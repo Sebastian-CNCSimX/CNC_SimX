@@ -153,11 +153,16 @@
     background: var(--bg);
   }
 
+  /* Geringere Höhe des Menübands (Release 97, Sebastian: "Den Platz von Menüband (Datei,
+     Bearbeiten, Einstellungen, usw.) nach etwas geringer machen zum oberen/unteren Rand.") -
+     betrifft ausschließlich den vertikalen Innenabstand der Topbar selbst (padding-top/-bottom
+     10px -> 6px, seitlicher Abstand 16px bewusst unverändert); alle Elemente darin (Menü-
+     Auslöser, Maschinentyp-Gruppe, Dateiname usw.) behalten ihre eigene, unveränderte Höhe. */
   .topbar {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 10px 16px;
+    padding: 6px 16px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
@@ -196,18 +201,29 @@
 
   .menu-bar { display: flex; align-items: center; gap: 2px; }
   .menu { position: relative; }
+  /* Rahmen um "Datei"/"Bearbeiten"/"Einstellungen"/"Info" (Release 97, Sebastian: "Datei,
+     Bearbeiten, Einstellungen, Info mit einem Rahmen belegen wie der Ok-Button bei
+     Maschinentyp.") - bis Release 96 war der Rahmen nur "unsichtbar" vorgemerkt
+     (border: 1px solid transparent, erst beim :hover sichtbar per border-color: var(--border),
+     siehe .menu-trigger:hover). Der "Ok"-Knopf neben "Maschinentyp" (#btnMachineTypeOk,
+     ".btn.ghost") hat dagegen von Haus aus einen dauerhaft sichtbaren Rahmen (".btn":
+     border: 1px solid var(--border); ".btn:hover": border-color: var(--ink-faint)). Exakt
+     dasselbe Muster wird hier auf die vier Menü-Auslöser übertragen: fester Rahmen in
+     var(--border), beim Hover dunkler auf var(--ink-faint) (identisch zu ".btn:hover") - der
+     bereits offene Zustand (".menu.open .menu-trigger", siehe unten) überschreibt border-color
+     weiterhin auf "transparent" und bleibt dadurch unverändert. */
   .menu-trigger {
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
     padding: 7px 14px;
     border-radius: 7px;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
     background: transparent;
     color: var(--ink);
     cursor: pointer;
   }
-  .menu-trigger:hover { background: var(--panel-2); border-color: var(--border); }
+  .menu-trigger:hover { background: var(--panel-2); border-color: var(--ink-faint); }
   .menu-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   /* "Buttonfarbe einstellen" (53. Runde, Sebastian: "Highlight-Farbe für 'Datei', 'Bearbeiten' und
      'Ansicht', wenn aktiv. Standard bleibt Rot ... Eine gewählte Farbe gilt für alle drei
@@ -1299,16 +1315,22 @@
      längsten Beschriftung der Gruppe gemessen + kleiner Rand) mit Flexbox-Zentrierung statt der
      sonst variablen Innenabstände. Höhe war je Gruppe bereits einheitlich 26px (natürliche
      .toolbar-btn-Zeilenhöhe bei 11.5px) und wird hier zur Klarheit ebenfalls explizit
-     festgeschrieben. Drei getrennte Gruppen, da die Beschriftungslängen zwischen ihnen stark
-     variieren (kürzeste Gruppe "DXF" ca. 66px, längste Werkzeug-Gruppe "+Werkzeuge (T)" ca. 118px)
-     - eine gemeinsame Breite über alle neun+ Knöpfe hinweg hätte die kurzen Symbol-Knöpfe unnötig
-     stark aufgebläht. */
-  #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon {
-    width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
-  }
+     festgeschrieben.
+     Release 97 (Sebastian: "Die CNC und DXF Icons sollen dieselbe Größe kriegen. Untereinander
+     ist erledigt, aber insgesamt sollen CNC und DXF einheitlich werden"): Release 96 hatte CNC
+     (68px) und DXF (66px) noch als zwei GETRENNTE Gruppen mit leicht unterschiedlicher Breite
+     behandelt - innerhalb jeder Gruppe bereits einheitlich, aber CNC- und DXF-Knöpfe
+     untereinander (zwischen Zeile 1 und Zeile 2) noch 2px auseinander. Seither eine einzige,
+     gemeinsame Selektor-Gruppe für alle zwölf CNC- plus DXF-Symbolleisten-Icons mit derselben
+     Breite (68px, der bisherige CNC-Wert - reicht für die kürzeren DXF-Beschriftungen ohnehin mit
+     Puffer). Die Werkzeug-Gruppe ("+Werkzeuge (T)"/"Werkzeug ausblenden"/"Spannfutter ausblenden")
+     bleibt bewusst eine eigene, deutlich breitere Gruppe (118px) - ihre Beschriftungen sind zu
+     lang, um sie ohne unnötiges Aufblähen der kurzen CNC-/DXF-Icons in dieselbe Breite zu
+     zwingen; Sebastian hat für diese Anfrage ausdrücklich nur "CNC und DXF" genannt. */
+  #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
   #btnDxfImportIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
-    width: 66px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
+    width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
   #btnInsertToolData, #btnToggleTool, #btnToggleToolHolder {
     width: 118px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -1997,7 +2019,11 @@
            (#btnDxfMoveIcon). Disabled-Zustand wird zusammen mit den beiden anderen gepflegt (kein
            Programm geladen -> deaktiviert, siehe loadText()/clearProgram() in app.js). -->
       <button class="toolbar-btn" id="btnEditProgramToolbarIcon" type="button" disabled title="Geladenes CNC-Programm bearbeiten (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm bearbeiten')">✎ CNC</button>
-      <span class="toolbar-sep"></span>
+      <!-- Trennstrich zwischen "✎ CNC" und "✕ CNC" entfernt (Release 97, Sebastian: "Den
+           Trennstrich hinter CNC-Bearbeiten Icon entfernen, vor CNC Löschen") - die drei
+           CNC-Symbolleisten-Icons (Laden/Bearbeiten/Löschen) bilden seither eine durchgehende
+           Gruppe ohne innere Trennlinie, exakt wie die neun DXF-Icons in Zeile 2 darunter (siehe
+           dort), die von Anfang an ohne Trennstriche zwischen den einzelnen Knöpfen auskommen. -->
       <!-- "CNC löschen"-Icon (70. Runde, Sebastian, Punkt 9: "'CNC löschen'-Icon hinzufügen") -
            ruft dieselbe, unveränderte clearProgram()-Funktion wie der bestehende Menüpunkt
            "CNC-Programm löschen" (#btnClearProgram, siehe "Bearbeiten" → "CNC") auf, nach
@@ -4634,8 +4660,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 96;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:27 Uhr';
+  const APP_RELEASE_NUMBER = 97;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:39 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
