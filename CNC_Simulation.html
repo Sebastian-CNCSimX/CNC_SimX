@@ -1286,6 +1286,33 @@
      eindeutig sichtbar (deutlich blasser + "verboten"-Cursor, kein Hover-Effekt mehr). */
   .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .toolbar-btn:disabled:hover { color: var(--ink-muted); border-color: var(--border); }
+  /* Release 96, Sebastian: "Alle Icons bei CNC (öffnen, bearbeiten, löschen) und DXF (öffnen,
+     ausblenden, verschieben usw.) sollen dieselbe Größe kriegen." + "Die Icons +Werkzeuge (T),
+     Werkzeugausblenden und Spannfutter ausblenden sollen auch gleich groß werden." - bis Release 95
+     hatte ".toolbar-btn" (siehe oben) keine feste Breite: der Rahmen wuchs mit seinem Inhalt
+     (padding 5px 10px + Textbreite), und da jeder Knopf ein anderes Unicode-Symbol vor demselben
+     "CNC"/"DXF"-Textsuffix trägt (z. B. "📂" vs. "✎" vs. "✕"), rendern die Symbole selbst bei
+     gleicher font-size unterschiedlich breit - die Knopfrahmen einer Gruppe wichen dadurch sichtbar
+     voneinander ab (gemessen z. B. 65px "📂 CNC" gegen 60px "✎ CNC"/"✕ CNC"). Behoben nach demselben
+     Muster wie bereits bei #btnMeasureTransport/#btnMeasureAngleTransport (Release 90, siehe
+     .info-panel-btn weiter oben): eine feste, für jede Gruppe gemeinsame Breite (an der jeweils
+     längsten Beschriftung der Gruppe gemessen + kleiner Rand) mit Flexbox-Zentrierung statt der
+     sonst variablen Innenabstände. Höhe war je Gruppe bereits einheitlich 26px (natürliche
+     .toolbar-btn-Zeilenhöhe bei 11.5px) und wird hier zur Klarheit ebenfalls explizit
+     festgeschrieben. Drei getrennte Gruppen, da die Beschriftungslängen zwischen ihnen stark
+     variieren (kürzeste Gruppe "DXF" ca. 66px, längste Werkzeug-Gruppe "+Werkzeuge (T)" ca. 118px)
+     - eine gemeinsame Breite über alle neun+ Knöpfe hinweg hätte die kurzen Symbol-Knöpfe unnötig
+     stark aufgebläht. */
+  #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon {
+    width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
+  }
+  #btnDxfImportIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
+  #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
+    width: 66px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
+  }
+  #btnInsertToolData, #btnToggleTool, #btnToggleToolHolder {
+    width: 118px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
+  }
   /* "Perspektive:"-Label + reine Icon-Knöpfe für Oben/Unten/Links/Rechts/Vorn/Hinten (41. Runde,
      Benutzer: "Text entfernen und nur größere Icons dafür einbauen, davor 'Perspektive:'
      schreiben"): Die Knöpfe selbst bleiben ".toolbar-btn" (gleiche Optik/Klickfläche/Hover wie
@@ -4607,8 +4634,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 95;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:12 Uhr';
+  const APP_RELEASE_NUMBER = 96;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:27 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
