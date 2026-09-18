@@ -35,12 +35,21 @@
     --axis-z: #2b62c9;
     --grid-line: rgba(23,50,74,0.08);
     --shadow: 0 8px 24px rgba(23,50,74,0.10);
+    /* Farbpalette auf 10 statt 6 erweitert (Sebastian: "Aktuell wiederholen sich alle 6
+       Arbeitsgänge die Farben. Das auf 10 erweitern. Generell soll sich erst die 11. Farbe
+       wiederholen dürfen. Automatisiert sind es 10 unterschiedliche Farben.") - siehe
+       pathColor()/OP_COLOR_COUNT in app.js, das die Zykluslänge jetzt ausschließlich aus der
+       Länge dieses Namens-Arrays ableitet (keine hartkodierte "6" mehr). */
     --path-1: #ad1f2d;
     --path-2: #2b6674;
     --path-3: #1f8a52;
     --path-4: #8a4bb0;
     --path-5: #c9922a;
     --path-6: #1f9e9e;
+    --path-7: #b5507a;
+    --path-8: #5c6bc0;
+    --path-9: #7a8a3d;
+    --path-10: #a15c2e;
     --tool-color: #6b7f8f;
     /* DXF-Unterlage (Sebastian: "Ich möchte ein DXF importieren was am Ende quasi unter der
        gefrästen Kontur liegt") - eigene, dezent-neutrale Farbe (bewusst kein --path-*, da die
@@ -81,6 +90,10 @@
       --path-4: #cf9bf0;
       --path-5: #e8b04a;
       --path-6: #7fd8d8;
+      --path-7: #e78ab0;
+      --path-8: #9aa8f0;
+      --path-9: #b8cc6a;
+      --path-10: #e0935a;
     --tool-color: #b7c6d2;
     --dxf-color: #9fb3c2;
     }
@@ -116,6 +129,10 @@
     --path-4: #cf9bf0;
     --path-5: #e8b04a;
     --path-6: #7fd8d8;
+    --path-7: #e78ab0;
+    --path-8: #9aa8f0;
+    --path-9: #b8cc6a;
+    --path-10: #e0935a;
     --tool-color: #b7c6d2;
     --dxf-color: #9fb3c2;
   }
@@ -1854,6 +1871,12 @@
                        "Farben"-Untermenü, siehe #fontColorPanel weiter unten sowie
                        applyFontColors()/loadPersistedFontColors() in app.js. -->
                   <button class="menu-item" id="btnFontColor" type="button" title="Schriftfarbe einzeln festlegen für: CNC-Programmcode Zeilennummerierung, CNC-Programmcode Code, Arbeitsgänge, Geschwindigkeit, Sprung in Zeile">Schriftfarbe</button>
+                  <!-- "Arbeitsgangfarbe" (Release 100, Sebastian: "'Einstellungen -> Erscheinungsbild
+                       -> Farben' neuer Menüpunkt für 'Arbeitsgangfarbe'. ... der Bediener soll
+                       festlegen welche Farbe der 1. Arbeitsgang bekommt, welcher der 2. Arbeitsgang
+                       bekommt, welche der 3. usw.") - vierter Eintrag im "Farben"-Untermenü, siehe
+                       #opColorPanel weiter unten sowie applyOpColors()/pathColor() in app.js. -->
+                  <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)">Arbeitsgangfarbe</button>
                 </div>
               </div>
               <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
@@ -1866,7 +1889,7 @@
                    nach "Spalten" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
                    Schritt Buttonfarbe, Hintergrundfarbe, die neue Schriftfarbe UND die
                    Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js. -->
-              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe und Spaltenbreiten auf ihre Standardwerte zurück">Standardwerte wiederherstellen</button>
+              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe und Spaltenbreiten auf ihre Standardwerte zurück">Standardwerte wiederherstellen</button>
             </div>
           </div>
           <!-- "Maschinentypen" + "Einstellungen exportieren"/"Einstellungen importieren" hierher
@@ -2137,6 +2160,18 @@
         <label for="jumpLineInput">Sprung in Zeile:</label>
         <input type="number" id="jumpLineInput" min="1" step="1" placeholder="Zeile">
         <button class="transport-btn small" id="btnJumpLine" type="button" title="Zur eingegebenen Zeile springen (oder Enter)">→</button>
+        <!-- "Codesprung" (Release 101, Sebastian, Punkt 1: "Der Sprung in die Zeile beim Klick
+             soll hinter einen Button gesetzt werden und nicht dauerhaft aktiv sein." + Punkt 2:
+             "Neben 'Sprung in Zeile'-bestätigen Button einbauen, der die Funktion hat, dass man
+             gezielt auf eine Linie klicken kann: 'Codesprung'" + Punkt 3: "Der Standard in der
+             Sim ist wie zuvor, dass man mit der 'Hand' die Sim drehen kann, messen kann usw.") -
+             echter Umschalter, standardmäßig AUS (Klick im 3D-Bereich bewegt/dreht wie gehabt die
+             Kamera bzw. bedient ein AKTIVES Messwerkzeug), exakt dieselbe Ein-/Aus-/gegenseitig
+             exklusiv-Technik wie #btnMeasure/#btnMeasureAngle - siehe toggleCodeJump()/
+             syncMeasureButtons() in app.js. ".toolbar-btn"-Optik (samt vorhandener ".active"-
+             Hervorhebung) statt ".transport-btn.small" wie der direkt benachbarte Pfeil-Knopf, da
+             "Codesprung" ein eigenes, längeres Textlabel trägt statt eines einzelnen Glyphen. -->
+        <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge).">Codesprung</button>
       </div>
     </div>
   </div>
@@ -2632,6 +2667,110 @@
   </div>
 </div>
 
+<!-- "Arbeitsgangfarbe" (Release 100, Sebastian: "'Einstellungen -> Erscheinungsbild -> Farben'
+     neuer Menüpunkt für 'Arbeitsgangfarbe'. Die Farben werden ja aktuell 'durchnummeriert'. Das
+     ist ok so, aber der Bediener soll festlegen welche Farbe der 1. Arbeitsgang bekommt, welcher
+     der 2. Arbeitsgang bekommt, welche der 3. usw."; Release 101, Sebastian: "Aktuell wiederholen
+     sich alle 6 Arbeitsgänge die Farben. Das auf 10 erweitern. Generell soll sich erst die 11.
+     Farbe wiederholen dürfen. Automatisiert sind es 10 unterschiedliche Farben. Manuell
+     eingestellt werden kann der Benutzer auch 10 gleiche Farben") - zehn feste Zeilen (dieselbe
+     Text+Farbwähler-Technik wie bei "Hintergrundfarbe"/"Buttonfarbe"/"Schriftfarbe" oben,
+     .color-field-row/.color-field-inputs), eine je zyklisch verwendeter Bahn-/Zeilenfarbe
+     (--path-1…--path-10, siehe pathColor()/OP_COLOR_COUNT in app.js) - bei mehr als zehn
+     Arbeitsgängen wiederholt sich die Zuordnung weiterhin genau wie bisher ("durchnummeriert",
+     von Sebastian ausdrücklich als unverändert gewollt bestätigt, jetzt eben erst ab dem 11.
+     Arbeitsgang statt ab dem 7.). Anders als bei "Schriftfarbe" OHNE eigene Häkchen je Zeile -
+     alle zehn Farben werden gemeinsam als EIN Satz gesetzt oder gemeinsam auf die
+     Theme-Standardfarben zurückgesetzt (siehe applyOpColors()/#btnResetDisplayDefaults in
+     app.js), dieselbe Alles-oder-nichts-Logik wie bei "Hintergrundfarbe" → "Benutzerfarben" -
+     eine manuelle Eingabe von zehn identischen Hexcodes ist dabei ausdrücklich zulässig (keine
+     Unterscheidbarkeits-Prüfung wie bei "Buttonfarbe"), nur die automatisch vorbelegte
+     Standardpalette selbst besteht aus zehn tatsächlich unterschiedlichen Farben. -->
+<div class="paste-panel" id="opColorPanel">
+  <div class="paste-card">
+    <h3>Arbeitsgangfarbe einstellen</h3>
+    <p class="panel-hint">Legt fest, welche Farbe der 1. Arbeitsgang bekommt, welche der 2., usw. - bei mehr als zehn Arbeitsgängen beginnt die Zuordnung wieder von vorn (unverändert wie bisher, erst ab dem 11. Arbeitsgang). Gilt gleichermaßen für die Bahnfarbe im 3D-Bereich, die Zeilenfarbe im Programmcode sowie den Farbpunkt in der Arbeitsgänge-Spalte.</p>
+    <label class="color-field-row">
+      <span>1. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor1Picker" title="Farbe wählen">
+        <input type="text" id="opColor1Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ad1f2d">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>2. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor2Picker" title="Farbe wählen">
+        <input type="text" id="opColor2Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#2b6674">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>3. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor3Picker" title="Farbe wählen">
+        <input type="text" id="opColor3Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f8a52">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>4. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor4Picker" title="Farbe wählen">
+        <input type="text" id="opColor4Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#8a4bb0">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>5. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor5Picker" title="Farbe wählen">
+        <input type="text" id="opColor5Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9922a">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>6. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor6Picker" title="Farbe wählen">
+        <input type="text" id="opColor6Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f9e9e">
+      </span>
+    </label>
+    <!-- Vier zusätzliche Zeilen (Release 101, Sebastian: "Das auf 10 erweitern") - identische
+         Zeilenstruktur wie 1.-6. Arbeitsgang oben, nur mit den vier neuen --path-7…--path-10
+         Standard-Hexcodes als Platzhalter (siehe :root im <style> ganz oben). -->
+    <label class="color-field-row">
+      <span>7. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor7Picker" title="Farbe wählen">
+        <input type="text" id="opColor7Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#b5507a">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>8. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor8Picker" title="Farbe wählen">
+        <input type="text" id="opColor8Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#5c6bc0">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>9. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor9Picker" title="Farbe wählen">
+        <input type="text" id="opColor9Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#7a8a3d">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span>10. Arbeitsgang</span>
+      <span class="color-field-inputs">
+        <input type="color" id="opColor10Picker" title="Farbe wählen">
+        <input type="text" id="opColor10Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#a15c2e">
+      </span>
+    </label>
+    <p class="panel-hint" id="opColorHexWarning" hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnOpColorCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnOpColorApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
 <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für 'CNC-Programmcode' und
      'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") - zwei unabhängige Radiogruppen, je
      eine pro Spalte, siehe applyColumnScalePreference()/btnColumnScale-Verdrahtung in app.js. Die
@@ -2719,10 +2858,22 @@
      Kamera-Schwenken - ein Ziehen öffnet weiterhin kein Menü), außer direkt in echten
      Texteingabefeldern (dort bleibt bewusst das native Browser-Kontextmenü zum Markieren/
      Kopieren/Einfügen erhalten). Anfangs "hidden" - app.js blendet es bei jedem Öffnen an der
-     jeweiligen Klickposition ein. -->
+     jeweiligen Klickposition ein.
+
+     "Codesprung"/"Gesamtes Programm" ergänzt (Release 101, Sebastian, Punkt 4: "Codesprung kann
+     auch über Rechtsklick aus dem Kontextmenü aktiviert werden. Unter dem Trennstrich von
+     Winkelmessung kommt 'Codesprung', dann ein Trennstrich und dann 'Programm laden'"; Punkt 6:
+     "'Gesamtes Programm' auch im Kontextmenü ergänzen unter 'Codesprung' vor dem Trennstrich zu
+     'Programm laden'") - "Codesprung" ruft dieselbe toggleCodeJump()-Funktion auf wie der neue
+     #btnCodeJump neben "Sprung in Zeile" (siehe dort); "Gesamtes Programm" dieselbe
+     setScope({type:'all'})-Aktion wie #btnWholeProgram in der Symbolleiste. Beide bilden eine
+     eigene, vierte Gruppe zwischen den Messfunktionen und "Programm laden". -->
 <div class="context-menu" id="appContextMenu" hidden>
   <button class="menu-item" id="ctxMeasureLength" type="button">Längenmessung</button>
   <button class="menu-item" id="ctxMeasureAngle" type="button">Winkelmessung</button>
+  <div class="context-menu-divider"></div>
+  <button class="menu-item" id="ctxCodeJump" type="button">Codesprung</button>
+  <button class="menu-item" id="ctxWholeProgram" type="button">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
   <button class="menu-item" id="ctxLoadProgram" type="button">Programm laden</button>
   <button class="menu-item" id="ctxClearProgram" type="button">Programm löschen</button>
@@ -4686,8 +4837,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 99;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:48 Uhr';
+  const APP_RELEASE_NUMBER = 102;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 21:23 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5353,6 +5504,98 @@ Z*1
   // sowie um das Panel beim erneuten Öffnen mit dem tatsächlich aktiven Stand vorzubelegen).
   let activeFontColors = {};
 
+  // "Arbeitsgangfarbe" (Release 100, Sebastian: "'Einstellungen -> Erscheinungsbild -> Farben'
+  // neuer Menüpunkt für 'Arbeitsgangfarbe'. Die Farben werden ja aktuell 'durchnummeriert'. Das
+  // ist ok so, aber der Bediener soll festlegen welche Farbe der 1. Arbeitsgang bekommt, welcher
+  // der 2. Arbeitsgang bekommt, welche der 3. usw." + "Die 'Arbeitsgangfarben' sollen auch in die
+  // json kommen beim Einstellungsexport"; Release 101, Sebastian: "Aktuell wiederholen sich alle
+  // 6 Arbeitsgänge die Farben. Das auf 10 erweitern. Generell soll sich erst die 11. Farbe
+  // wiederholen dürfen. Automatisiert sind es 10 unterschiedliche Farben.") - pathColor(i) (siehe
+  // ganz oben, OP_COLOR_COUNT = 10) liest die zehn zyklisch verwendeten Bahn-/Zeilenfarben direkt
+  // aus den CSS-Variablen --path-1…--path-10 (die Farbzuordnung "durchnummeriert" sich bei mehr
+  // als zehn Arbeitsgängen weiterhin genau wie bisher, siehe pathColor() oben - Sebastian nannte
+  // das ausdrücklich als bewusst unverändert gewollt, "das ist ok so", nur eben jetzt mit zehn
+  // statt sechs Farben). Dieselbe zweiargumentige Übersteuerungs-Technik wie bei
+  // "Hintergrundfarbe" (activeColorProfile/DEFAULT_CUSTOM_COLORS oben): OHNE aktive
+  // Arbeitsgangfarbe bleiben --path-1…10 unangetastet, die eingebauten Hell-/Dark-Mode-Paletten
+  // (siehe :root/@media (prefers-color-scheme: dark)/:root[data-theme="dark"] in
+  // template_top.html) gelten dadurch unverändert weiter; eine gesetzte Arbeitsgangfarbe
+  // überschreibt alle zehn Variablen per Inline-Style auf :root direkt mit einem festen Hexcode
+  // (unabhängig von Hell/Dunkel, exakt wie bereits bei "Buttonfarbe"/"Schriftfarbe") - der
+  // Benutzer darf dabei auch zehn identische Hexcodes eingeben (keine Unterscheidbarkeits-Prüfung
+  // wie bei "Buttonfarbe"), nur die automatische Standardpalette selbst ist bewusst zehnfarbig.
+  const LS_KEY_OP_COLORS = 'cncsim.opColors';
+  function loadPersistedOpColors() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_OP_COLORS);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length === OP_COLOR_COUNT) {
+        const normalized = arr.map(normalizeHex);
+        if (normalized.every(Boolean)) return normalized;
+      }
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistOpColors(colors) {
+    try {
+      if (colors) window.localStorage.setItem(LS_KEY_OP_COLORS, JSON.stringify(colors));
+      else window.localStorage.removeItem(LS_KEY_OP_COLORS);
+    } catch (e) { /* s.o. */ }
+  }
+  // Wendet die übergebenen zehn Arbeitsgangfarben tatsächlich an (colors: Array von zehn
+  // gültigen Hexcodes, oder null für "automatisch"/Theme-Standard) und stößt ein Neueinfärben
+  // der bereits vorhandenen Szene an (recolorOpSegmentsAndPoints() unten) - OHNE die sonstigen,
+  // bei setScope() üblichen Nebenwirkungen (Kamera-Neurahmung, Scrubber-Reset usw.), da hier ja
+  // nur eine Farbe, keine Geometrie geändert wird. Liefert die normalisierte Fassung zurück
+  // (analog zu applyColorProfile()/applyMenuHighlightColor()/applyFontColors() oben).
+  function applyOpColors(colors) {
+    const normalized = Array.isArray(colors) && colors.length === OP_COLOR_COUNT && colors.every(h => normalizeHex(h))
+      ? colors.map(normalizeHex)
+      : null;
+    for (let i = 0; i < OP_COLOR_COUNT; i++) {
+      const varName = '--path-' + (i + 1);
+      if (normalized) root.style.setProperty(varName, normalized[i]);
+      else root.style.removeProperty(varName);
+    }
+    recolorOpSegmentsAndPoints();
+    return normalized;
+  }
+  // Hält die zuletzt per applyOpColors() angewendete Fassung fest (für den JSON-Export sowie um
+  // das Panel beim erneuten Öffnen sinnvoll vorzubelegen, siehe syncOpColorPanelFromActive()).
+  let activeOpColors = null;
+  // Färbt eine BEREITS vorhandene Szene (segments/points, siehe setScope()) anhand der jetzt
+  // aktuellen --path-1…10-Werte neu ein, ohne setScope() selbst erneut aufzurufen (das würde
+  // Kamera/Scrubber/Wiedergabezustand unnötig zurücksetzen). Jedes Segment/jeder Punkt, das/der
+  // seine Farbe ursprünglich über pathColor(colorCursor) bezogen hat, trägt dafür sein eigenes
+  // colorCursor (0-9) - siehe die drei segments.push(...)-Stellen in setScope() weiter unten.
+  // Gedimmte Kontext-Segmente (colorCursor === null, bleiben in --ink-faint) sind bewusst
+  // ausgenommen, exakt wie Arbeitsgangfarben insgesamt nur die aktive/vollfarbige Darstellung
+  // betreffen. Aktualisiert zusätzlich die bereits im DOM stehende Code-Zeilen-/Arbeitsgänge-
+  // Farbmarkierung (ohne renderTree()/renderOpsColumn() komplett neu aufzubauen - das würde
+  // Scrollposition/DOM-Referenzen unnötig verwerfen) sowie den Bake-Cache (siehe
+  // computeBakeParams()/bakeParamsEqual() oben - "segments" wird dort nur PER REFERENZ
+  // verglichen, ein reines In-Place-Umfärben würde ohne das erzwungene bakeParams=null sonst
+  // unbemerkt bleiben, bis ohnehin ein struktureller Rebake fällig wird).
+  function recolorOpSegmentsAndPoints() {
+    segments.forEach(seg => { if (seg.colorCursor != null) seg.color = pathColor(seg.colorCursor); });
+    points.forEach(p => { if (p.colorCursor != null) p.color = pathColor(p.colorCursor); });
+    if (current) {
+      const lineColors = computeLineColors(current);
+      lineEls.forEach((lineEl, lineIdx) => {
+        if (lineEl) lineEl.style.borderLeftColor = lineColors.get(lineIdx) || '';
+      });
+      opsListEl.querySelectorAll('.op-item').forEach(item => {
+        const opIndex = Number(item.dataset.opIndex);
+        const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === opIndex);
+        const sw = item.querySelector('.op-swatch');
+        if (sec && sw) sw.style.background = lineColors.get(sec.startIdx) || '';
+      });
+    }
+    bakeParams = null;
+    requestRender();
+  }
+
   // ============================================================
   // Standard-Arbeitsgang-Namensliste (Benutzer, 20. Runde: "gibt es ein anderes
   // Arbeitsgangformat bei anderen Postprozessoren. Da kommen keine Trennzeilen davor/dahinter.
@@ -5521,9 +5764,17 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // ============================================================
   // Farbpalette für Arbeitsgang-Bahnen (aus CSS-Variablen gelesen)
   // ============================================================
+  // Zykluslänge der Arbeitsgangfarben (Release 101, Sebastian: "Aktuell wiederholen sich alle 6
+  // Arbeitsgänge die Farben. Das auf 10 erweitern. Generell soll sich erst die 11. Farbe
+  // wiederholen dürfen. Automatisiert sind es 10 unterschiedliche Farben.") - EINZIGE Stelle, die
+  // die Anzahl der zyklisch verwendeten Bahn-/Zeilenfarben festlegt; pathColor()/applyOpColors()/
+  // loadPersistedOpColors()/die zehn Panel-Zeilen (#opColor1…10*, template_top.html) sowie die
+  // zehn --path-1…--path-10-CSS-Variablen (siehe :root oben) hängen alle direkt oder indirekt
+  // davon ab, keine hartkodierte "6"/"10" mehr an mehreren Stellen verstreut.
+  const OP_COLOR_COUNT = 10;
   function pathColor(i) {
     const styles = getComputedStyle(document.documentElement);
-    const names = ['--path-1', '--path-2', '--path-3', '--path-4', '--path-5', '--path-6'];
+    const names = Array.from({ length: OP_COLOR_COUNT }, (_, n) => '--path-' + (n + 1));
     return styles.getPropertyValue(names[i % names.length]).trim();
   }
   function cssVar(name) {
@@ -5838,6 +6089,9 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   const speedButtons = Array.from(document.querySelectorAll('.speed-btn'));
   const jumpLineInput = el('jumpLineInput');
   const btnJumpLine = el('btnJumpLine');
+  // "Codesprung"-Umschalter (Release 101), direkt neben #btnJumpLine im selben .jump-group - siehe
+  // codeJumpActive/toggleCodeJump() weiter unten.
+  const btnCodeJump = el('btnCodeJump');
   const btnWholeProgram = el('btnWholeProgram');
   const btnHomeView = el('btnHomeView');
   const btnClearProgram = el('btnClearProgram');
@@ -6121,6 +6375,32 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   let angleMeasureActive = false;
   let anglePoints = []; // 0-3 Einträge {x,y,z}; anglePoints[1] = Scheitelpunkt sobald vorhanden
   let angleHoverPoint = null;
+
+  // Linien-Sprung (Release 100, Sebastian: "Beim Klick in der Simulation auf die Linie im
+  // CNC-Code soll in die Zeile beim CNC-Programmcode gesprungen werden von der Stelle wo man
+  // hinklickt" + "Die Linie, die angeklickt wird, soll im 3D gehighlightet werden, indem der
+  // Start und Endpunkt der jeweiligen Stelle mit einem kleinen [] markiert werden") - merkt sich
+  // Start-/Endpunkt der zuletzt angeklickten CNC-Bahnlinie (siehe hitTestCncLine()/
+  // handleLineJumpClick() weiter unten), damit drawLineSelection() sie jeden Frame frisch als
+  // kleine "[]"-Markierung an der jeweils aktuellen Bildschirmposition einzeichnen kann (bewegt
+  // sich mit der Kamera mit, exakt wie Marker/Werkzeug/Messwerkzeug, siehe render()). Bleibt
+  // bestehen, bis eine andere Linie angeklickt wird oder der Scope/das Programm wechselt (siehe
+  // setScope()) - {p0,p1} in echten CNC-Koordinaten (nicht Bildschirm-Pixeln) | null.
+  let selectedLineHighlight = null;
+
+  // "Codesprung" als eigener EIN/AUS-Werkzeugmodus statt dauerhaft aktiv (Release 101, Sebastian,
+  // Punkt 1: "Der Sprung in die Zeile beim Klick soll hinter einen Button gesetzt werden und
+  // nicht dauerhaft aktiv sein." + Punkt 3: "Der Standard in der Sim ist wie zuvor, dass man mit
+  // der 'Hand' die Sim drehen kann, messen kann usw.") - in Release 100 feuerte ein einfacher
+  // Linksklick auf eine CNC-Linie IMMER den Codesprung aus (sobald keines der beiden
+  // Messwerkzeuge aktiv war), ohne eigenen Ein-/Ausschalter; das kollidierte mit dem Wunsch,
+  // einen gewöhnlichen Klick im 3D-Bereich wie gewohnt für Kamera-Interaktion frei zu halten.
+  // Jetzt exakt dieselbe Ein-/Aus-/gegenseitig-exklusiv-Technik wie measureActive/
+  // angleMeasureActive oben (siehe toggleCodeJump()/syncMeasureButtons() weiter unten) - nur bei
+  // codeJumpActive === true wertet der pointerup-Handler einen "echten" Linksklick als
+  // Linien-Sprung, ausgeschaltet (Standardzustand) verhält sich ein Klick/Ziehen im 3D-Bereich
+  // exakt wie vor Release 100 (Kamera drehen/verschieben).
+  let codeJumpActive = false;
 
   // Zeilen-Elemente der linken Programm-Ansicht (Index = Zeilennummer, 0-basiert), für das
   // Highlighting der aktuell simulierten Zeile + Auto-Scroll.
@@ -7775,6 +8055,9 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     measureStart = null;
     measureEnd = null;
     anglePoints = []; // 67. Runde: dieselbe Rücksetzregel für die neue Winkelmessung
+    // Linien-Sprung-Markierung (Release 100): bezieht sich ebenfalls auf die vorherige Geometrie -
+    // dieselbe Rücksetzregel wie bei der Messung oben.
+    selectedLineHighlight = null;
 
     if (current) {
       const opSections = current.sections.filter(s => s.type === 'arbeitsgang');
@@ -7784,7 +8067,10 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
             const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes);
-            segments.push({ color: pathColor(colorCursor), title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode });
+            // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
+            // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
+            // setScope()-Neuaufbau, siehe dort.
+            segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode });
           });
         } else if (current.sections.length) {
           // Kein Arbeitsgang-Schema erkannt: Das Programm ist trotzdem gültig und wird als
@@ -7797,7 +8083,7 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
             const state = newModalState();
             const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes);
             if (!pts.length) return;
-            segments.push({ color: pathColor(colorCursor), title: `Programmteil ${colorCursor + 1}`, opIndex: null, points: pts, context: false });
+            segments.push({ color: pathColor(colorCursor), colorCursor, title: `Programmteil ${colorCursor + 1}`, opIndex: null, points: pts, context: false });
             colorCursor++;
           });
         }
@@ -7812,6 +8098,7 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
           const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink);
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
+            colorCursor: isActive ? colorCursor : null,
             title: sec.title, opIndex: sec.index, points: pts, context: !isActive,
             toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode
           });
@@ -7832,7 +8119,7 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     points = [];
     segments.filter(seg => !seg.context).forEach(seg => {
       seg.rangeStart = points.length;
-      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode }, p)));
+      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, colorCursor: seg.colorCursor, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode }, p)));
     });
 
     // Sichtbare Punkte fürs Kamera-Framing/Raster: inklusive gedimmtem Kontext.
@@ -8328,6 +8615,7 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     if (points.length) { drawMarker(proj); drawTool(proj); }
     drawMeasure(proj);
     drawAngleMeasure(proj);
+    drawLineSelection(proj);
     // Gizmo (70. Runde, Punkt 3) - arbeitet bewusst direkt in Bildschirm-Pixeln (nicht über proj()
     // wie der Rest hier), siehe drawViewGizmo() weiter unten.
     drawViewGizmo(basis, w, h);
@@ -8487,6 +8775,29 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     }
   }
 
+  // Markierung der zuletzt per Linien-Sprung angeklickten CNC-Bahnlinie (Release 100, Sebastian:
+  // "Die Linie, die angeklickt wird, soll im 3D gehighlightet werden, indem der Start und
+  // Endpunkt der jeweiligen Stelle mit einem kleinen [] markiert werden") - zeichnet an Start-
+  // UND Endpunkt (selectedLineHighlight.p0/p1, siehe dort) je ein kleines "[]"-Textglyph in
+  // Akzentfarbe, zentriert auf die jeweilige Bildschirmposition. Bewusst als echtes Zeichen-Paar
+  // (nicht als gezeichneter Rahmen aus einzelnen Linien) - liest sich unmittelbar als "hier
+  // markiert" und braucht keine eigene Geometrie. Wie das Messwerkzeug-Overlay JEDEN Frame frisch
+  // gezeichnet (nicht gebacken, siehe render()), damit die Markierung der Kamera folgt.
+  function drawLineSelection(proj) {
+    if (!selectedLineHighlight) return;
+    const color = cssVar('--accent');
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.font = '600 16px "Open Sans", ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    [selectedLineHighlight.p0, selectedLineHighlight.p1].forEach(p => {
+      const s = proj(toRender(p));
+      if (s) ctx.fillText('[]', s.x, s.y);
+    });
+    ctx.restore();
+  }
+
   // ============================================================
   // Messwerkzeug: Klick -> nächstgelegener Punkt ODER Linien-Schnittpunkt (70. Runde, siehe
   // screenSegmentIntersect() unten) ODER (falls keiner von beiden in der Nähe) der nächste Punkt
@@ -8639,6 +8950,51 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       };
     }
     return null;
+  }
+
+  // Klick auf eine CNC-Bahnlinie -> Sprung zur zugehörigen Quelltextzeile (Release 100, Sebastian,
+  // siehe selectedLineHighlight weiter oben für den vollständigen Wortlaut). Eigener, bewusst
+  // schlankerer Treffertest als hitTest3D() oben: nur die tatsächliche CNC-Bahn (segments) - KEIN
+  // DXF (eine DXF-Unterlage hat keinen zugehörigen Programmcode) und kein Punkt-/Schnittpunkt-
+  // Snapping wie beim Messwerkzeug (hier zählt nur "auf welcher Linie wurde geklickt", reiner
+  // Lot-Fußpunkt-Vergleich, dieselbe MEASURE_PICK_PX-Fangdistanz). Erfasst bewusst ALLE Segmente
+  // inklusive gedimmter Kontext-Bahnen (seg.context - "bereits gefertigtes Bauteil" beim Scope
+  // "einzelner Arbeitsgang"), genau wie hitTest3D() es für die Messfunktion bereits tut - auch
+  // eine bereits gefertigte, gedimmte Kontur bleibt so anklickbar. Liefert das getroffene
+  // Punktepaar (p0/p1, für die Markierung selbst, siehe drawLineSelection() weiter unten).
+  function hitTestCncLine(mx, my) {
+    const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+    const camPos = cameraPosition();
+    const basis = buildBasis(camPos);
+    const proj = p => project(p, camPos, basis, w, h);
+    let best = null, bestDist = MEASURE_PICK_PX;
+    segments.forEach(seg => {
+      for (let i = 1; i < seg.points.length; i++) {
+        const p0 = seg.points[i - 1], p1 = seg.points[i];
+        const a = proj(toRender(p0));
+        const b = proj(toRender(p1));
+        if (!a || !b) continue;
+        const { dist } = pointToSegmentDist(mx, my, a.x, a.y, b.x, b.y);
+        if (dist < bestDist) { bestDist = dist; best = { p0, p1 }; }
+      }
+    });
+    return best;
+  }
+
+  // Klick-Handler zu hitTestCncLine() oben - springt zur Quelltextzeile über jumpToCodeLine(),
+  // exakt dieselbe Funktion wie beim Klick auf eine Zeile in der Arbeitsgänge-Spalte (siehe 7.2):
+  // scrollt die Code-Liste dorthin UND bewegt die Wiedergabeposition (Scrubber) an dieselbe
+  // Stelle. Die Zeile des ZIELPUNKTS (p1.lineIdx, mit p0.lineIdx als Rückfallebene) wird gewählt -
+  // das ist die Zeile, deren Achswort die angeklickte Bewegung tatsächlich programmiert. Setzt
+  // zusätzlich selectedLineHighlight für die "[]"-Markierung (Feature 2, siehe dort).
+  function handleLineJumpClick(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const hit = hitTestCncLine(clientX - rect.left, clientY - rect.top);
+    if (!hit) return;
+    const lineIdx = hit.p1.lineIdx != null ? hit.p1.lineIdx : hit.p0.lineIdx;
+    selectedLineHighlight = { p0: hit.p0, p1: hit.p1 };
+    if (lineIdx != null) jumpToCodeLine(lineIdx);
+    requestRender();
   }
 
   // Aktualisiert den live der Maus folgenden Fangpunkt-Marker (59. Runde, siehe measureHoverPoint
@@ -10070,6 +10426,8 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   const ctxItems = {
     measureLength: el('ctxMeasureLength'),
     measureAngle: el('ctxMeasureAngle'),
+    codeJump: el('ctxCodeJump'),
+    wholeProgram: el('ctxWholeProgram'),
     loadProgram: el('ctxLoadProgram'),
     clearProgram: el('ctxClearProgram'),
     toggleAllOps: el('ctxToggleAllOps'),
@@ -10147,6 +10505,8 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // zusätzlicher Guard in den Handlern hier ist deshalb nicht nötig.
   ctxItems.measureLength.addEventListener('click', toggleMeasure);
   ctxItems.measureAngle.addEventListener('click', toggleMeasureAngle);
+  ctxItems.codeJump.addEventListener('click', toggleCodeJump);
+  ctxItems.wholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
   ctxItems.loadProgram.addEventListener('click', () => el('fileInput').click());
   ctxItems.clearProgram.addEventListener('click', clearProgram);
   ctxItems.toggleAllOps.addEventListener('click', toggleAllOps);
@@ -10191,6 +10551,14 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       // Escape-Druck mit, unabhängig davon, ob zusätzlich noch ein Dialog offen ist (siehe unten).
       if (measureActive) toggleMeasure();
       if (angleMeasureActive) toggleMeasureAngle();
+      // Release 102, Sebastian: "Codesprung soll auch mit Esc verlassen werden können" - Codesprung
+      // (9.4a) ist als dritter, zu den beiden Messwerkzeugen gleichberechtigter Werkzeug-Umschalter
+      // (codeJumpActive, Release 101) hinzugekommen, war aber bislang nicht Teil dieses bereits
+      // bestehenden Escape-Abbruch-Mechanismus. Exakt dieselbe Behandlung wie oben bei den beiden
+      // Messwerkzeugen: toggleCodeJump() deaktiviert bei aktivem Codesprung genau wie ein erneuter
+      // Klick auf #btnCodeJump/den Kontextmenü-Eintrag - Cursor kehrt zum Normalzustand zurück, die
+      // "[]"-Markierung wird entfernt, Info-Fenster blendet sich ggf. aus.
+      if (codeJumpActive) toggleCodeJump();
       const openPanel = document.querySelector('.paste-panel.open');
       if (openPanel) {
         const cancelBtn = openPanel.querySelector(".paste-actions button[id$='Cancel']");
@@ -10472,7 +10840,13 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       // beim Export in die JSON mitgeschrieben") - als einfaches Unterobjekt mit höchstens den
       // fünf bekannten Schlüsseln (siehe FONT_COLOR_SLOTS); eine Zeile ohne eigene Farbe taucht
       // darin schlicht nicht auf (kein "null"-Wert), exakt wie im internen activeFontColors.
-      fontColors: Object.assign({}, activeFontColors)
+      fontColors: Object.assign({}, activeFontColors),
+      // Arbeitsgangfarbe (Release 100, Sebastian: "Die 'Arbeitsgangfarben' sollen auch in die
+      // json kommen beim Einstellungsexport") - dieselbe Regel wie bei den übrigen Farbeinstell-
+      // ungen: "automatisch" (kein Override) exportiert bewusst null statt der aktuell wirksamen,
+      // theme-abhängigen Hexcodes, damit ein Re-Import auf einem anderen Rechner/Theme weiterhin
+      // "automatisch" bleibt statt versehentlich einen festen Stand einzufrieren.
+      opColors: activeOpColors ? activeOpColors.slice() : null
     }, null, 2);
   }
   el('btnSaveSettings').addEventListener('click', () => {
@@ -10581,6 +10955,26 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
         activeFontColors = applyFontColors(data.fontColors);
         persistFontColors(activeFontColors);
       }
+      // Arbeitsgangfarbe (Release 100, ab Release 101 zehn statt sechs Farben, siehe
+      // OP_COLOR_COUNT weiter oben): fehlt das Feld (ältere/handgeschriebene Datei), bleibt die
+      // aktuell aktive Arbeitsgangfarbe unangetastet - dieselbe Regel wie bei den übrigen
+      // Einstellungsteilen oben. Ein vorhandenes, aber explizites null setzt bewusst zurück auf
+      // "automatisch" (applyOpColors(null)), ein Array wird nur bei genau OP_COLOR_COUNT gültigen
+      // Hexcodes übernommen (applyOpColors() ignoriert alles andere und liefert dann unverändert
+      // null) - eine ältere, sechs-elementige Datei aus Release 100 wird dadurch bewusst nicht
+      // mehr übernommen (Längenmismatch), die aktuell aktive Arbeitsgangfarbe bleibt in diesem
+      // Fall unangetastet, statt fälschlich nur sechs von zehn Farben zu setzen.
+      if (data.opColors === null || (Array.isArray(data.opColors) && data.opColors.length === OP_COLOR_COUNT)) {
+        activeOpColors = applyOpColors(data.opColors);
+        persistOpColors(activeOpColors);
+        syncOpColorPanelFromActive();
+      }
+      // Ein vorhandenes Array mit ABWEICHENDER Länge (z.B. ein alter, sechs-elementiger
+      // Release-100-Export) fällt bewusst NICHT in den obigen Zweig und ruft applyOpColors() daher
+      // gar nicht erst auf - andernfalls würde dessen interne Längenprüfung zwar korrekt null
+      // liefern, dabei aber schon vorher --path-1…10 per Seiteneffekt auf "automatisch"
+      // zurückgesetzt und damit die tatsächlich aktive Arbeitsgangfarbe fälschlich überschrieben
+      // haben, statt sie wirklich unangetastet zu lassen.
     });
     e.target.value = '';
   });
@@ -10730,6 +11124,59 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     fontColorPanel.classList.remove('open');
   });
 
+  // "Einstellungen" -> "Farben" -> "Arbeitsgangfarbe" (Release 100, siehe #opColorPanel in
+  // template_top.html sowie applyOpColors()/LS_KEY_OP_COLORS weiter oben; Release 101: auf zehn
+  // statt sechs Zeilen erweitert, siehe OP_COLOR_COUNT weiter oben). Zehn feste Hexcode-Zeilen
+  // (dieselbe Text<->Farbwähler-Synchronisation wie bei den übrigen Farb-Panels oben) - anders
+  // als "Schriftfarbe" ohne eigenes Häkchen je Zeile: "Übernehmen" setzt immer alle zehn
+  // gemeinsam als EIN Satz (dieselbe Alles-oder-nichts-Logik wie "Hintergrundfarbe" ->
+  // "Benutzerfarben") - zehn identische Hexcodes sind dabei ausdrücklich zulässig.
+  const opColorPanel = el('opColorPanel');
+  const opColorHexWarning = el('opColorHexWarning');
+  const opColorFields = Array.from({ length: OP_COLOR_COUNT }, (_, n) => n + 1)
+    .map(n => ({ hex: el('opColor' + n + 'Hex'), picker: el('opColor' + n + 'Picker') }));
+  // Belegt die zehn Zeilen mit dem aktuell tatsächlich aktiven Stand vor - bei aktiver
+  // Arbeitsgangfarbe (activeOpColors) mit deren zehn Hexcodes, sonst mit den gerade LIVE
+  // aufgelösten Theme-Standardfarben (pathColor(i), berücksichtigt automatisch Hell-/Dark-Mode)
+  // als sinnvoller Ausgangspunkt, falls der Benutzer direkt eine eigene Farbe wählen will.
+  function syncOpColorPanelFromActive() {
+    opColorFields.forEach((f, i) => {
+      const hex = (activeOpColors && activeOpColors[i]) || normalizeHex(pathColor(i)) || '#000000';
+      f.hex.value = hex;
+      f.picker.value = hex;
+    });
+    opColorHexWarning.hidden = true;
+  }
+  opColorFields.forEach(f => {
+    f.hex.addEventListener('input', () => {
+      const norm = normalizeHex(f.hex.value);
+      if (norm) f.picker.value = norm;
+    });
+    f.picker.addEventListener('input', () => { f.hex.value = f.picker.value; });
+  });
+  el('btnOpColor').addEventListener('click', () => {
+    syncOpColorPanelFromActive();
+    opColorPanel.classList.add('open');
+  });
+  el('btnOpColorCancel').addEventListener('click', () => opColorPanel.classList.remove('open'));
+  opColorPanel.addEventListener('click', (e) => { if (e.target === opColorPanel) opColorPanel.classList.remove('open'); });
+  el('btnOpColorApply').addEventListener('click', () => {
+    const next = [];
+    let allValid = true;
+    opColorFields.forEach(f => {
+      const norm = normalizeHex(f.hex.value);
+      if (!norm) { allValid = false; return; }
+      next.push(norm);
+    });
+    if (!allValid) {
+      opColorHexWarning.hidden = false;
+      return;
+    }
+    activeOpColors = applyOpColors(next);
+    persistOpColors(activeOpColors);
+    opColorPanel.classList.remove('open');
+  });
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -10754,6 +11201,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     activeFontColors = applyFontColors({});
     persistFontColors(activeFontColors);
     syncFontColorPanelFromActive();
+    // Arbeitsgangfarbe (Release 100): zurück auf "automatisch" (kein persistiertes Override) -
+    // exakt dasselbe "automatisch statt erzwungener Standard"-Vorgehen wie bei Hintergrundfarbe
+    // oben, da --path-1…6 sonst ohne Override direkt aus der Hell-/Dark-Mode-Palette stammen.
+    activeOpColors = applyOpColors(null);
+    persistOpColors(activeOpColors);
+    syncOpColorPanelFromActive();
     // Spaltenbreiten: zurück auf 100%/100%, inkl. sofortiger Anwendung auf ein ggf. bereits
     // geladenes Programm - identische Anwenden-Logik wie beim "Übernehmen"-Klick im
     // "Spalteneinstellungen"-Dialog (siehe dort für die ausführliche Begründung der Reihenfolge).
@@ -11008,12 +11461,14 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // beiden gleichwertigen Knopfpaare (Info-Fenster-Kopfzeile UND Transportleiste) optisch
   // synchron. Aus den vormals direkt in den Klick-Handlern liegenden `classList.toggle('active',
   // ...)`-Aufrufen ausgelagert, damit BEIDE Buttons eines Paares bei jeder Zustandsänderung
-  // aktualisiert werden, unabhängig davon, welcher der beiden geklickt wurde.
+  // aktualisiert werden, unabhängig davon, welcher der beiden geklickt wurde. Seit Release 101
+  // zusätzlich zuständig für #btnCodeJump (nur ein einzelner Knopf, kein Zwillingspaar).
   function syncMeasureButtons() {
     btnMeasure.classList.toggle('active', measureActive);
     btnMeasureTransport.classList.toggle('active', measureActive);
     btnMeasureAngle.classList.toggle('active', angleMeasureActive);
     btnMeasureAngleTransport.classList.toggle('active', angleMeasureActive);
+    btnCodeJump.classList.toggle('active', codeJumpActive);
   }
 
   // Messwerkzeug ein-/ausschalten (Button aktiviert die Funktion) - aus den vormals getrennten
@@ -11023,11 +11478,17 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     measureActive = !measureActive;
     canvas.style.cursor = measureActive ? 'crosshair' : '';
     if (!measureActive) { measureStart = null; measureEnd = null; measureHoverPoint = null; }
-    // Winkelmessung ist exklusiv zur Längenmessung (67. Runde) - Aktivieren der einen schaltet
-    // die andere automatisch ab, statt beide gleichzeitig laufen zu lassen.
+    // Winkelmessung UND Codesprung sind exklusiv zur Längenmessung (67. Runde bzw. Release 101,
+    // siehe codeJumpActive weiter oben) - Aktivieren der einen schaltet die anderen automatisch
+    // ab, statt mehrere gleichzeitig laufen zu lassen (dieselbe 3D-Linksklick-Aktion würde sonst
+    // mehrdeutig).
     if (measureActive && angleMeasureActive) {
       angleMeasureActive = false;
       anglePoints = []; angleHoverPoint = null;
+    }
+    if (measureActive && codeJumpActive) {
+      codeJumpActive = false;
+      selectedLineHighlight = null;
     }
     syncMeasureButtons();
     updateInfoPanelVisibility();
@@ -11049,6 +11510,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       measureActive = false;
       measureStart = null; measureEnd = null; measureHoverPoint = null;
     }
+    // Codesprung ist ebenfalls exklusiv zur Winkelmessung (Release 101, siehe toggleMeasure()
+    // oben für die ausführliche Begründung).
+    if (angleMeasureActive && codeJumpActive) {
+      codeJumpActive = false;
+      selectedLineHighlight = null;
+    }
     syncMeasureButtons();
     updateInfoPanelVisibility();
     updateMeasureOutput();
@@ -11056,6 +11523,33 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   }
   btnMeasureAngle.addEventListener('click', toggleMeasureAngle);
   btnMeasureAngleTransport.addEventListener('click', toggleMeasureAngle);
+
+  // "Codesprung" ein-/ausschalten (Release 101, siehe codeJumpActive weiter oben für die
+  // vollständige Begründung/Zitate) - dieselbe Ein-/Aus-/Cursor-/Zurücksetzen-Struktur wie
+  // toggleMeasure()/toggleMeasureAngle() oben, nur ohne Info-Fenster-Beteiligung (Codesprung hat
+  // keine eigene Mess-Ausgabe). Ausschalten verwirft zusätzlich eine noch sichtbare "[]"-
+  // Markierung (selectedLineHighlight, siehe drawLineSelection()) - ausgeschaltet soll im 3D-
+  // Bereich keinerlei Codesprung-Spur mehr sichtbar bleiben.
+  function toggleCodeJump() {
+    codeJumpActive = !codeJumpActive;
+    canvas.style.cursor = codeJumpActive ? 'crosshair' : '';
+    if (!codeJumpActive) { selectedLineHighlight = null; }
+    // Exklusiv zu beiden Messwerkzeugen (siehe toggleMeasure()/toggleMeasureAngle() oben) - ein
+    // Linksklick im 3D-Bereich kann immer nur EINE der drei Funktionen gleichzeitig bedienen.
+    if (codeJumpActive && measureActive) {
+      measureActive = false;
+      measureStart = null; measureEnd = null; measureHoverPoint = null;
+    }
+    if (codeJumpActive && angleMeasureActive) {
+      angleMeasureActive = false;
+      anglePoints = []; angleHoverPoint = null;
+    }
+    syncMeasureButtons();
+    updateInfoPanelVisibility();
+    updateMeasureOutput();
+    requestRender();
+  }
+  btnCodeJump.addEventListener('click', toggleCodeJump);
 
   // G0-/Eilgang-Layer ein-/ausblenden (Sebastian, 11. Runde: "Layer befindet sich dort wo
   // Play/Stop-Button usw. ist").
@@ -11562,6 +12056,16 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       handleMeasureClick(e.clientX, e.clientY);
     } else if (angleMeasureActive && e.button === 0 && Math.hypot(e.clientX - downPX, e.clientY - downPY) <= 6) {
       handleAngleMeasureClick(e.clientX, e.clientY);
+    } else if (codeJumpActive && e.button === 0 && points.length && Math.hypot(e.clientX - downPX, e.clientY - downPY) <= 6) {
+      // Linien-Sprung (Release 100, seit Release 101 hinter dem eigenen "Codesprung"-Umschalter
+      // #btnCodeJump statt dauerhaft aktiv - siehe codeJumpActive/toggleCodeJump() weiter oben).
+      // codeJumpActive ist per gegenseitiger Exklusivität (toggleMeasure()/toggleMeasureAngle()/
+      // toggleCodeJump()) nie gleichzeitig mit measureActive/angleMeasureActive true, die
+      // zusätzliche Prüfung hier ist rein defensiv. Dasselbe "kaum Bewegung seit pointerdown"-
+      // Kriterium (≤6px) wie beim Messwerkzeug/Gizmo direkt darüber, damit ein Kamera-Dreh nicht
+      // versehentlich als Klick gewertet wird - OHNE aktiven Codesprung verhält sich ein solcher
+      // Klick dadurch exakt wie vor Release 100 (reine Kamera-Interaktion, "Hand").
+      handleLineJumpClick(e.clientX, e.clientY);
     }
   });
   ['pointercancel', 'pointerleave'].forEach(evt =>
@@ -12057,6 +12561,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // "Schriftfarbe" (66. Runde): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei den drei Einstellungen oben.
   activeFontColors = applyFontColors(loadPersistedFontColors());
+  // "Arbeitsgangfarbe" (Release 100): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei den anderen drei
+  // Farbeinstellungen oben - recolorOpSegmentsAndPoints() (in applyOpColors()) ist an dieser
+  // Stelle ein No-Op, da segments/current hier noch leer sind, wird aber trotzdem sicherheitshalber
+  // konsistent mit den anderen Anwendungsstellen aufgerufen.
+  activeOpColors = applyOpColors(loadPersistedOpColors());
   fitCanvas();
   setScope({ type: 'all' });
   // Automatische Spaltenbreiten (siehe autoFitColumnWidths oben) messen mit der aktuell
