@@ -337,8 +337,17 @@
   .menu-info-row + .menu-info-row { margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--border); }
   /* Trennstrich oberhalb von "Versionsupdate prüfen" (Release 93) - grenzt den echten,
      anklickbaren .menu-item optisch von den beiden reinen .menu-info-row-Anzeigezeilen darüber
-     ab, nach demselben Muster wie die Trennlinie zwischen den beiden Anzeigezeilen selbst. */
-  #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+     ab, nach demselben Muster wie die Trennlinie zwischen den beiden Anzeigezeilen selbst.
+     Release 98 (Sebastian: "'Versionsupdate prüfen' highlighten."): Text in Akzentfarbe +
+     fett (dasselbe Hervorhebungsmuster wie z. B. ".machine-type-label"/".op-item.current
+     .op-title" an anderer Stelle der Oberfläche, siehe dort) statt der sonst überall
+     gleichen, neutralen ".menu-item"-Schriftfarbe - macht den einzigen echten Aktions-Knopf
+     im "Info"-Menü auf den ersten Blick erkennbar, ohne die beiden reinen Anzeige-Zeilen
+     darüber (Version/Letzte Releasezeit, unverändert neutral) mit einzufärben. Der
+     :disabled-Zustand während der laufenden Prüfung ("Prüfe…", siehe checkForUpdate() in
+     app.js) bleibt über die bereits bestehende ".menu-item:disabled"-Regel (opacity: .4)
+     zuverlässig sichtbar abgedimmt, unabhängig von dieser zusätzlichen Akzentfarbe. */
+  #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--accent); font-weight: 600; }
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
 
@@ -1335,6 +1344,23 @@
   #btnInsertToolData, #btnToggleTool, #btnToggleToolHolder {
     width: 118px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
+  /* Release 99, Sebastian: "Haben +Werkzeuge, Werkzeugausblenden, Spannfutterausblenden,
+     Längenmessung und Winkelmessung dieselbe Höhe wie die DXF oder CNC Symbole? Bitte herstellen
+     und 'Gesamtes Programm' genau so hoch machen." - Nachmessung per Playwright (getComputedStyle
+     + boundingBox) ergab: #btnInsertToolData/#btnToggleTool/#btnToggleToolHolder (Werkzeuge-Gruppe,
+     Release 96, siehe oben) sowie #btnMeasureTransport/#btnMeasureAngleTransport (Längen-/
+     Winkelmessung, Release 90, siehe .info-panel-btn-Kommentar weiter oben) hatten bereits alle
+     exakt height:26px - identisch zu den CNC-/DXF-Icons oben. Einzig #btnWholeProgram ("⛶ Gesamtes
+     Programm") hatte KEINE eigene height-Angabe und erreichte die 26px bislang nur zufällig über
+     das Zusammenspiel aus padding (5px 10px) + font-size (11.5px, geerbt von .toolbar-btn) +
+     box-sizing:border-box - optisch bereits identisch (siehe Screenshot-Vergleich), aber nicht
+     ausdrücklich festgeschrieben und dadurch zerbrechlich (jede künftige Schriftgrößen-/Padding-
+     Änderung an .toolbar-btn hätte die Höhe unbemerkt verschieben können). Deshalb jetzt wie von
+     Sebastian gewünscht ausdrücklich "hergestellt": eigene height:26px-Regel, damit die Höhe
+     unabhängig vom Textinhalt/Padding garantiert bei 26px bleibt - Breite bleibt bewusst variabel
+     (kein width-Wert, im Gegensatz zu den festbreiten CNC-/DXF-/Werkzeuge-Gruppen), da "Gesamtes
+     Programm" nie Teil einer gleichbreiten Knopfgruppe war und dafür auch nicht angefragt wurde. */
+  #btnWholeProgram { height: 26px; }
   /* "Perspektive:"-Label + reine Icon-Knöpfe für Oben/Unten/Links/Rechts/Vorn/Hinten (41. Runde,
      Benutzer: "Text entfernen und nur größere Icons dafür einbauen, davor 'Perspektive:'
      schreiben"): Die Knöpfe selbst bleiben ".toolbar-btn" (gleiche Optik/Klickfläche/Hover wie
@@ -4660,8 +4686,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 97;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:39 Uhr';
+  const APP_RELEASE_NUMBER = 99;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:48 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
