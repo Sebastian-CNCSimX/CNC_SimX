@@ -15,8 +15,8 @@
     --bg: #eef2f4;
     --panel: #ffffff;
     --panel-2: #eef4f6;
-    --border: #d6dee3;
-    --border-soft: #e6ecef;
+    --border: #b7c2c9;
+    --border-soft: #ccd6db;
     --ink: #17324a;
     --ink-muted: #58707e;
     --ink-faint: #8a9ba6;
@@ -4607,8 +4607,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 93;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 08:27 Uhr';
+  const APP_RELEASE_NUMBER = 95;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 09:12 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5995,6 +5995,31 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   let dxfHiddenLayers = new Set();
   let dxfHiddenLayersVersion = 0;
   let sidebarView = 'code';
+
+  // Bugfix (Sebastian: "Beim Ausblenden aller DXF Layer (egal welcher Weg), geht der Fokus
+  // verloren und das Gitter, was unter der DXF liegt, wird sehr klein."): drawGrid()/
+  // drawAxisGizmo() berechneten ihre Größe/Position bislang bei JEDEM Frame frisch aus
+  // boundsOf(viewPoints.concat(dxfPointsForBounds())) - und dxfPointsForBounds() liefert ein
+  // leeres Array, sobald ALLE Layer ausgeblendet sind (siehe dort), unabhängig davon, ob dieser
+  // Zustand über den Sammel-Knopf oder einzelne Checkboxen erreicht wurde. Weder
+  // toggleAllDxfLayers() noch die einzelne Checkbox rufen frameCamera() auf (bewusst so, siehe
+  // 9.8a - Ein-/Ausblenden soll nur das Zeichnen betreffen, wie beim "Auge" der
+  // Arbeitsgänge-Spalte, wo hiddenOpIndexes ebenfalls NICHT in die Bounding Box einfließt); die
+  // Kamera selbst (cam.target/cam.dist) blieb dadurch unverändert auf der ursprünglichen,
+  // vollständigen DXF-Ausdehnung stehen, während Gitter/Achsen-Gizmo bei "alle Layer aus" pro
+  // Frame plötzlich auf den kleinen, ortsfesten Nichts-geladen-Standard (-100..100 um den
+  // Ursprung) zurückfielen - sichtbar als "Fokus verloren" (Gitter sitzt woanders als die Kamera
+  // hinschaut) und "Gitter wird sehr klein" (200 Einheiten Spannweite statt der tatsächlichen,
+  // oft viel größeren Bauteil-/DXF-Ausdehnung, auf die die Kamera weiterhin gezoomt ist).
+  // Fix: lastFramedBounds hält das Ergebnis der jeweils letzten ECHTEN frameCamera()-Berechnung
+  // fest (siehe dort) - genau die Momente, die auch tatsächlich die Kamera selbst bewegen (Laden/
+  // Löschen von Programm/DXF, Scope-Wechsel, "Home", Spiegeln/Drehen/Skalieren). drawGrid()/
+  // drawAxisGizmo() lesen ab sofort ausschließlich diesen Cache (siehe currentGridBounds() weiter
+  // unten) statt live neu zu rechnen - ein reines Ein-/Ausblenden von Layern (oder Arbeitsgängen)
+  // verändert dadurch weder Kamera noch Gitter/Gizmo, exakt wie bei den Arbeitsgängen bereits der
+  // Fall. Ein bewusster Re-Frame (z. B. "Home" nach dem Ausblenden) berücksichtigt weiterhin
+  // korrekt nur die aktuell sichtbare Geometrie, da frameCamera() selbst unverändert bleibt.
+  let lastFramedBounds = null;
 
   // Messwerkzeug: misst den Abstand zwischen zwei angeklickten Punkten/Linien im 3D-Bereich.
   let measureActive = false;
@@ -7888,6 +7913,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
 
   function frameCamera() {
     const b = boundsOf(viewPoints.concat(dxfPointsForBounds()));
+    // Bugfix (siehe Kommentar bei der Deklaration von lastFramedBounds weiter oben): Der Cache
+    // wird ausschließlich HIER, bei einem echten Kamera-Reframe, aktualisiert - unabhängig davon,
+    // ob b gerade etwas liefert (normaler Fall) oder null ist (wirklich nichts geladen/sichtbar,
+    // z. B. nach clearDxf() ohne geladenes CNC-Programm). Ein reines Ein-/Ausblenden von DXF-
+    // Layern zwischen zwei frameCamera()-Aufrufen lässt diesen Cache dadurch bewusst unverändert.
+    lastFramedBounds = b;
     if (!b) { cam.target = { x: 0, y: 0, z: 0 }; cam.dist = 220; cam.minEyeDist = 220; cam.maxDist = 4000; return; }
     const cx = (b.minx + b.maxx) / 2, cy = (b.miny + b.maxy) / 2, cz = (b.minz + b.maxz) / 2;
     const rc = toRender({ x: cx, y: cy, z: cz });
@@ -8689,7 +8720,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // Programm (bleibt dabei exakt unverändert, wenn keine DXF geladen ist: dxfPointsForBounds()
   // liefert dann ein leeres Array, boundsOf(viewPoints.concat([])) === boundsOf(viewPoints)).
   function drawGrid(proj) {
-    const b = boundsOf(viewPoints.concat(dxfPointsForBounds())) || { minx: -100, maxx: 100, miny: -100, maxy: 100 };
+    // Bugfix (siehe Kommentar bei lastFramedBounds weiter oben): liest den bei der letzten echten
+    // Kamera-Einrahmung ermittelten Stand, statt bei jedem Frame live aus der GERADE sichtbaren
+    // Geometrie neu zu rechnen - dadurch bleibt das Gitter unverändert, wenn nur die Sichtbarkeit
+    // von DXF-Layern (oder Arbeitsgängen) umgeschaltet wird, ohne dass die Kamera selbst bewegt
+    // wurde.
+    const b = lastFramedBounds || { minx: -100, maxx: 100, miny: -100, maxy: 100 };
     const spanX = Math.max(60, b.maxx - b.minx), spanY = Math.max(60, b.maxy - b.miny);
     const span = Math.max(spanX, spanY);
     let step = 10;
@@ -8713,7 +8749,10 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   function drawAxisGizmo(proj) {
     // 72. Runde: dieselbe DXF-Einbeziehung wie bei drawGrid() gleich oberhalb, aus demselben
     // Grund (Achsen-Gizmo-Länge soll ebenfalls zur DXF passen, nicht nur zu CNC-Bahnpunkten).
-    const b = boundsOf(viewPoints.concat(dxfPointsForBounds()));
+    // Bugfix (siehe Kommentar bei lastFramedBounds weiter oben): derselbe Cache wie in drawGrid(),
+    // aus demselben Grund - Layer-/Arbeitsgang-Sichtbarkeit soll die Gizmo-Länge nicht pro Frame
+    // verändern, ohne dass die Kamera selbst tatsächlich neu eingerahmt wurde.
+    const b = lastFramedBounds;
     const diag = b ? Math.sqrt(Math.pow(b.maxx - b.minx, 2) + Math.pow(b.maxy - b.miny, 2) + Math.pow(b.maxz - b.minz, 2)) : 100;
     const L = Math.max(20, diag * 0.18);
     const origin = { x: 0, y: 0, z: 0 };
@@ -10062,6 +10101,17 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     if (e.key === 'Escape') {
       closeAllMenus();
       closeContextMenu();
+      // Wunsch (Sebastian: "Wenn die Messfunktion aktiv ist, soll die mit Esc abgebrochen werden
+      // können") - schaltet ein aktives Mess-Werkzeug (Längen- ODER Winkelmessung, die beiden
+      // sind ohnehin exklusiv zueinander, siehe 9.4) komplett ab, exakt wie ein erneuter Klick auf
+      // den jeweiligen Knopf bzw. das Tastenkürzel Shift+L/Shift+W (toggleMeasure()/
+      // toggleMeasureAngle(), Release 92) - nicht nur die bereits gesetzten Punkte verwerfen,
+      // sondern das Werkzeug selbst wieder deaktivieren (Cursor kehrt zum Normalzustand zurück,
+      // Info-Fenster blendet sich aus, sofern kein Programm geladen ist). Unconditioneller Teil
+      // des Escape-Handlers wie closeAllMenus()/closeContextMenu() oben - läuft bei JEDEM
+      // Escape-Druck mit, unabhängig davon, ob zusätzlich noch ein Dialog offen ist (siehe unten).
+      if (measureActive) toggleMeasure();
+      if (angleMeasureActive) toggleMeasureAngle();
       const openPanel = document.querySelector('.paste-panel.open');
       if (openPanel) {
         const cancelBtn = openPanel.querySelector(".paste-actions button[id$='Cancel']");
