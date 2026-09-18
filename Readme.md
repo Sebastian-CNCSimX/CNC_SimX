@@ -1,4 +1,4 @@
-# CNC-Code Simulator — technische Spezifikation
+# CNC-Code Simulator (CNC SimX) — technische Spezifikation
 
 Diese Spezifikation beschreibt ausschließlich den **aktuellen Stand** des Werkzeugs — keine Entwicklungshistorie, keine Änderungsprotokolle. Sie ist so detailliert gehalten, dass sich das Tool anhand dieses Dokuments exakt nachbauen lässt.
 
