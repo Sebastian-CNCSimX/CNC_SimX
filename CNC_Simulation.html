@@ -4837,8 +4837,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 102;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 21:23 Uhr';
+  const APP_RELEASE_NUMBER = 103;
+  const APP_RELEASE_TIMESTAMP = '18.09.2026, 21:36 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -4939,6 +4939,21 @@
   // Alle zehn übrigen, bereits bestehenden SWITCHCASEMACHINE-Regeln (CR=/OPTI/N X/O /BEGIN MACRO/
   // NAME=ISO/PARAM,NAME=ISO,VALUE="/END MACRO/G2<->G3/G42<->G41) sowie X*1/Y*-1/Z*-1 bleiben
   // unverändert - Sebastians neuer Blockinhalt ist 1:1 übernommen, keine eigene Interpretation.
+  // Release 103 (Sebastian, wörtlich): "Bei Maschinentyp bitte folgendes einbauen zu den
+  // bestehenden einbauen: [MACHINETYPE Name="KRC"][SWITCHCASEMACHINE][/SWITCHCASEMACHINE]
+  // [CALCMACHINE]X*1 Y*1 Z*1 C*-1[/CALCMACHINE][/MACHINETYPE Name="KRC"]" - neuer, zehnter
+  // Maschinentyp-Block, unverändert 1:1 übernommen (leere SWITCHCASEMACHINE, also keine
+  // Textersatzregeln; CALCMACHINE kehrt nur das Vorzeichen der Achse C um, X/Y/Z bleiben mit
+  // Faktor 1 unangetastet - exakt dieselbe generische `applyAxisCalc()`-Mechanik wie beim
+  // bestehenden Biesse-Block, siehe Release-68-Kommentar oben). Name "KRC" ist dabei bewusst
+  // unabhängig vom bereits bestehenden, gleichnamigen `detectMachine()`-Erkennungsstil in
+  // parser.js (KUKA-Robotersyntax, "(KRC ...)"-Kopfzeile) - beide verwenden zufällig denselben
+  // Namen, betreffen aber zwei komplett unabhängige Mechanismen (automatische
+  // Arbeitsgang-Struktur-Erkennung vs. dieser hier manuell im Dropdown ausgewählte
+  // Austausch-/Achsberechnungs-Maschinentyp) und beeinflussen sich nicht gegenseitig. Einsortiert
+  // alphabetisch (case-insensitiv) zwischen "Houfek" und "MAKA" ("houfek" < "krc" < "maka"),
+  // damit die weiter oben beschriebene, bewusst von Hand alphabetisch sortierte Reihenfolge
+  // erhalten bleibt (siehe Kommentar zu Runde 34 oben) - keine Laufzeit-Umsortierung nötig.
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -5030,6 +5045,17 @@ Y*1
 Z*1
 [/CALCMACHINE]
 [/MACHINETYPE Name="Houfek"]
+
+[MACHINETYPE Name="KRC"]
+[SWITCHCASEMACHINE]
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*1
+Z*1
+C*-1
+[/CALCMACHINE]
+[/MACHINETYPE Name="KRC"]
 
 [MACHINETYPE Name="MAKA"]
 [SWITCHCASEMACHINE]
