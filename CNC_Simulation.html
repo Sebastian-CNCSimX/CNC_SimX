@@ -1483,8 +1483,41 @@
   .transport-btn.small { width: 26px; height: 26px; font-size: 12px; }
 
   input[type="range"] {
-    flex: 1 1 auto;
+    width: 100%;
     accent-color: var(--accent);
+  }
+  /* Kleine Markierungen auf der Wiedergabe-Leiste bei jedem neuen Arbeitsgang (Release 108,
+     Sebastian: "In der Playleiste sollen kleine Markierungen auf der Leiste sein immer wenn ein
+     neuer Arbeitsgang kommt. Dann weiß man bei langen Arbeitsgängen wie weit man schon ist.") -
+     ".scrub-wrap" übernimmt die bisherige "flex:1 1 auto"-Rolle von "input[type=range]" selbst
+     (siehe oben), damit #scrub weiterhin denselben Platz in ".transport-row" einnimmt; darüber
+     liegt absolut positioniert das reine Anzeige-Overlay "#scrubMarks" mit einer Markierung
+     ("scrub-mark") je Arbeitsgang-Start - Positionierung/Berechnung siehe updateScrubMarks() in
+     app.js. "pointer-events: none" auf Overlay UND jeder einzelnen Markierung ist wichtig, damit
+     Klicks/Ziehen am darunterliegenden nativen Schieberegler unverändert funktionieren. */
+  .scrub-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+  }
+  .scrub-marks {
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .scrub-mark {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 10px;
+    background: var(--ink-muted);
+    border-radius: 1px;
+    transform: translateX(-1px);
+    pointer-events: none;
+    opacity: .75;
   }
   .transport-idx {
     font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
@@ -2236,7 +2269,14 @@
     <div class="transport-row">
       <button class="transport-btn" id="btnPlay" type="button" title="Abspielen / Pause">▶</button>
       <button class="transport-btn" id="btnStop" type="button" title="Stopp (Programm abbrechen und zurücksetzen)">■</button>
-      <input type="range" id="scrub" min="0" max="0" value="0" step="1">
+      <!-- ".scrub-wrap"/"#scrubMarks" (Release 108, siehe CSS-Kommentar weiter oben sowie
+           updateScrubMarks() in app.js) - reines Positionierungs-Overlay für die kleinen
+           Arbeitsgang-Markierungen auf der Leiste, #scrub selbst (ID/Funktion/Event-Verdrahtung)
+           bleibt vollständig unverändert. -->
+      <div class="scrub-wrap" id="scrubWrap">
+        <input type="range" id="scrub" min="0" max="0" value="0" step="1">
+        <div class="scrub-marks" id="scrubMarks" aria-hidden="true"></div>
+      </div>
       <span class="transport-idx" id="transportIdx">0 / 0</span>
       <label class="layer-toggle" title="Eilgang-Bewegungen (G0, gestrichelt) im 3D-Bereich ein-/ausblenden">
         <input type="checkbox" id="chkShowRapid" checked> G0 (Eilgang)
@@ -4961,8 +5001,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 107;
-  const APP_RELEASE_TIMESTAMP = '19.09.2026, 21:48 Uhr';
+  const APP_RELEASE_NUMBER = 108;
+  const APP_RELEASE_TIMESTAMP = '19.09.2026, 23:31 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -6376,6 +6416,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const infoPanelHeadEl = el('infoPanelHead');
   const transportEl = el('transport');
   const scrubEl = el('scrub');
+  const scrubMarksEl = el('scrubMarks'); // Release 108, siehe updateScrubMarks() weiter unten
   const transportIdxEl = el('transportIdx');
   const btnPlay = el('btnPlay');
   const btnStop = el('btnStop');
@@ -7291,6 +7332,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // beim ursprünglichen Laden eines DXF ohne Programm (siehe loadDxfText()). Ohne verbleibendes
     // DXF sorgt die defensive Absicherung in updateSidebarHeader() ohnehin für "code" (Ausgangszustand).
     if (dxfGeometry) sidebarView = 'dxfLayers';
+    // Spaltenbreite (Release 108, siehe applyDxfLayerColumnWidth() weiter oben): rawProgramText
+    // ist an dieser Stelle bereits null (siehe Zuweisung oben), die Funktion wechselt die Breite
+    // deshalb - sofern noch ein DXF geladen ist - jetzt auf dessen Layernamen-basierte Breite,
+    // statt die bis hierhin geltende, jetzt gegenstandslose Programm-Breite stehen zu lassen.
+    applyDxfLayerColumnWidth();
     updateSidebarHeader();
   }
 
@@ -7561,6 +7607,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // auf den neuen "DXF-Layer"-Reiter wechseln) - ist dagegen (noch) KEIN Programm geladen, gibt es
     // ohnehin nichts anderes anzuzeigen, die Spalte wechselt deshalb automatisch auf "DXF-Layer".
     if (rawProgramText == null) sidebarView = 'dxfLayers';
+    // Spaltenbreite (Release 108, siehe computeDxfLayerContentWidth()/applyDxfLayerColumnWidth()
+    // weiter oben): nur wirksam, solange kein CNC-Programm geladen ist - bei bereits geladenem
+    // Programm bleibt dessen Breite unangetastet ("Priorität beim Laden hat immer das CNC
+    // Programm", siehe Kommentar direkt oberhalb).
+    applyDxfLayerColumnWidth();
     updateDxfUI();
     frameCamera();
     requestRender();
@@ -7770,6 +7821,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const OP3D_FONT = '10px "Open Sans", ui-sans-serif, system-ui, sans-serif';
   const OPS_HEAD_TITLE_FONT = '600 11px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .ops-col-title
   const OPS_SHOWALL_FONT = '10px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .ops-showall-btn
+  const DXF_LAYER_FONT = '12.5px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .dxf-layer-name (Release 108, siehe computeDxfLayerContentWidth())
 
   // Natürliche Breite der Code-Liste: längste Zeile (Zeichenanzahl, da Mono-Schrift jedes Zeichen
   // gleich breit macht - ein einziger measureText()-Aufruf genügt statt je Zeile einer) plus
@@ -7842,6 +7894,70 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     const safety = 12; // u.a. Ausgleich für letter-spacing der Kopfzeile, per measureText() nicht erfasst
     const contentW = Math.max(maxItemW + listPad, headRowW, showAllBtnW);
     return Math.ceil(contentW) + colBorder + safety;
+  }
+
+  // Natürliche Breite der "DXF-Layer"-Spalte (Release 108, Sebastian: "Die Spaltenbreite, wenn ein
+  // DXF geöffnet ist, sollte automatisch so breit sein wie der breiteste Layername. Wenn aber ein
+  // CNC Programm parallel geladen ist, soll die Spaltenbreite vom CNC Programm genommen werden,
+  // damit das hin und her wechseln (zw. Layername und Programm) sauberer ist.") - misst wie
+  // computeTreeContentWidth()/computeOpsContentWidth() oben ausschließlich per Canvas-2D
+  // measureText() (kein DOM-Layout nötig) den breitesten Layernamen zzgl. der per Playwright am
+  // echten DOM nachgemessenen Zeilen-/Spalten-Chrome: Checkbox (13px, Browser-Standardgröße, kein
+  // eigenes CSS), Farbfeld (.dxf-layer-swatch, 10px), zwei Zwischenräume (.dxf-layer-row gap:8px)
+  // sowie Zeilen- (.dxf-layer-row padding:5px 6px) und Spalten-Innenabstand (.dxf-layer-panel
+  // padding:4px 4px 14px 10px, links 10px/rechts 4px relevant). Berücksichtigt außerdem - analog
+  // zum "Alle AG ausblenden"-Knopf in computeOpsContentWidth() oben - den "Alle Layer
+  // ausblenden"/"Alle Layer anzeigen"-Knopf (teilt sich exakt die ".ops-showall-btn"-Optik, siehe
+  // dort), damit die Spalte auch bei durchweg kurzen Layernamen nie schmaler als dieser Knopf wird.
+  // WICHTIG: nur relevant, solange (noch) KEIN CNC-Programm geladen ist - siehe
+  // applyDxfLayerColumnWidth() direkt darunter sowie deren Aufrufer loadDxfText()/clearProgram():
+  // ist ein Programm geladen, hat dessen Breite (computeTreeContentWidth()/applyProgCollapseStage())
+  // IMMER Vorrang, unabhängig davon, welcher der beiden Reiter ("CNC-Programmcode"/"DXF-Layer")
+  // gerade sichtbar ist - ein reiner Reiter-Wechsel (siehe sidebarTabCode/sidebarTabDxf weiter
+  // unten) fasst die Spaltenbreite deshalb bewusst an keiner Stelle an.
+  function computeDxfLayerContentWidth(layers) {
+    if (!layers || !layers.length) return 0;
+    const checkboxW = 13;    // input[type="checkbox"] - Browser-Standardgröße, kein eigenes CSS
+    const swatchW = 10;      // .dxf-layer-swatch { width: 10px }
+    const rowGaps = 8 + 8;   // .dxf-layer-row { gap: 8px } - Checkbox->Farbfeld und Farbfeld->Name
+    const rowPad = 6 + 6;    // .dxf-layer-row { padding: 5px 6px }
+    const panelPad = 10 + 4; // .dxf-layer-panel { padding: 4px 4px 14px 10px } (links 10px/rechts 4px)
+    const rowChrome = checkboxW + swatchW + rowGaps + rowPad + panelPad;
+    let maxNameW = 0;
+    layers.forEach(name => {
+      const w = textWidth(String(name), DXF_LAYER_FONT);
+      if (w > maxNameW) maxNameW = w;
+    });
+
+    // "Alle Layer ausblenden/anzeigen"-Knopf (.ops-showall-btn: padding 4px 7px, Rahmen 1px, gap
+    // 4px, Schrift 10px - alle Werte per Playwright/getComputedStyle am echten Knopf nachgemessen).
+    const showAllBtnChrome = 7 + 7 + 1 + 1 + 4; // Innenabstand 7px*2, Rahmen 1px*2, Zwischenraum 4px
+    const eyeGlyphW = Math.ceil(textWidth('👁', OPS_SHOWALL_FONT));
+    const showAllLabelW = Math.max(
+      textWidth('Alle Layer ausblenden', OPS_SHOWALL_FONT),
+      textWidth('Alle Layer anzeigen', OPS_SHOWALL_FONT)
+    );
+    const showAllBtnW = panelPad + showAllBtnChrome + eyeGlyphW + showAllLabelW;
+
+    const safety = 18; // Rundungsfehler + evtl. vertikaler Scrollbalken (.dxf-layer-panel: overflow-y:auto) bei vielen Layern
+    const contentW = Math.max(maxNameW + rowChrome, showAllBtnW);
+    return Math.ceil(contentW) + safety;
+  }
+
+  // Wendet computeDxfLayerContentWidth() auf die aktuell geladene DXF-Datei an - aber
+  // ausschließlich, solange kein CNC-Programm geladen ist (rawProgramText==null), siehe
+  // ausführlichen Kommentar bei computeDxfLayerContentWidth() oben. Zwei Aufrufer: loadDxfText()
+  // (frischer/erneuter DXF-Import) und clearProgram() (ein Programm wird entfernt, während noch
+  // ein DXF geladen ist - die Spalte zeigt danach nur noch "DXF-Layer" und soll deshalb auch
+  // sofort dessen Breite bekommen statt der bis dahin geltenden, jetzt gegenstandslosen
+  // Programm-Breite). Kein eigener Aufruf beim bloßen Reiter-Wechsel (sidebarTabCode/
+  // sidebarTabDxf) oder beim Ein-/Ausblenden einzelner Layer (toggleAllDxfLayers) - beides ändert
+  // weder das geladene Programm noch die Layer-Namen selbst.
+  function applyDxfLayerColumnWidth() {
+    if (rawProgramText != null) return;
+    if (!dxfGeometry) return;
+    const w = computeDxfLayerContentWidth(dxfGeometry.layers);
+    if (w > 0) setSidebarWidth(w);
   }
 
   // Freiraum, den die Arbeitsgänge-Spalte (inkl. ihres eigenen Ziehgriffs) rechts neben der
@@ -8361,6 +8477,39 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (matchEl) matchEl.scrollIntoView({ block: 'nearest' });
   }
 
+  // Kleine Markierungen auf der Wiedergabe-Leiste bei jedem neuen Arbeitsgang (Release 108,
+  // Sebastian: "In der Playleiste sollen kleine Markierungen auf der Leiste sein immer wenn ein
+  // neuer Arbeitsgang kommt. Dann weiß man bei langen Arbeitsgängen wie weit man schon ist.") -
+  // baut auf demselben fortlaufenden "points"-Array auf, das auch der Scrubber selbst
+  // (scrubEl.max/.value, siehe setScope() weiter unten) verwendet: jedes NICHT gedimmte Segment
+  // merkt sich dort bereits seinen eigenen Start-Index darin (seg.rangeStart, siehe dortiger
+  // Kommentar "Bugfix/Wunsch ... rangeStart") - eine Markierung erscheint bei jedem rangeStart>0
+  // (der erste Start bei Index 0 liegt ohnehin am linken Rand der Leiste und bräuchte keine eigene
+  // Markierung). In der Praxis liegen mehrere Segmente nur beim Scope "Gesamtes Programm"
+  // gleichzeitig in "points" (siehe setScope(), mode.type==='all') - bei einem einzeln
+  // ausgewählten Arbeitsgang bleiben alle vorherigen als gedimmter Kontext AUSSERHALB von
+  // "points" (seg.context===true), es gibt dort also nur ein einziges Segment und folglich keine
+  // Markierung, was inhaltlich korrekt ist (kein "neuer Arbeitsgang" innerhalb der sichtbaren
+  // Leiste). Rein optisches Overlay (<div id="scrubMarks"> über dem nativen
+  // <input type="range" id="scrub">, siehe .scrub-wrap/.scrub-marks/.scrub-mark in
+  // template_top.html) - "pointer-events:none" auf dem gesamten Overlay stellt sicher, dass
+  // Klicks/Ziehen am Scrubber selbst unverändert funktionieren. Die Positionierung ist eine reine
+  // Prozent-Näherung über die gesamte Breite der Leiste, ohne Ausgleich für die native Breite des
+  // Schiebereglers selbst (dessen Rundgriff nimmt an beiden Enden ein paar Pixel der Leiste ein) -
+  // für "kleine Markierungen" als grobe Orientierungshilfe bewusst ausreichend genau.
+  function updateScrubMarks() {
+    scrubMarksEl.innerHTML = '';
+    const maxIdx = points.length - 1;
+    if (maxIdx <= 0) return;
+    const boundaries = segments.filter(seg => !seg.context).map(seg => seg.rangeStart).filter(rs => rs > 0);
+    boundaries.forEach(rs => {
+      const mark = document.createElement('span');
+      mark.className = 'scrub-mark';
+      mark.style.left = (rs / maxIdx * 100) + '%';
+      scrubMarksEl.appendChild(mark);
+    });
+  }
+
   // ============================================================
   // Szenen-Aufbau je nach Scope
   // ============================================================
@@ -8459,6 +8608,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     } else {
       transportEl.hidden = true;
     }
+    updateScrubMarks(); // Release 108, siehe Kommentar bei der Funktion selbst weiter oben
 
     // Scope-Chip (50. Runde: Anzeige bei "Gesamtes Programm" bereits entfernt; 59. Runde,
     // Sebastian: "Wenn ein Arbeitsgang über '3D' angeklickt wird, steht da immer ein Hinweis in
