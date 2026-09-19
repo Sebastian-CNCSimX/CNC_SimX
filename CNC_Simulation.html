@@ -253,6 +253,23 @@
      (app.js) noch keine eigene Benutzerfarbe gesetzt hat - das entspricht exakt "Standard bleibt
      Rot", da --accent in der eingebauten hellen wie dunklen Palette bereits ein Rot ist. */
   .menu.open .menu-trigger { background: var(--menu-active-bg, var(--accent)); color: var(--menu-active-ink, var(--accent-ink)); border-color: transparent; }
+  /* "?" (vormals "Info"-Menü, Release 105, Sebastian: "Bisherige Informationen aus 'Info' in
+     neuen Menüpunkt schieben, der '?' heißt. Das ist ein orangenes Fragezeichen, selbe
+     Schriftgröße wie die restlichen Menüpunkte, egal welche Farbeinstellung gewählt sind, das
+     ist immer orange") - #menuInfoTrigger bleibt technisch/inhaltlich das bisherige "Info"-Menü
+     (Version/Letzte Releasezeit/Versionsupdate prüfen, siehe #menuInfo weiter unten im Markup),
+     nur Beschriftung ("?" statt "Info") und Farbe ändern sich. Schriftgröße bewusst NICHT eigens
+     gesetzt - ".menu-trigger" oben liefert bereits dieselben 13px wie bei "Datei"/"Bearbeiten"/
+     "Einstellungen"/"Infos". Die Orange-Farbe (fester Hex-Wert, KEINE CSS-Variable aus einem der
+     Farbprofile/der "Buttonfarbe"-Einstellung) wird per ID-Selektor (höhere Spezifität als die
+     Klassenregeln ".menu-trigger"/".menu-trigger:hover" oben) UND zusätzlich mit "!important"
+     abgesichert, da ".menu.open .menu-trigger" direkt darüber sonst bei geöffnetem Menü die
+     Schriftfarbe auf die vom Benutzer gewählte "Menü-Hervorhebungsfarbe" (--menu-active-ink)
+     umstellen würde - das soll laut Sebastian ausdrücklich NIE passieren ("egal welche
+     Farbeinstellung gewählt sind"). Hintergrund/Rahmen bleiben bewusst unverändert nach dem
+     normalen .menu-trigger-Verhalten (Hover-Hintergrund, transparenter Rahmen im offenen
+     Zustand) - einzig die Textfarbe des Fragezeichens selbst ist fest. */
+  #menuInfoTrigger { color: #ff8c00 !important; }
   .menu-dropdown {
     position: absolute;
     top: calc(100% + 6px);
@@ -1562,6 +1579,51 @@
   }
   .paste-card h3 { margin: 0; font-size: 14px; }
   .paste-card.wide { width: min(960px, 96vw); }
+  /* "Knowledge Base" (Release 105, Sebastian: "'Knowledge Base' ist eine editierbare Liste an
+     Infos, auch in der Größe skalierbar, seitlich wie nach unten.") - ".paste-card" ist bereits
+     ein Flex-Container (flex-direction: column), "resize: both" darauf reicht deshalb aus, um den
+     Benutzer die Karte selbst per Ziehen am unteren rechten Eck sowohl in der Breite als auch in
+     der Höhe vergrößern/verkleinern zu lassen (Browser-Standardverhalten, kein eigenes JS nötig) -
+     "overflow: auto" ist dafür laut CSS-Spezifikation Voraussetzung (nur "visible"-Overflow-Boxen
+     lassen sich nicht resizen). min-width/min-height verhindern ein versehentliches
+     Zusammenziehen auf eine unbenutzbare Größe. Bewusst eine EIGENE Modifikator-Klasse (nicht
+     einfach auf ".paste-card" selbst) - alle anderen Dialoge (Maschinentypen/AG-Namen/Programm
+     bearbeiten usw.) sollen weiterhin ihre feste Größe behalten, nur "Knowledge Base" wurde
+     ausdrücklich als größenveränderbar gewünscht. */
+  .paste-card.resizable { resize: both; overflow: auto; min-width: 420px; min-height: 360px; }
+  /* A-Z-Sprungleiste oben im Knowledge-Base-Fenster (Release 105, Sebastian: "Die 'Knowledge
+     Base' hat oben im Fenster die Buchstaben A bis Z angezeigt. Wenn man z.B. auf F klickt,
+     landet man im Scrolldownfenster bei F und folgende.") - ein Knopf je Buchstabe, technisch
+     dieselbe kompakte Optik wie ".speed-btn" (Geschwindigkeits-Auswahl), aber als eigene Klasse,
+     da hier keine "active"-Markierung wie dort existiert. Wird per JS einmalig beim Laden mit
+     26 Knöpfen befüllt (siehe knowledgeBaseAzBar in app.js) statt 26 einzelner <button>-Zeilen
+     hier im Markup. */
+  .kb-az-bar { display: flex; flex-wrap: wrap; gap: 3px; }
+  .kb-letter-btn {
+    flex: none;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--ink-muted);
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .kb-letter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* "Nach oben"-Knopf (Sebastian, Punkt 5: "Es gibt einen Knopf im Editierfenster um ganz nach
+     oben zu scrollen") - eigene schmale Werkzeugzeile oberhalb der Textarea, rechtsbündig, analog
+     zur Optik anderer sekundärer ".btn.ghost"-Knöpfe in den übrigen Bearbeiten-Panels. */
+  .kb-toolbar { display: flex; justify-content: flex-end; }
+  /* Die Textarea selbst wächst/schrumpft mit der Karte mit (".paste-card.resizable" oben), statt
+     eine eigene, feste Höhe wie bei den übrigen Bearbeiten-Panels zu haben - "flex: 1 1 auto"
+     nimmt dazu den gesamten nach A-Z-Leiste/Werkzeugzeile/Knopfreihe verbleibenden Platz ein.
+     "resize: none" verhindert einen ZWEITEN, verwirrenden Größenziehpunkt zusätzlich zu dem der
+     Karte selbst (".paste-card textarea" weiter unten setzt sonst "resize: vertical"). */
+  #knowledgeBaseEditArea { flex: 1 1 auto; height: 320px; resize: none; }
   .panel-hint { margin: -4px 0 0; font-size: 11.5px; color: var(--ink-muted); line-height: 1.5; }
   .panel-hint .k { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 1px 6px; border-radius: 4px; }
   /* Warnung bei doppelt vergebenen Maschinentyp-Namen (DropdownMachinetype.txt Punkt 5) - nicht
@@ -1924,18 +1986,43 @@
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe) - NICHT das geladene CNC-Programm selbst">Einstellungen exportieren</button>
         </div>
       </div>
-      <!-- "Info" (55. Runde, Sebastian: "Bitte einen neuen Menüpunkt: 'Info' neben bearbeiten.
+      <!-- "Infos" -> "Knowledge Base" (Release 105, Sebastian: "Ein neuer Menüpunkt 'Infos'
+           (rechts von 'Einstellungen') -> 'Knowledge Base'") - neues, fünftes Menü, direkt rechts
+           von "Einstellungen" und damit links vom (in Release 105 umbenannten) "?"-Menü. Enthält
+           bewusst nur den einen Eintrag "Knowledge Base" (kein Untermenü nötig, da aktuell keine
+           weiteren Punkte verlangt wurden) - siehe #knowledgeBasePanel weiter unten im Markup
+           sowie dessen Verdrahtung in app.js.
+           Release 106, Sebastian: "Infos in 'Hilfe' umbenennen" - reine Beschriftungsänderung, ID
+           (menuInfos/menuInfosTrigger/menuInfosDropdown) bewusst unverändert gelassen (wie schon
+           beim "?"-Menü, das intern weiterhin #menuInfo/#menuInfoTrigger heißt), damit app.js und
+           diese Attribution-Kommentare hier ohne Umbenennungs-Fehlerrisiko weiterlaufen. -->
+      <div class="menu" id="menuInfos">
+        <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false">Hilfe</button>
+        <div class="menu-dropdown" id="menuInfosDropdown" hidden>
+          <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert">Knowledge Base</button>
+        </div>
+      </div>
+      <!-- "Info" -> "?" (55. Runde, Sebastian: "Bitte einen neuen Menüpunkt: 'Info' neben bearbeiten.
            Darin ist ein Menüpunkt 'Version', die die Nummer unseres aktuellen
            Versionsdurchgangs anzeigt, zB 'Release 29' ... Darunter ein 'Letzte Releasezeit:' mit
            Datum und Uhrzeit des letzten Durchlaufs") - ursprünglich direkt neben "Bearbeiten"
            platziert, auf Sebastians Korrektur ("Shit, 'Info' sollte rechts neben 'Ansicht'")
-           noch in derselben Runde hierher verschoben: jetzt als viertes und letztes Menü, direkt
-           rechts neben "Ansicht". Enthält bewusst keine Knöpfe/Aktionen, nur zwei reine
-           Anzeige-Zeilen (.menu-info-row, siehe Stylesheet oben) - Werte werden von app.js aus
-           APP_RELEASE_NUMBER/APP_RELEASE_TIMESTAMP befüllt, die bei jeder ausgelieferten Version
-           von Hand aktualisiert werden (siehe dort). -->
+           noch in derselben Runde hierher verschoben: jetzt als letztes Menü, direkt rechts neben
+           dem neuen "Infos"-Menü. Enthält bewusst keine Knöpfe/Aktionen (bis auf "Versionsupdate
+           prüfen"), nur zwei reine Anzeige-Zeilen (.menu-info-row, siehe Stylesheet oben) - Werte
+           werden von app.js aus APP_RELEASE_NUMBER/APP_RELEASE_TIMESTAMP befüllt, die bei jeder
+           ausgelieferten Version von Hand aktualisiert werden (siehe dort).
+           Release 105 (Sebastian, Punkt 1: "Bisherige Informationen aus 'Info' in neuen
+           Menüpunkt schieben, der '?' heißt. Das ist ein orangenes Fragezeichen, selbe
+           Schriftgröße wie die restlichen Menüpunkte, egal welche Farbeinstellung gewählt sind,
+           das ist immer orange") - #menuInfo/#menuInfoTrigger/#menuInfoDropdown UND ihr
+           kompletter Inhalt bleiben technisch unverändert (gleiche IDs, gleiche
+           Verdrahtung/checkForUpdate() in app.js) - "in einen neuen Menüpunkt schieben" wird hier
+           dadurch erreicht, dass exakt dieses bereits bestehende, eigenständige Menü umbenannt
+           und fest orange eingefärbt wird (siehe #menuInfoTrigger weiter oben im Stylesheet),
+           statt zusätzlich ein zweites, inhaltsgleiches Menü danebenzustellen. -->
       <div class="menu" id="menuInfo">
-        <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false">Info</button>
+        <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Info" aria-label="Info">?</button>
         <div class="menu-dropdown" id="menuInfoDropdown" hidden>
           <div class="menu-info-row">
             <span class="menu-info-label">Version</span>
@@ -2353,6 +2440,35 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnOpNamesEditCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnOpNamesEditApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Knowledge Base" (Release 105, Sebastian, Punkte 3-5: "'Knowledge Base' ist eine editierbare
+     Liste an Infos, auch in der Größe skalierbar, seitlich wie nach unten. Die Punkte sortieren
+     sich nach dem Eintragen automatisch alphabetisch. Jeder Eintrag beginnt mit einem [ und
+     endet mit einem ]. ... Die 'Knowledge Base' hat oben im Fenster die Buchstaben A bis Z
+     angezeigt. ... Es gibt einen Knopf im Editierfenster um ganz nach oben zu scrollen") -
+     technisch dasselbe Grundmuster wie "Maschinentypen bearbeiten"/"Arbeitsgang-Namen bearbeiten"
+     (ein roher Text in einer großen Textarea, Abbrechen/Übernehmen), ergänzt um drei
+     Zusatzelemente: die A-Z-Sprungleiste (#knowledgeBaseAzBar, wird per JS mit 26 Knöpfen
+     befüllt), den "Nach oben"-Knopf, und die Größenveränderbarkeit der Karte selbst
+     (".paste-card.resizable", siehe Stylesheet oben). Siehe DEFAULT_KNOWLEDGE_BASE_TEXT/
+     parseKnowledgeBaseEntries()/sortKnowledgeBaseEntries()/applyKnowledgeBaseText() in app.js für
+     die vollständige Logik (Parsen der [...]-Blöcke, alphabetisches Sortieren beim Übernehmen,
+     localStorage-Persistenz). -->
+<div class="paste-panel" id="knowledgeBasePanel">
+  <div class="paste-card wide resizable">
+    <h3>Knowledge Base</h3>
+    <p class="panel-hint">Ein Eintrag je Block: beginnt mit <span class="k">[</span>, endet mit <span class="k">]</span>, erste Zeile darin ist der Titel (z.B. <span class="k">Fräserlängen:</span>). Beim Übernehmen werden alle Einträge automatisch alphabetisch nach ihrem Titel sortiert. Ein Klick auf einen Buchstaben oben springt zum ersten Eintrag ab diesem Buchstaben, "Nach oben" scrollt wieder ganz an den Anfang. Die Karte lässt sich am unteren rechten Eck sowohl in der Breite als auch in der Höhe vergrößern.</p>
+    <div class="kb-az-bar" id="knowledgeBaseAzBar"></div>
+    <div class="kb-toolbar">
+      <button class="btn ghost" id="btnKnowledgeBaseScrollTop" type="button">Nach oben</button>
+    </div>
+    <textarea id="knowledgeBaseEditArea" placeholder='[Fräserlängen:&#10;1. Zu tief gefräst = Fräser zu kurz -&gt; Fräserlänge einmessen und länger auf Maschine eingeben]' spellcheck="false"></textarea>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnKnowledgeBaseCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnKnowledgeBaseApply" type="button">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -4837,8 +4953,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 104;
-  const APP_RELEASE_TIMESTAMP = '18.09.2026, 21:42 Uhr';
+  const APP_RELEASE_NUMBER = 106;
+  const APP_RELEASE_TIMESTAMP = '19.09.2026, 21:21 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5776,6 +5892,103 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   }
 
   // ============================================================
+  // Knowledge Base (Release 105, Sebastian, Punkte 2-5: "Ein neuer Menüpunkt 'Infos' (rechts von
+  // 'Einstellungen') -> 'Knowledge Base'. 'Knowledge Base' ist eine editierbare Liste an Infos,
+  // auch in der Größe skalierbar, seitlich wie nach unten. Die Punkte sortieren sich nach dem
+  // Eintragen automatisch alphabetisch. Jeder Eintrag beginnt mit einem [ und endet mit einem ].
+  // ... Die 'Knowledge Base' hat oben im Fenster die Buchstaben A bis Z angezeigt. Wenn man z.B.
+  // auf F klickt, landet man im Scrolldownfenster bei F und folgende. Es gibt einen Knopf im
+  // Editierfenster um ganz nach oben zu scrollen") - technisch dasselbe Grundmuster wie
+  // DEFAULT_OPNAME_TEXT/loadPersistedOpNameList/persistOpNameList direkt oberhalb (roher Text,
+  // localStorage-Persistenz mit demselben Rückfall-auf-Standard-Verhalten bei fehlendem/
+  // blockiertem localStorage), siehe #knowledgeBasePanel/#knowledgeBaseEditArea in
+  // template_top.html für das zugehörige Bearbeiten-Panel.
+  // SIM_SAVE:KNOWLEDGEBASE_DEFAULT:BEGIN (siehe buildSavedSimulationHtml() weiter unten; diese
+  // beiden Kommentarzeilen sind exakte textuelle Anker, NICHT verschieben/umbenennen/entfernen,
+  // ohne buildSavedSimulationHtml() anzupassen)
+  // Release 106, Sebastian: "neuen Text einfügen als Basis schon mal für später" - drei weitere
+  // Einträge (DXF/Messen/Shortcuts) zu den beiden bestehenden (Fräserlängen/Fräserradien)
+  // hinzugefügt, bereits alphabetisch einsortiert (DXF < Fräserlängen < Fräserradien < Messen <
+  // Shortcuts).
+  const DEFAULT_KNOWLEDGE_BASE_TEXT = `[DXF:
+3D DXF können auch importiert werden.]
+
+[Fräserlängen:
+1. Zu tief gefräst = Fräser zu kurz -> Fräserlänge einmessen und länger auf Maschine eingeben
+2. Fräsung nicht tief genug = Fräser zu lang -> Fräserlänge einmessen und kürzer auf Maschine eingeben]
+
+[Fräserradien:
+1. Zu viel weggefräst = Fräserradius zu klein -> Fräserradius messen und vergrößern
+2. Zu wenig weggefräst = Fräserradius zu groß -> Fräserradius messen und verkleinern]
+
+[Messen:
+Messen kann in der DXF erfolgen, im CNC-Programm und zwischen beidem!]
+
+[Shortcuts:
+Shift + L = Längenmessung, Shift + W = Winkelmessung, mit Esc zu verlassen. Space startet/pausiert Simulation.]
+`;
+  // SIM_SAVE:KNOWLEDGEBASE_DEFAULT:END
+
+  // Zerlegt den rohen Knowledge-Base-Text in einzelne Eintrags-Inhalte (jeweils OHNE die
+  // umschließenden [ ] selbst, aber mit ihren internen Zeilenumbrüchen) - ein nicht-gieriges
+  // Regex ohne verschachtelte eckige Klammern innerhalb eines Eintrags (wie bei den bestehenden
+  // [MACHINETYPE ...]/[SWITCHCASEMACHINE]-Blöcken auch keine verschachtelten Klammern vorgesehen).
+  // Leere/nur aus Leerraum bestehende Blöcke werden übersprungen.
+  function parseKnowledgeBaseEntries(text) {
+    const entries = [];
+    const re = /\[([^\[\]]*)\]/g;
+    let m;
+    while ((m = re.exec(text || ''))) {
+      const trimmed = m[1].trim();
+      if (trimmed) entries.push(trimmed);
+    }
+    return entries;
+  }
+  // Sortiert die Einträge alphabetisch nach ihrer jeweils ersten Zeile (Titel, z.B.
+  // "Fräserlängen:") - dieselbe Vergleichsart (localeCompare, "de", sensitivity "base" =
+  // Groß-/Kleinschreibung egal, numeric: true) wie beim DXF-Layer-Sortieren an anderer Stelle der
+  // Oberfläche, statt eines simplen "<"-Vergleichs, damit Umlaute (ä/ö/ü) korrekt einsortiert
+  // werden. Baut daraus den neuen, vollständigen Rohtext wieder zusammen (je ein Eintrag, mit
+  // Leerzeile getrennt) - wird sowohl beim Übernehmen im Panel als auch beim Laden aus
+  // localStorage/DEFAULT_KNOWLEDGE_BASE_TEXT verwendet, damit die Anzeige immer sortiert ist.
+  function sortKnowledgeBaseEntries(text) {
+    const entries = parseKnowledgeBaseEntries(text);
+    entries.sort((a, b) => {
+      const ta = a.split(/\r?\n/, 1)[0];
+      const tb = b.split(/\r?\n/, 1)[0];
+      return ta.localeCompare(tb, 'de', { sensitivity: 'base', numeric: true });
+    });
+    return entries.length ? entries.map(e => '[' + e + ']').join('\n\n') + '\n' : '';
+  }
+  // Liefert je Eintrag im (aktuell im Editierfeld stehenden, ggf. noch unsortierten) Text dessen
+  // Titel sowie die Zeichenposition seiner öffnenden Klammer "[" - Grundlage für den A-Z-Sprung
+  // (siehe jumpToKnowledgeBaseLetter weiter unten): dort wird daraus die Zeilennummer und darüber
+  // die Scroll-Position in der Textarea berechnet.
+  function knowledgeBaseEntryOffsets(text) {
+    const offsets = [];
+    const re = /\[([^\[\]]*)\]/g;
+    let m;
+    while ((m = re.exec(text || ''))) {
+      const trimmed = m[1].trim();
+      if (!trimmed) continue;
+      offsets.push({ index: m.index, title: trimmed.split(/\r?\n/, 1)[0] });
+    }
+    return offsets;
+  }
+  const LS_KEY_KNOWLEDGE_BASE = 'cncsim.knowledgeBaseText';
+  function loadPersistedKnowledgeBaseText() {
+    try {
+      const saved = window.localStorage.getItem(LS_KEY_KNOWLEDGE_BASE);
+      return saved != null ? saved : DEFAULT_KNOWLEDGE_BASE_TEXT;
+    } catch (e) {
+      return DEFAULT_KNOWLEDGE_BASE_TEXT;
+    }
+  }
+  function persistKnowledgeBaseText(text) {
+    try { window.localStorage.setItem(LS_KEY_KNOWLEDGE_BASE, text); } catch (e) { /* siehe Kommentar bei loadPersistedMachineTypesConfig weiter oben */ }
+  }
+
+  // ============================================================
   // Vektor-Hilfsfunktionen (3D)
   // ============================================================
   const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
@@ -6162,6 +6375,15 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   const btnEditOpNames = el('btnEditOpNames');
   const opNamesEditPanel = el('opNamesEditPanel');
   const opNamesEditArea = el('opNamesEditArea');
+  // Knowledge Base (Release 105, siehe DEFAULT_KNOWLEDGE_BASE_TEXT/parseKnowledgeBaseEntries/
+  // sortKnowledgeBaseEntries oben sowie #knowledgeBasePanel in template_top.html) - dieselbe
+  // Bearbeiten-Panel-Mechanik wie "Arbeitsgang-Namen bearbeiten" direkt oberhalb, ergänzt um die
+  // A-Z-Leiste und den "Nach oben"-Knopf (Verdrahtung weiter unten im "Menüband öffnen/
+  // schließen"-Abschnitt).
+  const btnOpenKnowledgeBase = el('btnOpenKnowledgeBase');
+  const knowledgeBasePanel = el('knowledgeBasePanel');
+  const knowledgeBaseEditArea = el('knowledgeBaseEditArea');
+  const knowledgeBaseAzBar = el('knowledgeBaseAzBar');
   const btnEditProgram = el('btnEditProgram');
   // Icon-Zwilling neben "CNC-Programmcode" (62. Runde) - siehe openProgramEditPanel() weiter
   // unten sowie die beiden disabled-Sync-Stellen bei btnEditProgram.disabled.
@@ -6196,11 +6418,21 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   const menuView = el('menuView');
   const menuViewTrigger = el('menuViewTrigger');
   const menuViewDropdown = el('menuViewDropdown');
-  // "Info"-Menü (55. Runde, Sebastian: "Neuer Menüpunkt 'Info' neben bearbeiten", noch in
-  // derselben Runde korrigiert: "Shit, 'Info' sollte rechts neben 'Ansicht'") - viertes und
-  // letztes Menü, direkt neben "Ansicht" (siehe DOM-Reihenfolge in template_top.html). Enthält
+  // "Infos" -> "Knowledge Base" (Release 105, Sebastian, Punkt 2: "Ein neuer Menüpunkt 'Infos'
+  // (rechts von 'Einstellungen') -> 'Knowledge Base'") - fünftes Menü, direkt rechts von
+  // "Einstellungen" (siehe DOM-Reihenfolge in template_top.html), links vom "?"-Menü. Öffnen/
+  // Verdrahtung siehe "Menüband öffnen/schließen" weiter unten (menus-Array) sowie
+  // btnOpenKnowledgeBase weiter unten.
+  const menuInfos = el('menuInfos');
+  const menuInfosTrigger = el('menuInfosTrigger');
+  const menuInfosDropdown = el('menuInfosDropdown');
+  // "Info" -> "?" (55. Runde, Sebastian: "Neuer Menüpunkt 'Info' neben bearbeiten", noch in
+  // derselben Runde korrigiert: "Shit, 'Info' sollte rechts neben 'Ansicht'") - letztes Menü,
+  // direkt neben dem neuen "Infos"-Menü (siehe DOM-Reihenfolge in template_top.html). Enthält
   // reine Anzeige-Zeilen statt Knöpfen (siehe .menu-info-row im Stylesheet) - Werte werden weiter
   // unten, direkt nach dieser Deklaration, aus APP_RELEASE_NUMBER/APP_RELEASE_TIMESTAMP befüllt.
+  // Release 105: Beschriftung/feste Orange-Farbe des Auslösers geändert (siehe #menuInfoTrigger
+  // in template_top.html), IDs und der komplette restliche Inhalt/Ablauf unverändert.
   const menuInfo = el('menuInfo');
   const menuInfoTrigger = el('menuInfoTrigger');
   const menuInfoDropdown = el('menuInfoDropdown');
@@ -6225,6 +6457,11 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   let activeMachineTypeName = loadPersistedActiveMachineTypeName();
   let opNameListText = loadPersistedOpNameList(); // roher Text der aktiven Arbeitsgang-Namensliste (für "Arbeitsgang-Namen bearbeiten") - 75. Runde: jetzt aus localStorage geladen, siehe loadPersistedOpNameList() weiter oben
   let opNameList = parseOpNameList(opNameListText); // geparste Liste, an CNCParser.parse() übergeben (siehe displayCurrentProgram)
+  // Roher Text der Knowledge Base (Release 105, für "Knowledge Base"-Panel) - direkt beim Laden
+  // sortiert (sortKnowledgeBaseEntries), damit die Anzeige auch bei einem von Hand bearbeiteten
+  // localStorage-Wert garantiert alphabetisch beginnt, siehe loadPersistedKnowledgeBaseText()
+  // weiter oben.
+  let knowledgeBaseText = sortKnowledgeBaseEntries(loadPersistedKnowledgeBaseText());
   // Zeilenindizes (0-basiert) aller Leerzeilen (nach Trimmen), die in der Programm-Ansicht
   // ausgeblendet werden (20. Runde, seit der 26. Runde erweitert - siehe
   // displayCurrentProgram/renderTree).
@@ -10362,6 +10599,7 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     { wrapper: menuFile, trigger: menuFileTrigger, dropdown: menuFileDropdown },
     { wrapper: menuEdit, trigger: menuEditTrigger, dropdown: menuEditDropdown },
     { wrapper: menuView, trigger: menuViewTrigger, dropdown: menuViewDropdown },
+    { wrapper: menuInfos, trigger: menuInfosTrigger, dropdown: menuInfosDropdown },
     { wrapper: menuInfo, trigger: menuInfoTrigger, dropdown: menuInfoDropdown }
   ];
   // Untermenü-Flyouts (60. Runde, siehe .menu-submenu/.submenu-trigger/.submenu-dropdown im
@@ -10722,6 +10960,11 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       'const DEFAULT_OPNAME_TEXT = ' + JSON.stringify(opNameListText) + ';');
     html = replaceBetweenMarkers(html, 'SIM_SAVE:ACTIVE_MACHINETYPE_DEFAULT:BEGIN', 'SIM_SAVE:ACTIVE_MACHINETYPE_DEFAULT:END',
       'const DEFAULT_ACTIVE_MACHINETYPE_NAME = ' + JSON.stringify(activeMachineTypeName || 'ISO') + ';');
+    // Knowledge Base (Release 105) - dieselbe Übernahme in die neue Standard-Seite wie bei den
+    // drei bestehenden Feldern oben, damit "Simulation speichern" auch die aktuell gepflegte
+    // Knowledge Base als neuen Standard mitnimmt.
+    html = replaceBetweenMarkers(html, 'SIM_SAVE:KNOWLEDGEBASE_DEFAULT:BEGIN', 'SIM_SAVE:KNOWLEDGEBASE_DEFAULT:END',
+      'const DEFAULT_KNOWLEDGE_BASE_TEXT = ' + JSON.stringify(knowledgeBaseText) + ';');
     return html;
   }
   el('btnSaveSimulation').addEventListener('click', () => {
@@ -10849,6 +11092,10 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       opNameListText,
       machineTypesConfigText,
       activeMachineTypeName,
+      // Knowledge Base (Release 105) - dieselbe Behandlung wie opNameListText oben: einfaches
+      // Textfeld, fehlt es beim Import (ältere Datei), bleibt der aktuelle Stand unangetastet
+      // (siehe Import weiter unten).
+      knowledgeBaseText,
       // Farbprofil (39. Runde, Benutzer: "Die Einstellungen fließen auch in die JSON-Datei bei
       // 'CNC Sim Speichern' und werden auch bei 'CNC Sim geladen'") - als Text in der vom
       // Benutzer vorgegebenen Klammer-Syntax, nicht als separates JSON-Unterobjekt, damit sie
@@ -10908,6 +11155,11 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
       }
       if (typeof data.opNameListText === 'string') {
         applyOpNameList(data.opNameListText);
+      }
+      // Knowledge Base (Release 105) - fehlt das Feld (ältere/handgeschriebene Datei), bleibt der
+      // aktuell aktive Stand unangetastet, dieselbe Regel wie bei den übrigen Einstellungsteilen.
+      if (typeof data.knowledgeBaseText === 'string') {
+        applyKnowledgeBaseText(data.knowledgeBaseText);
       }
       if (typeof data.machineTypesConfigText === 'string') {
         // Dieselbe alphabetische Umsortierung wie früher bei "Maschinentypen laden" (34. Runde;
@@ -11381,6 +11633,68 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
     opNamesEditPanel.classList.remove('open');
   });
   opNamesEditPanel.addEventListener('click', (e) => { if (e.target === opNamesEditPanel) opNamesEditPanel.classList.remove('open'); });
+
+  // "Knowledge Base" (Release 105, Sebastian, Punkte 2-5, siehe DEFAULT_KNOWLEDGE_BASE_TEXT/
+  // parseKnowledgeBaseEntries/sortKnowledgeBaseEntries/knowledgeBaseEntryOffsets weiter oben) -
+  // dieselbe Öffnen/Abbrechen/Übernehmen-Mechanik wie "Arbeitsgang-Namen bearbeiten" direkt
+  // darüber, "Übernehmen" sortiert zusätzlich immer neu alphabetisch (Punkt 3: "Die Punkte
+  // sortieren sich nach dem Eintragen automatisch alphabetisch").
+  function applyKnowledgeBaseText(text) {
+    knowledgeBaseText = sortKnowledgeBaseEntries(text);
+    persistKnowledgeBaseText(knowledgeBaseText);
+  }
+  btnOpenKnowledgeBase.addEventListener('click', () => {
+    knowledgeBaseEditArea.value = knowledgeBaseText;
+    knowledgeBasePanel.classList.add('open');
+    knowledgeBaseEditArea.focus();
+  });
+  el('btnKnowledgeBaseCancel').addEventListener('click', () => knowledgeBasePanel.classList.remove('open'));
+  el('btnKnowledgeBaseApply').addEventListener('click', () => {
+    applyKnowledgeBaseText(knowledgeBaseEditArea.value);
+    knowledgeBasePanel.classList.remove('open');
+  });
+  knowledgeBasePanel.addEventListener('click', (e) => { if (e.target === knowledgeBasePanel) knowledgeBasePanel.classList.remove('open'); });
+
+  // A-Z-Sprungleiste (Punkt 4: "Die 'Knowledge Base' hat oben im Fenster die Buchstaben A bis Z
+  // angezeigt. Wenn man z.B. auf F klickt, landet man im Scrolldownfenster bei F und folgende.")
+  // - 26 Knöpfe werden einmalig beim Laden erzeugt (#knowledgeBaseAzBar in template_top.html
+  // startet bewusst leer) statt sie einzeln ins Markup zu schreiben. Sucht im AKTUELLEN
+  // Textarea-Inhalt (also auch VOR einem "Übernehmen", z.B. während gerade etwas Neues
+  // eingetragen wird) den ersten Eintrag, dessen Titel ab diesem Buchstaben beginnt (oder danach,
+  // falls dieser Buchstabe selbst nicht vorkommt) und scrollt die Textarea dorthin - Zeilennummer
+  // wird aus der Anzahl der Zeilenumbrüche VOR der öffnenden Klammer errechnet, multipliziert mit
+  // der aktuellen Zeilenhöhe der Textarea (line-height, mit Rückfallwert 18px falls der Browser
+  // das nicht als Pixelwert liefert).
+  function jumpToKnowledgeBaseLetter(letter) {
+    const text = knowledgeBaseEditArea.value;
+    const offsets = knowledgeBaseEntryOffsets(text);
+    if (!offsets.length) return;
+    const upper = letter.toUpperCase();
+    let target = offsets.find(o => o.title.trim().charAt(0).toUpperCase() >= upper);
+    if (!target) target = offsets[offsets.length - 1];
+    const before = text.slice(0, target.index);
+    const lineIndex = (before.match(/\n/g) || []).length;
+    const lineHeightPx = parseFloat(getComputedStyle(knowledgeBaseEditArea).lineHeight) || 18;
+    knowledgeBaseEditArea.focus();
+    knowledgeBaseEditArea.setSelectionRange(target.index, target.index);
+    knowledgeBaseEditArea.scrollTop = lineIndex * lineHeightPx;
+  }
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kb-letter-btn';
+    btn.textContent = letter;
+    btn.title = 'Zu Einträgen ab "' + letter + '" springen';
+    btn.addEventListener('click', () => jumpToKnowledgeBaseLetter(letter));
+    knowledgeBaseAzBar.appendChild(btn);
+  });
+  // "Nach oben"-Knopf (Punkt 5: "Es gibt einen Knopf im Editierfenster um ganz nach oben zu
+  // scrollen").
+  el('btnKnowledgeBaseScrollTop').addEventListener('click', () => {
+    knowledgeBaseEditArea.focus();
+    knowledgeBaseEditArea.setSelectionRange(0, 0);
+    knowledgeBaseEditArea.scrollTop = 0;
+  });
 
   // "Programm bearbeiten" (Benutzer, 21. Runde: "Ein geladenes CNC-Programm soll über das
   // Menüband oben editiert werden können") - analog zu "Austauschdatei bearbeiten"/"Arbeitsgang-
