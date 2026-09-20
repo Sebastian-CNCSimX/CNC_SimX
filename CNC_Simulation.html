@@ -1504,18 +1504,24 @@
   .scrub-marks {
     position: absolute;
     left: 0; right: 0; top: 50%;
-    height: 10px;
+    height: 14px; /* Release 109, Sebastian: "Markierungen bitte jeweils 2 Pixel nach oben und unten
+                     vergrößern" - bisher 10px, je 2px oben/unten ergänzt (Höhe der Markierungen
+                     selbst direkt darunter, ".scrub-mark", muss exakt mitwachsen). */
     transform: translateY(-50%);
     pointer-events: none;
   }
   .scrub-mark {
     position: absolute;
     top: 0;
-    width: 2px;
-    height: 10px;
-    background: var(--ink-muted);
+    width: 4px;  /* Release 109, Sebastian: "und 2 Pixel breiter machen" - bisher 2px */
+    height: 14px; /* Release 109, siehe Kommentar bei ".scrub-marks" oben */
+    background: var(--ink-muted); /* Fallback/Default - Release 110, Sebastian: "Die Markierungen
+      sollten dieselben Farben haben wie die Arbeitsgänge in der 3D Simulation" - im Regelfall
+      überschreibt updateScrubMarks() (app.js) das per Inline-Style mit der jeweiligen
+      Arbeitsgangfarbe (seg.color); dieser Wert greift nur, falls die Farbe ausnahmsweise fehlen
+      sollte. */
     border-radius: 1px;
-    transform: translateX(-1px);
+    transform: translateX(-2px); /* hälftiger Ausgleich der neuen Breite (4px), damit "left" weiterhin die Mitte der Markierung trifft */
     pointer-events: none;
     opacity: .75;
   }
@@ -5001,8 +5007,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 108;
-  const APP_RELEASE_TIMESTAMP = '19.09.2026, 23:31 Uhr';
+  const APP_RELEASE_NUMBER = 110;
+  const APP_RELEASE_TIMESTAMP = '20.09.2026, 11:47 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5782,6 +5788,9 @@ Z*1
         if (sec && sw) sw.style.background = lineColors.get(sec.startIdx) || '';
       });
     }
+    // Release 110, siehe Kommentar bei updateScrubMarks() weiter unten: Markierungsfarben auf der
+    // Wiedergabe-Leiste bei jedem Neueinfärben (Theme-Wechsel/eigene Arbeitsgangfarben) mitziehen.
+    updateScrubMarks();
     bakeParams = null;
     requestRender();
   }
@@ -8497,15 +8506,23 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Prozent-Näherung über die gesamte Breite der Leiste, ohne Ausgleich für die native Breite des
   // Schiebereglers selbst (dessen Rundgriff nimmt an beiden Enden ein paar Pixel der Leiste ein) -
   // für "kleine Markierungen" als grobe Orientierungshilfe bewusst ausreichend genau.
+  // Farbe der Markierungen (Release 110, Sebastian: "Die Markierungen sollten dieselben Farben
+  // haben wie die Arbeitsgänge in der 3D Simulation") - jede Markierung erhält per Inline-Style
+  // (mark.style.background) exakt die Farbe des Arbeitsgangs, der an dieser Stelle NEU beginnt
+  // (seg.color, dieselbe --path-1…10-Farbe, mit der die Bahn dieses Arbeitsgangs in der 3D-Ansicht
+  // gezeichnet wird, siehe pathColor()/ctx.strokeStyle=seg.color weiter unten) statt bisher
+  // einheitlich var(--ink-muted). recolorOpSegmentsAndPoints() ruft diese Funktion zusätzlich
+  // erneut auf, damit die Markierungsfarben auch bei einem Theme-/Farbwechsel (Hell-/Dark-Mode,
+  // eigene Arbeitsgangfarben im Einstellungen-Panel) sofort mitziehen.
   function updateScrubMarks() {
     scrubMarksEl.innerHTML = '';
     const maxIdx = points.length - 1;
     if (maxIdx <= 0) return;
-    const boundaries = segments.filter(seg => !seg.context).map(seg => seg.rangeStart).filter(rs => rs > 0);
-    boundaries.forEach(rs => {
+    segments.filter(seg => !seg.context && seg.rangeStart > 0).forEach(seg => {
       const mark = document.createElement('span');
       mark.className = 'scrub-mark';
-      mark.style.left = (rs / maxIdx * 100) + '%';
+      mark.style.left = (seg.rangeStart / maxIdx * 100) + '%';
+      mark.style.background = seg.color;
       scrubMarksEl.appendChild(mark);
     });
   }
