@@ -5007,8 +5007,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 110;
-  const APP_RELEASE_TIMESTAMP = '20.09.2026, 11:47 Uhr';
+  const APP_RELEASE_NUMBER = 112;
+  const APP_RELEASE_TIMESTAMP = '20.09.2026, 12:16 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5082,6 +5082,23 @@
   // Auffälligkeit ein: die (unveränderte, bereits bestehende) Regel "O ->G91" trägt in der
   // hochgeladenen Datei neu ein Leerzeichen am Ende ("O ->G91 "), was den Ersatztext um genau ein
   // Leerzeichen verlängert.
+  // Release 111 (Sebastian: "Bei Maschinentyp MAKA den Text gegen folgendes austauschen" - kompletter
+  // neuer SWITCHCASEMACHINE-Block für MAKA): Die bisherigen zwei Regeln "Y->X"/"X->Y" (Achsen-
+  // Vertauschung, aus der 59. Runde, siehe oben) sind komplett entfallen, stattdessen drei neue
+  // Regeln "P71:->R", "B->A", "A->C" ergänzt (zusammen mit den unverändert bleibenden "G03->G3"/
+  // "G02->G2") - 1:1 wie von Sebastian vorgegeben übernommen. Die Reihenfolge "B->A" VOR "A->C" ist
+  // bewusst genau die von Sebastian gelieferte: `applySwapRules()` (siehe 5.5 der Haupt-Doku) wendet
+  // an jeder Position ohnehin die Regel mit dem LÄNGSTEN Suchtext an ("Maximal-Munch"), nicht die
+  // Reihenfolge im Regeltext - bei einzelnen Buchstaben als Suchtext (hier B/A, je 1 Zeichen) sind
+  // "B->A" und "A->C" deshalb niemals gleichzeitig auf denselben ursprünglichen Buchstaben anwendbar,
+  // die Reihenfolge der beiden Regeln im Text hat also ohnehin keinen Einfluss auf das Ergebnis. Die
+  // CALCMACHINE-Achsberechnung (X*1/Y*1/Z*1) bleibt unverändert bestehen. Sebastians vorgegebener
+  // Blocktext schloss mit einer fehlenden schließenden Klammer ("[/MACHINETYPE Name=\"MAKA\"" ohne
+  // abschließendes "]") - offensichtlicher Tippfehler, beim Übernehmen korrigiert (alle acht übrigen
+  // Blöcke folgen demselben "[/MACHINETYPE Name=\"…\"]"-Muster, siehe CNCSwap.parseMachineTypes()
+  // in swap.js, das für die Blockgrenze ohnehin nur prüft, dass die NÄCHSTE Zeile mit "[" beginnt,
+  // siehe 5.2 der Haupt-Doku - ein fehlendes "]" hier hätte technisch nicht einmal etwas kaputt
+  // gemacht, wird aber der Konsistenz halber trotzdem sauber geschrieben).
   // SIM_SAVE:MACHINETYPES_DEFAULT:BEGIN (38. Runde, "Simulation speichern" - siehe
   // buildSavedSimulationHtml() weiter unten; diese beiden Kommentarzeilen sind exakte textuelle
   // Anker, NICHT verschieben/umbenennen/entfernen, ohne buildSavedSimulationHtml() anzupassen)
@@ -5231,8 +5248,9 @@ C*-1
 [SWITCHCASEMACHINE]
 G03->G3
 G02->G2
-Y->X
-X->Y
+P71:->R
+B->A
+A->C
 [/SWITCHCASEMACHINE]
 [CALCMACHINE]
 X*1
@@ -6472,6 +6490,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // (Vorbelegung) sowie confirmInsertToolData()/insertToolDataComment() (Übernahme) weiter unten.
   const toolModeSelect = el('toolModeSelect');
   const toolTypeSelect = el('toolTypeSelect');
+  // Arbeitsgang-Abschnitt, für den der "+Werkzeuge (T)"-Dialog gerade geöffnet ist (siehe
+  // applyToolTypeUI() weiter unten) - null, solange der Dialog geschlossen ist.
+  let toolDataActiveSec = null;
   const btnDxfDeleteIcon = el('btnDxfDeleteIcon');
   // Arbeitsgang-Namensliste (Benutzer, 20. Runde, siehe DEFAULT_OPNAME_TEXT/parseOpNameList
   // oben) - "Arbeitsgang-Namen bearbeiten" ist von Anfang an aktiv (die Standardliste ist immer
@@ -11062,6 +11083,28 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     }
   });
 
+  // Kein Schließen mehr durch Klick auf den Hintergrund (Release 112, Sebastian zunächst: "Nerviger
+  // Bug: Wenn ich den Text markiere beim Werkzeugfenster und ich aus versehen woanders hinklicke,
+  // schließt sich das Fenster", dann konkretisiert: "Das ist bei allen Editierfenstern so. Bitte
+  // beheben. Nur Ok/Übernehmen/Enter oder Esc/Abbruch darf das Fenster schließen") - alle
+  // .paste-panel-Dialoge (siehe Enter/Escape-Kommentar direkt oberhalb) hatten bislang zusätzlich
+  // einen eigenen Klick-Listener auf dem Hintergrund selbst ("panel.addEventListener('click', (e) =>
+  // { if (e.target === panel) panel.classList.remove('open'); })"), der bei einem Klick GENAU auf
+  // den abgedunkelten Rand (nicht auf die Karte selbst) schloss. Der Bug: Eine Textmarkierung per
+  // Maus INNERHALB eines Eingabe-/Textfelds (z. B. im "+Werkzeuge (T)"-Dialog), die versehentlich
+  // über den Feldrand hinaus bis auf den Hintergrund gezogen und dort losgelassen wird, zählt im
+  // Browser als ganz normaler "click" mit e.target===Hintergrund - der Dialog schloss sich dadurch
+  // ungewollt, obwohl gar keine Absicht bestand, ihn zu schließen (schlimmstenfalls mit Verlust noch
+  // nicht übernommener Eingaben). Ersatzlos entfernt statt nur abgeschwächt (z. B. über eine
+  // eigene mousedown/mouseup-Unterscheidung) - Sebastians zweite Nachricht macht die gewünschte
+  // Schließ-Logik abschließend explizit: "Nur Ok/Übernehmen/Enter oder Esc/Abbruch darf das Fenster
+  // schließen". Betroffen waren alle 16 ".paste-panel"-Dialoge (Maschinentypen/Hintergrundfarbe/
+  // Schriftfarbe/Arbeitsgangfarbe/Spalteneinstellungen/Buttonfarbe/AG-Namen/Knowledge Base/Programm
+  // bearbeiten/Speichern als/Werkzeugdaten einfügen/NC-Code einfügen/DXF Verschieben/Drehen/
+  // Bauteilstärke/Skalieren bearbeiten) - jeder eigene "Abbrechen"-Knopf (id endet auf "Cancel")
+  // sowie der jeweilige primäre Bestätigen-Knopf bleiben unverändert die einzigen Wege, ein Panel
+  // per Maus zu schließen, zusätzlich zu Enter/Escape (siehe Kommentar direkt oberhalb).
+
   el('btnLoadFile').addEventListener('click', () => el('fileInput').click());
   // "CNC"-Symbolleisten-Icon (67. Runde) - zweiter, gleichwertiger Auslöser derselben Aktion wie
   // #btnLoadFile oben, siehe Kommentar bei #btnLoadFileIcon in template_top.html.
@@ -11120,7 +11163,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (rawProgramText != null) displayCurrentProgram();
     machineTypeEditPanel.classList.remove('open');
   });
-  machineTypeEditPanel.addEventListener('click', (e) => { if (e.target === machineTypeEditPanel) machineTypeEditPanel.classList.remove('open'); });
 
   // "Maschinentypen laden" (#btnLoadMachineTypes/#machineTypeFileInput, ersetzte früher die
   // KOMPLETTE Konfiguration durch eine extern ausgewählte Datei) wurde in der 77. Runde entfernt
@@ -11532,7 +11574,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     colorProfilePanel.classList.add('open');
   });
   el('btnColorProfileCancel').addEventListener('click', () => colorProfilePanel.classList.remove('open'));
-  colorProfilePanel.addEventListener('click', (e) => { if (e.target === colorProfilePanel) colorProfilePanel.classList.remove('open'); });
   el('btnColorProfileApply').addEventListener('click', () => {
     const mode = colorProfileRadios.custom.checked ? 'custom' : (colorProfileRadios.dark.checked ? 'dark' : 'standard');
     let profile = { mode };
@@ -11605,7 +11646,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     fontColorPanel.classList.add('open');
   });
   el('btnFontColorCancel').addEventListener('click', () => fontColorPanel.classList.remove('open'));
-  fontColorPanel.addEventListener('click', (e) => { if (e.target === fontColorPanel) fontColorPanel.classList.remove('open'); });
   el('btnFontColorApply').addEventListener('click', () => {
     const next = {};
     let allValid = true;
@@ -11659,7 +11699,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     opColorPanel.classList.add('open');
   });
   el('btnOpColorCancel').addEventListener('click', () => opColorPanel.classList.remove('open'));
-  opColorPanel.addEventListener('click', (e) => { if (e.target === opColorPanel) opColorPanel.classList.remove('open'); });
   el('btnOpColorApply').addEventListener('click', () => {
     const next = [];
     let allValid = true;
@@ -11751,7 +11790,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     columnScalePanel.classList.add('open');
   });
   el('btnColumnScaleCancel').addEventListener('click', () => columnScalePanel.classList.remove('open'));
-  columnScalePanel.addEventListener('click', (e) => { if (e.target === columnScalePanel) columnScalePanel.classList.remove('open'); });
   el('btnColumnScaleApply').addEventListener('click', () => {
     const codeChecked = document.querySelector('input[name="columnScaleCode"]:checked');
     const opsChecked = document.querySelector('input[name="columnScaleOps"]:checked');
@@ -11808,7 +11846,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     menuColorPanel.classList.add('open');
   });
   el('btnMenuColorCancel').addEventListener('click', () => menuColorPanel.classList.remove('open'));
-  menuColorPanel.addEventListener('click', (e) => { if (e.target === menuColorPanel) menuColorPanel.classList.remove('open'); });
   el('btnMenuColorApply').addEventListener('click', () => {
     const bg = normalizeHex(menuColorFieldPairs[0].hex.value);
     const ink = normalizeHex(menuColorFieldPairs[1].hex.value);
@@ -11854,7 +11891,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     applyOpNameList(opNamesEditArea.value);
     opNamesEditPanel.classList.remove('open');
   });
-  opNamesEditPanel.addEventListener('click', (e) => { if (e.target === opNamesEditPanel) opNamesEditPanel.classList.remove('open'); });
 
   // "Knowledge Base" (Release 105, Sebastian, Punkte 2-5, siehe DEFAULT_KNOWLEDGE_BASE_TEXT/
   // parseKnowledgeBaseEntries/sortKnowledgeBaseEntries/knowledgeBaseEntryOffsets weiter oben) -
@@ -11887,7 +11923,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     applyKnowledgeBaseText(knowledgeBaseEditArea.value);
     knowledgeBasePanel.classList.remove('open');
   });
-  knowledgeBasePanel.addEventListener('click', (e) => { if (e.target === knowledgeBasePanel) knowledgeBasePanel.classList.remove('open'); });
 
   // A-Z-Sprungleiste (Punkt 4: "Die 'Knowledge Base' hat oben im Fenster die Buchstaben A bis Z
   // angezeigt. Wenn man z.B. auf F klickt, landet man im Scrolldownfenster bei F und folgende.")
@@ -11985,7 +12020,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     displayCurrentProgram();
     programEditPanel.classList.remove('open');
   });
-  programEditPanel.addEventListener('click', (e) => { if (e.target === programEditPanel) programEditPanel.classList.remove('open'); });
   el('btnProgramJump').addEventListener('click', () => {
     jumpToTextareaLine(programEditArea, programEditAreaGutter, el('programJumpInput').value);
   });
@@ -12027,7 +12061,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     saveAsPanel.classList.remove('open');
   }
   el('btnSaveAsConfirm').addEventListener('click', confirmSaveAs);
-  saveAsPanel.addEventListener('click', (e) => { if (e.target === saveAsPanel) saveAsPanel.classList.remove('open'); });
   saveAsFilenameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmSaveAs(); } });
 
   // 72. Runde: Sebastian - "Messfunktionen für Länge/Winkel rechts neben
@@ -12223,18 +12256,49 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     rawProgramText = lines.join(eol);
   }
 
+  // Typspezifische Standardwerte für Radius/Länge (Release 112, Sebastian: "Wenn das Werkzeug auf
+  // Säge umgestellt wird bei +Werkzeuge, neue Standardwerte hinterlegen nach dem Wechsel auf
+  // Radius 150 und Sägeblattstärke 3,5. Wenn Sägeblattdaten übergeben werden, werden natürlich die
+  // angezeigt. Die Werte sollen sich sofort nach dem Wechsel des Werkzeugtyps ändern.") - die
+  // bisherigen, fest für BEIDE Werkzeugtypen gleichermaßen geltenden Standardwerte 8/200 (34. Runde,
+  // Sebastian: "...Standardwert Radius 8, Length 200") gelten damit ab sofort NUR NOCH für "Fräser";
+  // "Säge" bekommt eigene, realistischere Standardwerte (ein Sägeblatt hat typischerweise einen
+  // deutlich größeren Radius und eine deutlich geringere Blattstärke als ein Fräser lang ist).
+  const TOOL_TYPE_DEFAULTS = {
+    fraeser: { radius: '8', length: '200' },
+    saege: { radius: '150', length: '3,5' }
+  };
+
   // applyToolTypeUI() (61. Runde, Sebastian: "Wenn 'Säge' oder 'Fräser' gewählt, ändern sich die
   // Eingabemöglichkeiten sofort, aktuell ändert sich das Menü erst nach Bestätigung von Ok und
-  // Neuaufruf") - vorher stand diese Textzuweisung (toolLengthLabelText.textContent = ...)
+  // Neuaufruf") - vorher stand die Beschriftungs-Zuweisung (toolLengthLabelText.textContent = ...)
   // EINMALIG und NUR im btnInsertToolData-Klick-Handler unten (Vorbelegung beim Öffnen), reagierte
   // also nicht auf ein späteres Umschalten von #toolTypeSelect INNERHALB des bereits geöffneten
-  // Dialogs. Jetzt in eine eigene Funktion ausgelagert und zusätzlich an einen "change"-Listener
-  // auf #toolTypeSelect gehängt (siehe weiter unten) - dadurch wird sie sowohl beim Öffnen als
-  // auch bei jeder Auswahländerung ausgeführt, ändert also die Beschriftung sofort:
-  // Fräser -> "Länge (L)", Säge -> "Sägeblattstärke" (Radius (R) und T-Längen bleiben in beiden
-  // Fällen unverändert vorhanden, wie von Sebastian vorgegeben).
+  // Dialogs. In eine eigene Funktion ausgelagert und an einen "change"-Listener auf #toolTypeSelect
+  // gehängt (siehe weiter unten) - dadurch wird sie sowohl beim Öffnen als auch bei jeder
+  // Auswahländerung ausgeführt: Fräser -> "Länge (L)", Säge -> "Sägeblattstärke".
+  //
+  // Release 112 erweitert dieselbe Funktion zusätzlich um die Radius-/Längenfelder selbst (bisher
+  // ausschließlich einmalig beim Öffnen im Klick-Handler unten vorbelegt, siehe dort): Für den
+  // GERADE ausgewählten Werkzeugtyp gilt "wenn Sägeblattdaten [bzw. Fräserdaten] übergeben werden,
+  // werden natürlich die angezeigt" - also die für DIESEN Arbeitsgang bereits erkannten realen
+  // Werkzeugdaten (toolDataActiveSec.toolRadius/toolLength), aber NUR, wenn sie tatsächlich zum
+  // gerade gewählten Typ gehören (toolDataActiveSec.toolIsBlade entspricht der Auswahl) - sonst
+  // (Typ eben erst umgeschaltet, für DIESEN Typ liegen in diesem Arbeitsgang keine erkannten Daten
+  // vor) greifen die neuen, typspezifischen Standardwerte (TOOL_TYPE_DEFAULTS oben). Dieselbe Logik
+  // bedient dadurch sowohl das ÖFFNEN des Dialogs (dort ist die Dropdown-Vorauswahl immer bereits
+  // deckungsgleich mit toolIsBlade, siehe Klick-Handler unten - es greifen also automatisch die
+  // realen Werte, falls vorhanden) als auch ein späteres LIVE-Umschalten innerhalb des bereits
+  // geöffneten Dialogs.
   function applyToolTypeUI() {
-    toolLengthLabelText.textContent = toolTypeSelect.value === 'saege' ? 'Sägeblattstärke' : 'Länge (L)';
+    const isSaege = toolTypeSelect.value === 'saege';
+    toolLengthLabelText.textContent = isSaege ? 'Sägeblattstärke' : 'Länge (L)';
+    if (!toolDataActiveSec) return;
+    const sec = toolDataActiveSec;
+    const hasRealDataForSelectedType = sec.toolRadius != null && sec.toolLength != null && !!sec.toolIsBlade === isSaege;
+    const defaults = isSaege ? TOOL_TYPE_DEFAULTS.saege : TOOL_TYPE_DEFAULTS.fraeser;
+    toolRadiusInput.value = hasRealDataForSelectedType ? String(sec.toolRadius) : defaults.radius;
+    toolLengthInput.value = hasRealDataForSelectedType ? String(sec.toolLength) : defaults.length;
   }
   toolTypeSelect.addEventListener('change', applyToolTypeUI);
 
@@ -12242,10 +12306,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (btnInsertToolData.disabled || scopeMode.type !== 'op' || !current) return;
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
     if (!sec) return;
-    // Vorbelegung: bereits erkannte Werkzeugdaten dieses Arbeitsgangs (egal in welcher Notation,
-    // siehe extractToolData), sonst die vom Benutzer festgelegten Standardwerte 8/200.
-    toolRadiusInput.value = sec.toolRadius != null ? String(sec.toolRadius) : '8';
-    toolLengthInput.value = sec.toolLength != null ? String(sec.toolLength) : '200';
+    toolDataActiveSec = sec;
     // Vorbelegung der beiden Dropdowns (60. Runde) mit den zuletzt für diesen Arbeitsgang
     // erkannten/gesetzten Werten (siehe extractToolData()/sec.toolMode/sec.toolType oben) -
     // fehlender Marker (null, z.B. bei noch nie über diesen Dialog gesetzten Werkzeugdaten oder
@@ -12255,19 +12316,22 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // sec.toolIsBlade true ist, sonst 'fraeser'.
     toolModeSelect.value = sec.toolMode === 'eingespannt' ? 'eingespannt' : 'ausgespannt';
     toolTypeSelect.value = sec.toolIsBlade ? 'saege' : 'fraeser';
-    // "BLADE" (41. Runde) / live (61. Runde): siehe applyToolTypeUI() oben - hier direkt nach der
-    // Vorbelegung von #toolTypeSelect aufgerufen, damit die Beschriftung schon beim ÖFFNEN des
-    // Dialogs konsistent zum vorbelegten Werkzeugtyp ist.
+    // "BLADE" (41. Runde) / live (61. Runde) / Radius-/Längenfelder (Release 112): siehe
+    // applyToolTypeUI() oben - hier direkt nach der Vorbelegung von #toolTypeSelect aufgerufen,
+    // damit Beschriftung UND Radius-/Längenfelder schon beim ÖFFNEN des Dialogs konsistent zum
+    // vorbelegten Werkzeugtyp sind (Vorbelegung der Felder selbst, vorher hier direkt per
+    // toolRadiusInput.value=.../toolLengthInput.value=..., läuft seit Release 112 mit über
+    // applyToolTypeUI(), siehe dortiger Kommentar).
     applyToolTypeUI();
     toolDataPanel.classList.add('open');
     toolRadiusInput.focus();
     toolRadiusInput.select();
   });
-  el('btnToolDataCancel').addEventListener('click', () => toolDataPanel.classList.remove('open'));
+  el('btnToolDataCancel').addEventListener('click', () => { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; });
   function confirmInsertToolData() {
-    if (scopeMode.type !== 'op' || !current) { toolDataPanel.classList.remove('open'); return; }
+    if (scopeMode.type !== 'op' || !current) { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; return; }
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
-    if (!sec) { toolDataPanel.classList.remove('open'); return; }
+    if (!sec) { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; return; }
     const radiusStr = normalizeToolValue(toolRadiusInput.value, 8);
     const lengthStr = normalizeToolValue(toolLengthInput.value, 200);
     const toolMode = toolModeSelect.value === 'eingespannt' ? 'eingespannt' : 'ausgespannt';
@@ -12299,9 +12363,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     cam.maxDist = savedCam.maxDist;
     requestRender();
     toolDataPanel.classList.remove('open');
+    toolDataActiveSec = null;
   }
   el('btnToolDataConfirm').addEventListener('click', confirmInsertToolData);
-  toolDataPanel.addEventListener('click', (e) => { if (e.target === toolDataPanel) toolDataPanel.classList.remove('open'); });
   [toolRadiusInput, toolLengthInput].forEach(inp => {
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmInsertToolData(); } });
   });
@@ -12322,7 +12386,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (txt.trim()) loadText(txt, 'Eingefügter Code');
     pastePanel.classList.remove('open');
   });
-  pastePanel.addEventListener('click', (e) => { if (e.target === pastePanel) pastePanel.classList.remove('open'); });
   el('btnPasteJump').addEventListener('click', () => {
     jumpToTextareaLine(pasteArea, pasteAreaGutter, el('pasteJumpInput').value);
   });
@@ -12973,7 +13036,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     dxfMovePanel.classList.remove('open');
   }
   el('btnDxfMoveConfirm').addEventListener('click', confirmDxfMove);
-  dxfMovePanel.addEventListener('click', (e) => { if (e.target === dxfMovePanel) dxfMovePanel.classList.remove('open'); });
   [dxfOffsetXInput, dxfOffsetYInput, dxfOffsetZInput].forEach(inp => {
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfMove(); } });
   });
@@ -13025,7 +13087,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     dxfRotatePanel.classList.remove('open');
   }
   el('btnDxfRotateConfirm').addEventListener('click', confirmDxfRotate);
-  dxfRotatePanel.addEventListener('click', (e) => { if (e.target === dxfRotatePanel) dxfRotatePanel.classList.remove('open'); });
   dxfRotateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfRotate(); } });
 
   // "Bauteilstärke" (67. Runde) - derselbe Dialog-Ablauf wie "DXF drehen" direkt oberhalb, mit
@@ -13049,7 +13110,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     dxfThicknessPanel.classList.remove('open');
   }
   el('btnDxfThicknessConfirm').addEventListener('click', confirmDxfThickness);
-  dxfThicknessPanel.addEventListener('click', (e) => { if (e.target === dxfThicknessPanel) dxfThicknessPanel.classList.remove('open'); });
   dxfThicknessInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfThickness(); } });
 
   // "DXF skalieren" (Release 84, Sebastian: "DXF Skalier Icon rechts neben
@@ -13108,7 +13168,6 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       dxfScalePanel.classList.remove('open');
     });
   }
-  dxfScalePanel.addEventListener('click', (e) => { if (e.target === dxfScalePanel) dxfScalePanel.classList.remove('open'); });
   dxfScaleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfScale(); } });
 
   // ============================================================
