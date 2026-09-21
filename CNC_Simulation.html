@@ -713,6 +713,123 @@
     border-bottom-color: var(--accent);
   }
 
+  /* "Mehrere Programme in Programmliste laden" (Release 113) - siehe Markup-Kommentar bei
+     #programListBar in template_top.html sowie renderProgramListUI() in app.js für den vollen
+     Hintergrund. Wiederverwendet bewusst dieselbe ".menu-item"/".menu-dropdown"-Optik wie die
+     übrigen Menüs der App (Hover/Fokus/disabled identisch), nur in eigener, voller Zeilenbreite
+     unter der Kopfzeile statt im Menüband. */
+  .program-list-bar { padding: 0 14px 8px; }
+  .program-list-bar[hidden] { display: none; }
+  .program-list-dropdown { position: relative; }
+  .program-list-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .program-list-trigger:hover { border-color: var(--accent); }
+  .program-list-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .program-list-trigger-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* "5/10" bzw. "4/10" usw. (Punkt 7: "Anzeige in der CNC-Programmliste 5/10 bei 5 von 10
+     möglichen Programmen") */
+  .program-list-count {
+    flex: 0 0 auto;
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+  .program-list-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 30;
+  }
+  .program-list-menu[hidden] { display: none; }
+  .program-list-add {
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .program-list-add:hover { background: var(--panel-2); }
+  .program-list-add:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .program-list-add:disabled { opacity: .4; cursor: default; pointer-events: none; }
+  .program-list-items { display: flex; flex-direction: column; gap: 1px; }
+  .program-list-item { display: flex; align-items: center; gap: 2px; }
+  .program-list-item-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .program-list-item-name:hover { background: var(--panel-2); }
+  .program-list-item-name:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Gerade aktives (in der 3D-Simulation berechnetes) Programm hervorgehoben - dieselbe
+     Akzentfarbe wie der aktive Reiter bei "DXF-Layer"/"CNC-Programmcode" oben. */
+  .program-list-item.active .program-list-item-name { color: var(--accent); font-weight: 600; }
+  /* Rotes "x" hinter jedem Programmnamen (Punkt 4, wörtlich: "ein rotes x hinter jedem
+     Programmnamen") - dieselbe --danger-Farbvariable wie das bestehende "✕ DXF"-Icon
+     (.dxf-delete-glyph, siehe dort). */
+  .program-list-item-del {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .program-list-item-del:hover { background: var(--panel-2); }
+  .program-list-item-del:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
   .dxf-layer-panel {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -1880,6 +1997,15 @@
             <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false">CNC-Programm <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
               <button class="menu-item" id="btnLoadFile" type="button">Programm laden</button>
+              <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Programm laden wird wieder nur
+                   auf 1 limitiert (wie zuvor), an allen Stellen wo man ein CNC Programm laden kann.
+                   Dafür neuer Menüpunkt unter 'Datei' -> Neue CNC-Programmliste. Dort können dann
+                   bis zu 10 Programme geladen werden.") - direkt unter "Programm laden", da
+                   funktional das Gegenstück dazu: öffnet den eigenen Mehrfachauswahl-Dialog
+                   #fileInputList (siehe dort sowie startNewProgramList() in app.js) und ersetzt
+                   eine evtl. bestehende Programmliste komplett durch eine frische, aus der
+                   getroffenen Auswahl aufgebaute Liste. -->
+              <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl">Neue CNC-Programmliste</button>
               <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter">Programm speichern als…</button>
             </div>
           </div>
@@ -1915,6 +2041,16 @@
               <button class="menu-item" id="btnPaste" type="button">CNC-Code einfügen</button>
               <button class="menu-item" id="btnEditProgram" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten">CNC-Programm bearbeiten</button>
               <button class="menu-item" id="btnClearProgram" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)">CNC-Programm löschen</button>
+              <!-- "CNC-Programmliste löschen" (Release 113, Sebastian, Punkt 6: "Neuer Button mit Icon
+                   für 'CNC Programmliste löschen' in der Zeile mit den CNC Programmen, Menüeintrag
+                   unter 'Bearbeiten' -> 'CNC' -> 'CNC-Programmliste löschen'") - im Unterschied zu
+                   "CNC-Programm löschen" (entfernt nur das gerade AKTIVE Programm aus der Ansicht,
+                   die übrigen im Hintergrund geladenen Programme bleiben in der Liste erhalten)
+                   leert dieser neue Eintrag die GESAMTE Programmliste (siehe #programListBar weiter
+                   unten sowie clearProgramList() in app.js) inklusive eines evtl. gerade aktiven
+                   Programms. Nur aktiv, solange überhaupt mindestens ein Programm in der Liste ist
+                   (siehe renderProgramListUI() in app.js). -->
+              <button class="menu-item" id="btnClearProgramList" type="button" disabled title="Entfernt ALLE im Hintergrund geladenen CNC-Programme aus der Programmliste (inklusive eines evtl. gerade aktiven Programms) - die Maschinentyp-Konfiguration bleibt erhalten">CNC-Programmliste löschen</button>
             </div>
           </div>
           <div class="menu-submenu" id="submenuDxf">
@@ -2126,7 +2262,22 @@
         <span class="dxf-filename" id="dxfFilenameLabel"></span>
       </div>
     </div>
+    <!-- #fileInput: wieder EINFACHAUSWAHL (Release 117, zurückgerollt von Release 113, Sebastian:
+         "Programm laden wird wieder nur auf 1 limitiert (wie zuvor), an allen Stellen wo man ein
+         CNC Programm laden kann.") - Release 113 hatte hier probeweise "multiple" ergänzt; diese
+         Mehrfachauswahl ist seit Release 117 ausschließlich über den eigenen, neuen Dialog
+         #fileInputList weiter unten ("Neue CNC-Programmliste") erreichbar. #fileInput bedient
+         weiterhin sowohl die klassischen Ladewege (#btnLoadFile/#btnLoadFileIcon/Kontextmenü
+         "Programm laden", siehe loadTextClassic() in app.js) ALS AUCH "+Add" innerhalb der
+         Programmliste (#programListAddBtn, siehe dort) - welcher der beiden Codepfade nach einer
+         Auswahl greift, entscheidet fileInputIntent in app.js. -->
     <input type="file" id="fileInput" hidden>
+    <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Dafür neuer Menüpunkt unter 'Datei' ->
+         Neue CNC-Programmliste. Dort können dann bis zu 10 Programme geladen werden.") - eigener,
+         von #fileInput komplett getrennter Mehrfachauswahl-Dialog, ausgelöst über
+         #btnNewProgramList/#btnNewProgramListIcon/ctxItems.newProgramList (siehe dort sowie
+         startNewProgramList() in app.js). -->
+    <input type="file" id="fileInputList" hidden multiple>
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
     <input type="file" id="settingsFileInput" hidden accept="application/json,.json">
     <div class="topbar-spacer"></div>
@@ -2213,6 +2364,25 @@
            Menüpunkt; disabled-/title-Zustand wird zusammen mit #btnClearProgram gepflegt (siehe
            app.js). -->
       <button class="toolbar-btn" id="btnClearProgramIcon" type="button" disabled title="Geladenes CNC-Programm wieder entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm löschen')"><span class="dxf-delete-glyph">✕</span> CNC</button>
+      <!-- "CNC Liste neu"-Symbolleisten-Icon (Release 117, Sebastian: "Es gibt auch ein Symbol für
+           'CNC Liste neu' links von 'CNC Liste löschen'") - ruft denselben #fileInputList-Dialog
+           auf wie "Datei" -> "CNC-Programm" -> "Neue CNC-Programmliste" (siehe dort sowie
+           startNewProgramList() in app.js), bewusst UNMITTELBAR LINKS von "☰✕ Liste"
+           (#btnClearProgramListIcon) platziert, wie von Sebastian gefordert - "☰+" als Glyph-
+           Gegenstück zu dessen "☰✕", damit "neue Liste erstellen" und "Liste löschen" auf den
+           ersten Blick als zusammengehöriges, aber gegensätzliches Knopfpaar erkennbar sind.
+           Anders als die übrigen CNC-Icons NIE deaktiviert - das Erstellen einer neuen Liste ist
+           unabhängig vom aktuellen Lade-/Listenzustand jederzeit möglich (genau wie "📂 CNC"). -->
+      <button class="toolbar-btn" id="btnNewProgramListIcon" type="button" title="Neue CNC-Programmliste erstellen (Datei-Dialog mit Mehrfachauswahl, bis zu 10 Programme - dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Neue CNC-Programmliste')">☰+ Liste</button>
+      <!-- "CNC-Programmliste löschen"-Symbolleisten-Icon (Release 113, Sebastian, Punkt 6, siehe
+           Kommentar bei #btnClearProgramList im "Bearbeiten" → "CNC"-Menü weiter oben) - ruft
+           dieselbe, unveränderte clearProgramList()-Funktion auf, ein vierter, gleichwertiger
+           CNC-Auslöser in derselben Zeile "mit den CNC Programmen" wie Laden/Bearbeiten/Löschen
+           (Sebastian wörtlich: "in der Zeile mit den CNC Programmen"), nach demselben
+           Icon-Zeichen-Muster wie "✕ CNC" direkt davor, zusätzlich mit eigenem Listen-Glyph "☰",
+           damit die beiden "Löschen"-Icons (einzelnes Programm vs. gesamte Liste) klar
+           unterscheidbar bleiben. -->
+      <button class="toolbar-btn" id="btnClearProgramListIcon" type="button" disabled title="Alle im Hintergrund geladenen CNC-Programme aus der Programmliste entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programmliste löschen')"><span class="dxf-delete-glyph">☰✕</span> Liste</button>
     </div>
     <!-- Zeile 2 (70. Runde, Punkt 9, wörtlich): "Alle DXF-Icons" - die komplette, unverändert in
          sich zusammenhängende Gruppe der bestehenden DXF-Symbolleisten-Icons (Laden/Sichtbarkeit/
@@ -2362,6 +2532,39 @@
                ihrer Position), nur Reihenfolge im Markup + Glyphen wurden getauscht. -->
           <button class="prog-toggle-btn" id="btnProgCollapse" type="button" disabled title="Programm-Spalte verkleinern (auf 75%)"><span class="toggle-glyph">«</span></button>
           <button class="prog-toggle-btn" id="btnProgExpand" type="button" disabled title="Programm-Spalte ist bereits vollständig aufgeklappt (100%)"><span class="toggle-glyph">»</span></button>
+        </div>
+      </div>
+      <!-- "Mehrere Programme in Programmliste laden" (Release 113, Sebastian, wörtlich siehe
+           CNC_Simulation.md Abschnitt "Mehrere CNC-Programme im Hintergrund (Release 113)") - eigene
+           volle Zeile UNTER der Kopfzeile statt innerhalb von .sidebar-head selbst, damit die dort
+           bereits sehr eng bemessene Kopfzeile (siehe Kommentare bei .sidebar-head-right oben) nicht
+           noch enger wird. Nur sichtbar, sobald mindestens zwei Programme in der Liste sind (Punkt 3:
+           "Sobald mehrere Programme gewählt worden sind, gibt es ein Dropdownmenü bei
+           CNC-Programmcode") - bei nur einem (oder keinem) geladenen Programm verhält sich die App
+           optisch exakt wie vor dieser Runde. Sichtbarkeit/Inhalt werden ausschließlich von
+           renderProgramListUI() in app.js gesteuert. -->
+      <div class="program-list-bar" id="programListBar" hidden>
+        <div class="program-list-dropdown" id="programListDropdown">
+          <button class="program-list-trigger" id="programListTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Programmliste: aktives CNC-Programm für die 3D-Simulation auswählen">
+            <span class="program-list-trigger-label" id="programListTriggerLabel">–</span>
+            <span class="program-list-count" id="programListCount">0/10</span>
+            <span class="submenu-arrow">▾</span>
+          </button>
+          <!-- Eigene, schlanke Dropdown-Liste statt eines nativen <select> (Punkt 4: "In der
+               Dropdownliste können Programme gelöscht werden, ein rotes x hinter jedem
+               Programmnamen") - <option>-Elemente können keine eingebetteten Lösch-Knöpfe tragen,
+               daher dieselbe generische ".menu-item"-Optik wie die übrigen Menüs/Untermenüs der App
+               (siehe CSS weiter oben), hier in einer eigenen Absolut-Positionierung unter dem
+               Auslöser-Knopf. -->
+          <div class="program-list-menu" id="programListMenu" hidden>
+            <!-- "+Add" (Punkt 5: "Über ein '+ Add' (in der Listenauswahl ganz oben können wieder
+                 Programme zur Liste hinzugefügt werden") - öffnet denselben #fileInput-Dialog wie
+                 "Programm laden" (jetzt mit "multiple", siehe dort), neu hinzugekommene Dateien
+                 werden NICHT automatisch aktiviert (siehe addFilesToProgramList() in app.js), bis
+                 zu insgesamt 10 Programmen (Punkt 7, siehe #programListCount). -->
+            <button class="program-list-add" id="programListAddBtn" type="button">+ Add</button>
+            <div class="program-list-items" id="programListItems"></div>
+          </div>
         </div>
       </div>
       <div class="program-body">
@@ -3046,6 +3249,12 @@
   <button class="menu-item" id="ctxWholeProgram" type="button">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
   <button class="menu-item" id="ctxLoadProgram" type="button">Programm laden</button>
+  <!-- "CNC-Programmliste erstellen" (Release 117, Sebastian: "Im Rechtsklick Kontextmenü gibt es
+       auch einen Punkt für 'CNC-Programmliste erstellen'") - direkt unter "Programm laden",
+       ruft denselben #fileInputList-Dialog auf wie "Datei" -> "CNC-Programm" -> "Neue
+       CNC-Programmliste"/das Symbolleisten-Icon "☰+ Liste" (siehe dort sowie
+       startNewProgramList() in app.js). -->
+  <button class="menu-item" id="ctxNewProgramList" type="button">CNC-Programmliste erstellen</button>
   <button class="menu-item" id="ctxClearProgram" type="button">Programm löschen</button>
   <button class="menu-item" id="ctxToggleAllOps" type="button">Alle Arbeitsgänge ausblenden</button>
   <div class="context-menu-divider"></div>
@@ -5007,8 +5216,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 112;
-  const APP_RELEASE_TIMESTAMP = '20.09.2026, 12:16 Uhr';
+  const APP_RELEASE_NUMBER = 117;
+  const APP_RELEASE_TIMESTAMP = '21.09.2026, 10:24 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -6457,6 +6666,18 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const btnHomeView = el('btnHomeView');
   const btnClearProgram = el('btnClearProgram');
   const btnClearProgramIcon = el('btnClearProgramIcon'); // 70. Runde, Punkt 9, siehe template_top.html
+  // "Mehrere Programme in Programmliste laden" (Release 113) - siehe Kommentar bei
+  // #programListBar/#btnClearProgramList in template_top.html sowie programList/
+  // renderProgramListUI() weiter unten im Abschnitt "Datei laden" für den vollen Hintergrund.
+  const btnClearProgramList = el('btnClearProgramList');
+  const btnClearProgramListIcon = el('btnClearProgramListIcon');
+  const programListBar = el('programListBar');
+  const programListTrigger = el('programListTrigger');
+  const programListTriggerLabel = el('programListTriggerLabel');
+  const programListCount = el('programListCount');
+  const programListMenu = el('programListMenu');
+  const programListAddBtn = el('programListAddBtn');
+  const programListItems = el('programListItems');
   const resizerEl = el('resizer');
   const mainEl = document.querySelector('.main');
   // Maschinentyp-Dropdown (31. Runde) - siehe DEFAULT_MACHINETYPES_TEXT oben sowie den Abschnitt
@@ -7100,6 +7321,27 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     reader.readAsArrayBuffer(file);
   }
 
+  // Liest mehrere Dateien parallel ein (Release 113, "Mehrere Programme in Programmliste laden",
+  // Punkt 2: "Multiselect beim Laden im Explorerfenster") - dünner Wrapper um readFileAsText()
+  // oben, die selbst weiterhin nur eine einzelne Datei kennt/anfasst. Ruft onAllDone EINMAL auf,
+  // sobald ALLE Dateien fertig (erfolgreich oder mit Fehler) sind, mit einem Ergebnis-Array in
+  // genau derselben Reihenfolge wie "files" - {file, text} bei Erfolg, {file, text:null} bei
+  // Lesefehler (vom Aufrufer auszuwerten, siehe addFilesToProgramList()).
+  function readFilesAsText(files, onAllDone) {
+    if (!files.length) { onAllDone([]); return; }
+    const results = new Array(files.length);
+    let remaining = files.length;
+    files.forEach((file, i) => {
+      readFileAsText(file, (text) => {
+        results[i] = { file, text };
+        if (--remaining === 0) onAllDone(results);
+      }, () => {
+        results[i] = { file, text: null };
+        if (--remaining === 0) onAllDone(results);
+      });
+    });
+  }
+
   // ============================================================
   // Maschinentyp-Dropdown: Befüllung, Vorschlag, Duplikat-Warnung
   // ============================================================
@@ -7286,6 +7528,318 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   }
 
   // ============================================================
+  // "Mehrere Programme in Programmliste laden" (Release 113, Sebastian wörtlich):
+  // "Mehrere Programme in Programmliste laden:
+  //  1 3D Sim wird nur vom aktiven Programm angezeigt und berechnet -> Performancegründe
+  //  2 Bis zu 10 Programme können (nicht müssen) im Hintergrund geladen werden, Multiselect beim
+  //    Laden im Explorerfenster
+  //  3 Sobald mehrere Programme gewählt worden sind, gibt es ein Dropdownmenü bei
+  //    CNC-Programmcode mit der Liste der gewählten Programmdateien - mit Endung. Das Programm
+  //    was dort gewählt wird, wird in der 3D Sim berechnet. Vorher gibt es keine Berechnung des
+  //    3D, keinen CNC Code Austausch durch Maschinentyp
+  //  4 In der Dropdownliste können Programme gelöscht werden, ein rotes x hinter jedem
+  //    Programmnamen
+  //  5 Über ein "+ Add" (in der Listenauswahl ganz oben können wieder Programme zur Liste
+  //    hinzugefügt werden
+  //  6 Neuer Button mit Icon für "CNC Programmliste löschen" in der Zeile mit den CNC
+  //    Programmen, Menüeintrag unter "Bearbeiten" -> "CNC" -> "CNC-Programmliste löschen"
+  //  7 Anzeige in der CNC-Programmliste 5/10 bei 5 von 10 möglichen Programmen. 4/10 wenn 4
+  //    geladen worden sind usw."
+  //
+  // Architektur: "programList" ist eine reine Roh-Text-Ablage (KEINE geparsten/berechneten
+  // Arbeitsgänge/Segmente je Eintrag - siehe Punkt 1, "Performancegründe") - jeder Eintrag
+  // {id, filename, text} entspricht genau EINER hinzugefügten Programmquelle, roh und
+  // unverändert (keine Maschinentyp-Anwendung, kein Parsen). Nur das jeweils AKTIVE Programm
+  // (activeProgramId) läuft tatsächlich durch loadText()/displayCurrentProgram() - exakt wie vor
+  // Release 113 bei einem einzelnen geladenen Programm. Ein neu hinzugefügter Eintrag wird NUR
+  // dann automatisch aktiv, wenn er das alleinige Ergebnis eines Ladevorgangs ist, bei dem die
+  // Liste vorher leer war - jede andere Ergänzung (Mehrfachauswahl, "+Add" bei bereits
+  // vorhandenen Einträgen) landet unberechnet im Hintergrund, bis der Anwender sie explizit in
+  // der Dropdownliste auswählt (Punkt 3: "Vorher gibt es keine Berechnung des 3D, keinen CNC Code
+  // Austausch durch Maschinentyp"). Die Liste selbst bleibt von einem einfachen "CNC-Programm
+  // löschen" (btnClearProgram, entfernt nur die AKTIVE Anzeige, siehe clearProgram()) bewusst
+  // UNBERÜHRT - Einträge verschwinden nur über das rote "x" je Zeile (Punkt 4) oder komplett über
+  // "CNC-Programmliste löschen" (Punkt 6).
+  //
+  // Entkopplung der normalen Ladewege von der Programmliste (Release 117, Sebastian wörtlich):
+  // "Anderer Ansatz: Programm laden wird wieder nur auf 1 limitiert (wie zuvor), an allen Stellen
+  // wo man ein CNC Programm laden kann. Dafür neuer Menüpunkt unter 'Datei' -> Neue
+  // CNC-Programmliste. Dort können dann bis zu 10 Programme geladen werden. Es gibt auch ein
+  // Symbol für 'CNC Liste neu' links von 'CNC Liste löschen'. Im Rechtsklick Kontextmenü gibt es
+  // auch einen Punkt für 'CNC-Programmliste erstellen'." Release 113 hatte ALLE vorhandenen
+  // Ladewege (Datei-Dialog/Toolbar-Icon/Kontextmenü/Drag&Drop/Einfügen/Host-Hook) über die
+  // Programmliste laufen lassen und dabei Mehrfachauswahl überall zugelassen; das erwies sich als
+  // zu unspezifisch. Seit Release 117 gilt eine klare Trennung:
+  //  - Die "klassischen" Ladewege - "Datei" -> "CNC-Programm" -> "Programm laden" (#btnLoadFile),
+  //    das Symbolleisten-Icon "📂 CNC" (#btnLoadFileIcon), "Programm laden" im Rechtsklick-
+  //    Kontextmenü (#ctxLoadProgram), Drag & Drop einer einzelnen Datei, "CNC-Code einfügen"
+  //    sowie der Host-Hook - akzeptieren wieder wie vor Release 113 IMMER nur genau EIN Programm
+  //    (#fileInput trägt seither wieder KEIN "multiple") und laufen über die neue Funktion
+  //    loadTextClassic() weiter unten, die direkt loadText() aufruft - komplett UNTER UMGEHUNG
+  //    der Programmliste. War zu diesem Zeitpunkt ein Eintrag der Programmliste als "aktiv"
+  //    markiert, wird diese Markierung dabei zurückgesetzt (die Programmliste selbst bleibt
+  //    unangetastet im Hintergrund bestehen), damit die Dropdownliste keinen inzwischen nicht
+  //    mehr angezeigten Eintrag fälschlich als aktiv hervorhebt.
+  //  - Die Mehrfachauswahl (bis zu PROGRAM_LIST_MAX Programme) ist jetzt AUSSCHLIESSLICH über die
+  //    drei neuen, gleichwertigen Auslöser "Neue CNC-Programmliste" erreichbar: Menüpunkt unter
+  //    "Datei" -> "CNC-Programm" (#btnNewProgramList), Symbolleisten-Icon "CNC Liste neu"
+  //    (#btnNewProgramListIcon, links von "CNC Liste löschen") sowie "CNC-Programmliste
+  //    erstellen" im Rechtsklick-Kontextmenü (#ctxNewProgramList) - alle drei öffnen denselben,
+  //    EIGENEN Datei-Dialog #fileInputList (mit "multiple") und rufen bei tatsächlich getroffener
+  //    Auswahl startNewProgramList() weiter unten auf: eine evtl. bereits bestehende
+  //    Programmliste (samt aktiver Anzeige) wird dabei komplett durch eine frische, aus der
+  //    aktuellen Auswahl aufgebaute Liste ersetzt ("Neue" Liste, kein Anhängen an eine
+  //    bestehende) - erst NACH einer tatsächlichen Auswahl, ein Abbruch des Datei-Dialogs lässt
+  //    eine vorhandene Liste unangetastet.
+  //  - "+Add" (#programListAddBtn) innerhalb der Dropdownliste selbst bleibt dagegen weiterhin
+  //    eine Operation AN der Programmliste - nutzt denselben, jetzt wieder einfachauswahl-
+  //    beschränkten #fileInput wie die klassischen Ladewege, läuft intern aber weiterhin über
+  //    addFilesToProgramList() (siehe fileInputIntent weiter unten für die Unterscheidung, welcher
+  //    der beiden Codepfade nach einer #fileInput-Auswahl greifen soll).
+  // ============================================================
+  let programList = []; // [{id, filename, text}]
+  let activeProgramId = null;
+  let programListIdCounter = 0;
+  const PROGRAM_LIST_MAX = 10;
+  // Release 116, Sebastian: "Sobald eine List aktiv(iert) worden ist und nur noch ein Programm
+  // übrig ist, soll das Dropdownmenü noch verfügbar sein" - einmal aktiviert (Liste hat mindestens
+  // zwei Einträge erreicht), bleibt die Dropdownliste seither auch bei nur noch einem einzigen
+  // verbliebenen Eintrag sichtbar/bedienbar (statt wie zuvor unterhalb von zwei Einträgen wieder
+  // zu verschwinden) - siehe renderProgramListUI() weiter unten. Wird erst wieder zurückgesetzt,
+  // sobald die Liste komplett leer ist (0 Einträge): ein danach neu geladenes EINZELNES Programm
+  // verhält sich dann wieder exakt wie der unveränderte "normale" Einzeldatei-Ladefall (kein
+  // Dropdown, siehe Punkt 3).
+  let programListActivated = false;
+  // Release 117: welcher der beiden Codepfade nach der nächsten #fileInput-Auswahl greifen soll -
+  // 'load' (Standard, klassischer Einzel-Ladepfad über loadTextClassic(), siehe oben) oder 'add'
+  // (Programmlisten-Operation über addFilesToProgramList(), nur gesetzt unmittelbar vor einem
+  // Klick auf "+Add" - siehe programListAddBtn weiter unten). Wird im change-Handler von
+  // #fileInput nach jeder Auswertung sofort wieder auf 'load' zurückgesetzt.
+  let fileInputIntent = 'load';
+
+  // Zentrale Aufnahme neu ausgewählter/gezogener Dateien (Datei-Dialog inkl. Mehrfachauswahl,
+  // "+Add", Drag&Drop) in die Programmliste - liest sie parallel ein (readFilesAsText() oben) und
+  // aktiviert das Ergebnis NUR im beschriebenen Einzelfall (siehe Kommentar oben). "files" ist ein
+  // normales Array von File-Objekten (aus einer FileList per Array.from() gewonnen).
+  function addFilesToProgramList(files) {
+    if (!files || !files.length) return;
+    const capacity = PROGRAM_LIST_MAX - programList.length;
+    if (capacity <= 0) {
+      alert('Die CNC-Programmliste ist bereits voll (maximal ' + PROGRAM_LIST_MAX + ' Programme). Bitte zuerst ein Programm aus der Liste entfernen (rotes "x").');
+      return;
+    }
+    const toLoad = files.slice(0, capacity);
+    if (files.length > toLoad.length) {
+      alert('Es können maximal ' + PROGRAM_LIST_MAX + ' Programme gleichzeitig in der Programmliste geladen werden. Nur die ersten ' + toLoad.length + ' der ' + files.length + ' ausgewählten Dateien wurden hinzugefügt.');
+    }
+    readFilesAsText(toLoad, (results) => {
+      const wasEmpty = programList.length === 0;
+      const addedEntries = [];
+      results.forEach(r => {
+        if (r.text == null) { alert('Datei konnte nicht gelesen werden: ' + r.file.name); return; }
+        const entry = { id: 'p' + (++programListIdCounter), filename: r.file.name, text: r.text };
+        programList.push(entry);
+        addedEntries.push(entry);
+      });
+      if (!addedEntries.length) return;
+      if (wasEmpty && addedEntries.length === 1) {
+        activateProgramFromList(addedEntries[0].id);
+      } else {
+        renderProgramListUI();
+      }
+    });
+  }
+
+  // Klassischer Einzel-Ladepfad (Release 117, wiederhergestellt nach Release 113 - siehe
+  // Architektur-Kommentar oben) - Ersatz für den früheren direkten loadText()-Aufruf an ALLEN
+  // "normalen" Ladestellen (Datei-Dialog/Toolbar-Icon/Kontextmenü/Drag&Drop/Einfügen/Host-Hook):
+  // ruft loadText() unverändert auf, setzt aber zusätzlich eine evtl. noch als "aktiv" markierte
+  // Programmliste-Zeile zurück, damit die Dropdownliste (falls gerade sichtbar) keinen inzwischen
+  // nicht mehr angezeigten Eintrag fälschlich hervorhebt. Die Programmliste selbst (programList)
+  // bleibt dabei komplett unangetastet im Hintergrund bestehen - nur activeProgramId wird
+  // zurückgesetzt.
+  function loadTextClassic(text, filename) {
+    loadText(text, filename);
+    activeProgramId = null;
+    renderProgramListUI();
+  }
+
+  // "Neue CNC-Programmliste" (Release 117, Sebastian: siehe Architektur-Kommentar oben, Zitat
+  // dort) - einziger Weg, wie ab dieser Runde eine Mehrfachauswahl an Programmen in die
+  // Programmliste gelangt. Ersetzt eine evtl. bereits bestehende Programmliste (samt aktiver
+  // Anzeige) komplett durch eine frische, aus der aktuellen Auswahl aufgebaute Liste - dieselbe
+  // "leeren + neu befüllen"-Logik wie clearProgramList() gefolgt von addFilesToProgramList(), nur
+  // in einem Schritt. Wird ERST nach einer tatsächlich getroffenen Dateiauswahl aufgerufen (siehe
+  // #fileInputList weiter unten) - ein abgebrochener Datei-Dialog darf eine vorhandene Liste
+  // nicht zerstören.
+  function startNewProgramList(files) {
+    if (rawProgramText != null) clearProgram();
+    programList = [];
+    activeProgramId = null;
+    addFilesToProgramList(files);
+  }
+
+  // Macht den Eintrag mit der übergebenen id zum aktiven Programm - einziger Weg, wie ein Eintrag
+  // der Programmliste tatsächlich berechnet wird (Punkt 1/3): ruft dieselbe, unveränderte
+  // loadText() wie jeder reguläre Einzel-Ladevorgang auf.
+  function activateProgramFromList(id) {
+    const entry = programList.find(p => p.id === id);
+    if (!entry) return;
+    activeProgramId = id;
+    loadText(entry.text, entry.filename);
+    renderProgramListUI();
+  }
+
+  // Rotes "x" je Zeile (Punkt 4) - entfernt genau diesen einen Eintrag aus der Liste. War der
+  // Eintrag gerade aktiv, wird zusätzlich die Anzeige geleert (dieselbe clearProgram()-Logik wie
+  // bei "CNC-Programm löschen"), damit nicht ein bereits aus der Liste entferntes Programm
+  // weiterhin in der 3D-Simulation stehen bleibt.
+  //
+  // Bugfix 1 (nach Release 113, Sebastian: "Wenn nur noch zwei Programme in der Liste sind und ich
+  // das vorletzte lösche, verschwindet auch das letzte. Aber eins darf ja noch drin bleiben"):
+  // War das gelöschte Programm aktiv UND bleibt danach GENAU EIN Programm in der Liste übrig, wird
+  // dieses eine verbleibende Programm automatisch aktiviert, statt (wie zuvor) nur clearProgram()
+  // aufzurufen.
+  //
+  // Bugfix 2 (Release 114, Sebastian: "Wenn noch kein Programm aktiv geladen worden ist, nur noch
+  // zwei Programme in der Liste sind, aber das vorletzte gelöscht sind, verschwindet die Liste.
+  // Das Programm ist zwar noch da, aber nicht erreichbar."): Derselbe Effekt tritt auch auf, wenn
+  // GAR KEIN Programm aktiv war (activeProgramId bereits null, z. B. nach einer Mehrfachauswahl,
+  // bei der der Anwender noch keins der beiden gewählt hat, siehe Punkt 3) und eines der beiden
+  // Hintergrund-Einträge gelöscht wird - "wasActive" ist in diesem Fall zwar false, trotzdem bleibt
+  // danach dasselbe eine, unaktivierte Programm ohne Dropdown zurück.
+  //
+  // Beide Fälle laufen deshalb über dieselbe, verallgemeinerte Regel: Bleibt nach dem Entfernen
+  // GENAU EIN Programm in der Liste übrig UND ist (zu diesem Zeitpunkt) KEIN Programm aktiv, wird
+  // dieses eine verbleibende Programm automatisch aktiviert. Ohne diese Sonderbehandlung landete
+  // das letzte verbleibende Programm in einem unsichtbaren/unerreichbaren Zwischenzustand: es blieb
+  // zwar in programList erhalten, aber die Dropdownliste selbst verschwindet ja bereits unterhalb
+  // von zwei Einträgen (Punkt 3, "Dropdown erst ab zwei Programmen") - ohne sichtbares Dropdown gab
+  // es dann keinen Weg mehr, dieses eine übrig gebliebene Programm auszuwählen, es "verschwand"
+  // faktisch komplett. Bleiben nach dem Löschen dagegen ZWEI ODER MEHR Programme übrig oder ist
+  // weiterhin ein ANDERES Programm aktiv, gilt weiterhin die normale Regel (Anzeige wird ggf.
+  // geleert, Auswahl bleibt bewusst dem Anwender über die weiterhin sichtbare Dropdownliste
+  // überlassen - hier ist die Auswahl unter mehreren verbliebenen Programmen ja nicht eindeutig).
+  function removeProgramFromList(id) {
+    const idx = programList.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const wasActive = activeProgramId === id;
+    programList.splice(idx, 1);
+    if (wasActive) activeProgramId = null;
+    if (programList.length === 1 && activeProgramId == null) {
+      activateProgramFromList(programList[0].id); // ruft renderProgramListUI() bereits selbst auf
+      return;
+    }
+    if (wasActive) clearProgram();
+    renderProgramListUI();
+  }
+
+  // "CNC-Programmliste löschen" (Punkt 6, #btnClearProgramList/#btnClearProgramListIcon) - leert
+  // die GESAMTE Liste inklusive eines evtl. aktiven Programms, im Unterschied zum unveränderten
+  // "CNC-Programm löschen" (btnClearProgram), das nur die aktive Anzeige leert und die übrigen
+  // Hintergrund-Einträge bewusst unangetastet lässt (siehe Architektur-Kommentar oben).
+  function clearProgramList() {
+    if (!programList.length) return;
+    if (rawProgramText != null) clearProgram();
+    programList = [];
+    activeProgramId = null;
+    renderProgramListUI();
+  }
+
+  // Öffnen/Schließen der Dropdownliste selbst - bewusst eine eigene, einfache Klick-außerhalb-/
+  // Escape-Logik statt der ".paste-panel"-Technik (Release 112): diese Liste ist ein reines
+  // Auswahlmenü ohne Texteingabe, das - wie die übrigen Menüs der App (#menuEdit/#menuView usw.) -
+  // beim Klicken daneben schließen SOLL, betrifft also nicht die in Release 112 entfernte
+  // Backdrop-Klick-Logik der 16 Editier-Dialoge.
+  function openProgramListMenu() {
+    programListMenu.hidden = false;
+    programListTrigger.setAttribute('aria-expanded', 'true');
+  }
+  function closeProgramListMenu() {
+    programListMenu.hidden = true;
+    programListTrigger.setAttribute('aria-expanded', 'false');
+  }
+
+  // Baut Sichtbarkeit/Beschriftung/Zähler/Zeilen der Programmliste komplett neu auf - einzige
+  // Stelle, die den DOM-Zustand aus programList/activeProgramId ableitet (analog zu
+  // renderDxfLayerList() für die DXF-Layer-Liste). Wird nach JEDER Änderung von programList/
+  // activeProgramId aufgerufen (siehe alle Funktionen oben sowie clearProgram()/loadText()-Umfeld).
+  function renderProgramListUI() {
+    // Punkt 3: Dropdown erst sichtbar, sobald mindestens zwei Programme in der Liste sind - bei
+    // nur einem (oder keinem) verhält sich die App optisch exakt wie vor dieser Runde.
+    // Release 116: Ist die Liste einmal "aktiviert" (hat sie schon mindestens zwei Einträge
+    // erreicht), bleibt die Dropdownliste seither auch bei nur noch einem einzigen verbliebenen
+    // Eintrag sichtbar/bedienbar (siehe programListActivated weiter oben) - erst eine komplett
+    // GELEERTE Liste (0 Einträge) setzt den Zustand wieder zurück auf "unaktiviert".
+    if (programList.length >= 2) programListActivated = true;
+    if (programList.length === 0) programListActivated = false;
+    const showList = programListActivated;
+    programListBar.hidden = !showList;
+    if (!showList) closeProgramListMenu();
+    const activeEntry = programList.find(p => p.id === activeProgramId);
+    programListTriggerLabel.textContent = activeEntry ? activeEntry.filename : '(kein Programm aktiv - bitte auswählen)';
+    // Punkt 7: "5/10" bzw. "4/10" usw.
+    programListCount.textContent = programList.length + '/' + PROGRAM_LIST_MAX;
+    const full = programList.length >= PROGRAM_LIST_MAX;
+    programListAddBtn.disabled = full;
+    programListAddBtn.title = full
+      ? ('Maximal ' + PROGRAM_LIST_MAX + ' Programme erreicht - bitte zuerst ein Programm aus der Liste entfernen')
+      : 'Weitere(s) CNC-Programm(e) zur Liste hinzufügen';
+    programListItems.innerHTML = '';
+    programList.forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'program-list-item' + (entry.id === activeProgramId ? ' active' : '');
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'program-list-item-name';
+      nameBtn.textContent = entry.filename;
+      nameBtn.title = 'Als aktives Programm in der 3D-Simulation berechnen/anzeigen: ' + entry.filename;
+      nameBtn.addEventListener('click', () => {
+        if (entry.id !== activeProgramId) activateProgramFromList(entry.id);
+        closeProgramListMenu();
+      });
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'program-list-item-del';
+      delBtn.title = 'Aus der Programmliste entfernen: ' + entry.filename;
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeProgramFromList(entry.id);
+      });
+      row.appendChild(nameBtn);
+      row.appendChild(delBtn);
+      programListItems.appendChild(row);
+    });
+    // "CNC-Programmliste löschen" (Punkt 6) - nur aktiv, solange überhaupt mindestens ein
+    // Programm in der Liste ist (auch dann, wenn die Dropdownliste selbst wegen showList===false
+    // noch gar nicht sichtbar ist, z. B. bei genau einem geladenen Programm).
+    btnClearProgramList.disabled = programList.length === 0;
+    btnClearProgramListIcon.disabled = programList.length === 0;
+  }
+
+  programListTrigger.addEventListener('click', () => {
+    if (programListMenu.hidden) openProgramListMenu(); else closeProgramListMenu();
+  });
+  programListAddBtn.addEventListener('click', () => {
+    if (programListAddBtn.disabled) return;
+    // "+Add" bleibt (im Unterschied zu den klassischen Ladewegen, siehe loadTextClassic() oben)
+    // eine Operation AN der Programmliste - markiert die nächste #fileInput-Auswahl deshalb
+    // ausdrücklich als 'add', damit deren change-Handler sie über addFilesToProgramList() statt
+    // über loadTextClassic() verarbeitet (siehe fileInputIntent weiter oben).
+    fileInputIntent = 'add';
+    el('fileInput').click();
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#programListDropdown')) closeProgramListMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !programListMenu.hidden) closeProgramListMenu();
+  });
+  btnClearProgramList.addEventListener('click', clearProgramList);
+  btnClearProgramListIcon.addEventListener('click', clearProgramList);
+
+  // ============================================================
   // Host-Hook für eine optionale native Windows-Hülle (WebView2/C#, "CncSimHost", 54. Runde)
   // ============================================================
   // Rein additiv, wirkt sich auf die normale Browser-Nutzung NICHT aus: Ein künftiger, separater
@@ -7304,7 +7858,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     var bytes = new Uint8Array(binary.length);
     for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     var text = window.CNCEncoding.decodeBuffer(bytes.buffer);
-    loadText(text, filename);
+    // Release 117 (zurückgerollt von Release 113, siehe Architektur-Kommentar bei "programList"
+    // weiter oben): läuft wieder über den klassischen Einzel-Ladepfad loadTextClassic() statt über
+    // die Programmliste - Mehrfachauswahl ist seit Release 117 ausschließlich über "Neue
+    // CNC-Programmliste" erreichbar.
+    loadTextClassic(text, filename);
   };
 
   // "CNC-Programm löschen" (Benutzer, 17. Runde): entfernt nur das geladene CNC-Programm wieder,
@@ -7368,6 +7926,12 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // statt die bis hierhin geltende, jetzt gegenstandslose Programm-Breite stehen zu lassen.
     applyDxfLayerColumnWidth();
     updateSidebarHeader();
+    // Release 113: "CNC-Programm löschen" entfernt bewusst NUR die aktive Anzeige - ein evtl. im
+    // Hintergrund geladenes programList bleibt unangetastet (siehe Architektur-Kommentar bei
+    // programList weiter oben), nur activeProgramId selbst wird zurückgesetzt, damit kein bereits
+    // geleerter Eintrag fälschlich noch als "aktiv" in der Dropdownliste markiert bleibt.
+    activeProgramId = null;
+    renderProgramListUI();
   }
 
   // ============================================================
@@ -10936,6 +11500,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     codeJump: el('ctxCodeJump'),
     wholeProgram: el('ctxWholeProgram'),
     loadProgram: el('ctxLoadProgram'),
+    newProgramList: el('ctxNewProgramList'), // Release 117, siehe Architektur-Kommentar bei "programList"
     clearProgram: el('ctxClearProgram'),
     toggleAllOps: el('ctxToggleAllOps'),
     loadDxf: el('ctxLoadDxf'),
@@ -11015,6 +11580,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   ctxItems.codeJump.addEventListener('click', toggleCodeJump);
   ctxItems.wholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
   ctxItems.loadProgram.addEventListener('click', () => el('fileInput').click());
+  // "CNC-Programmliste erstellen" (Release 117) - ruft denselben #fileInputList-Dialog auf wie
+  // "Datei" -> "CNC-Programm" -> "Neue CNC-Programmliste"/das Symbolleisten-Icon "CNC Liste neu".
+  ctxItems.newProgramList.addEventListener('click', () => el('fileInputList').click());
   ctxItems.clearProgram.addEventListener('click', clearProgram);
   ctxItems.toggleAllOps.addEventListener('click', toggleAllOps);
   ctxItems.loadDxf.addEventListener('click', () => el('dxfFileInput').click());
@@ -11109,11 +11677,39 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // "CNC"-Symbolleisten-Icon (67. Runde) - zweiter, gleichwertiger Auslöser derselben Aktion wie
   // #btnLoadFile oben, siehe Kommentar bei #btnLoadFileIcon in template_top.html.
   el('btnLoadFileIcon').addEventListener('click', () => el('fileInput').click());
+  // Release 117 (siehe Architektur-Kommentar bei "programList" weiter oben): #fileInput akzeptiert
+  // wieder wie vor Release 113 nur genau EINE Datei (KEIN "multiple" mehr, siehe
+  // template_top.html) und wird von zwei unterschiedlichen Stellen ausgelöst - fileInputIntent
+  // entscheidet, welcher Codepfad nach der Auswahl greift: 'load' (Standard, die klassischen
+  // Ladewege oben/Kontextmenü/Drag&Drop) ruft loadTextClassic() auf (komplett unter Umgehung der
+  // Programmliste), 'add' (nur gesetzt unmittelbar vor einem Klick auf "+Add", siehe
+  // programListAddBtn weiter oben) läuft weiterhin über addFilesToProgramList(). Wird nach jeder
+  // Auswertung sofort wieder auf 'load' zurückgesetzt.
   el('fileInput').addEventListener('change', (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    readFileAsText(f, (text) => loadText(text, f.name));
+    const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = '';
+    const intent = fileInputIntent;
+    fileInputIntent = 'load';
+    if (!files.length) return;
+    if (intent === 'add') {
+      addFilesToProgramList(files);
+    } else {
+      readFileAsText(files[0], (text) => loadTextClassic(text, files[0].name));
+    }
+  });
+
+  // "Neue CNC-Programmliste" (Release 117, siehe Architektur-Kommentar bei "programList" weiter
+  // oben) - eigener, dedizierter Mehrfachauswahl-Dialog (#fileInputList, "multiple"), komplett
+  // getrennt vom nun wieder einfachauswahl-beschränkten #fileInput. Drei gleichwertige Auslöser:
+  // Menüpunkt unter "Datei" -> "CNC-Programm" (#btnNewProgramList), Symbolleisten-Icon
+  // (#btnNewProgramListIcon) sowie Rechtsklick-Kontextmenü (ctxItems.newProgramList, siehe dort).
+  el('btnNewProgramList').addEventListener('click', () => el('fileInputList').click());
+  el('btnNewProgramListIcon').addEventListener('click', () => el('fileInputList').click());
+  el('fileInputList').addEventListener('change', (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = '';
+    if (!files.length) return;
+    startNewProgramList(files);
   });
 
   btnClearProgram.addEventListener('click', clearProgram);
@@ -12383,7 +12979,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   el('btnPasteCancel').addEventListener('click', () => pastePanel.classList.remove('open'));
   el('btnPasteApply').addEventListener('click', () => {
     const txt = pasteArea.value;
-    if (txt.trim()) loadText(txt, 'Eingefügter Code');
+    // Release 117 (zurückgerollt von Release 113, siehe Architektur-Kommentar bei "programList"
+    // weiter oben): läuft wieder über den klassischen Einzel-Ladepfad loadTextClassic() statt über
+    // die Programmliste.
+    if (txt.trim()) loadTextClassic(txt, 'Eingefügter Code');
     pastePanel.classList.remove('open');
   });
   el('btnPasteJump').addEventListener('click', () => {
@@ -12417,11 +13016,16 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // gezogen werden können") - dieselbe Dropzone wie fürs CNC-Programm, unterschieden allein
     // anhand der Dateiendung (".dxf", case-insensitiv): eine abgelegte DXF-Datei geht an
     // loadDxfText() statt loadText() und lässt das evtl. geladene CNC-Programm unangetastet
-    // (siehe 9.8) - alles andere wird unverändert wie bisher als CNC-Programm behandelt.
+    // (siehe 9.8) - alles andere wird als CNC-Programm behandelt. Release 117 (zurückgerollt von
+    // Release 113, siehe Architektur-Kommentar bei "programList" weiter oben): wieder wie vor
+    // Release 113 nur EINE abgelegte Datei je Ablage (dt.files[0]) - eine per Drag&Drop abgelegte
+    // CNC-Datei läuft über den klassischen Einzel-Ladepfad loadTextClassic() statt über die
+    // Programmliste; Mehrfachauswahl ist seit Release 117 ausschließlich über "Neue
+    // CNC-Programmliste" erreichbar.
     if (/\.dxf$/i.test(f.name)) {
       readFileAsText(f, (text) => loadDxfText(text, f.name), () => alert('DXF-Datei konnte nicht gelesen werden: ' + f.name));
     } else {
-      readFileAsText(f, (text) => loadText(text, f.name), () => alert('Datei konnte nicht gelesen werden: ' + f.name));
+      readFileAsText(f, (text) => loadTextClassic(text, f.name), () => alert('Datei konnte nicht gelesen werden: ' + f.name));
     }
   }, false);
 
