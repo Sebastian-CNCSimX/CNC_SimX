@@ -3240,7 +3240,14 @@
      'Programm laden'") - "Codesprung" ruft dieselbe toggleCodeJump()-Funktion auf wie der neue
      #btnCodeJump neben "Sprung in Zeile" (siehe dort); "Gesamtes Programm" dieselbe
      setScope({type:'all'})-Aktion wie #btnWholeProgram in der Symbolleiste. Beide bilden eine
-     eigene, vierte Gruppe zwischen den Messfunktionen und "Programm laden". -->
+     eigene, vierte Gruppe zwischen den Messfunktionen und "Programm laden".
+
+     Dritte Gruppe umsortiert/erweitert (Release 118, Sebastian: "im Rechtsklick Kontextmenü soll
+     auch 'Programmliste löschen' auftauchen. Reihenfolge: Programm laden / Programm löschen /
+     Programmliste erstellen / Programmliste löschen / Alle Arbeitsgänge ausblenden") - lautet
+     seither "Programm laden" / "Programm löschen" / "Programmliste erstellen" (Release 117,
+     Beschriftung seit 118 ohne "CNC-"-Präfix) / "Programmliste löschen" (*neu ab Release 118*) /
+     "Alle Arbeitsgänge ausblenden", siehe Kommentar direkt beim jeweiligen Button unten. -->
 <div class="context-menu" id="appContextMenu" hidden>
   <button class="menu-item" id="ctxMeasureLength" type="button">Längenmessung</button>
   <button class="menu-item" id="ctxMeasureAngle" type="button">Winkelmessung</button>
@@ -3249,13 +3256,23 @@
   <button class="menu-item" id="ctxWholeProgram" type="button">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
   <button class="menu-item" id="ctxLoadProgram" type="button">Programm laden</button>
-  <!-- "CNC-Programmliste erstellen" (Release 117, Sebastian: "Im Rechtsklick Kontextmenü gibt es
-       auch einen Punkt für 'CNC-Programmliste erstellen'") - direkt unter "Programm laden",
-       ruft denselben #fileInputList-Dialog auf wie "Datei" -> "CNC-Programm" -> "Neue
-       CNC-Programmliste"/das Symbolleisten-Icon "☰+ Liste" (siehe dort sowie
-       startNewProgramList() in app.js). -->
-  <button class="menu-item" id="ctxNewProgramList" type="button">CNC-Programmliste erstellen</button>
   <button class="menu-item" id="ctxClearProgram" type="button">Programm löschen</button>
+  <!-- "Programmliste erstellen"/"Programmliste löschen" (Release 117: ursprünglich nur
+       "CNC-Programmliste erstellen" direkt unter "Programm laden", siehe Sebastian-Zitat im
+       Architektur-Kommentar bei "programList" in app.js; Release 118, Sebastian: "im Rechtsklick
+       Kontextmenü soll auch 'Programmliste löschen' auftauchen. Reihenfolge: Programm laden /
+       Programm löschen / Programmliste erstellen / Programmliste löschen / Alle Arbeitsgänge
+       ausblenden" sowie "CNC-Programmliste erstellen in 'Programmliste erstellen' umbenennen im
+       Rechtsklickmenü" und "'CNC Programmliste löschen' heißt direkt 'Programmliste löschen'") -
+       beide ohne "CNC-"-Präfix, wie die übrigen kurzen Kontextmenü-Beschriftungen
+       ("Programm laden"/"Programm löschen"/"DXF laden" usw.). "Programmliste erstellen" ruft
+       denselben #fileInputList-Dialog auf wie "Datei" -> "CNC-Programm" -> "Neue
+       CNC-Programmliste"/das Symbolleisten-Icon "☰+ Liste" (siehe dort sowie
+       startNewProgramList() in app.js); "Programmliste löschen" ruft dieselbe clearProgramList()
+       auf wie der Menüpunkt "CNC-Programmliste löschen"/das Symbolleisten-Icon "☰✕ Liste" und ist
+       ebenso deaktiviert, solange die Programmliste leer ist. -->
+  <button class="menu-item" id="ctxNewProgramList" type="button">Programmliste erstellen</button>
+  <button class="menu-item" id="ctxClearProgramList" type="button">Programmliste löschen</button>
   <button class="menu-item" id="ctxToggleAllOps" type="button">Alle Arbeitsgänge ausblenden</button>
   <div class="context-menu-divider"></div>
   <button class="menu-item" id="ctxLoadDxf" type="button">DXF laden</button>
@@ -5216,8 +5233,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 117;
-  const APP_RELEASE_TIMESTAMP = '21.09.2026, 10:24 Uhr';
+  const APP_RELEASE_NUMBER = 118;
+  const APP_RELEASE_TIMESTAMP = '21.09.2026, 15:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11502,6 +11519,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     loadProgram: el('ctxLoadProgram'),
     newProgramList: el('ctxNewProgramList'), // Release 117, siehe Architektur-Kommentar bei "programList"
     clearProgram: el('ctxClearProgram'),
+    clearProgramList: el('ctxClearProgramList'), // Release 118, siehe Architektur-Kommentar bei "programList"
     toggleAllOps: el('ctxToggleAllOps'),
     loadDxf: el('ctxLoadDxf'),
     clearDxf: el('ctxClearDxf'),
@@ -11524,6 +11542,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   function updateContextMenuState() {
     const opSections = current ? current.sections.filter(s => s.type === 'arbeitsgang') : [];
     ctxItems.clearProgram.disabled = btnClearProgram.disabled;
+    ctxItems.clearProgramList.disabled = btnClearProgramListIcon.disabled; // Release 118
     ctxItems.toggleAllOps.disabled = !opSections.length;
     ctxItems.toggleAllOps.textContent = hiddenOpIndexes.size > 0 ? 'Alle Arbeitsgänge anzeigen' : 'Alle Arbeitsgänge ausblenden';
 
@@ -11584,6 +11603,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // "Datei" -> "CNC-Programm" -> "Neue CNC-Programmliste"/das Symbolleisten-Icon "CNC Liste neu".
   ctxItems.newProgramList.addEventListener('click', () => el('fileInputList').click());
   ctxItems.clearProgram.addEventListener('click', clearProgram);
+  ctxItems.clearProgramList.addEventListener('click', clearProgramList); // Release 118
   ctxItems.toggleAllOps.addEventListener('click', toggleAllOps);
   ctxItems.loadDxf.addEventListener('click', () => el('dxfFileInput').click());
   ctxItems.clearDxf.addEventListener('click', clearDxf);
