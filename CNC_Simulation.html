@@ -1,3 +1,27 @@
+<meta charset="UTF-8"><!-- WICHTIG: Muss das allererste Zeichen der gesamten Datei sein (keinerlei
+     Kommentar/Whitespace davor), damit es garantiert innerhalb der ersten 1024 Bytes liegt - genau
+     das verlangt die HTML-Spezifikation, damit Browser die Kodierung schon vor dem eigentlichen
+     Parsen zuverlässig erkennen. Ein Kommentar oder auch nur eine Leerzeile davor würde bei diesem
+     ohnehin sehr kommentarreichen Dokument sonst leicht diese Grenze überschreiten und die Wirkung
+     dieses Tags zunichtemachen (genau das ist beim ersten Versuch dieser Runde tatsächlich passiert
+     - siehe ausführliche Begründung direkt beim <title>-Tag weiter unten). -->
+<!-- Zeichenkodierung explizit festgelegt (Release 119, Sebastian meldete auf der Cloudflare-gehosteten
+     Kopie: "ðŸ“‚ CNC âœŽ CNC âœ• CNC â˜°+ Liste â˜°âœ• Liste" statt "📂 CNC ✎ CNC ✕ CNC ☰+ Liste ☰✕ Liste" -
+     klassisches Mojibake-Muster (UTF-8-Bytes als Windows-1252/ISO-8859-1 fehlinterpretiert). Ursache:
+     Diese Datei hatte noch NIE ein <meta charset>-Tag (und auch kein <!DOCTYPE html>/<html>/<head> -
+     ein bewusst gewachsenes "Tag Soup"-Dokument, siehe unten). Beim Öffnen als file:// bzw. über die
+     WebView2-Hülle (Chromium) wurde die Kodierung bisher zuverlässig richtig geraten (UTF-8), sobald
+     die Datei aber über einen echten HTTP-Server ohne Charset-Angabe im Content-Type-Header
+     ausgeliefert wird (z. B. ein statisches Hosting wie Cloudflare Pages/Workers), rät der Browser
+     die Kodierung selbst und kann danebenliegen - genau das beobachtete Mojibake. Das
+     `<meta charset="UTF-8">` selbst steht deshalb jetzt ganz oben ohne jeden vorangehenden
+     Kommentar (siehe dortige Begründung), damit jeder Browser unabhängig vom Hosting/
+     Übertragungsweg zuverlässig UTF-8 verwendet - unabhängig davon, ob ein Server einen (evtl.
+     falschen/fehlenden) Charset-Header mitschickt. Bewusst NUR dieses eine Tag ergänzt, kein
+     <!DOCTYPE html> hinzugefügt - das würde den Browser vom bisherigen Quirks-Modus in den
+     Standards-Modus umschalten und könnte nach 118 stabilen Runden unbeabsichtigte
+     Layout-Nebenwirkungen (Box-Modell usw.) auslösen, die außerhalb des gemeldeten Problems
+     liegen. -->
 <!-- "CNC SimX" (70. Runde, Sebastian, Punkt 4: "'CNC-Code Simulator' in 'CNC SimX' umbenennen, das r69 usw. dahinter kommt mit." + Punkt 5: "Im Tool selbst, dann noch im Browser, der angezeigte Name des Tabs ändern.") - der Browser-Tab-Titel (dieses <title>-Tag) UND der Fenstertitel der C#-EXE (MainForm.cs, siehe Konzept_EXE_C-Sharp.md) zeigen jetzt beide "CNC SimX"; der Namenszusatz "r<Releasenummer>" bleibt unverändert ausschließlich das Ergebnis von app.js (#brandReleaseTag, siehe .brand weiter unten) und wird NICHT hier ins <title>-Tag mit übernommen - der Browser-Tab-Titel selbst hieß auch vorher schon nie "CNC-Code Simulator r69", das war ausschließlich eine Beschriftung IM Fenster (.brand), nicht im Tab. -->
 <title>CNC SimX</title>
 <!-- Browser-Tab-/Favicon (70. Runde, Sebastian, Punkt 7: "Das Icon ... soll ... neben 'CNC SimX' oben rechts im Browser stehen bzw. im Tab angezeigt werden") - dasselbe sechseckige "Treppen"-Icon aus Sebastians Anhang, als Base64-PNG eingebettet (32x32px), damit CNC_Simulation.html eine einzige, vollständig eigenständige Datei ohne externe Bilddatei bleibt (siehe bereits bestehende Konvention für eingebettete Assets in diesem Projekt). -->
@@ -5233,8 +5257,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 118;
-  const APP_RELEASE_TIMESTAMP = '21.09.2026, 15:05 Uhr';
+  const APP_RELEASE_NUMBER = 119;
+  const APP_RELEASE_TIMESTAMP = '22.09.2026, 21:49 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
