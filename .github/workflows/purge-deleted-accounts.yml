@@ -1,0 +1,42 @@
+# GitHub-Actions-Workflow: ruft einmal taeglich die Supabase Edge Function
+# "purge-expired-deletions" auf, die zur Loeschung vorgemerkte Konten endgueltig entfernt,
+# sobald deren 14-taegige Gnadenfrist abgelaufen ist (siehe exe_starterkit/README.md, Abschnitt
+# "Konto-Loeschung mit 14-taegiger Gnadenfrist").
+#
+# EINRICHTUNG (einmalig, durch Sebastian):
+#   1. Diese Datei in genau diesem Repo (Sebastian-CNCSimX/CNC_SimX) unter dem Pfad
+#      ".github/workflows/purge-deleted-accounts.yml" ablegen -- im GitHub-Web-Interface über
+#      "Add file" -> "Create new file", Pfad+Dateinamen dort direkt eintippen (erzeugt
+#      automatisch die Ordner ".github/workflows/"), Inhalt dieser Datei hineinkopieren,
+#      "Commit new file". Kein Git/Kommandozeile noetig.
+#   2. Unter "Settings" (des Repos) -> "Secrets and variables" -> "Actions" -> "New repository
+#      secret" ein Secret mit dem Namen PURGE_SECRET anlegen. Der Wert muss EXAKT mit dem
+#      Secret "PURGE_SECRET" uebereinstimmen, das im Supabase-Dashboard unter
+#      Project Settings -> Edge Functions -> Secrets gesetzt wird (selbst gewaehltes, langes
+#      Zufallspasswort -- gleiches Vorgehen wie bei den drei PAYPAL_*-Secrets).
+#   3. Fertig -- ab dann laeuft die Bereinigung automatisch, einmal taeglich, ganz ohne weiteres
+#      Zutun. Unter dem Reiter "Actions" des Repos laesst sich jeder Lauf einsehen (und bei
+#      Bedarf auch manuell per "Run workflow" sofort ausloesen, z.B. zum Testen).
+
+name: Purge deleted CNC SimX accounts
+
+on:
+  schedule:
+    # Taeglich um 03:17 UTC (bewusst keine "volle" Uhrzeit, um Lastspitzen bei GitHub zu meiden --
+    # gaengige Empfehlung fuer geplante Workflows). In der Kommentarspalte rechts daneben nicht
+    # aenderbar, aber praktisch voellig egal, WANN genau am Tag die Pruefung laeuft.
+    - cron: "17 3 * * *"
+  workflow_dispatch: {}
+    # Erlaubt zusaetzlich den manuellen Sofort-Start ueber den "Actions"-Reiter im Repo
+    # ("Run workflow"-Knopf) -- praktisch zum Testen, ohne einen ganzen Tag zu warten.
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call purge-expired-deletions
+        run: |
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "X-Purge-Secret: ${{ secrets.PURGE_SECRET }}" \
+            https://fyrouoswfdpggtbsselh.supabase.co/functions/v1/purge-expired-deletions
