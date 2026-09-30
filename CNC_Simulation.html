@@ -5,6 +5,54 @@
      ohnehin sehr kommentarreichen Dokument sonst leicht diese Grenze überschreiten und die Wirkung
      dieses Tags zunichtemachen (genau das ist beim ersten Versuch dieser Runde tatsächlich passiert
      - siehe ausführliche Begründung direkt beim <title>-Tag weiter unten). -->
+<!-- Host-Prüfung (NEU, 23.09.2026, Sebastian meldete: "Ich kann die Simulation auch so öffnen [...]
+     hab den vollen Umfang und werde nirgends abgefangen" - also durch direktes Öffnen dieser Datei
+     per Doppelklick/Drag&Drop, komplett vorbei an der Login-/Tokenprüfung des C#-Hosts, siehe
+     AuthGate.cs/MainForm.cs). Auf Rückfrage einer von drei besprochenen Varianten gewählt
+     (Sebastian: "Wir probieren Weg 2") - eine bewusst LEICHTE Hürde, kein echter Kopierschutz:
+     MainForm.cs hängt beim Öffnen einen geheimen Wert als URL-Parameter "cncsimxHost" an; dieses
+     Script hier prüft GANZ am Anfang der Datei (noch vor <title>/<style>/allem Übrigen), ob genau
+     dieser Wert vorhanden ist. Fehlt er (z. B. weil die Datei direkt im Browser geöffnet wurde),
+     legt sich ein blickdichtes Overlay über die gesamte Seite mit einer kurzen Sperrmeldung (siehe
+     Kommentar direkt im Script unten, warum NICHT einfach der Ladevorgang selbst abgebrochen wird).
+     WICHTIG, ehrlich benannt: Wer sich den (ohnehin offen
+     einsehbaren) Quelltext ansieht, findet den erwarteten Wert und kann ihn selbst an die URL
+     anhängen - das hält "aus Versehen/aus Neugier direkt öffnen" zuverlässig ab, ist aber keine
+     echte Sicherheit gegen einen gezielten Versuch. Echte, harte Sicherheit ist bei einer offen
+     einsehbaren HTML-Datei grundsätzlich nicht möglich (siehe Konzept_Tokenbezahlung.md, Abschnitt
+     "Warum das nicht clientseitig geht") - das ist hier bewusst in Kauf genommen. Der erwartete Wert
+     MUSS exakt mit MainForm.HostToken übereinstimmen. -->
+<script>
+(function () {
+  var expected = "h4Kt9mQ2vXpL7wZaR3fN0yC6sJdEgB1u";
+  var actual;
+  try { actual = new URLSearchParams(window.location.search).get("cncsimxHost"); } catch (e) { actual = null; }
+  if (actual === expected) return; // Host-Parameter stimmt -> normal weiterladen
+
+  // WICHTIG (Praxis-Fund beim Testen dieser Sperre): document.open()/write()/close() aus einem
+  // Inline-Script heraus, das selbst NOCH TEIL des laufenden Parse-Vorgangs DIESES Dokuments ist,
+  // bricht den Parser laut HTML-Spezifikation NICHT ab (nur bei "aktivem Parser mit
+  // Script-Nesting-Level > 0" wird document.open() zum No-Op) - der Rest der Datei würde trotzdem
+  // ganz normal weiterparsen und die Simulation dahinter unsichtbar mitlaufen. Stattdessen: ein
+  // blickdichtes Overlay über die GESAMTE Seite legen, direkt an documentElement gehängt (nicht an
+  // document.body - der existiert an dieser frühen Stelle im Dokument oft noch gar nicht). Deckt
+  // die Simulation optisch UND per Klick/Tastatur vollständig ab, auch wenn sie im Hintergrund
+  // technisch trotzdem weiterlädt.
+  var overlay = document.createElement("div");
+  overlay.setAttribute("style",
+    "position:fixed;inset:0;z-index:2147483647;background:#17324a;color:#eef2f4;" +
+    "display:flex;align-items:center;justify-content:center;text-align:center;" +
+    "font-family:'Open Sans',ui-sans-serif,system-ui,sans-serif;padding:24px;");
+  overlay.innerHTML =
+    '<div style="max-width:480px;">' +
+    '<h1 style="margin:0 0 12px;font-size:1.4rem;">CNC SimX</h1>' +
+    '<p style="margin:0;line-height:1.5;color:#c7d2d8;">Diese Seite lässt sich nicht direkt ' +
+    "im Browser öffnen.<br>Bitte starte CNC SimX über die normale Verknüpfung bzw. " +
+    "die .exe.</p></div>";
+  document.documentElement.appendChild(overlay);
+  document.documentElement.style.overflow = "hidden";
+})();
+</script>
 <!-- Zeichenkodierung explizit festgelegt (Release 119, Sebastian meldete auf der Cloudflare-gehosteten
      Kopie: "ðŸ“‚ CNC âœŽ CNC âœ• CNC â˜°+ Liste â˜°âœ• Liste" statt "📂 CNC ✎ CNC ✕ CNC ☰+ Liste ☰✕ Liste" -
      klassisches Mojibake-Muster (UTF-8-Bytes als Windows-1252/ISO-8859-1 fehlinterpretiert). Ursache:
@@ -266,6 +314,24 @@
   }
   .menu-trigger:hover { background: var(--panel-2); border-color: var(--ink-faint); }
   .menu-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* Sprachumschalter DE/EN (NEU, 23.09.2026, Sebastian: "Oben links neben 'Datei' EN und DE
+     anbieten.") - direkt links von "Datei" in derselben Menüleiste, bewusst optisch dezent
+     gehalten (kleiner als .menu-trigger, kein eigener Rahmen im Ruhezustand) - siehe
+     applyLanguage()/#langSwitch weiter unten im Markup bzw. in app.js. */
+  .lang-switch { display: flex; align-items: center; gap: 2px; margin-right: 6px; padding-right: 6px; border-right: 1px solid var(--border); }
+  .lang-switch-btn {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .lang-switch-btn:hover { background: var(--panel-2); color: var(--ink); }
+  .lang-switch-btn.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
   /* "Buttonfarbe einstellen" (53. Runde, Sebastian: "Highlight-Farbe für 'Datei', 'Bearbeiten' und
      'Ansicht', wenn aktiv. Standard bleibt Rot ... Eine gewählte Farbe gilt für alle drei
      Menüpunkte") - bewusst ZWEI EIGENE Variablen statt der Wiederverwendung von --accent/
@@ -406,6 +472,12 @@
      app.js) bleibt über die bereits bestehende ".menu-item:disabled"-Regel (opacity: .4)
      zuverlässig sichtbar abgedimmt, unabhängig von dieser zusätzlichen Akzentfarbe. */
   #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--accent); font-weight: 600; }
+  /* Trennstrich oberhalb von "Datenschutzerklärung" (NEU, 30.09.2026, Sebastian: "Unter
+     'Versionsupdate prüfen' kommt ein Trennstrich, darunter dann: Datenschutzerklärung /
+     Impressum") - dasselbe Trennlinien-Muster wie bei #btnCheckForUpdate oben, hier aber ohne
+     die Akzentfarbe/Fettschrift, da dieser Trennstrich nur zwei Menü-Gruppen optisch trennt und
+     keinen einzelnen Aktions-Knopf hervorheben soll. */
+  #btnShowPrivacy { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
 
@@ -2008,8 +2080,18 @@
 <div class="app" id="app">
   <div class="topbar">
     <div class="menu-bar" id="menuBar">
+      <!-- Sprachumschalter DE/EN (NEU, 23.09.2026, Sebastian: "Oben links neben 'Datei' EN und DE
+           anbieten. DE = Alles wie gehabt, EN = Sprache ändert sich auf Englisch.") - übersetzt nur
+           die mit [data-i18n-en] markierten Elemente (siehe applyLanguage() weiter unten im
+           Script) - eine bewusst erste, versuchsweise Abdeckung der wichtigsten Menü-/Knopftexte
+           (genau die von Sebastian benannten), NICHT jeder einzelne Tooltip/jede Meldung in der
+           gesamten Simulation. -->
+      <div class="lang-switch" id="langSwitch" role="group" aria-label="Sprache / Language">
+        <button class="lang-switch-btn active" id="langBtnDe" type="button" data-lang="de">DE</button>
+        <button class="lang-switch-btn" id="langBtnEn" type="button" data-lang="en">EN</button>
+      </div>
       <div class="menu" id="menuFile">
-        <button class="menu-trigger" id="menuFileTrigger" type="button" aria-haspopup="true" aria-expanded="false">Datei</button>
+        <button class="menu-trigger" id="menuFileTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="File">Datei</button>
         <div class="menu-dropdown" id="menuFileDropdown" hidden>
           <!-- "CNC-Programm"-Untermenü (61. Runde, Sebastian: "Änderung bei 'Datei', Untermenüs
                einfügen für: 'CNC-Programm' -> 'Programm laden' und darunter 'Programm speichern
@@ -2018,9 +2100,9 @@
                dahinterliegende Funktion bleiben unverändert - nur Label (gekürzt) und Position
                (jetzt im Untermenü) ändern sich. -->
           <div class="menu-submenu" id="submenuFileCncProgram">
-            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false">CNC-Programm <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="CNC-Program">CNC-Programm <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
-              <button class="menu-item" id="btnLoadFile" type="button">Programm laden</button>
+              <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load program">Programm laden</button>
               <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Programm laden wird wieder nur
                    auf 1 limitiert (wie zuvor), an allen Stellen wo man ein CNC Programm laden kann.
                    Dafür neuer Menüpunkt unter 'Datei' -> Neue CNC-Programmliste. Dort können dann
@@ -2029,16 +2111,26 @@
                    #fileInputList (siehe dort sowie startNewProgramList() in app.js) und ersetzt
                    eine evtl. bestehende Programmliste komplett durch eine frische, aus der
                    getroffenen Auswahl aufgebaute Liste. -->
-              <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl">Neue CNC-Programmliste</button>
-              <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter">Programm speichern als…</button>
+              <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl" data-i18n-en="New CNC-Program list" data-i18n-en-title="Opens a file dialog with multi-selection (up to 10 programs) and replaces the current CNC program list with the selection made">Neue CNC-Programmliste</button>
+              <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter" data-i18n-en="Save program as…" data-i18n-en-title="Downloads the currently loaded (possibly edited) program text as a file">Programm speichern als…</button>
             </div>
           </div>
           <!-- DXF-Import (Sebastian: "Das DXF soll separat über Datei -> 'DXF Import' eingefügt
                werden können") - bewusst eigener Menüpunkt statt in "Datei laden" integriert: DXF-
                und CNC-Programm-Zustand sind komplett unabhängig voneinander (siehe loadDxfText()/
-               clearDxf() in app.js - weder lädt noch löscht das eine das andere). -->
-          <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)">DXF Importieren</button>
-          <button class="menu-item" id="btnSaveSimulation" type="button" title="Lädt eine vollständig eigenständige, lauffähige Kopie dieser Simulations-Seite herunter - mit den aktuellen Maschinentyp-/Arbeitsgang-Namen-Einstellungen bereits als neuer Standard eingebacken, aber OHNE ein eventuell gerade geladenes CNC-Programm">Simulation speichern</button>
+               clearDxf() in app.js - weder lädt noch löscht das eine das andere).
+               NACHTRAG (23.09.2026, Sebastian: "Datei -> 'DXF importieren' (statt Importieren groß
+               geschrieben)") - reine Schreibweisenkorrektur (kleines "i"), ID/Funktion unverändert. -->
+          <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
+          <!-- "Simulation speichern" (NEU, 23.09.2026, Sebastian: "Datei -> Simulation speichern ->
+               Menüpunkt entfernen") - nur der Menüpunkt selbst UND seine Klick-Verdrahtung
+               (el('btnSaveSimulation').addEventListener(...) weiter unten) wurden entfernt, wie
+               wörtlich verlangt. Die dahinterliegenden Bausteine (PRISTINE_PAGE_HTML,
+               buildSavedSimulationHtml(), die SIM_SAVE:*:BEGIN/END-Kommentarankerpaare an mehreren
+               Stellen weiter unten im Markup) wurden BEWUSST NICHT ebenfalls entfernt - das wäre ein
+               deutlich größerer, riskanterer Umbau (mehrere weit verteilte Stellen) für eine reine
+               Aufräumarbeit ohne funktionalen Nutzen, wenn nur "der Menüpunkt" verlangt war. Toter,
+               aber harmloser Code; bei Bedarf in einer eigenen Runde vollständig entfernbar. -->
         </div>
       </div>
       <!-- "Bearbeiten" (60. Runde, Sebastian, "Umsetzung Werkzeuglängen:", Abschnitt "Untermenüs":
@@ -2057,14 +2149,14 @@
            in app.js bleiben dabei unverändert - reine Verschiebung im Markup, keine
            Funktionsänderung. -->
       <div class="menu" id="menuEdit">
-        <button class="menu-trigger" id="menuEditTrigger" type="button" aria-haspopup="true" aria-expanded="false">Bearbeiten</button>
+        <button class="menu-trigger" id="menuEditTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Edit">Bearbeiten</button>
         <div class="menu-dropdown" id="menuEditDropdown" hidden>
           <div class="menu-submenu" id="submenuCnc">
             <button class="menu-item submenu-trigger" id="submenuCncTrigger" type="button" aria-haspopup="true" aria-expanded="false">CNC <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuCncDropdown" hidden>
-              <button class="menu-item" id="btnPaste" type="button">CNC-Code einfügen</button>
-              <button class="menu-item" id="btnEditProgram" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten">CNC-Programm bearbeiten</button>
-              <button class="menu-item" id="btnClearProgram" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)">CNC-Programm löschen</button>
+              <button class="menu-item" id="btnPaste" type="button" data-i18n-en="Paste CNC-Code">CNC-Code einfügen</button>
+              <button class="menu-item" id="btnEditProgram" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten" data-i18n-en="Edit CNC-Program" data-i18n-en-title="Opens the loaded program text for direct editing">CNC-Programm bearbeiten</button>
+              <button class="menu-item" id="btnClearProgram" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)" data-i18n-en="Delete CNC-Program" data-i18n-en-title="Removes the loaded CNC program again (machine type configuration is kept)">CNC-Programm löschen</button>
               <!-- "CNC-Programmliste löschen" (Release 113, Sebastian, Punkt 6: "Neuer Button mit Icon
                    für 'CNC Programmliste löschen' in der Zeile mit den CNC Programmen, Menüeintrag
                    unter 'Bearbeiten' -> 'CNC' -> 'CNC-Programmliste löschen'") - im Unterschied zu
@@ -2074,20 +2166,20 @@
                    unten sowie clearProgramList() in app.js) inklusive eines evtl. gerade aktiven
                    Programms. Nur aktiv, solange überhaupt mindestens ein Programm in der Liste ist
                    (siehe renderProgramListUI() in app.js). -->
-              <button class="menu-item" id="btnClearProgramList" type="button" disabled title="Entfernt ALLE im Hintergrund geladenen CNC-Programme aus der Programmliste (inklusive eines evtl. gerade aktiven Programms) - die Maschinentyp-Konfiguration bleibt erhalten">CNC-Programmliste löschen</button>
+              <button class="menu-item" id="btnClearProgramList" type="button" disabled title="Entfernt ALLE im Hintergrund geladenen CNC-Programme aus der Programmliste (inklusive eines evtl. gerade aktiven Programms) - die Maschinentyp-Konfiguration bleibt erhalten" data-i18n-en="Delete CNC-Program list" data-i18n-en-title="Removes ALL CNC programs loaded in the background from the program list (including any currently active program) - the machine type configuration is kept">CNC-Programmliste löschen</button>
             </div>
           </div>
           <div class="menu-submenu" id="submenuDxf">
             <button class="menu-item submenu-trigger" id="submenuDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuDxfDropdown" hidden>
-              <button class="menu-item" id="btnDxfMoveMenu" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde">DXF Verschieben</button>
-              <button class="menu-item" id="btnDxfDeleteMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde">DXF löschen</button>
+              <button class="menu-item" id="btnDxfMoveMenu" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Move DXF" data-i18n-en-title="Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported">DXF verschieben</button>
+              <button class="menu-item" id="btnDxfDeleteMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Delete DXF" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported">DXF löschen</button>
             </div>
           </div>
           <div class="menu-submenu" id="submenuOps">
-            <button class="menu-item submenu-trigger" id="submenuOpsTrigger" type="button" aria-haspopup="true" aria-expanded="false">Arbeitsgänge <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuOpsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Processing steps">Arbeitsgänge <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuOpsDropdown" hidden>
-              <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten">Arbeitsgang-Namen bearbeiten</button>
+              <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
             </div>
           </div>
         </div>
@@ -2106,7 +2198,7 @@
            keine weiteren Unterpunkte genannt wurden) aufgeteilt. Reihenfolge innerhalb "Farben"
            entspricht Sebastians eigener Auflistung ("Buttonfarbe" vor "Hintergrundfarbe"). -->
       <div class="menu" id="menuView">
-        <button class="menu-trigger" id="menuViewTrigger" type="button" aria-haspopup="true" aria-expanded="false">Einstellungen</button>
+        <button class="menu-trigger" id="menuViewTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Settings">Einstellungen</button>
         <div class="menu-dropdown" id="menuViewDropdown" hidden>
           <!-- "Erscheinungsbild" (67. Runde, Sebastian: "Alle Menüs unter 'Einstellungen' als
                Untermenü 'Erscheinungsbild' zusammenfassen. Verhalten bleibt gleich, weiterhin
@@ -2123,41 +2215,41 @@
                #btnFontColor/#btnColumnScale/#btnResetDisplayDefaults) UND ihre Funktion bleiben
                dabei vollständig unverändert - nur ihre Gruppierung ändert sich. -->
           <div class="menu-submenu" id="submenuAppearance">
-            <button class="menu-item submenu-trigger" id="submenuAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false">Erscheinungsbild <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Appearance">Erscheinungsbild <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuAppearanceDropdown" hidden>
               <div class="menu-submenu" id="submenuColors">
-                <button class="menu-item submenu-trigger" id="submenuColorsTrigger" type="button" aria-haspopup="true" aria-expanded="false">Farben <span class="submenu-arrow">▸</span></button>
+                <button class="menu-item submenu-trigger" id="submenuColorsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Colors">Farben <span class="submenu-arrow">▸</span></button>
                 <div class="submenu-dropdown" id="submenuColorsDropdown" hidden>
                   <!-- "Buttonfarbe einstellen" (53. Runde, siehe #menuColorPanel weiter unten sowie
                        applyMenuHighlightColor() in app.js). -->
-                  <button class="menu-item" id="btnMenuColor" type="button" title="Hervorhebungsfarbe der Menüpunkte 'Datei'/'Bearbeiten'/'Einstellungen' bei geöffnetem Menü festlegen (Hintergrund + Schrift, Standard Rot)">Buttonfarbe</button>
-                  <button class="menu-item" id="btnEditColors" type="button" title="Farbprofil wählen (Standard/Dark Mode/Benutzerfarben) und bei Benutzerfarben die Hintergründe von Programmcode, Arbeitsgängen und 3D-Simulation per Hexcode festlegen">Hintergrundfarbe</button>
+                  <button class="menu-item" id="btnMenuColor" type="button" title="Hervorhebungsfarbe der Menüpunkte 'Datei'/'Bearbeiten'/'Einstellungen' bei geöffnetem Menü festlegen (Hintergrund + Schrift, Standard Rot)" data-i18n-en="Button color" data-i18n-en-title="Set the highlight color of the 'File'/'Edit'/'Settings' menu items when the menu is open (background + text, default red)">Buttonfarbe</button>
+                  <button class="menu-item" id="btnEditColors" type="button" title="Farbprofil wählen (Standard/Dark Mode/Benutzerfarben) und bei Benutzerfarben die Hintergründe von Programmcode, Arbeitsgängen und 3D-Simulation per Hexcode festlegen" data-i18n-en="Background color" data-i18n-en-title="Choose a color profile (Default/Dark Mode/Custom colors) and, for custom colors, set the backgrounds of the program code, processing steps, and 3D simulation by hex code">Hintergrundfarbe</button>
                   <!-- "Schriftfarbe" (66. Runde, Sebastian: "'Einstellungen' -> 'Farben' erweitern um
                        'Schriftfarbe'. Auswahl der Schriftfarben im Menü, die geändert werden können: a
                        'CNC-Programmcode Zeilennummerierung' b 'CNC-Programmcode Code' c
                        'Arbeitsgänge' d 'Geschwindigkeit' e 'Sprung in Zeile'") - dritter Eintrag im
                        "Farben"-Untermenü, siehe #fontColorPanel weiter unten sowie
                        applyFontColors()/loadPersistedFontColors() in app.js. -->
-                  <button class="menu-item" id="btnFontColor" type="button" title="Schriftfarbe einzeln festlegen für: CNC-Programmcode Zeilennummerierung, CNC-Programmcode Code, Arbeitsgänge, Geschwindigkeit, Sprung in Zeile">Schriftfarbe</button>
+                  <button class="menu-item" id="btnFontColor" type="button" title="Schriftfarbe einzeln festlegen für: CNC-Programmcode Zeilennummerierung, CNC-Programmcode Code, Arbeitsgänge, Geschwindigkeit, Sprung in Zeile" data-i18n-en="Font color" data-i18n-en-title="Set the font color individually for: CNC program code line numbering, CNC program code, processing steps, speed, jump to line">Schriftfarbe</button>
                   <!-- "Arbeitsgangfarbe" (Release 100, Sebastian: "'Einstellungen -> Erscheinungsbild
                        -> Farben' neuer Menüpunkt für 'Arbeitsgangfarbe'. ... der Bediener soll
                        festlegen welche Farbe der 1. Arbeitsgang bekommt, welcher der 2. Arbeitsgang
                        bekommt, welche der 3. usw.") - vierter Eintrag im "Farben"-Untermenü, siehe
                        #opColorPanel weiter unten sowie applyOpColors()/pathColor() in app.js. -->
-                  <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)">Arbeitsgangfarbe</button>
+                  <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)" data-i18n-en="Processing step color" data-i18n-en-title="Set the color of the six cyclically used processing step/path colors individually (1st processing step, 2nd processing step, etc.)">Arbeitsgangfarbe</button>
                 </div>
               </div>
               <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
                    'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
                    siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
-              <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet">Spalten</button>
+              <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
               <!-- "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button bei den
                    Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
                    Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt.") - direkt flach
                    nach "Spalten" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
                    Schritt Buttonfarbe, Hintergrundfarbe, die neue Schriftfarbe UND die
                    Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js. -->
-              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe und Spaltenbreiten auf ihre Standardwerte zurück">Standardwerte wiederherstellen</button>
+              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
           <!-- "Maschinentypen" + "Einstellungen exportieren"/"Einstellungen importieren" hierher
@@ -2183,13 +2275,13 @@
                gleichwertig über "Einstellungen importieren" (#btnLoadSettings, JSON-Import) zur
                Verfügung. Das Untermenü besteht seitdem nur noch aus "Maschinentypen bearbeiten". -->
           <div class="menu-submenu" id="submenuMachineTypes">
-            <button class="menu-item submenu-trigger" id="submenuMachineTypesTrigger" type="button" aria-haspopup="true" aria-expanded="false">Maschinentypen <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuMachineTypesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Machine types">Maschinentypen <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuMachineTypesDropdown" hidden>
-              <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)">Maschinentypen bearbeiten</button>
+              <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
             </div>
           </div>
-          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen">Einstellungen importieren</button>
-          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe) - NICHT das geladene CNC-Programm selbst">Einstellungen exportieren</button>
+          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings">Einstellungen importieren</button>
+          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
         </div>
       </div>
       <!-- "Infos" -> "Knowledge Base" (Release 105, Sebastian: "Ein neuer Menüpunkt 'Infos'
@@ -2203,7 +2295,7 @@
            beim "?"-Menü, das intern weiterhin #menuInfo/#menuInfoTrigger heißt), damit app.js und
            diese Attribution-Kommentare hier ohne Umbenennungs-Fehlerrisiko weiterlaufen. -->
       <div class="menu" id="menuInfos">
-        <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false">Hilfe</button>
+        <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Help">Hilfe</button>
         <div class="menu-dropdown" id="menuInfosDropdown" hidden>
           <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert">Knowledge Base</button>
         </div>
@@ -2228,14 +2320,17 @@
            und fest orange eingefärbt wird (siehe #menuInfoTrigger weiter oben im Stylesheet),
            statt zusätzlich ein zweites, inhaltsgleiches Menü danebenzustellen. -->
       <div class="menu" id="menuInfo">
-        <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Info" aria-label="Info">?</button>
+        <!-- title="Info" (Tooltip) am 23.09.2026 auf Sebastians Wunsch entfernt ("Tooltip bei '?'
+             entfernen, egal ob DE/EN der ist unnötig") - aria-label="Info" bleibt bewusst stehen
+             (Barrierefreiheit/Screenreader, kein Hover-Tooltip, war nicht gemeint). -->
+        <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Info">?</button>
         <div class="menu-dropdown" id="menuInfoDropdown" hidden>
           <div class="menu-info-row">
             <span class="menu-info-label">Version</span>
             <span class="menu-info-value" id="infoVersionValue"></span>
           </div>
           <div class="menu-info-row">
-            <span class="menu-info-label">Letzte Releasezeit:</span>
+            <span class="menu-info-label" data-i18n-en="Last release:">Letzte Releasezeit:</span>
             <span class="menu-info-value" id="infoReleaseTimeValue"></span>
           </div>
           <!-- "Versionsupdate prüfen" (Release 93, Sebastian: "der Benutzer klickt auf
@@ -2245,20 +2340,37 @@
                #btnCheckForUpdate) optisch von ihnen abgesetzt, da .menu-info-row selbst bewusst
                nicht anklickbar ist (siehe Kommentar oben). Verdrahtung/Ablauf: checkForUpdate()
                in app.js. -->
-          <button class="menu-item" id="btnCheckForUpdate" type="button">Versionsupdate prüfen</button>
+          <button class="menu-item" id="btnCheckForUpdate" type="button" data-i18n-en="Check for updates">Versionsupdate prüfen</button>
+          <!-- "Token kaufen" (23.09.2026) TEMPORÄR AUSGEBAUT (30.09.2026, Sebastian: "Token kaufen
+               entfernen" + "Beim Programmstart das Programm direkt starten ohne Anmeldung/
+               Tokenprüfung") - das Bezahlsystem kommt zu einem späteren Zeitpunkt zurück, siehe
+               Tokenkauf.md für die genauen Rückbau-Schritte. Bewusst nur auskommentiert statt
+               gelöscht, damit das Wiedereinbauen später nur das Entfernen dieser Kommentare
+               braucht (Verdrahtung buyTokens() weiter unten in diesem Script ebenfalls nur
+               auskommentiert, nicht gelöscht).
+          <button class="menu-item" id="btnBuyTokens" type="button" data-i18n-en="Buy tokens">Token kaufen</button>
+          -->
+          <!-- "Datenschutzerklärung"/"Impressum" (NEU, 30.09.2026, Sebastian: zwei neue
+               Menüpunkte unter "?", durch einen Trennstrich von "Versionsupdate prüfen"
+               abgesetzt, siehe #btnShowPrivacy im Stylesheet oben) - öffnen ein natives,
+               NICHT editierbares Textfenster innerhalb der exe (LegalTextDialog.cs, aufgerufen
+               aus MainForm.WebView_WebMessageReceived()), kein Browser-Tab/keine externe Seite.
+               Verdrahtung: showLegalText() weiter unten in diesem Script. -->
+          <button class="menu-item" id="btnShowPrivacy" type="button" data-i18n-en="Privacy policy">Datenschutzerklärung</button>
+          <button class="menu-item" id="btnShowImprint" type="button" data-i18n-en="Imprint">Impressum</button>
         </div>
       </div>
     </div>
     <div class="machine-type-quick-group" id="machineTypeQuickGroup">
-      <span class="machine-type-label">Maschinentyp</span>
-      <select id="machineTypeSelect" title="Maschinentyp auswählen - wird erst nach Klick auf 'Ok' auf das geladene Programm angewendet"></select>
-      <button class="btn ghost" id="btnMachineTypeOk" type="button" disabled title="Ausgewählten Maschinentyp auf das geladene Programm anwenden (Austausch + Achsberechnung)">Ok</button>
+      <span class="machine-type-label" data-i18n-en="Machine type">Maschinentyp</span>
+      <select id="machineTypeSelect" title="Maschinentyp auswählen - wird erst nach Klick auf 'Ok' auf das geladene Programm angewendet" data-i18n-en-title="Select machine type - only applied to the loaded program after clicking 'Ok'"></select>
+      <button class="btn ghost" id="btnMachineTypeOk" type="button" disabled title="Ausgewählten Maschinentyp auf das geladene Programm anwenden (Austausch + Achsberechnung)" data-i18n-en-title="Apply the selected machine type to the loaded program (replacement + axis calculation)">Ok</button>
     </div>
     <span class="topbar-sep"></span>
     <div class="file-status-row">
       <span class="machine-badge" id="machineBadge" hidden><span class="dot"></span><span id="machineBadgeText">Keine Datei geladen</span></span>
       <span class="filename" id="filenameLabel"></span>
-      <label class="reichenbacher-switch" id="reichenbacherSwitchWrap" hidden title="Kardanische Winkelkorrektur für den Reichenbacher-Aggregatkopf (siehe Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - steuert, ob das Werkzeug in der 3D-Ansicht mit der verifizierten Korrekturformel oder mit der ursprünglichen, unkorrigierten Berechnung ausgerichtet wird">
+      <label class="reichenbacher-switch" id="reichenbacherSwitchWrap" hidden title="Kardanische Winkelkorrektur für den Reichenbacher-Aggregatkopf (siehe Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - steuert, ob das Werkzeug in der 3D-Ansicht mit der verifizierten Korrekturformel oder mit der ursprünglichen, unkorrigierten Berechnung ausgerichtet wird" data-i18n-en-title="Gimbal angle correction for the Reichenbacher aggregate head (see Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - controls whether the tool in the 3D view is aligned using the verified correction formula or the original, uncorrected calculation">
         <input type="checkbox" id="chkReichenbacherCorrection" checked>
         <span class="reichenbacher-switch-track"><span class="reichenbacher-switch-thumb"></span></span>
         <span class="reichenbacher-switch-text">Kardan-Winkelkorrektur</span>
@@ -2366,7 +2478,7 @@
            dieselbe Aktion, nach demselben Muster wie z. B. "✥ DXF" (#btnDxfMoveIcon) neben dem
            gleichnamigen Menüpunkt. Das "Datei laden"-Symbol (📂, offener Ordner) steht als eigenes
            Icon-Zeichen LINKS vor dem Text "CNC", wie gefordert. -->
-      <button class="toolbar-btn" id="btnLoadFileIcon" type="button" title="CNC-Programm laden (dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Programm laden')">📂 CNC</button>
+      <button class="toolbar-btn" id="btnLoadFileIcon" type="button" title="CNC-Programm laden (dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Programm laden')" data-i18n-en-title="Load CNC program (same action as 'File' → 'CNC-Program' → 'Load program')">📂 CNC</button>
       <!-- "CNC-Bearbeiten"-Icon (72. Runde, Sebastian: "CNC-Bearbeiten Icon rechts von
            CNC-Programm Laden-Icon einfügen") - ruft dieselbe, unveränderte openProgramEditPanel()
            auf wie der bestehende Icon-Zwilling #btnEditProgramIcon neben der Überschrift
@@ -2375,7 +2487,7 @@
            Auslöser für exakt dieselbe Aktion, nach demselben Muster wie z. B. "✥ DXF"
            (#btnDxfMoveIcon). Disabled-Zustand wird zusammen mit den beiden anderen gepflegt (kein
            Programm geladen -> deaktiviert, siehe loadText()/clearProgram() in app.js). -->
-      <button class="toolbar-btn" id="btnEditProgramToolbarIcon" type="button" disabled title="Geladenes CNC-Programm bearbeiten (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm bearbeiten')">✎ CNC</button>
+      <button class="toolbar-btn" id="btnEditProgramToolbarIcon" type="button" disabled title="Geladenes CNC-Programm bearbeiten (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm bearbeiten')" data-i18n-en-title="Edit the loaded CNC program (same action as 'Edit' → 'CNC' → 'Edit CNC-Program')">✎ CNC</button>
       <!-- Trennstrich zwischen "✎ CNC" und "✕ CNC" entfernt (Release 97, Sebastian: "Den
            Trennstrich hinter CNC-Bearbeiten Icon entfernen, vor CNC Löschen") - die drei
            CNC-Symbolleisten-Icons (Laden/Bearbeiten/Löschen) bilden seither eine durchgehende
@@ -2387,7 +2499,7 @@
            demselben Muster wie z. B. "✕ DXF" (#btnDxfDeleteIcon) neben dem gleichnamigen
            Menüpunkt; disabled-/title-Zustand wird zusammen mit #btnClearProgram gepflegt (siehe
            app.js). -->
-      <button class="toolbar-btn" id="btnClearProgramIcon" type="button" disabled title="Geladenes CNC-Programm wieder entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm löschen')"><span class="dxf-delete-glyph">✕</span> CNC</button>
+      <button class="toolbar-btn" id="btnClearProgramIcon" type="button" disabled title="Geladenes CNC-Programm wieder entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm löschen')" data-i18n-en-title="Remove the loaded CNC program again (same action as 'Edit' → 'CNC' → 'Delete CNC-Program')"><span class="dxf-delete-glyph">✕</span> CNC</button>
       <!-- "CNC Liste neu"-Symbolleisten-Icon (Release 117, Sebastian: "Es gibt auch ein Symbol für
            'CNC Liste neu' links von 'CNC Liste löschen'") - ruft denselben #fileInputList-Dialog
            auf wie "Datei" -> "CNC-Programm" -> "Neue CNC-Programmliste" (siehe dort sowie
@@ -2397,7 +2509,7 @@
            ersten Blick als zusammengehöriges, aber gegensätzliches Knopfpaar erkennbar sind.
            Anders als die übrigen CNC-Icons NIE deaktiviert - das Erstellen einer neuen Liste ist
            unabhängig vom aktuellen Lade-/Listenzustand jederzeit möglich (genau wie "📂 CNC"). -->
-      <button class="toolbar-btn" id="btnNewProgramListIcon" type="button" title="Neue CNC-Programmliste erstellen (Datei-Dialog mit Mehrfachauswahl, bis zu 10 Programme - dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Neue CNC-Programmliste')">☰+ Liste</button>
+      <button class="toolbar-btn" id="btnNewProgramListIcon" type="button" title="Neue CNC-Programmliste erstellen (Datei-Dialog mit Mehrfachauswahl, bis zu 10 Programme - dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Neue CNC-Programmliste')" data-i18n-en-title="Create a new CNC program list (file dialog with multi-selection, up to 10 programs - same action as 'File' → 'CNC-Program' → 'New CNC-Program list')"><span data-i18n-en="☰+ List">☰+ Liste</span></button>
       <!-- "CNC-Programmliste löschen"-Symbolleisten-Icon (Release 113, Sebastian, Punkt 6, siehe
            Kommentar bei #btnClearProgramList im "Bearbeiten" → "CNC"-Menü weiter oben) - ruft
            dieselbe, unveränderte clearProgramList()-Funktion auf, ein vierter, gleichwertiger
@@ -2406,28 +2518,28 @@
            Icon-Zeichen-Muster wie "✕ CNC" direkt davor, zusätzlich mit eigenem Listen-Glyph "☰",
            damit die beiden "Löschen"-Icons (einzelnes Programm vs. gesamte Liste) klar
            unterscheidbar bleiben. -->
-      <button class="toolbar-btn" id="btnClearProgramListIcon" type="button" disabled title="Alle im Hintergrund geladenen CNC-Programme aus der Programmliste entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programmliste löschen')"><span class="dxf-delete-glyph">☰✕</span> Liste</button>
+      <button class="toolbar-btn" id="btnClearProgramListIcon" type="button" disabled title="Alle im Hintergrund geladenen CNC-Programme aus der Programmliste entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programmliste löschen')" data-i18n-en-title="Remove all CNC programs loaded in the background from the program list (same action as 'Edit' → 'CNC' → 'Delete CNC-Program list')"><span class="dxf-delete-glyph">☰✕</span> <span data-i18n-en="List">Liste</span></button>
     </div>
     <!-- Zeile 2 (70. Runde, Punkt 9, wörtlich): "Alle DXF-Icons" - die komplette, unverändert in
          sich zusammenhängende Gruppe der bestehenden DXF-Symbolleisten-Icons (Laden/Sichtbarkeit/
          Verschieben/Spiegeln-X/Spiegeln-Y/Drehen/Bauteilstärke/Löschen), unverändert in ihrer
          bisherigen internen Reihenfolge aus der 67./68. Runde. -->
     <div class="toolbar-row" id="toolbarRow2">
-      <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')">📂 DXF</button>
-      <button class="toolbar-btn tool-toggle-btn" id="btnToggleDxf" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden"><span class="eye-glyph">👁</span> DXF</button>
-      <button class="toolbar-btn" id="btnDxfMoveIcon" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde">✥ DXF</button>
-      <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde">⬍ DXF</button>
-      <button class="toolbar-btn" id="btnDxfMirrorY" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde">⬌ DXF</button>
-      <button class="toolbar-btn" id="btnDxfRotate" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde">↻ DXF</button>
-      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, tiefer liegende Kontur samt Verbindungslinien dargestellt) - erst verfügbar, sobald ein DXF importiert wurde">🧱 DXF</button>
+      <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
+      <button class="toolbar-btn tool-toggle-btn" id="btnToggleDxf" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the imported DXF in the 3D view"><span class="eye-glyph">👁</span> DXF</button>
+      <button class="toolbar-btn" id="btnDxfMoveIcon" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported">✥ DXF</button>
+      <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">⬍ DXF</button>
+      <button class="toolbar-btn" id="btnDxfMirrorY" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">⬌ DXF</button>
+      <button class="toolbar-btn" id="btnDxfRotate" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">↻ DXF</button>
+      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, tiefer liegende Kontur samt Verbindungslinien dargestellt) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second, deeper contour including connecting lines) - only available once a DXF has been imported">🧱 DXF</button>
       <!-- "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal
            sein, dass das in cm exportiert worden ist ... Da müsste man um den Faktor 10 skalieren.
            Umgekehrt gibt es das Problem auch. Lösung: DXF Skalier Icon rechts neben
            DXF-Bauteilstärke-Icon.") - direkt rechts neben "🧱 DXF" (Bauteilstärke), sonst exakt
            dasselbe Knopf-/Dialog-Muster wie "↻ DXF" (Drehen) und "🧱 DXF" (Bauteilstärke) daneben,
            siehe dxfScalePanel unten sowie dxfScale/dxfTransformPoint()/openDxfScalePanel() in app.js. -->
-      <button class="toolbar-btn" id="btnDxfScale" type="button" disabled title="Importiertes DXF mit einem frei wählbaren Faktor skalieren (z. B. 10 bei versehentlich in cm statt mm exportierten Dateien) - erst verfügbar, sobald ein DXF importiert wurde">🔍 DXF</button>
-      <button class="toolbar-btn" id="btnDxfDeleteIcon" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde"><span class="dxf-delete-glyph">✕</span> DXF</button>
+      <button class="toolbar-btn" id="btnDxfScale" type="button" disabled title="Importiertes DXF mit einem frei wählbaren Faktor skalieren (z. B. 10 bei versehentlich in cm statt mm exportierten Dateien) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Scale the imported DXF by a freely selectable factor (e.g. 10 for files accidentally exported in cm instead of mm) - only available once a DXF has been imported">🔍 DXF</button>
+      <button class="toolbar-btn" id="btnDxfDeleteIcon" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported"><span class="dxf-delete-glyph">✕</span> DXF</button>
     </div>
     <!-- Zeile 3 (70. Runde, NEU, siehe ANNAHME oben) - die drei aus Zeile 1/2 der 68. Runde
          übrig gebliebenen, keiner der beiden von Sebastian benannten Gruppen zugehörigen Knöpfe:
@@ -2438,14 +2550,14 @@
            'Spannfutter' (mit Ein/Ausblendensymbol)") - bis zur 73. Runde stand hier zuerst
            "Werkzeug" (btnToggleTool), dann "+Werkzeuge (T)" (btnInsertToolData); ab dieser Runde
            genau umgekehrt, plus der neue dritte Knopf "Spannfutter" dahinter. -->
-      <button class="toolbar-btn" id="btnInsertToolData" type="button" disabled title="Werkzeugdaten (Radius/Länge/T-Länge/Werkzeugtyp) als Kommentar unter dem Arbeitsgangkommentar einfügen - nur verfügbar, wenn ein einzelner Arbeitsgang als 3D-Ansicht ausgewählt ist">+Werkzeuge (T)</button>
-      <button class="toolbar-btn tool-toggle-btn" id="btnToggleTool" type="button" title="Werkzeug (Zylinder aus Radius/Länge des Programms) in der 3D-Ansicht ein-/ausblenden"><span class="eye-glyph">👁</span> Werkzeug</button>
+      <button class="toolbar-btn" id="btnInsertToolData" type="button" disabled title="Werkzeugdaten (Radius/Länge/T-Länge/Werkzeugtyp) als Kommentar unter dem Arbeitsgangkommentar einfügen - nur verfügbar, wenn ein einzelner Arbeitsgang als 3D-Ansicht ausgewählt ist" data-i18n-en="+Tools (T)">+Werkzeuge (T)</button>
+      <button class="toolbar-btn tool-toggle-btn" id="btnToggleTool" type="button" title="Werkzeug (Zylinder aus Radius/Länge des Programms) in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the tool (cylinder from the program's radius/length) in the 3D view"><span class="eye-glyph">👁</span> <span data-i18n-en="Tools">Werkzeug</span></button>
       <!-- "Spannfutter" (74. Runde, NEU) - blendet den HSK63-Werkzeughalter (samt Sägeblatt-
            Adapterstück, siehe 9.7b) unabhängig vom Werkzeug selbst ein/aus, dieselbe
            .tool-toggle-btn-Augensymbol-Technik wie #btnToggleTool/#btnToggleDxf. -->
-      <button class="toolbar-btn tool-toggle-btn" id="btnToggleToolHolder" type="button" title="Spannfutter (HSK63-Werkzeughalter) in der 3D-Ansicht ein-/ausblenden"><span class="eye-glyph">👁</span> Spannfutter</button>
+      <button class="toolbar-btn tool-toggle-btn" id="btnToggleToolHolder" type="button" title="Spannfutter (HSK63-Werkzeughalter) in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the collet (HSK63 tool holder) in the 3D view"><span class="eye-glyph">👁</span> <span data-i18n-en="Collet">Spannfutter</span></button>
       <span class="toolbar-sep"></span>
-      <button class="toolbar-btn" id="btnWholeProgram" type="button" title="Gesamtes Programm mit allen Arbeitsgängen zeigen">⛶ Gesamtes Programm</button>
+      <button class="toolbar-btn" id="btnWholeProgram" type="button" title="Gesamtes Programm mit allen Arbeitsgängen zeigen" data-i18n-en-title="Show the entire program with all processing steps"><span data-i18n-en="⛶ Complete Programcode">⛶ Gesamtes Programm</span></button>
       <span class="toolbar-sep"></span>
       <!-- Umzug (73. Runde, Punkt 4): Sebastian - "Die Messfunktion vom 'Sprung in Zeile' Menü
            verschieben hinter 'Gesamtes Programm'. Dann ist sie auch im DXF verfügbar. Hinter
@@ -2461,14 +2573,14 @@
            ".toolbar-btn" (wie ihre neuen Nachbarn hier) - deren ".toolbar-btn.active"-Regel
            deckt den hervorgehobenen "aktiv"-Zustand bereits ab, die bisherige eigene
            ".transport-btn.small.active"-Regel (72. Runde) ist dadurch entfallen. -->
-      <button class="toolbar-btn" id="btnMeasureTransport" type="button" title="Messwerkzeug: Abstand zwischen zwei Punkten/Linien im 3D-Bereich messen (X/Y/Z, Ebene und direkt)">📏</button>
-      <button class="toolbar-btn" id="btnMeasureAngleTransport" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Punkte im 3D-Bereich messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel zusätzlich zu den beiden Schenkellängen">∠</button>
+      <button class="toolbar-btn" id="btnMeasureTransport" type="button" title="Messwerkzeug: Abstand zwischen zwei Punkten/Linien im 3D-Bereich messen (X/Y/Z, Ebene und direkt)" data-i18n-en-title="Measurement tool: measure the distance between two points/lines in the 3D area (X/Y/Z, plane, and direct)">📏</button>
+      <button class="toolbar-btn" id="btnMeasureAngleTransport" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Punkte im 3D-Bereich messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel zusätzlich zu den beiden Schenkellängen" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked points in the 3D area (second click = vertex) - shows angle and counter-angle in addition to the two leg lengths">∠</button>
     </div>
   </div>
   <div class="transport" id="transport" hidden>
     <div class="transport-row">
-      <button class="transport-btn" id="btnPlay" type="button" title="Abspielen / Pause">▶</button>
-      <button class="transport-btn" id="btnStop" type="button" title="Stopp (Programm abbrechen und zurücksetzen)">■</button>
+      <button class="transport-btn" id="btnPlay" type="button" title="Abspielen / Pause" data-i18n-en-title="Play / Pause">▶</button>
+      <button class="transport-btn" id="btnStop" type="button" title="Stopp (Programm abbrechen und zurücksetzen)" data-i18n-en-title="Stop (cancel and reset the program)">■</button>
       <!-- ".scrub-wrap"/"#scrubMarks" (Release 108, siehe CSS-Kommentar weiter oben sowie
            updateScrubMarks() in app.js) - reines Positionierungs-Overlay für die kleinen
            Arbeitsgang-Markierungen auf der Leiste, #scrub selbst (ID/Funktion/Event-Verdrahtung)
@@ -2478,7 +2590,7 @@
         <div class="scrub-marks" id="scrubMarks" aria-hidden="true"></div>
       </div>
       <span class="transport-idx" id="transportIdx">0 / 0</span>
-      <label class="layer-toggle" title="Eilgang-Bewegungen (G0, gestrichelt) im 3D-Bereich ein-/ausblenden">
+      <label class="layer-toggle" title="Eilgang-Bewegungen (G0, gestrichelt) im 3D-Bereich ein-/ausblenden" data-i18n-en-title="Show/hide rapid-traverse movements (G0, dashed) in the 3D area">
         <input type="checkbox" id="chkShowRapid" checked> G0 (Eilgang)
       </label>
     </div>
@@ -2493,7 +2605,7 @@
       <div class="jump-group">
         <label for="jumpLineInput">Sprung in Zeile:</label>
         <input type="number" id="jumpLineInput" min="1" step="1" placeholder="Zeile">
-        <button class="transport-btn small" id="btnJumpLine" type="button" title="Zur eingegebenen Zeile springen (oder Enter)">→</button>
+        <button class="transport-btn small" id="btnJumpLine" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">→</button>
         <!-- "Codesprung" (Release 101, Sebastian, Punkt 1: "Der Sprung in die Zeile beim Klick
              soll hinter einen Button gesetzt werden und nicht dauerhaft aktiv sein." + Punkt 2:
              "Neben 'Sprung in Zeile'-bestätigen Button einbauen, der die Funktion hat, dass man
@@ -2505,7 +2617,7 @@
              syncMeasureButtons() in app.js. ".toolbar-btn"-Optik (samt vorhandener ".active"-
              Hervorhebung) statt ".transport-btn.small" wie der direkt benachbarte Pfeil-Knopf, da
              "Codesprung" ein eigenes, längeres Textlabel trägt statt eines einzelnen Glyphen. -->
-        <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge).">Codesprung</button>
+        <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge)." data-i18n-en-title="Code jump: toggle on/off. When active, clicking a line in the 3D area jumps to the corresponding program line and marks the start/end point with &quot;[]&quot; - when off, clicking/dragging in the 3D area behaves as usual (rotate/pan camera, measurement tools).">Codesprung</button>
       </div>
     </div>
   </div>
@@ -2527,7 +2639,7 @@
              vollständige Umschalt-/Prioritätslogik sowie #dxfLayerPanel weiter unten für den
              zugehörigen zweiten Inhalt neben #tree. -->
         <div class="sidebar-tabs" id="sidebarTabs">
-          <button class="sidebar-tab active" id="sidebarTabCode" type="button" role="tab" aria-selected="true" disabled>CNC-Programmcode</button>
+          <button class="sidebar-tab active" id="sidebarTabCode" type="button" role="tab" aria-selected="true" disabled data-i18n-en="CNC-Programcode">CNC-Programmcode</button>
           <button class="sidebar-tab" id="sidebarTabDxf" type="button" role="tab" aria-selected="false" hidden disabled>DXF-Layer</button>
         </div>
         <!-- Edit-Icon rechts neben der Überschrift (62. Runde, Sebastian: "Rechts von
@@ -2540,7 +2652,7 @@
              ruft in app.js exakt dieselbe openProgramEditPanel()-Funktion wie der bestehende
              Menüpunkt "CNC-Programm bearbeiten" (#btnEditProgram, siehe "Bearbeiten" -> "CNC")
              auf und wird von genau denselben Stellen (de)aktiviert - "Selbes Verhalten". -->
-        <button class="prog-toggle-btn sidebar-edit-btn" id="btnEditProgramIcon" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten (dasselbe wie „Bearbeiten“ → „CNC“ → „CNC-Programm bearbeiten“)">✎</button>
+        <button class="prog-toggle-btn sidebar-edit-btn" id="btnEditProgramIcon" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten (dasselbe wie „Bearbeiten“ → „CNC“ → „CNC-Programm bearbeiten“)" data-i18n-en-title="Opens the loaded program text for direct editing (same as 'Edit' → 'CNC' → 'Edit CNC-Program')">✎</button>
         <div class="sidebar-head-right">
           <span class="op-count" id="opCount"></span>
           <!-- Reihenfolge/Pfeilrichtung 53. Runde (Sebastian: "Wenn man auf den 'Pfeil links'
@@ -2554,8 +2666,8 @@
                Aktion stimmen jetzt überein ("Pfeil links" = verkleinert, "Pfeil rechts" =
                vergrößert). Die IDs selbst blieben unverändert (benannt nach ihrer AKTION, nicht
                ihrer Position), nur Reihenfolge im Markup + Glyphen wurden getauscht. -->
-          <button class="prog-toggle-btn" id="btnProgCollapse" type="button" disabled title="Programm-Spalte verkleinern (auf 75%)"><span class="toggle-glyph">«</span></button>
-          <button class="prog-toggle-btn" id="btnProgExpand" type="button" disabled title="Programm-Spalte ist bereits vollständig aufgeklappt (100%)"><span class="toggle-glyph">»</span></button>
+          <button class="prog-toggle-btn" id="btnProgCollapse" type="button" disabled title="Programm-Spalte verkleinern (auf 75%)" data-i18n-en-title="Shrink program column (to 75%)"><span class="toggle-glyph">«</span></button>
+          <button class="prog-toggle-btn" id="btnProgExpand" type="button" disabled title="Programm-Spalte ist bereits vollständig aufgeklappt (100%)" data-i18n-en-title="Program column is already fully expanded (100%)"><span class="toggle-glyph">»</span></button>
         </div>
       </div>
       <!-- "Mehrere Programme in Programmliste laden" (Release 113, Sebastian, wörtlich siehe
@@ -2569,7 +2681,7 @@
            renderProgramListUI() in app.js gesteuert. -->
       <div class="program-list-bar" id="programListBar" hidden>
         <div class="program-list-dropdown" id="programListDropdown">
-          <button class="program-list-trigger" id="programListTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Programmliste: aktives CNC-Programm für die 3D-Simulation auswählen">
+          <button class="program-list-trigger" id="programListTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Programmliste: aktives CNC-Programm für die 3D-Simulation auswählen" data-i18n-en-title="Program list: select the active CNC program for the 3D simulation">
             <span class="program-list-trigger-label" id="programListTriggerLabel">–</span>
             <span class="program-list-count" id="programListCount">0/10</span>
             <span class="submenu-arrow">▾</span>
@@ -2595,7 +2707,7 @@
         <div class="tree" id="tree">
           <div class="empty-state" id="emptyState">
             <div class="glyph">⚙</div>
-            Noch keine Datei geladen.<br>Lade eine NC-Datei, um das Programm sowie Arbeitsgänge, Zwischenstopps und Programmende zu erkennen.
+            <span data-i18n-en-html="No file has been loaded yet.&lt;br&gt;Load an NC file to identify the program, as well as machining operations, intermediate stops, and the end of the program.">Noch keine CNC-Datei geladen.<br>Lade eine CNC-Datei, um das Programm sowie Arbeitsgänge, Zwischenstopps und Programmende zu erkennen.</span>
           </div>
         </div>
         <!-- "DXF-Layer"-Inhalt (78. Runde) - Geschwister von #tree, beide teilen sich denselben
@@ -2621,24 +2733,24 @@
                zeigt "Alle Layer anzeigen" - "wieder alle Layer ein"). Teilt sich bewusst dieselbe
                ".ops-showall-btn"-Klasse/Optik (Augensymbol mit Durchstreichung im "alle
                ausgeblendet"-Zustand) statt eigener, redundanter CSS-Regeln. -->
-          <button class="ops-showall-btn dxf-layer-showall-btn" id="btnShowAllDxfLayers" type="button" title="Alle Layer in der 3D-Ansicht ausblenden" hidden><span class="eye-glyph">👁</span> <span class="dxf-showall-label">Alle Layer ausblenden</span></button>
+          <button class="ops-showall-btn dxf-layer-showall-btn" id="btnShowAllDxfLayers" type="button" title="Alle Layer in der 3D-Ansicht ausblenden" data-i18n-en-title="Hide all layers in the 3D view" hidden><span class="eye-glyph">👁</span> <span class="dxf-showall-label">Alle Layer ausblenden</span></button>
           <div class="dxf-layer-list" id="dxfLayerList"></div>
         </div>
-        <div class="resizer ops-resizer" id="opsResizer" title="Arbeitsgänge-Spalte in der Breite anpassen" hidden></div>
+        <div class="resizer ops-resizer" id="opsResizer" title="Arbeitsgänge-Spalte in der Breite anpassen" data-i18n-en-title="Adjust the width of the processing steps column" hidden></div>
         <div class="ops-col" id="opsCol" hidden>
           <div class="ops-col-head">
             <div class="ops-col-head-row">
               <span class="ops-col-title" id="opsColTitle">Arbeitsgänge</span>
-              <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen">»</button>
+              <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen" data-i18n-en-title="Expand/collapse the processing steps column">»</button>
             </div>
-            <button class="ops-showall-btn" id="btnShowAllOps" type="button" title="Alle Arbeitsgänge in der 3D-Ansicht ausblenden"><span class="eye-glyph">👁</span> <span class="ops-showall-label">Alle AG ausblenden</span></button>
+            <button class="ops-showall-btn" id="btnShowAllOps" type="button" title="Alle Arbeitsgänge in der 3D-Ansicht ausblenden" data-i18n-en-title="Hide all processing steps in the 3D view"><span class="eye-glyph">👁</span> <span class="ops-showall-label">Alle AG ausblenden</span></button>
           </div>
           <div class="ops-list" id="opsList"></div>
         </div>
       </div>
     </div>
 
-    <div class="resizer" id="resizer" title="Arbeitsgänge-Bereich in der Breite anpassen"></div>
+    <div class="resizer" id="resizer" title="Arbeitsgänge-Bereich in der Breite anpassen" data-i18n-en-title="Adjust the width of the processing steps area"></div>
 
     <div class="viewer-col">
       <div class="viewer" id="viewer">
@@ -2657,18 +2769,18 @@
         </div>
         <!-- Home-Knopf neben dem Gizmo (70. Runde, Punkt 3) - siehe ausführlichen Kommentar bei
              ".gizmo-home-btn" im Stylesheet oben. ID/Funktion/Klick-Handler unverändert. -->
-        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Ansicht zurücksetzen: Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert">⌂</button>
+        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Ansicht zurücksetzen: Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Reset view: top-down view, zoomed out and centered on the currently displayed program">⌂</button>
         <!-- Verschiebbares Info-Fenster (70. Runde, Punkte 2/10/13) - siehe ausführlichen
              Kommentar bei ".info-panel" im Stylesheet oben. Startet hidden, genau wie #readout
              vorher (siehe readoutEl.hidden-Zuweisung in app.js, dort um infoPanelEl.hidden
              ergänzt) - erst sichtbar, sobald ein Programm mit Bahnpunkten geladen ist. -->
         <div class="info-panel" id="infoPanel" hidden>
-          <div class="info-panel-head" id="infoPanelHead" title="Ziehen, um dieses Fenster frei zu verschieben">
+          <div class="info-panel-head" id="infoPanelHead" title="Ziehen, um dieses Fenster frei zu verschieben" data-i18n-en-title="Drag to freely move this window">
             <!-- Mess-Icons (70. Runde, Punkt 10: "Text entfernen, nur die Icons einfügen") - IDs/
                  Klick-Handler/exklusives Ein-Ausschalt-Verhalten in app.js unverändert, nur ohne
                  Textbeschriftung und nicht mehr Teil der Symbolleiste. -->
-            <button class="toolbar-btn info-panel-btn" id="btnMeasure" type="button" title="Messwerkzeug: Abstand zwischen zwei Punkten/Linien im 3D-Bereich messen (X/Y/Z, Ebene und direkt)">📏</button>
-            <button class="toolbar-btn info-panel-btn" id="btnMeasureAngle" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Punkte im 3D-Bereich messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel zusätzlich zu den beiden Schenkellängen">∠</button>
+            <button class="toolbar-btn info-panel-btn" id="btnMeasure" type="button" title="Messwerkzeug: Abstand zwischen zwei Punkten/Linien im 3D-Bereich messen (X/Y/Z, Ebene und direkt)" data-i18n-en-title="Measurement tool: measure the distance between two points/lines in the 3D area (X/Y/Z, plane, and direct)">📏</button>
+            <button class="toolbar-btn info-panel-btn" id="btnMeasureAngle" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Punkte im 3D-Bereich messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel zusätzlich zu den beiden Schenkellängen" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked points in the 3D area (second click = vertex) - shows angle and counter-angle in addition to the two leg lengths">∠</button>
             <span class="info-panel-grip">⠿</span>
           </div>
           <div class="readout" id="readout" hidden></div>
@@ -2686,7 +2798,7 @@
     <div class="editor-jump">
       <label for="pasteJumpInput">Zeile:</label>
       <input type="number" id="pasteJumpInput" min="1" step="1">
-      <button class="btn ghost small" id="btnPasteJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)">Ok</button>
+      <button class="btn ghost small" id="btnPasteJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">Ok</button>
     </div>
     <div class="editor-wrap">
       <div class="editor-gutter" id="pasteAreaGutter" aria-hidden="true">1</div>
@@ -2761,11 +2873,11 @@
     <div class="editor-jump">
       <label for="programJumpInput">Zeile:</label>
       <input type="number" id="programJumpInput" min="1" step="1">
-      <button class="btn ghost small" id="btnProgramJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)">Ok</button>
+      <button class="btn ghost small" id="btnProgramJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">Ok</button>
       <span class="editor-jump-sep" id="programJumpOpSep" aria-hidden="true" hidden></span>
       <span class="editor-jump-ops" id="programJumpOpGroup" hidden>
         <label for="programJumpOpSelect">Arbeitsgang:</label>
-        <select id="programJumpOpSelect" title="Zur Startzeile eines erkannten Arbeitsgangs springen">
+        <select id="programJumpOpSelect" title="Zur Startzeile eines erkannten Arbeitsgangs springen" data-i18n-en-title="Jump to the start line of a recognized processing step">
           <option value="" selected disabled>Springen zu…</option>
         </select>
       </span>
@@ -2819,7 +2931,7 @@
          applyToolTypeUI()), nicht mehr nur einmalig beim Öffnen des Dialogs. -->
     <div class="tool-data-row">
       <label class="tool-data-field">Werkzeugtyp:
-        <select id="toolTypeSelect" class="filename-input" title="'Säge' berücksichtigt die Sägeblattstärke und stellt das Werkzeug wie bei Übergabe per '; BLADE' dar (inkl. verlängerter HSK63-Aufnahme)">
+        <select id="toolTypeSelect" class="filename-input" title="'Säge' berücksichtigt die Sägeblattstärke und stellt das Werkzeug wie bei Übergabe per '; BLADE' dar (inkl. verlängerter HSK63-Aufnahme)" data-i18n-en-title="'Saw' takes the blade thickness into account and displays the tool as when passed via '; BLADE' (incl. extended HSK63 holder)">
           <option value="fraeser">Fräser</option>
           <option value="saege">Säge</option>
         </select>
@@ -2835,7 +2947,7 @@
     </div>
     <div class="tool-data-row">
       <label class="tool-data-field">T-Längen:
-        <select id="toolModeSelect" class="filename-input" title="Bestimmt, wie die eingegebene Länge am 3D-Werkzeugzylinder relativ zum HSK63-Halter dargestellt wird">
+        <select id="toolModeSelect" class="filename-input" title="Bestimmt, wie die eingegebene Länge am 3D-Werkzeugzylinder relativ zum HSK63-Halter dargestellt wird" data-i18n-en-title="Determines how the entered length is displayed on the 3D tool cylinder relative to the HSK63 holder">
           <option value="ausgespannt">Ausgespannte Länge</option>
           <option value="eingespannt">Eingespannte Länge</option>
         </select>
@@ -2936,7 +3048,7 @@
     </div>
     <p class="panel-hint" id="dxfScaleCurrentHint">Aktuelle Gesamtskalierung seit Import: ×1</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnDxfScaleReset" type="button" title="Setzt die Skalierung direkt auf die Originalgröße beim Import zurück (×1), ohne den Kehrwert der bisherigen Faktoren ausrechnen zu müssen">Originalgröße</button>
+      <button class="btn ghost" id="btnDxfScaleReset" type="button" title="Setzt die Skalierung direkt auf die Originalgröße beim Import zurück (×1), ohne den Kehrwert der bisherigen Faktoren ausrechnen zu müssen" data-i18n-en-title="Resets the scale directly to the original import size (×1), without having to calculate the inverse of the previous factors">Originalgröße</button>
       <button class="btn ghost" id="btnDxfScaleCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnDxfScaleConfirm" type="button">Ok</button>
     </div>
@@ -2969,21 +3081,21 @@
       <label class="color-field-row">
         <span>Hintergrund CNC-Programmcode</span>
         <span class="color-field-inputs">
-          <input type="color" id="colorCodeBgPicker" title="Farbe wählen">
+          <input type="color" id="colorCodeBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorCodeBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ffffff">
         </span>
       </label>
       <label class="color-field-row">
         <span>Hintergrund Arbeitsgänge</span>
         <span class="color-field-inputs">
-          <input type="color" id="colorOpsBgPicker" title="Farbe wählen">
+          <input type="color" id="colorOpsBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorOpsBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#eef4f6">
         </span>
       </label>
       <label class="color-field-row">
         <span>Hintergrund 3D Simulation</span>
         <span class="color-field-inputs">
-          <input type="color" id="colorViewerBgPicker" title="Farbe wählen">
+          <input type="color" id="colorViewerBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorViewerBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#eef4f6">
         </span>
       </label>
@@ -3012,7 +3124,7 @@
         CNC-Programmcode Zeilennummerierung
       </span>
       <span class="color-field-inputs">
-        <input type="color" id="fontColorLinenumPicker" title="Farbe wählen">
+        <input type="color" id="fontColorLinenumPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorLinenumHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#8a9ba6">
       </span>
     </label>
@@ -3022,7 +3134,7 @@
         CNC-Programmcode Code
       </span>
       <span class="color-field-inputs">
-        <input type="color" id="fontColorCodePicker" title="Farbe wählen">
+        <input type="color" id="fontColorCodePicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorCodeHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#17324a">
       </span>
     </label>
@@ -3032,7 +3144,7 @@
         Arbeitsgänge
       </span>
       <span class="color-field-inputs">
-        <input type="color" id="fontColorOpsPicker" title="Farbe wählen">
+        <input type="color" id="fontColorOpsPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorOpsHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#17324a">
       </span>
     </label>
@@ -3042,7 +3154,7 @@
         Geschwindigkeit
       </span>
       <span class="color-field-inputs">
-        <input type="color" id="fontColorSpeedPicker" title="Farbe wählen">
+        <input type="color" id="fontColorSpeedPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorSpeedHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#58707e">
       </span>
     </label>
@@ -3052,7 +3164,7 @@
         Sprung in Zeile
       </span>
       <span class="color-field-inputs">
-        <input type="color" id="fontColorJumpPicker" title="Farbe wählen">
+        <input type="color" id="fontColorJumpPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorJumpHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#58707e">
       </span>
     </label>
@@ -3090,42 +3202,42 @@
     <label class="color-field-row">
       <span>1. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor1Picker" title="Farbe wählen">
+        <input type="color" id="opColor1Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor1Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ad1f2d">
       </span>
     </label>
     <label class="color-field-row">
       <span>2. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor2Picker" title="Farbe wählen">
+        <input type="color" id="opColor2Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor2Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#2b6674">
       </span>
     </label>
     <label class="color-field-row">
       <span>3. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor3Picker" title="Farbe wählen">
+        <input type="color" id="opColor3Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor3Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f8a52">
       </span>
     </label>
     <label class="color-field-row">
       <span>4. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor4Picker" title="Farbe wählen">
+        <input type="color" id="opColor4Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor4Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#8a4bb0">
       </span>
     </label>
     <label class="color-field-row">
       <span>5. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor5Picker" title="Farbe wählen">
+        <input type="color" id="opColor5Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor5Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9922a">
       </span>
     </label>
     <label class="color-field-row">
       <span>6. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor6Picker" title="Farbe wählen">
+        <input type="color" id="opColor6Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor6Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f9e9e">
       </span>
     </label>
@@ -3135,28 +3247,28 @@
     <label class="color-field-row">
       <span>7. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor7Picker" title="Farbe wählen">
+        <input type="color" id="opColor7Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor7Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#b5507a">
       </span>
     </label>
     <label class="color-field-row">
       <span>8. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor8Picker" title="Farbe wählen">
+        <input type="color" id="opColor8Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor8Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#5c6bc0">
       </span>
     </label>
     <label class="color-field-row">
       <span>9. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor9Picker" title="Farbe wählen">
+        <input type="color" id="opColor9Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor9Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#7a8a3d">
       </span>
     </label>
     <label class="color-field-row">
       <span>10. Arbeitsgang</span>
       <span class="color-field-inputs">
-        <input type="color" id="opColor10Picker" title="Farbe wählen">
+        <input type="color" id="opColor10Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor10Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#a15c2e">
       </span>
     </label>
@@ -3180,7 +3292,7 @@
     <h3>Spalteneinstellungen</h3>
     <p class="panel-hint">Bevorzugte Breite von <span class="k">CNC-Programmcode</span> als Anteil ihrer automatisch ermittelten vollen Breite, sowie Ein-/Ausklapp-Vorgabe für <span class="k">Arbeitsgänge</span> (immer entweder eingeklappt oder exakt an den längsten Arbeitsgang angepasst, keine Zwischenbreite mehr wählbar) - wird bei jedem (Neu-)Laden eines Programms angewendet. Die Pfeil-Knöpfe über der Programmcode-Spalte bzw. der Ein-/Ausklappen-Knopf über der Arbeitsgänge-Spalte erlauben zusätzlich jederzeit eine feinere, nur für die aktuelle Sitzung geltende Anpassung.</p>
     <div class="scale-group">
-      <div class="scale-group-title">CNC-Programmcode</div>
+      <div class="scale-group-title" data-i18n-en="CNC-Programcode">CNC-Programmcode</div>
       <div class="scale-choice" id="columnScaleCodeChoice">
         <label class="scale-option"><input type="radio" name="columnScaleCode" value="100"> 100%</label>
         <label class="scale-option"><input type="radio" name="columnScaleCode" value="75"> 75%</label>
@@ -3221,14 +3333,14 @@
     <label class="color-field-row">
       <span>Hintergrundfarbe</span>
       <span class="color-field-inputs">
-        <input type="color" id="menuColorBgPicker" title="Farbe wählen">
+        <input type="color" id="menuColorBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="menuColorBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ad1f2d">
       </span>
     </label>
     <label class="color-field-row">
       <span>Schriftfarbe</span>
       <span class="color-field-inputs">
-        <input type="color" id="menuColorInkPicker" title="Farbe wählen">
+        <input type="color" id="menuColorInkPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="menuColorInkHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ffffff">
       </span>
     </label>
@@ -3273,14 +3385,14 @@
      Beschriftung seit 118 ohne "CNC-"-Präfix) / "Programmliste löschen" (*neu ab Release 118*) /
      "Alle Arbeitsgänge ausblenden", siehe Kommentar direkt beim jeweiligen Button unten. -->
 <div class="context-menu" id="appContextMenu" hidden>
-  <button class="menu-item" id="ctxMeasureLength" type="button">Längenmessung</button>
-  <button class="menu-item" id="ctxMeasureAngle" type="button">Winkelmessung</button>
+  <button class="menu-item" id="ctxMeasureLength" type="button" data-i18n-en="Length measurement">Längenmessung</button>
+  <button class="menu-item" id="ctxMeasureAngle" type="button" data-i18n-en="Angle measurement">Winkelmessung</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxCodeJump" type="button">Codesprung</button>
-  <button class="menu-item" id="ctxWholeProgram" type="button">Gesamtes Programm</button>
+  <button class="menu-item" id="ctxCodeJump" type="button" data-i18n-en="Code jump">Codesprung</button>
+  <button class="menu-item" id="ctxWholeProgram" type="button" data-i18n-en="Complete Programcode">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxLoadProgram" type="button">Programm laden</button>
-  <button class="menu-item" id="ctxClearProgram" type="button">Programm löschen</button>
+  <button class="menu-item" id="ctxLoadProgram" type="button" data-i18n-en="Load program">Programm laden</button>
+  <button class="menu-item" id="ctxClearProgram" type="button" data-i18n-en="Delete program">Programm löschen</button>
   <!-- "Programmliste erstellen"/"Programmliste löschen" (Release 117: ursprünglich nur
        "CNC-Programmliste erstellen" direkt unter "Programm laden", siehe Sebastian-Zitat im
        Architektur-Kommentar bei "programList" in app.js; Release 118, Sebastian: "im Rechtsklick
@@ -3295,14 +3407,14 @@
        startNewProgramList() in app.js); "Programmliste löschen" ruft dieselbe clearProgramList()
        auf wie der Menüpunkt "CNC-Programmliste löschen"/das Symbolleisten-Icon "☰✕ Liste" und ist
        ebenso deaktiviert, solange die Programmliste leer ist. -->
-  <button class="menu-item" id="ctxNewProgramList" type="button">Programmliste erstellen</button>
-  <button class="menu-item" id="ctxClearProgramList" type="button">Programmliste löschen</button>
-  <button class="menu-item" id="ctxToggleAllOps" type="button">Alle Arbeitsgänge ausblenden</button>
+  <button class="menu-item" id="ctxNewProgramList" type="button" data-i18n-en="Create program list">Programmliste erstellen</button>
+  <button class="menu-item" id="ctxClearProgramList" type="button" data-i18n-en="Delete program list">Programmliste löschen</button>
+  <button class="menu-item" id="ctxToggleAllOps" type="button" data-i18n-en="Hide all processing steps">Alle Arbeitsgänge ausblenden</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxLoadDxf" type="button">DXF laden</button>
-  <button class="menu-item" id="ctxClearDxf" type="button">DXF löschen</button>
-  <button class="menu-item" id="ctxToggleDxfLayers" type="button">DXF-Layer ausblenden</button>
-  <button class="menu-item" id="ctxMoveDxf" type="button">DXF verschieben</button>
+  <button class="menu-item" id="ctxLoadDxf" type="button" data-i18n-en="Load DXF">DXF laden</button>
+  <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
+  <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
+  <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
 </div>
 
 <script>
@@ -7824,8 +7936,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     const full = programList.length >= PROGRAM_LIST_MAX;
     programListAddBtn.disabled = full;
     programListAddBtn.title = full
-      ? ('Maximal ' + PROGRAM_LIST_MAX + ' Programme erreicht - bitte zuerst ein Programm aus der Liste entfernen')
-      : 'Weitere(s) CNC-Programm(e) zur Liste hinzufügen';
+      ? T('Maximal ' + PROGRAM_LIST_MAX + ' Programme erreicht - bitte zuerst ein Programm aus der Liste entfernen', 'Maximum of ' + PROGRAM_LIST_MAX + ' programs reached - please remove a program from the list first')
+      : T('Weitere(s) CNC-Programm(e) zur Liste hinzufügen', 'Add more CNC program(s) to the list');
     programListItems.innerHTML = '';
     programList.forEach(entry => {
       const row = document.createElement('div');
@@ -7834,7 +7946,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       nameBtn.type = 'button';
       nameBtn.className = 'program-list-item-name';
       nameBtn.textContent = entry.filename;
-      nameBtn.title = 'Als aktives Programm in der 3D-Simulation berechnen/anzeigen: ' + entry.filename;
+      nameBtn.title = T('Als aktives Programm in der 3D-Simulation berechnen/anzeigen: ', 'Calculate/show as the active program in the 3D simulation: ') + entry.filename;
       nameBtn.addEventListener('click', () => {
         if (entry.id !== activeProgramId) activateProgramFromList(entry.id);
         closeProgramListMenu();
@@ -7842,7 +7954,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'program-list-item-del';
-      delBtn.title = 'Aus der Programmliste entfernen: ' + entry.filename;
+      delBtn.title = T('Aus der Programmliste entfernen: ', 'Remove from the program list: ') + entry.filename;
       delBtn.textContent = '✕';
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -7952,8 +8064,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // dort deaktiviert - beide bleiben hier aber ohnehin `disabled` wegen "kein Programm
     // geladen", siehe oben).
     progCollapseStage = 0;
-    btnProgCollapse.title = 'Programm-Spalte verkleinern (50%)';
-    btnProgExpand.title = 'Programm-Spalte vergrößern';
+    btnProgCollapse.title = T('Programm-Spalte verkleinern (50%)', 'Shrink program column (50%)');
+    btnProgExpand.title = T('Programm-Spalte vergrößern', 'Enlarge program column');
     renderTree();
     setScope({ type: 'all' });
     // "DXF-Layer" (78. Runde): Ist noch ein DXF geladen, gibt es in der Programmcode-Spalte ohne
@@ -8030,28 +8142,31 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     btnDxfMirrorY.classList.toggle('active', dxfMirrorY);
     if (dxfGeometry) {
       dxfFilenameLabel.textContent = dxfFilename || 'DXF';
-      const parts = [`${dxfGeometry.entityCount} Entität(en)`, `${dxfGeometry.pointCount} Punkte`];
+      const parts = [
+        T(`${dxfGeometry.entityCount} Entität(en)`, `${dxfGeometry.entityCount} entit${dxfGeometry.entityCount === 1 ? 'y' : 'ies'}`),
+        T(`${dxfGeometry.pointCount} Punkte`, `${dxfGeometry.pointCount} points`)
+      ];
       if (dxfGeometry.skippedTypes && Object.keys(dxfGeometry.skippedTypes).length) {
         const skippedList = Object.entries(dxfGeometry.skippedTypes).map(([t, n]) => `${n}× ${t}`).join(', ');
-        parts.push(`nicht unterstützt/übersprungen: ${skippedList}`);
+        parts.push(T(`nicht unterstützt/übersprungen: ${skippedList}`, `not supported/skipped: ${skippedList}`));
       }
       const title = (dxfFilename || 'DXF') + ' — ' + parts.join(' · ');
       dxfFilenameLabel.title = title;
-      btnToggleDxf.title = (dxfVisible ? 'Importiertes DXF ausblenden' : 'Importiertes DXF einblenden') + ' — ' + title;
-      const moveTitle = 'Verschiebung (X/Y/Z) des importierten DXF eingeben — ' + title;
+      btnToggleDxf.title = (dxfVisible ? T('Importiertes DXF ausblenden', 'Hide imported DXF') : T('Importiertes DXF einblenden', 'Show imported DXF')) + ' — ' + title;
+      const moveTitle = T('Verschiebung (X/Y/Z) des importierten DXF eingeben', 'Enter the offset (X/Y/Z) of the imported DXF') + ' — ' + title;
       btnDxfMoveMenu.title = moveTitle;
       btnDxfMoveIcon.title = moveTitle;
-      const deleteTitle = 'Importiertes DXF wieder entfernen — ' + title;
+      const deleteTitle = T('Importiertes DXF wieder entfernen', 'Remove the imported DXF again') + ' — ' + title;
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
     } else {
       dxfFilenameLabel.textContent = '';
       dxfFilenameLabel.title = '';
-      btnToggleDxf.title = 'Importiertes DXF in der 3D-Ansicht ein-/ausblenden';
-      const moveTitle = 'Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde';
+      btnToggleDxf.title = T('Importiertes DXF in der 3D-Ansicht ein-/ausblenden', 'Show/hide the imported DXF in the 3D view');
+      const moveTitle = T('Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde', 'Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported');
       btnDxfMoveMenu.title = moveTitle;
       btnDxfMoveIcon.title = moveTitle;
-      const deleteTitle = 'Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde';
+      const deleteTitle = T('Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde', 'Removes the imported DXF again - only available once a DXF has been imported');
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
     }
@@ -8196,10 +8311,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     btnShowAllDxfLayers.setAttribute('aria-pressed', String(allHidden));
     if (allHidden) {
       btnShowAllDxfLayersLabel.textContent = 'Alle Layer anzeigen';
-      btnShowAllDxfLayers.title = 'Alle Layer wieder in der 3D-Ansicht zeigen';
+      btnShowAllDxfLayers.title = T('Alle Layer wieder in der 3D-Ansicht zeigen', 'Show all layers in the 3D view again');
     } else {
       btnShowAllDxfLayersLabel.textContent = 'Alle Layer ausblenden';
-      btnShowAllDxfLayers.title = 'Alle Layer in der 3D-Ansicht ausblenden';
+      btnShowAllDxfLayers.title = T('Alle Layer in der 3D-Ansicht ausblenden', 'Hide all layers in the 3D view');
     }
   }
 
@@ -8635,14 +8750,14 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // deaktiviert.
     btnProgCollapse.disabled = progCollapseStage >= PROG_STAGE_MAX;
     btnProgCollapse.title = progCollapseStage >= PROG_STAGE_MAX
-      ? 'Programm-Spalte ist bereits eingeklappt (0%)'
-      : 'Programm-Spalte verkleinern (auf ' + PROG_STAGE_PCT[progCollapseStage + 1] + '%)';
+      ? T('Programm-Spalte ist bereits eingeklappt (0%)', 'Program column is already collapsed (0%)')
+      : T('Programm-Spalte verkleinern (auf ' + PROG_STAGE_PCT[progCollapseStage + 1] + '%)', 'Shrink program column (to ' + PROG_STAGE_PCT[progCollapseStage + 1] + '%)');
     // Aufklappen/"Pfeil rechts" (Stufe sinkt 4->3->2->1->0): am Ende (Stufe 0, volle Breite)
     // deaktiviert.
     btnProgExpand.disabled = progCollapseStage <= 0;
     btnProgExpand.title = progCollapseStage <= 0
-      ? 'Programm-Spalte ist bereits vollständig aufgeklappt (100%)'
-      : 'Programm-Spalte vergrößern (auf ' + PROG_STAGE_PCT[progCollapseStage - 1] + '%)';
+      ? T('Programm-Spalte ist bereits vollständig aufgeklappt (100%)', 'Program column is already fully expanded (100%)')
+      : T('Programm-Spalte vergrößern (auf ' + PROG_STAGE_PCT[progCollapseStage - 1] + '%)', 'Enlarge program column (to ' + PROG_STAGE_PCT[progCollapseStage - 1] + '%)');
   }
 
   // 70. Runde, Sebastian, Punkt 14: "Verhalten auf/zuklappen ändern: 'Arbeitsgänge' kann nur voll
@@ -8799,7 +8914,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       item.type = 'button';
       item.className = 'op-item';
       item.dataset.opIndex = String(sec.index);
-      item.title = `Zur Zeile ${sec.startIdx + 1} springen (${sec.title})`;
+      item.title = T(`Zur Zeile ${sec.startIdx + 1} springen (${sec.title})`, `Jump to line ${sec.startIdx + 1} (${sec.title})`);
 
       const sw = document.createElement('span');
       sw.className = 'op-swatch';
@@ -8824,8 +8939,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       btnEye.classList.toggle('is-hidden', isHidden);
       btnEye.innerHTML = '<span class="eye-glyph">👁</span>';
       btnEye.title = isHidden
-        ? 'Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden'
-        : 'Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden';
+        ? T('Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden', "Show this processing step's path in the 3D view again")
+        : T('Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden', "Hide this processing step's path in the 3D view");
       btnEye.setAttribute('aria-pressed', String(isHidden));
       btnEye.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -8839,7 +8954,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       btn3d.className = 'op-3d-btn';
       btn3d.dataset.opIndex = String(sec.index);
       btn3d.textContent = '3D';
-      btn3d.title = 'Diesen Arbeitsgang in der 3D-Ansicht zeigen';
+      btn3d.title = T('Diesen Arbeitsgang in der 3D-Ansicht zeigen', 'Show this processing step in the 3D view');
       btn3d.addEventListener('click', (e) => {
         e.stopPropagation();
         // 59. Runde (Sebastian: "Wenn man einen Arbeitsgang mit '3D' anklickt, kann das 3D
@@ -8877,8 +8992,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (btn) {
       btn.classList.toggle('is-hidden', isHidden);
       btn.title = isHidden
-        ? 'Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden'
-        : 'Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden';
+        ? T('Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden', "Show this processing step's path in the 3D view again")
+        : T('Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden', "Hide this processing step's path in the 3D view");
       btn.setAttribute('aria-pressed', String(isHidden));
       const item = btn.closest('.op-item');
       if (item) item.classList.toggle('op-hidden', isHidden);
@@ -8912,7 +9027,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       hiddenOpsVersion++;
       opsListEl.querySelectorAll('.op-eye-btn:not(.is-hidden)').forEach(btn => {
         btn.classList.add('is-hidden');
-        btn.title = 'Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden';
+        btn.title = T('Bahn dieses Arbeitsgangs in der 3D-Ansicht wieder einblenden', "Show this processing step's path in the 3D view again");
         btn.setAttribute('aria-pressed', 'true');
         const item = btn.closest('.op-item');
         if (item) item.classList.add('op-hidden');
@@ -8923,7 +9038,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       hiddenOpsVersion++;
       opsListEl.querySelectorAll('.op-eye-btn.is-hidden').forEach(btn => {
         btn.classList.remove('is-hidden');
-        btn.title = 'Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden';
+        btn.title = T('Bahn dieses Arbeitsgangs in der 3D-Ansicht ausblenden', "Hide this processing step's path in the 3D view");
         btn.setAttribute('aria-pressed', 'false');
         const item = btn.closest('.op-item');
         if (item) item.classList.remove('op-hidden');
@@ -8942,10 +9057,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     btnShowAllOps.setAttribute('aria-pressed', String(allHidden));
     if (allHidden) {
       btnShowAllOpsLabel.textContent = 'Alle AG anzeigen';
-      btnShowAllOps.title = 'Alle Arbeitsgänge wieder in der 3D-Ansicht zeigen';
+      btnShowAllOps.title = T('Alle Arbeitsgänge wieder in der 3D-Ansicht zeigen', 'Show all processing steps in the 3D view again');
     } else {
       btnShowAllOpsLabel.textContent = 'Alle AG ausblenden';
-      btnShowAllOps.title = 'Alle Arbeitsgänge in der 3D-Ansicht ausblenden';
+      btnShowAllOps.title = T('Alle Arbeitsgänge in der 3D-Ansicht ausblenden', 'Hide all processing steps in the 3D view');
     }
   }
 
@@ -10206,11 +10321,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // Längenmesswerkzeug erscheinen - hier je einmal für beide Schenkel (Scheitelpunkt -> erster
       // bzw. dritter Punkt). "Gegenwinkel" wird als Explementärwinkel (360° - Winkel) verstanden.
       if (anglePoints.length === 0) {
-        measurePanel.innerHTML = '<div class="measure-hint">Winkelmessung aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Winkelmessung aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Angle measurement active: Click the first point (or line) in the 3D space.') + '</div>';
       } else if (anglePoints.length === 1) {
-        measurePanel.innerHTML = '<div class="measure-hint">Erster Punkt gesetzt – Scheitelpunkt (zweiten Punkt) anklicken.</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Erster Punkt gesetzt – Scheitelpunkt (zweiten Punkt) anklicken.', 'First point set – click the vertex (second point).') + '</div>';
       } else if (anglePoints.length === 2) {
-        measurePanel.innerHTML = '<div class="measure-hint">Scheitelpunkt gesetzt – dritten Punkt anklicken.</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Scheitelpunkt gesetzt – dritten Punkt anklicken.', 'Vertex set – click the third point.') + '</div>';
       } else {
         const [p1, vertex, p3] = anglePoints;
         const v1 = { x: p1.x - vertex.x, y: p1.y - vertex.y, z: p1.z - vertex.z };
@@ -10242,13 +10357,13 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       return;
     }
     if (!measureStart) {
-      measurePanel.innerHTML = '<div class="measure-hint">Messwerkzeug aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.</div>';
+      measurePanel.innerHTML = '<div class="measure-hint">' + T('Messwerkzeug aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Measurement tool active: Click the first point (or line) in the 3D area.') + '</div>';
     } else if (!measureEnd) {
-      measurePanel.innerHTML = '<div class="measure-hint">Startpunkt gesetzt – zweiten Punkt (oder Linie) anklicken.</div>';
+      measurePanel.innerHTML = '<div class="measure-hint">' + T('Startpunkt gesetzt – zweiten Punkt (oder Linie) anklicken.', 'Start point set – click the second point (or line).') + '</div>';
     } else {
       measurePanel.innerHTML =
         measureLegRows(measureStart, measureEnd, '') +
-        `<div class="measure-hint">Erneut klicken für eine neue Messung.</div>`;
+        `<div class="measure-hint">${T('Erneut klicken für eine neue Messung.', 'Click again for a new measurement.')}</div>`;
     }
   }
 
@@ -11243,9 +11358,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // ============================================================
   const fmt = n => (Math.round(n * 100) / 100).toFixed(2);
   const AXIS_META = {
-    A: { label: 'Kipp A', hint: 'Kippwinkel (typisch, maschinenabhängig)' },
-    B: { label: 'Kipp B', hint: 'Kippwinkel (typisch, maschinenabhängig)' },
-    C: { label: 'Dreh C', hint: 'Drehwinkel (typisch, maschinenabhängig)' }
+    A: { label: 'Kipp A', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
+    B: { label: 'Kipp B', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
+    C: { label: 'Dreh C', hint: 'Drehwinkel (typisch, maschinenabhängig)', hintEn: 'Rotation angle (typical, machine-dependent)' }
   };
 
   function updateReadout() {
@@ -11263,7 +11378,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       rows += '<div class="readout-sep"></div>';
       present.forEach(a => {
         const meta = AXIS_META[a];
-        rows += `<div class="readout-row rot" title="${meta.hint}"><span class="k">${meta.label}</span><span class="v">${fmt(p[a.toLowerCase()])}°</span></div>`;
+        rows += `<div class="readout-row rot" title="${T(meta.hint, meta.hintEn)}"><span class="k">${meta.label}</span><span class="v">${fmt(p[a.toLowerCase()])}°</span></div>`;
       });
     }
     // Werkzeugdaten (Benutzer: "Simulation liest Werkzeugdaten ... Ausgabe Werkzeug Radius*2 für
@@ -11272,7 +11387,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // direkt den Radius, nur diese Anzeige rechnet für die Ausgabe auf Durchmesser um.
     if (p.toolRadius != null && p.toolLength != null) {
       rows += '<div class="readout-sep"></div>';
-      rows += `<div class="readout-row" title="Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)"><span class="k">Werkzeug ⌀</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
+      rows += `<div class="readout-row" title="${T('Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)', 'Tool data read from the program (see the tool eye icon in the toolbar)')}"><span class="k">Werkzeug ⌀</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
       // "BLADE" (41. Runde): stammt der Längenwert von einer "; BLADE .."-Zeile (Sägeblattstärke
       // statt Werkzeuglänge, siehe extractToolData() in parser.js), wird das auch hier statt
       // "Länge" als "Sägeblattstärke" beschriftet - der Zahlenwert selbst (p.toolLength) und die
@@ -11568,13 +11683,13 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     ctxItems.clearProgram.disabled = btnClearProgram.disabled;
     ctxItems.clearProgramList.disabled = btnClearProgramListIcon.disabled; // Release 118
     ctxItems.toggleAllOps.disabled = !opSections.length;
-    ctxItems.toggleAllOps.textContent = hiddenOpIndexes.size > 0 ? 'Alle Arbeitsgänge anzeigen' : 'Alle Arbeitsgänge ausblenden';
+    ctxItems.toggleAllOps.textContent = hiddenOpIndexes.size > 0 ? T('Alle Arbeitsgänge anzeigen', 'Show all processing steps') : T('Alle Arbeitsgänge ausblenden', 'Hide all processing steps');
 
     const dxfLayers = (dxfGeometry && dxfGeometry.layers) || [];
     ctxItems.clearDxf.disabled = btnDxfDeleteMenu.disabled;
     ctxItems.moveDxf.disabled = btnDxfMoveMenu.disabled;
     ctxItems.toggleDxfLayers.disabled = !dxfLayers.length;
-    ctxItems.toggleDxfLayers.textContent = dxfHiddenLayers.size > 0 ? 'DXF-Layer anzeigen' : 'DXF-Layer ausblenden';
+    ctxItems.toggleDxfLayers.textContent = dxfHiddenLayers.size > 0 ? T('DXF-Layer anzeigen', 'Show DXF layers') : T('DXF-Layer ausblenden', 'Hide DXF layers');
   }
 
   function openContextMenu(x, y) {
@@ -11871,17 +11986,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       'const DEFAULT_KNOWLEDGE_BASE_TEXT = ' + JSON.stringify(knowledgeBaseText) + ';');
     return html;
   }
-  el('btnSaveSimulation').addEventListener('click', () => {
-    const blob = new Blob([buildSavedSimulationHtml()], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'CNC_Simulation.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+  // "Simulation speichern"-Button (#btnSaveSimulation) wurde am 23.09.2026 auf Sebastians Wunsch
+  // entfernt (siehe Kommentar beim ehemaligen Button-Markup weiter oben, "Datei"-Menü) - dieser
+  // Klick-Handler wurde deshalb ebenfalls entfernt (el('btnSaveSimulation') gäbe sonst null zurück
+  // und .addEventListener darauf würde beim Laden der Seite einen JavaScript-Fehler auslösen).
+  // buildSavedSimulationHtml() selbst bleibt bewusst stehen, siehe Kommentar dort.
 
   // ============================================================
   // Versionsupdate prüfen (Release 93, siehe UPDATE_MANIFEST_URL ganz oben für Hintergrund/
@@ -11980,6 +12089,223 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       });
   }
   btnCheckForUpdate.addEventListener('click', checkForUpdate);
+
+  // ============================================================
+  // "Token kaufen" (23.09.2026) TEMPORÄR AUSGEBAUT (30.09.2026, Sebastian: "Token kaufen entfernen"
+  // + "Beim Programmstart das Programm direkt starten ohne Anmeldung/Tokenprüfung") - das
+  // Bezahlsystem kommt zu einem späteren Zeitpunkt zurück, siehe Tokenkauf.md für die genauen
+  // Rückbau-Schritte. Bewusst als Blockkommentar auskommentiert statt gelöscht, damit das
+  // Wiedereinbauen später nur "/*"/"*/" hier sowie die HTML-Kommentare um den zugehörigen
+  // Menü-Knopf oben entfernen muss - der Menü-Knopf #btnBuyTokens existiert aktuell nicht mehr
+  // im Markup (siehe dort), daher würde el('btnBuyTokens') ohne dieses Auskommentieren sofort
+  // einen JavaScript-Fehler beim Laden der Seite werfen.
+  /*
+  // "Token kaufen" (NEU, 23.09.2026, Sebastian: "Erweiterung für die CNC-Simulation.html -> Kaufseite
+  // aufrufen können unter '?' -> 'Token kaufen'. Öffnet dann die Tokenseite und füllt die
+  // Mailadresse aus, die zum Login benutzt worden ist.")
+  //
+  // - Innerhalb der WebView2-exe (isRunningInHostWebView(), siehe oben): schickt nur ein kurzes
+  //   {type: 'cncsim-open-purchase-page'} an den C#-Host (siehe MainForm.cs/
+  //   AuthGate.OpenPurchasePage()) - die Simulation selbst kennt die Login-Email GAR NICHT (das
+  //   komplette Account-/Token-System lebt bewusst ausschließlich im C#-Host, siehe
+  //   Konzept_Tokenbezahlung.md, Abschnitt "Architekturvorschlag") - der Host öffnet den
+  //   Standardbrowser dann selbst mit der bei ihm bereits bekannten, aktuell eingeloggten Email
+  //   als "?email=..."-Parameter (identisch zum bestehenden Verhalten bei "Kein Guthaben mehr").
+  // - Normaler Browser-Tab (kein WebView2, also auch kein Login-System vorhanden): öffnet die
+  //   Kaufseite einfach ohne vorausgefüllte Email in einem neuen Tab.
+  const btnBuyTokens = el('btnBuyTokens');
+  const PURCHASE_PAGE_URL = 'https://cnc-simx.spekka83.workers.dev/';
+  function buyTokens() {
+    if (isRunningInHostWebView()) {
+      window.chrome.webview.postMessage({ type: 'cncsim-open-purchase-page' });
+      return;
+    }
+    window.open(PURCHASE_PAGE_URL, '_blank');
+  }
+  btnBuyTokens.addEventListener('click', buyTokens);
+  */
+
+  // ============================================================
+  // "Datenschutzerklärung"/"Impressum" (NEU, 30.09.2026, Sebastian: zwei neue Menüpunkte unter "?",
+  // per Trennstrich von "Versionsupdate prüfen" abgesetzt) - öffnen die beiden angehängten Texte
+  // (Datenschutzerklärung.txt/Impressum.txt) NICHT editierbar an.
+  //
+  // - Innerhalb der WebView2-exe (isRunningInHostWebView(), siehe oben): schickt nur den
+  //   Nachrichtentyp an den C#-Host (siehe MainForm.cs/LegalTextDialog.cs) - der öffnet ein
+  //   eigenes, natives WinForms-Fenster mit einer schreibgeschützten Textbox (kein Browserfenster,
+  //   kein Bearbeiten möglich).
+  // - Normaler Browser-Tab (kein WebView2, kein natives Fenster verfügbar): Fallback auf einen
+  //   neuen Tab mit dem reinen Text (derselbe Blob-Trick wie beim Update-Download oben, nur mit
+  //   text/plain statt eines Downloads) - technisch zwar per Browser-Adressleiste editierbar zu
+  //   erreichen (jede Textdatei im Browser ist das), aber kein anklickbares Bearbeitungs-Element
+  //   auf der Seite selbst; dieser Fallback greift ohnehin nur außerhalb der exe (z. B. beim Testen
+  //   in einem gewöhnlichen Browser), nicht im normalen Kundenbetrieb.
+  //
+  // WICHTIG: Der Text unten MUSS inhaltlich mit LegalTexts.cs (C#-Seite) übereinstimmen - beide
+  // Stellen halten denselben Text bewusst unabhängig voneinander vor (die Simulation kennt die
+  // exe-Dateien nicht und umgekehrt), müssen bei künftigen Änderungen also von Hand synchron
+  // gehalten werden (siehe Konzept_Tokenbezahlung.md/CNC_Simulation.md für weitere Beispiele
+  // dieses Musters, z. B. HostToken).
+  const LEGAL_TEXTS = {
+    privacy: {
+      title: 'Datenschutzerklärung',
+      text: `1. Verantwortlicher
+
+Sebastian Bäcker
+Kurler Str. 257
+44329 Dortmund
+Email: s.baecker1983@gmail.com
+Telefon: +49 160 94734534
+
+2. Übersicht der Verarbeitungen
+
+Diese Website (die "Kaufseite" von CNC SimX) und die zugehörige CNC-SimX-Anwendung verarbeiten personenbezogene Daten in folgenden Zusammenhängen:
+
+- Registrierung & Login: Email-Adresse und Passwort (verschlüsselt gespeichert) zur Erstellung und Verwaltung deines Accounts, über den Auftragsverarbeiter Supabase.
+- Guthaben/Token-Kauf: Deine Email-Adresse und die gekaufte Token-Anzahl werden zur Zuordnung des Guthabens verarbeitet; die eigentliche Zahlungsabwicklung übernimmt PayPal.
+- Hosting: Beim Aufruf dieser Seite verarbeitet der Hosting-Anbieter Cloudflare technisch notwendige Daten (u. a. IP-Adresse) zur Auslieferung der Seite.
+
+3. Registrierung & Login (Supabase)
+
+Für die Kontoerstellung und -verwaltung wird der Dienst Supabase eingesetzt (Supabase, Inc.). Verarbeitet werden Email-Adresse und Passwort (nur als Hash gespeichert, nicht im Klartext). Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Erfüllung eines Vertrags bzw. vorvertragliche Maßnahmen -- Bereitstellung deines Accounts). Die Daten werden so lange gespeichert, wie der Account besteht; bei Löschung des Accounts werden sie gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten entgegenstehen.
+
+4. Zahlungsabwicklung (PayPal)
+
+Der Kauf von Tokens erfolgt über PayPal (PayPal (Europe) S.à r.l. et Cie, S.C.A.). Bei einer Zahlung verarbeitet PayPal die dafür erforderlichen Daten gemäß eigener Datenschutzerklärung; an uns übermittelt wird lediglich die Bestätigung der erfolgreichen Zahlung sowie eine Bestell-ID, verknüpft mit deiner angegebenen Account-Email zur Gutschrift der Tokens. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
+
+5. Hosting (Cloudflare)
+
+Diese Seite wird über Cloudflare ausgeliefert (Cloudflare, Inc.). Dabei werden automatisch technische Informationen verarbeitet, die dein Browser übermittelt (u. a. IP-Adresse, Datum/Uhrzeit des Zugriffs, aufgerufene Seite). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren und funktionsfähigen Auslieferung der Website).
+
+6. Cookies
+
+Diese Website selbst setzt keine eigenen Tracking- oder Analyse-Cookies. Die eingebundenen Dienste PayPal und ggf. Cloudflare können technisch notwendige Cookies setzen, die für den jeweiligen Dienst (z. B. Zahlungsabwicklung, Absicherung gegen Missbrauch) erforderlich sind.
+
+7. Empfänger / Auftragsverarbeiter
+
+Daten werden an die oben genannten Dienstleister (Supabase, PayPal, Cloudflare) weitergegeben, soweit dies zur Erbringung der jeweiligen Leistung notwendig ist. Mit Auftragsverarbeitern werden, soweit erforderlich, entsprechende Verträge (AVV) abgeschlossen bzw. deren Standardvertragsklauseln genutzt.
+
+8. Deine Rechte
+
+Du hast nach der DSGVO das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) sowie Widerspruch gegen die Verarbeitung (Art. 21) deiner personenbezogenen Daten. Wende dich dazu an die oben genannte Kontaktadresse. Außerdem steht dir ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde zu.
+
+Eine Kontolöschung (über „Profil bearbeiten" in CNC SimX) wird zunächst nur vorgemerkt: Dein Konto samt Guthaben bleibt danach noch 14 Tage lang vollständig gespeichert, bevor es endgültig gelöscht wird. Meldest du dich innerhalb dieser 14 Tage erneut an, wird die Löschung automatisch rückgängig gemacht und dein Guthaben bleibt erhalten — diese Frist dient ausschließlich als Schutz vor versehentlichen Löschungen und wird dir beim Löschvorgang selbst noch einmal angezeigt.
+
+9. Speicherdauer
+
+Personenbezogene Daten werden nur so lange gespeichert, wie es für die genannten Zwecke erforderlich ist bzw. wie es gesetzliche Aufbewahrungsfristen vorschreiben.`,
+    },
+    imprint: {
+      title: 'Impressum',
+      text: `Angaben gemäß § 5 DDG
+
+Sebastian Bäcker
+Kurler Str. 257
+44329 Dortmund
+
+Kontakt
+
+Telefon: +49 160 94734534
+Email: s.baecker1983@gmail.com
+
+Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+
+Sebastian Bäcker (Anschrift wie oben)`,
+    },
+  };
+
+  const btnShowPrivacy = el('btnShowPrivacy');
+  const btnShowImprint = el('btnShowImprint');
+
+  function showLegalText(kind) {
+    const info = LEGAL_TEXTS[kind];
+    if (isRunningInHostWebView()) {
+      window.chrome.webview.postMessage({ type: kind === 'privacy' ? 'cncsim-show-privacy' : 'cncsim-show-imprint' });
+      return;
+    }
+    const blob = new Blob([info.text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+  btnShowPrivacy.addEventListener('click', () => showLegalText('privacy'));
+  btnShowImprint.addEventListener('click', () => showLegalText('imprint'));
+
+  // ============================================================
+  // Sprachumschalter DE/EN (NEU, 23.09.2026, Sebastian: "Konzept: Seite zweisprachig. Oben links
+  // neben 'Datei' EN und DE anbieten. DE = Alles wie gehabt, EN = Sprache ändert sich auf
+  // Englisch." + Liste konkreter Übersetzungen + "Der Rest soll mal versuchsweise automatisch
+  // übersetzt werden.") - übersetzt alle mit [data-i18n-en] markierten Elemente (siehe Markup
+  // weiter oben: Hauptmenüs, Maschinentyp-Beschriftung, Einstellungen importieren/exportieren,
+  // Versionsupdate prüfen, Letzte Releasezeit, +Werkzeuge/Werkzeug/Spannfutter-Knöpfe, Gesamtes
+  // Programm, die beiden Listen-Symbole, CNC-Programmcode-Reiter). BEWUSST eine erste,
+  // versuchsweise Abdeckung genau der von Sebastian benannten Texte plus einiger offensichtlich
+  // dazugehöriger Stellen - NICHT jeder einzelne Tooltip/jede Meldung/jedes Panel der gesamten
+  // Simulation (das wäre ein eigenes, deutlich größeres Vorhaben).
+  //
+  // Deutsch bleibt technisch die "Quelle": der ursprüngliche deutsche Textinhalt wird beim ersten
+  // Wechsel auf Englisch automatisch in data-i18n-de zwischengespeichert (statt ihn zusätzlich
+  // hart in diesem Script zu duplizieren) - ein Zurückwechseln nach Deutsch stellt dadurch immer
+  // exakt den ursprünglichen Text wieder her. Die Wahl wird in localStorage gemerkt (rein
+  // clientseitig, bewusst NICHT über den sonst für Einstellungen genutzten Dateipfad-gebundenen
+  // Mechanismus, siehe 5.8 der Doku) und beim nächsten Laden automatisch wieder angewendet.
+  const langButtons = Array.from(document.querySelectorAll('#langSwitch .lang-switch-btn'));
+  // NACHTRAG (23.09.2026, Sebastian: umfangreiche Liste weiterer Übersetzungen + "Alle Tooltips
+  // beim hovern mit der Maus für die EN Version bitte übersetzen, automatisch, was dein System so
+  // hergibt"): drei Erweiterungen der ursprünglichen [data-i18n-en]-Technik von oben.
+  // 1. "currentLang" hält die aktuelle Sprache jetzt in einer eigenen Variable fest (nicht nur
+  //    implizit über die Knopf-Klasse), damit AUCH Code, der NICHT über applyLanguage() läuft
+  //    (z.B. die Mess-Hinweiszeilen weiter unten, dynamisch per JS gesetzte title-Attribute),
+  //    jederzeit die aktuell aktive Sprache abfragen kann.
+  // 2. T(de, en) ist der dafür gedachte kleine Hilfsruf - genau dasselbe Muster wie
+  //    Localization.T() im C#-Teil (siehe exe_starterkit/Localization.cs), hier nur clientseitig.
+  // 3. [data-i18n-en-title] überträgt dieselbe Technik wie [data-i18n-en] zusätzlich auf das
+  //    title-Attribut (Maus-Hover-Tooltip) statt auf den sichtbaren Text - für die zahlreichen
+  //    Tooltips, deren BESCHRIFTUNG unverändert Deutsch/Englisch bleibt (z.B. Symbol-Knöpfe ohne
+  //    eigenen Text), aber deren Tooltip trotzdem übersetzt werden soll.
+  // [data-i18n-en-html] überträgt dieselbe Technik zusätzlich auf innerHTML statt textContent -
+  // NUR für die wenigen Stellen mit eingebettetem Markup (hier: der <br> im Leerzustand-Hinweis),
+  // da ein reiner textContent-Tausch das <br> beim ersten Wechsel unwiderruflich zerstören würde
+  // (exakt derselbe Fehler, der beim Bau von kaufseite/datenschutz.html schon einmal passiert ist
+  // und dort auf innerHTML umgestellt wurde - hier von Anfang an richtig gemacht).
+  let currentLang = 'de';
+  function T(de, en) { return currentLang === 'en' ? en : de; }
+  function applyLanguage(lang) {
+    currentLang = lang === 'en' ? 'en' : 'de';
+    document.querySelectorAll('[data-i18n-en]').forEach(elem => {
+      if (elem.dataset.i18nDe === undefined) {
+        elem.dataset.i18nDe = elem.textContent;
+      }
+      elem.textContent = lang === 'en' ? elem.getAttribute('data-i18n-en') : elem.dataset.i18nDe;
+    });
+    document.querySelectorAll('[data-i18n-en-title]').forEach(elem => {
+      if (elem.dataset.i18nDeTitle === undefined) {
+        elem.dataset.i18nDeTitle = elem.getAttribute('title') || '';
+      }
+      elem.setAttribute('title', lang === 'en' ? elem.getAttribute('data-i18n-en-title') : elem.dataset.i18nDeTitle);
+    });
+    document.querySelectorAll('[data-i18n-en-html]').forEach(elem => {
+      if (elem.dataset.i18nDeHtml === undefined) {
+        elem.dataset.i18nDeHtml = elem.innerHTML;
+      }
+      elem.innerHTML = lang === 'en' ? elem.getAttribute('data-i18n-en-html') : elem.dataset.i18nDeHtml;
+    });
+    document.documentElement.lang = lang === 'en' ? 'en' : 'de';
+    langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
+    try { localStorage.setItem('cncsimx_lang', lang); } catch (e) { /* rein defensiv, siehe 5.8 der Doku */ }
+    // WICHTIG, ehrlich benannt: Zahlreiche Tooltips/Hinweiszeilen werden nicht statisch im Markup
+    // gehalten, sondern von app.js bei jeder Zustandsänderung frisch per JS neu zusammengebaut
+    // (z.B. die Mess-Hinweiszeile, die Programmliste-Einträge mit ihrem Dateinamen). Diese Stellen
+    // rufen jeweils T(de, en) auf (siehe dort) und zeigen dadurch ab der NÄCHSTEN Zustandsänderung
+    // automatisch die richtige Sprache - ein Sprachwechsel per Klick hier aktualisiert sie aber
+    // NICHT sofort rückwirkend, ohne dass zusätzlich jede einzelne Neuzeichnen-Funktion hier
+    // erneut aufgerufen würde. Bewusst nicht umgesetzt (deutlich größerer Aufwand für einen sehr
+    // kurzen Zwischenzustand) - betrifft in der Praxis nur den Sonderfall "Sprache mitten in einer
+    // laufenden Messung wechseln".
+  }
+  langButtons.forEach(btn => btn.addEventListener('click', () => applyLanguage(btn.dataset.lang)));
+  let savedLang = 'de';
+  try { savedLang = localStorage.getItem('cncsimx_lang') || 'de'; } catch (e) { /* rein defensiv */ }
+  applyLanguage(savedLang);
 
   // "CNC Sim speichern"/"CNC Sim laden" (32. Runde, Benutzer: „'CNC Sim speichern' fehlt noch ...
   // Das speichert den aktuellen Stand der Seite inkl. aller Simulationseinstellungen
@@ -12518,7 +12844,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (rawProgramText != null) displayCurrentProgram();
   }
   function updateOpNamesButtonTitle() {
-    btnEditOpNames.title = `Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen (${opNameList.length} Namen) bearbeiten`;
+    btnEditOpNames.title = T(`Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen (${opNameList.length} Namen) bearbeiten`, `Edit the editable list of processing step names used for list-based recognition without separator lines (${opNameList.length} names)`);
   }
   updateOpNamesButtonTitle();
   btnEditOpNames.addEventListener('click', () => {
@@ -12593,7 +12919,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     btn.type = 'button';
     btn.className = 'kb-letter-btn';
     btn.textContent = letter;
-    btn.title = 'Zu Einträgen ab "' + letter + '" springen';
+    btn.title = T('Zu Einträgen ab "' + letter + '" springen', 'Jump to entries starting with "' + letter + '"');
     btn.addEventListener('click', () => jumpToKnowledgeBaseLetter(letter));
     knowledgeBaseAzBar.appendChild(btn);
   });
