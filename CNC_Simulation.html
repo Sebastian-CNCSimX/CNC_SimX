@@ -5369,8 +5369,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 121;
-  const APP_RELEASE_TIMESTAMP = '01.10.2026, 07:58 Uhr';
+  const APP_RELEASE_NUMBER = 122;
+  const APP_RELEASE_TIMESTAMP = '01.10.2026, 13:38 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5503,6 +5503,16 @@
   // alphabetisch (case-insensitiv) zwischen "Houfek" und "MAKA" ("houfek" < "krc" < "maka"),
   // damit die weiter oben beschriebene, bewusst von Hand alphabetisch sortierte Reihenfolge
   // erhalten bleibt (siehe Kommentar zu Runde 34 oben) - keine Laufzeit-Umsortierung nötig.
+  // Release 121 (Sebastian, wörtlich): "Bitte bei Maschinentyp 'Reichenbacher' folgenden Text,
+  // statt den bisherigen einbauen: [MACHINETYPE Name="Reichenbacher"][SWITCHCASEMACHINE]
+  // TRANS->G92 CR=->R RND=->R[/SWITCHCASEMACHINE][CALCMACHINE]X*1 Y*1 Z*1[/CALCMACHINE]
+  // SWIVELANGLE=45[/MACHINETYPE Name="Reichenbacher"]" - 1:1 wie vorgegeben übernommen. Gegenüber
+  // der bisherigen Fassung (45. Runde, siehe oben) kommen zwei neue SWITCHCASEMACHINE-Regeln
+  // hinzu, "CR=->R" und "RND=->R" (beide auf das generische Rundungs-/Radius-Achswort "R"
+  // abgebildet) - die bereits bestehende Regel "TRANS->G92" sowie CALCMACHINE (X*1/Y*1/Z*1) und
+  // SWIVELANGLE=45 bleiben unverändert. "CR=->R" ist dabei dieselbe Regel, die auch der SCM-Block
+  // bereits verwendet (siehe dort) - zwei verschiedene Maschinentypen können dieselbe
+  // Austauschregel unabhängig voneinander enthalten, das ist kein Widerspruch.
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -5636,6 +5646,8 @@ Z*1
 [MACHINETYPE Name="Reichenbacher"]
 [SWITCHCASEMACHINE]
 TRANS->G92
+CR=->R
+RND=->R
 [/SWITCHCASEMACHINE]
 [CALCMACHINE]
 X*1
