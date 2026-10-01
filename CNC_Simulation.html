@@ -5297,10 +5297,58 @@
   // z.B. bei unterschiedlicher Nachkommastellenzahl), wird die Maske pro Regel-Durchlauf aus
   // dem AKTUELLEN Zwischenstand neu berechnet, um Offset-Drift zwischen mehreren Achsregeln
   // zu vermeiden.
+  //
+  // Release 126 (Sebastian: "SCM geht, aber bei Biesse sind jetzt riesengroße Kreise drin."
+  // mit Beispielprogramm "BiesseKreiseGross.txt", danach eigener Fund: "Eine Sache hab ich
+  // gefunden G2->G3 und G3->G2 in der Austauschfunktion entfernen, entfernt die Kreise. Dafür
+  // ist das zackig. 'absolut' und 'incremental' halfen auch nicht."):
+  //
+  // DIAGNOSE: Weder IJMODE (war für Biesse bereits korrekt auf "absolute" gestellt, siehe
+  // Release 123) noch die G2<->G3-Drehsinn-Vertauschung in SWITCHCASEMACHINE (die ist für die
+  // Y-Spiegelung unten tatsächlich richtig - ihr Entfernen behebt die Kreise nur zufällig,
+  // erzeugt aber dafür Zacken) waren die eigentliche Ursache. Der echte Fehler: G02/G03-
+  // Bogenparameter I/J sind per Konvention Offsets/Koordinaten PARALLEL zu X bzw. Y (I~X,
+  // J~Y, K~Z, wie in CALCMACHINE-Achsen selbst). CALCMACHINE wendet Y*-1/Z*-1 (Biesse-
+  // Spiegelung) bisher aber NUR auf die Achsbuchstaben X/Y/Z selbst an, NIE auf I/J/K - nach
+  // der Spiegelung von Start-/Zielpunkt (X/Y) blieb der daraus mit I/J gebildete Bogen-
+  // Mittelpunkt (ob per IJMODE=absolute direkt oder IJMODE=incremental als Versatz vom
+  // Startpunkt) im unveränderten, nicht gespiegelten Koordinatensystem stehen - ein
+  // geometrisch falscher Mittelpunkt. Bei den in der Biesse-Datei vorkommenden sehr großen I/
+  // J-Werten (über 1000mm, da sehr große Radien mit kurzen Sehnen verwendet werden) macht sich
+  // das extrem bemerkbar: im Tessellierungs-Ergebnis (siehe tessellateArc()/arcSweepAngle())
+  // kann daraus ein nahezu komplett durchlaufener, riesiger Kreis statt des kurzen, sanften
+  // Bogenstücks entstehen.
+  //
+  // FIX: Für jede CALCMACHINE-Achsregel auf X/Y/Z wird automatisch dieselbe Faktor-Regel auch
+  // auf den zugehörigen Bogenparameter-Buchstaben (I/J/K) angewendet - außer der Maschinentyp
+  // definiert explizit selbst schon eine eigene I-/J-/K-Regel (dann hat diese Vorrang). Für
+  // alle anderen eingebauten Maschinentypen (X*1/Y*1/Z*1, keine Spiegelung) ist das ein reines
+  // No-Op, nur Biesse (X*1/Y*-1/Z*-1) ist betroffen.
+  //
+  // VERIFIKATION: Geometrisch gegen BiesseKreiseGross.txt geprüft (dieselbe Methode wie bei
+  // Release 125/SCM: Abstand Mittelpunkt->Start vs. Mittelpunkt->Ziel je Bogen muss
+  // übereinstimmen) - nach SWITCHCASEMACHINE+CALCMACHINE und mit automatisch mitgespiegeltem J
+  // sinkt die Abweichung an allen 16 im Beispiel enthaltenen G02/G03-Bögen von bisher 0,6 bis
+  // 83,7mm auf 0,0000 bis 0,0053mm (quasi exakt) - die bisherige, nicht mitgespiegelte Variante
+  // ergab an jedem einzelnen Bogen einen spürbar falschen Mittelpunkt. Die SCM-Kontur aus
+  // Release 125 bleibt unverändert korrekt (SCM hat keine Achsspiegelung, CALCMACHINE X*1/Y*1/
+  // Z*1 - die neue I/J/K-Mitspiegelung ist dort ein No-Op).
+  const AXIS_TO_ARC_LETTER = { X: 'I', Y: 'J', Z: 'K' };
+  function deriveArcLetterRules(calcRules) {
+    const hasOwnRule = letter => calcRules.some(r => r.axis === letter);
+    const derived = [];
+    calcRules.forEach(rule => {
+      const arcLetter = AXIS_TO_ARC_LETTER[rule.axis];
+      if (!arcLetter || hasOwnRule(arcLetter)) return;
+      derived.push({ axis: arcLetter, factor: rule.factor });
+    });
+    return derived;
+  }
   function applyAxisCalc(text, calcRules) {
     if (!calcRules || !calcRules.length) return text;
+    const effectiveRules = calcRules.concat(deriveArcLetterRules(calcRules));
     let out = text;
-    calcRules.forEach(rule => {
+    effectiveRules.forEach(rule => {
       if (rule.factor === 1) return; // No-op: Achse bleibt unangetastet, keine Regex-Anwendung nötig
       const re = makeAxisValueRe(rule.axis);
       const mask = computeCommentMask(out);
@@ -5310,6 +5358,55 @@
       });
     });
     return out;
+  }
+
+  // Release 127 (Sebastian, direkt im Anschluss an Release 126: "Ist schon besser. Problem nur:
+  // Ich muss das Programm an der Y-Achse *-1 rechnen, damit das Bauteil richtig liegt. Dann
+  // kommen wieder die Kreise ins Spiel."):
+  //
+  // DIAGNOSE: Release 126 behob die I/J-Mittelpunkt-Berechnung (Mitspiegelung von J), aber
+  // Biesse brauchte ZUSÄTZLICH noch die von Hand in SWITCHCASEMACHINE eingetragenen Regeln
+  // "G2->G3"/"G3->G2", um bei gespiegelter Y-Achse auch den Drehsinn (Uhrzeigersinn/
+  // Gegenuhrzeigersinn) jedes Bogens richtigzustellen (siehe 5.6 der Doku) - geometrisch
+  // zwingend, da eine Achsspiegelung den Drehsinn einer Kreisbewegung umkehrt. Diese von Hand
+  // gepflegte Textregel ist aber fehleranfällig: Sebastians eigener früherer Diagnose-Schritt
+  // ("G2->G3 und G3->G2 ... entfernen, entfernt die Kreise. Dafür ist das zackig.") zeigt genau
+  // das Problem - wird sie (versehentlich oder bei einem eigenen neuen Maschinentyp mit
+  // Achsspiegelung, der diese Regel schlicht noch nicht kennt) vergessen oder entfernt, kommen
+  // exakt dieselben "riesengroßen Kreise" wie bei Release 126 zurück, nur diesmal OHNE dass
+  // IJMODE oder die I/J-Mitspiegelung selbst falsch wären.
+  //
+  // FIX: Der Drehsinn-Tausch wird jetzt - genau wie die I/J-Mitspiegelung in Release 126 -
+  // automatisch aus der CALCMACHINE-Achsberechnung abgeleitet, statt sich auf eine von Hand
+  // gepflegte SWITCHCASEMACHINE-Textregel zu verlassen: Eine Spiegelung (negativer Faktor) von
+  // GENAU EINER der beiden Bogenebenen-Achsen X/Y kehrt den Drehsinn um, eine Spiegelung BEIDER
+  // (oder keiner) Achsen gleichzeitig entspricht geometrisch einer 180°-Drehung und lässt den
+  // Drehsinn unverändert - daher die Vorzeichen-XOR-Logik unten (nur das VORZEICHEN des
+  // jeweiligen Faktors zählt, nicht seine Größe; Z bleibt unberücksichtigt, da G02/G03 hier nur
+  // in der XY-Ebene unterstützt werden, siehe 9.1). Angewendet wird der Tausch in extractMotion()
+  // (app.js) direkt nach dem Ermitteln von arcDir aus scanArcDirection() - interpolateArc()
+  // selbst bleibt dadurch weiterhin bewusst frei von jeder Maschinentyp-Kenntnis (siehe die
+  // Dokumentation direkt dort). Die bisherige Handarbeit entfällt dadurch komplett: Die
+  // SWITCHCASEMACHINE-Regeln "G2->G3"/"G3->G2" wurden aus dem eingebauten Biesse-Block
+  // entfernt (sie würden sonst zusammen mit dieser automatischen Ableitung ein zweites Mal
+  // tauschen und den Drehsinn erneut falsch machen - siehe 5.6). Jeder vom Benutzer selbst
+  // angelegte Maschinentyp mit einer Achsspiegelung in CALCMACHINE bekommt den korrekten
+  // Drehsinn jetzt automatisch, ohne dass eine eigene SWITCHCASEMACHINE-Regel dafür nötig wäre.
+  //
+  // VERIFIKATION: Geometrisch gegen das vollständige, vom Benutzer bereitgestellte
+  // "BiesseKreiseGross.txt" (alle drei wiederholten Konturabschnitte plus Endsequenz) geprüft -
+  // die resultierende Bahn bleibt für jede der drei Wiederholungen innerhalb der tatsächlichen
+  // Bauteil-Abmessungen (Bounding-Box ca. X:[-1, 3983], Y:[-506, 396]) statt wie zuvor (ohne
+  // diesen Fix, nur mit Release 126) auf bis zu X:[-6678, 12243], Y:[-512, 18415] aufzublähen -
+  // exakt dasselbe "riesengroße Kreise"-Muster wie vor Release 126, nur durch das Fehlen des
+  // Drehsinn-Tauschs statt durch die I/J-Mittelpunkt-Berechnung verursacht.
+  function computeArcChiralityFlip(calcRules) {
+    const axisSign = axis => {
+      const rule = (calcRules || []).find(r => r.axis === axis);
+      if (!rule) return 1;
+      return rule.factor < 0 ? -1 : 1;
+    };
+    return (axisSign('X') * axisSign('Y')) < 0;
   }
   // Backward-kompatibler dünner Wrapper über applyAxisCalc (ersetzt die frühere eigenständige
   // Implementierung 1:1) - der frühere "Biesse-Code"-Knopf selbst wurde entfernt (Benutzer, 31.
@@ -5520,7 +5617,7 @@
     return dupes;
   }
 
-  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode };
+  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode };
 });
 </script>
 <script>
@@ -5597,8 +5694,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 124;
-  const APP_RELEASE_TIMESTAMP = '01.10.2026, 15:52 Uhr';
+  const APP_RELEASE_NUMBER = 127;
+  const APP_RELEASE_TIMESTAMP = '01.10.2026, 18:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5767,6 +5864,20 @@
   // interpretiert), ihr Entfernen ändert also am sichtbaren Verhalten aller bisherigen MAKA-Dateien
   // nichts, macht aber jetzt erst die neue Verrundung nutzbar. Die übrigen MAKA-Regeln
   // (G03->G3/G02->G2/B->A/A->C) sowie CALCMACHINE (X*1/Y*1/Z*1) bleiben unverändert.
+  // Release 125 (Sebastian meldete "Zacken" in der simulierten Bahn bei einem echten SCM-Programm
+  // ["SCMZackig.txt"] mit G02/G03 im I/J-Format): geometrisch gegen die mitgeschickte Beispieldatei
+  // nachgerechnet - für jeden darin enthaltenen Bogen stimmt der aus I/J gebildete Mittelpunkt nur
+  // dann mit dem Abstand zu Start- UND Zielpunkt exakt überein (Differenz < 0.001mm statt teils
+  // >50mm), wenn I/J als ABSOLUTE Mittelpunkt-Koordinate statt als Versatz vom Startpunkt gelesen
+  // werden - exakt derselbe Fall wie bei Biesse/CIX (siehe Release 123 oben), nur bislang für SCM
+  // nicht konfiguriert, sodass der globale Standard 'incremental' griff und an jedem Bogen einen
+  // deutlich falschen Mittelpunkt (und damit einen sichtbaren Knick/"Zacken" in der sonst glatten,
+  // großradiusigen Kontur) erzeugte. Neue Zeile "IJMODE=absolute" im SCM-Block (analog zu Biesse)
+  // behebt das. Die übrigen SCM-Regeln (SWITCHCASEMACHINE/CALCMACHINE) bleiben unverändert - keine
+  // davon griff in der Beispieldatei überhaupt (kein literales "H", "Q", "R", "V" etc. außerhalb
+  // von Kommentaren in den betroffenen Zeilen). Ein Programm, dessen SCM-Dialekt tatsächlich
+  // inkrementelle I/J-Werte verwendet, müsste diese Zeile in "Maschinentypen bearbeiten" wieder auf
+  // "IJMODE=incremental" ändern bzw. entfernen (siehe 5.12a der Doku).
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -5779,8 +5890,6 @@ BEGIN MACRO->/
 NAME=ISO->/
 PARAM,NAME=ISO,VALUE="->/
 END MACRO->/
-G2->G3
-G3->G2
 G42->G41
 G41->G42
 [/SWITCHCASEMACHINE]
@@ -5922,7 +6031,7 @@ XT G->M6 T
 V->F
 H->Z
 N X->/
-O ->G91 
+O ->G91
 Q->C
 R->A
 C=2->G41
@@ -5935,6 +6044,7 @@ X*1
 Y*1
 Z*1
 [/CALCMACHINE]
+IJMODE=absolute
 [/MACHINETYPE Name="SCM"]
 `;
   // SIM_SAVE:MACHINETYPES_DEFAULT:END
@@ -6883,7 +6993,13 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // durchgereicht (siehe dort für die Bedeutung) - der Aufrufer (setScope() weiter unten) löst dafür
   // den IJMODE-Wert des aktuell aktiven Maschinentyps auf (activeMt.ijMode, Standard 'incremental'
   // falls kein Maschinentyp aktiv ist oder dieser keine eigene IJMODE-Zeile hat).
-  function extractMotion(lines, startLineIdx, state, usedAxes, ijMode) {
+  // chiralityFlip (Release 127, neuer letzter Parameter, optional): wird - wie ijMode - vom
+  // Aufrufer (setScope() weiter unten) einmalig aus `CNCSwap.computeArcChiralityFlip(activeMt.calcRules)`
+  // ermittelt (siehe die ausführliche Dokumentation dort) und hier direkt auf das Ergebnis von
+  // scanArcDirection() angewendet, BEVOR interpolateArc() aufgerufen wird - interpolateArc()
+  // selbst bekommt dadurch, genau wie zuvor, nur ein fertiges 'cw'/'ccw' übergeben und muss
+  // nichts von alldem wissen.
+  function extractMotion(lines, startLineIdx, state, usedAxes, ijMode, chiralityFlip) {
     const points = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -6941,7 +7057,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         // Bei Misserfolg (interpolateArc()/parseArcParams() liefern null, z. B. geometrisch
         // unplausibler Radius) fällt es auf das bisherige Verhalten zurück: ein einzelner Punkt,
         // gerade Linie vom vorherigen zum Zielpunkt - wie bei jeder anderen Bewegungszeile auch.
-        const arcDir = scanArcDirection(line);
+        let arcDir = scanArcDirection(line);
+        if (arcDir && chiralityFlip) arcDir = (arcDir === 'cw' ? 'ccw' : 'cw'); // Release 127
         let arcPts = null;
         if (arcDir) {
           const arcParams = parseArcParams(line);
@@ -9569,6 +9686,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       ? machineTypes.find(mt => mt.name.toLowerCase() === activeMachineTypeName.toLowerCase())
       : null;
     const activeIJMode = (activeMtForIJ && activeMtForIJ.ijMode) || 'incremental';
+    // Drehsinn-Tausch (Release 127, siehe die ausführliche Dokumentation bei computeArcChiralityFlip()
+    // in swap.js) - aus denselben, bereits oben aufgelösten activeMtForIJ.calcRules abgeleitet, kein
+    // eigener Maschinentyp-Lookup nötig. false (kein Tausch), wenn kein Maschinentyp aktiv ist.
+    const activeChiralityFlip = CNCSwap.computeArcChiralityFlip(activeMtForIJ && activeMtForIJ.calcRules);
     // Eine laufende Messung bezieht sich auf die vorherige Geometrie - bei Scope-/Programmwechsel
     // zurücksetzen (der Messmodus selbst bleibt aktiv, falls eingeschaltet).
     measureStart = null;
@@ -9585,7 +9706,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           // Gesamtes Programm: alle Arbeitsgänge gleichwertig, vollfarbig, in Original-Reihenfolge.
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
-            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode);
+            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip);
             // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
             // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
             // setScope()-Neuaufbau, siehe dort.
@@ -9600,7 +9721,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           let colorCursor = 0;
           splitAtOriginResets(current.lines).forEach(chunk => {
             const state = newModalState();
-            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes, activeIJMode);
+            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip);
             if (!pts.length) return;
             segments.push({ color: pathColor(colorCursor), colorCursor, title: `Programmteil ${colorCursor + 1}`, opIndex: null, points: pts, context: false });
             colorCursor++;
@@ -9614,7 +9735,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           const isActive = sec.index === mode.index;
           const state = newModalState();
           const axesSink = isActive ? usedAxes : new Set();
-          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode);
+          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip);
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
