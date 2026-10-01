@@ -4296,27 +4296,52 @@
   // beliebig viele Punkte ohnehin schon geradlinig, sodass ein hinreichend fein tessellierter Bogen
   // optisch glatt erscheint, ohne dass an der Zeichenlogik selbst etwas geändert werden musste.
   //
-  // Unterstützt wird ausschließlich das R-Format: G02/G03 X.. Y.. R<Radius> - positiver Radius =
+  // Unterstützt wird das R-Format: G02/G03 X.. Y.. R<Radius> - positiver Radius =
   // "kurzer" Bogen (<=180°), negativer Radius = "langer" Bogen (>180°) - gängige Konvention (u. a.
   // Fanuc/LinuxCNC).
   //
-  // I/J-Format bewusst NICHT (mehr) unterstützt (40. Runde, Benutzer: "I und J wird immer noch
-  // bei manchen Maschinen verkehrt berechnet. Um es einfacher zu machen: Nimm das erst mal raus,
-  // die Bögen mit R bleiben und sehen gut aus"): Ursprünglich (34. Runde) wurde neben R auch I/J
-  // unterstützt (Mittelpunkt als Versatz vom Startpunkt, die verbreitete Standard-Konvention).
-  // Die 39. Runde versuchte, eine bei manchen Maschinen/Postprozessoren stattdessen verwendete
-  // ABSOLUTE I/J-Deutung per Konsistenzprüfung automatisch zu erkennen (Start-/Zielabstand zum
-  // vermuteten Mittelpunkt) - das griff zwar nachweislich an den damals gemeldeten Beispieldaten,
-  // erwies sich an weiteren, anderen Maschinen aber erneut als falsch. Da sich aus den nackten
-  // I/J-Zahlen allein nicht zuverlässig erkennen lässt, welche der (mindestens zwei) in der Praxis
-  // vorkommenden Konventionen ein bestimmter Postprozessor tatsächlich meint, wurde I/J auf
-  // ausdrücklichen Benutzerwunsch komplett entfernt statt weiter an einer Heuristik zu justieren.
-  // Eine Zeile mit I/J (aber ohne R) liefert seither `null` - die aufrufende Seite (app.js) fällt
-  // dann wie vor der 34. Runde auf eine gerade Linie zurück. Der Vollkreis-Sonderfall (Start=Ziel)
-  // war ausschließlich über I/J erreichbar und ist damit ebenfalls nicht mehr darstellbar - eine
-  // bewusst in Kauf genommene Einschränkung (R-Format kann per Definition keinen Vollkreis
-  // beschreiben, da unendlich viele Kreise mit demselben Radius durch zwei identische Punkte
-  // gehen).
+  // I/J-Format (probeweise wieder eingebaut, Release 123, Sebastian: "Nächster Versuch I und J
+  // für Bögenberechnung im CNC", mit Verweis auf
+  // https://www.machiningdoctor.com/de/gcodes/g2-3-circular/): Ursprünglich (34. Runde) wurde neben
+  // R auch I/J unterstützt (Mittelpunkt als INKREMENTELLER Versatz vom Startpunkt - die auf der
+  // verlinkten Seite beschriebene, verbreitete Standard-Konvention, u. a. Fanuc/LinuxCNC/GRBL: I/J
+  // sind IMMER inkrementell relativ zum Startpunkt des Bogens, unabhängig vom sonstigen G90/G91-
+  // Modus). Die 39. Runde versuchte stattdessen, eine bei manchen Maschinen/Postprozessoren
+  // abweichend verwendete ABSOLUTE I/J-Deutung per Konsistenzprüfung automatisch zu erkennen -
+  // das griff an den damals gemeldeten Beispieldaten, erwies sich an weiteren Maschinen aber als
+  // falsch, weshalb I/J in der 40. Runde auf Benutzerwunsch komplett entfernt wurde (siehe
+  // Git-Historie dieses Kommentars).
+  //
+  // Zweites Testprogramm (Sebastian: "Zweites Testprogramm, dort der Arbeitsgang 'Kontur'",
+  // "1790855852087_BIESSE.CNC") bewies geometrisch, dass genau dasselbe Problem wie in der 39./40.
+  // Runde erneut vorliegt: BIESSE/CIX verwendet nachweislich die ENTGEGENGESETZTE, ABSOLUTE I/J-
+  // Konvention (I/J SIND die Mittelpunkt-Koordinaten, kein Versatz vom Startpunkt) - unter der
+  // inkrementellen Deutung ergäbe sich dort ein Radienfehler von bis zu 247mm, unter der absoluten
+  // Deutung dagegen unter 0.01mm. Eine einzige globale Konvention ist damit nachweislich falsch für
+  // mindestens eine der beiden real verwendeten Maschinen. Da die 39. Runde bereits gezeigt hat,
+  // dass eine automatische Pro-Zeile-Erkennung an realen Maschinen versagt, wurde dem Benutzer die
+  // Entscheidung per Rückfrage vorgelegt - Sebastians Wahl: "Pro Maschinentyp festlegen
+  // (empfohlen)". Umsetzung: ein neuer, optionaler "IJMODE=incremental"/"IJMODE=absolute"-Parameter
+  // je [MACHINETYPE ...]-Block (siehe parseIJMode() in swap.js, exakt nach dem Vorbild von
+  // SWIVELANGLE) - KRC bekommt IJMODE=incremental, Biesse IJMODE=absolute, siehe
+  // DEFAULT_MACHINETYPES_TEXT. interpolateArc() unten erhält dazu einen zusätzlichen ijMode-
+  // Parameter ('incremental' als Standardwert für Maschinentypen ohne IJMODE-Zeile, identisch zum
+  // bisherigen, einzigen Verhalten dieses erneuten I/J-Versuchs).
+  //
+  // Verifiziert gegen beide vom Benutzer mitgelieferten Beispielprogramme:
+  // - "1790855201568_KRC.CNC" (Arbeitsgang "Stufen/Setzstufen Gesamtkontur", IJMODE=incremental):
+  //   z. B. die Zeile "G3 X4175.004 Y381.811 I-9.984 J20.986" nach "G1 X4172.520 Y380.437" ergibt
+  //   einen Mittelpunkt bei (4162.536, 401.423) mit für Start- UND Zielpunkt identischem Radius
+  //   (~23.24mm) - die inkrementelle Deutung passt hier geometrisch exakt (Startpunkt + I/J).
+  // - "1790855852087_BIESSE.CNC" (Arbeitsgang "Kontur", IJMODE=absolute): dort sind I/J bereits die
+  //   fertigen Mittelpunkt-Koordinaten, unabhängig vom Startpunkt - Radienfehler unter der
+  //   absoluten Deutung < 0.01mm, siehe oben.
+  //
+  // Enthält eine Zeile BEIDE Parameter (R und I/J, in der Praxis nicht üblich), gewinnt weiterhin R
+  // (unverändertes Verhalten, keine Konkurrenz zwischen den Formaten). Der Vollkreis-Sonderfall
+  // (Start=Ziel) ist über I/J damit auch wieder darstellbar (arcSweepAngle() wertet Start=Ziel
+  // bereits als Vollkreis, siehe dort) - das R-Format allein kann das weiterhin nicht (unendlich
+  // viele Kreise mit demselben Radius durch zwei identische Punkte).
   //
   // Bewusste Einschränkung: Es wird ausschließlich die XY-Ebene (G17) unterstützt - in der
   // Holzbearbeitung (Fräsen/Sägen in der Blattebene) der ganz überwiegende Regelfall. Z selbst
@@ -4324,17 +4349,33 @@
   // extractMotion) - das erlaubt nebenbei auch helixförmige Bögen (Z ändert sich während des
   // Bogens) ohne jeden Mehraufwand.
   const ARC_PARAM_RE = /R\s*(-?\d+(?:\.\d+)?)/g;
+  const ARC_PARAM_I_RE = /I\s*(-?\d+(?:\.\d+)?)/g;
+  const ARC_PARAM_J_RE = /J\s*(-?\d+(?:\.\d+)?)/g;
 
-  // Parst den R-Parameter aus einer einzelnen Programmzeile (siehe oben: I/J wird seit der
-  // 40. Runde bewusst nicht mehr ausgewertet). Kommt "R" mehrfach auf derselben Zeile vor (in der
-  // Praxis nicht üblich), gewinnt das letzte Vorkommen - unverändertes Verhalten gegenüber vor der
-  // 40. Runde. Gibt null zurück, wenn kein R gefunden wurde (kein gültiger Bogen-Parametersatz -
-  // die aufrufende Seite fällt dann auf eine gerade Linie zurück).
+  // Parst die Bogenparameter einer einzelnen Programmzeile: zuerst R (siehe oben), erst wenn KEIN
+  // R gefunden wurde, ersatzweise I/J (mode:'ij', inkrementeller Mittelpunkt-Versatz vom
+  // Startpunkt - siehe die ausführliche Begründung oben). Kommt derselbe Buchstabe mehrfach auf
+  // derselben Zeile vor (in der Praxis nicht üblich), gewinnt jeweils das letzte Vorkommen -
+  // unverändertes Verhalten wie bisher bei R. Fehlt bei I/J einer der beiden Werte (nur I oder nur
+  // J auf der Zeile), wird der fehlende als 0 angenommen (Mittelpunkt liegt dann exakt auf der
+  // X- bzw. Y-Achse durch den Startpunkt). Gibt null zurück, wenn WEDER R NOCH I/J gefunden wurde
+  // (kein gültiger Bogen-Parametersatz - die aufrufende Seite fällt dann auf eine gerade Linie
+  // zurück).
   function parseArcParams(line) {
     ARC_PARAM_RE.lastIndex = 0;
     let m, r = null;
     while ((m = ARC_PARAM_RE.exec(line))) { r = parseFloat(m[1]); }
-    return r !== null ? { mode: 'r', r } : null;
+    if (r !== null) return { mode: 'r', r };
+
+    ARC_PARAM_I_RE.lastIndex = 0;
+    let i = null;
+    while ((m = ARC_PARAM_I_RE.exec(line))) { i = parseFloat(m[1]); }
+    ARC_PARAM_J_RE.lastIndex = 0;
+    let j = null;
+    while ((m = ARC_PARAM_J_RE.exec(line))) { j = parseFloat(m[1]); }
+    if (i !== null || j !== null) return { mode: 'ij', i: i !== null ? i : 0, j: j !== null ? j : 0 };
+
+    return null;
   }
 
   // Betrag des Schwenkwinkels (im Bogenmaß, Bereich (0, 2*PI]) vom Start- zum Zielpunkt um den
@@ -4431,14 +4472,22 @@
   }
 
   // Öffentliche Hauptfunktion: Start-/Zielpunkt (bereits inkl. Nullpunktverschiebungs-Versatz,
-  // siehe extractMotion), geparste Bogenparameter (parseArcParams()) und Richtung ('cw' für G02,
-  // 'ccw' für G03). Gibt bei Erfolg das Tessellierungs-Array (siehe tessellateArc) zurück, sonst
-  // null - die aufrufende Seite (app.js) fällt dann auf das bisherige Verhalten (gerade Linie vom
-  // vorherigen zum Zielpunkt) zurück, statt abzustürzen oder eine falsche Bahn zu zeichnen.
-  // (40. Runde: nur noch params.mode === 'r' wird unterstützt, siehe Dokumentation bei
-  // ARC_PARAM_RE weiter oben - I/J-Bögen werden hier nicht mehr aufgelöst und fallen daher immer
-  // auf null / gerade Linie zurück, selbst wenn ein Aufrufer noch mode:'ij'-Parameter übergibt.)
-  function interpolateArc(sx, sy, ex, ey, params, direction) {
+  // siehe extractMotion), geparste Bogenparameter (parseArcParams()), Richtung ('cw' für G02,
+  // 'ccw' für G03) sowie (Release 123, neu) ijMode - nur für params.mode === 'ij' relevant, siehe
+  // die ausführliche Dokumentation bei ARC_PARAM_RE weiter oben: 'incremental' (Standard, auch wenn
+  // weggelassen/undefined - unverändertes Verhalten für Maschinentypen ohne eigene IJMODE-Zeile)
+  // deutet I/J als Versatz vom Startpunkt, 'absolute' deutet I/J als fertige Mittelpunkt-Koordinaten.
+  // Der eigentliche Maschinentyp-Bezug (welcher ijMode für das gerade angezeigte Programm gilt)
+  // wird NICHT hier, sondern von extractMotion()/dessen Aufrufern in app.js aufgelöst (activeMt.ijMode,
+  // siehe dort) - diese Funktion bleibt bewusst eine reine, DOM-unabhängige Geometrie-Funktion ohne
+  // jede Kenntnis von Maschinentyp-Objekten. Gibt bei Erfolg das Tessellierungs-Array (siehe
+  // tessellateArc) zurück, sonst null - die aufrufende Seite (app.js) fällt dann auf das bisherige
+  // Verhalten (gerade Linie vom vorherigen zum Zielpunkt) zurück, statt abzustürzen oder eine
+  // falsche Bahn zu zeichnen. tessellateArc() selbst kennt den Unterschied zwischen 'r' und 'ij'
+  // gar nicht - sie bekommt in beiden Fällen einfach einen fertigen Mittelpunkt übergeben,
+  // inklusive des darüber automatisch mitfunktionierenden Vollkreis-Sonderfalls, siehe
+  // arcSweepAngle().
+  function interpolateArc(sx, sy, ex, ey, params, direction, ijMode) {
     if (direction !== 'cw' && direction !== 'ccw') return null;
     if (!params) return null;
     let cx, cy;
@@ -4446,6 +4495,14 @@
       const center = arcCenterFromRadius(sx, sy, ex, ey, params.r, direction);
       if (!center) return null;
       cx = center.x; cy = center.y;
+    } else if (params.mode === 'ij') {
+      if (ijMode === 'absolute') {
+        cx = params.i;
+        cy = params.j;
+      } else {
+        cx = sx + params.i;
+        cy = sy + params.j;
+      }
     } else {
       return null;
     }
@@ -5166,6 +5223,37 @@
     return null;
   }
 
+  // Parst einen optionalen "IJMODE=incremental"/"IJMODE=absolute"-Parameter direkt innerhalb eines
+  // [MACHINETYPE ...]-Blocks (Release 123, Sebastian: "Nächster Versuch I und J für
+  // Bögenberechnung im CNC" - siehe die ausführliche Historie bei ARC_PARAM_RE weiter oben). Exakt
+  // nach demselben, bewährten Muster wie SWIVELANGLE direkt darüber: eine einzelne, schlichte
+  // "Schlüsselwort=Wert"-Zeile statt eines eigenen Klammerabschnitts, Schlüsselwort case-insensitiv,
+  // Suche über ALLE Zeilen des Blocks. Hintergrund: G02/G03-I/J-Bögen werden in der Praxis von
+  // verschiedenen Maschinen/Postprozessoren GEGENSÄTZLICH ausgewertet - der Mittelpunkt ist entweder
+  // ein INKREMENTELLER Versatz vom Startpunkt ("incremental", die auf
+  // https://www.machiningdoctor.com/de/gcodes/g2-3-circular/ beschriebene verbreitete
+  // Standard-Konvention, u. a. Fanuc/LinuxCNC/GRBL/KRC) oder I/J SIND bereits die ABSOLUTEN
+  // Mittelpunkt-Koordinaten ("absolute", so z. B. bei BIESSE/CIX, geometrisch verifiziert am
+  // Beispielprogramm "1790855852087_BIESSE.CNC", Arbeitsgang "Kontur"). Genau dieser Gegensatz
+  // (identisch zu dem bereits in der 39./40. Runde dokumentierten Problem, siehe ARC_PARAM_RE) macht
+  // eine einzige globale Konvention oder eine automatische Pro-Zeile-Erkennung unmöglich - die 39.
+  // Runde hatte genau so eine Heuristik versucht und sie erwies sich an weiteren Maschinen als
+  // falsch. Sebastian hat sich daher ausdrücklich für die Variante "Pro Maschinentyp festlegen"
+  // entschieden: Jeder Maschinentyp bekommt seine I/J-Konvention explizit und für den Benutzer
+  // sichtbar/änderbar als eigene Zeile im "Maschinentypen bearbeiten"-Textfeld, statt dass die
+  // Simulation raten muss. Gibt 'incremental', 'absolute' oder `null` zurück (keine/ungültige Zeile
+  // im Block - der Aufrufer verwendet dann seinen eigenen Standardwert 'incremental', siehe
+  // interpolateArc() in app.js, damit bereits bestehende Maschinentyp-Konfigurationen ohne IJMODE-
+  // Zeile ihr bisheriges Verhalten unverändert beibehalten).
+  const IJ_MODE_RE = /^IJMODE\s*=\s*(incremental|absolute)$/i;
+  function parseIJMode(blockLines) {
+    for (let i = 0; i < blockLines.length; i++) {
+      const m = IJ_MODE_RE.exec(blockLines[i].trim());
+      if (m) return m[1].toLowerCase();
+    }
+    return null;
+  }
+
   // Extrahiert den Inhalt EINES Abschnitts (z.B. SWITCHCASEMACHINE oder CALCMACHINE) aus einem
   // Array bereits aufgeteilter Zeilen: gesucht wird zunaechst die Zeile, auf die "startPredicate"
   // zutrifft (der oeffnende Marker, z.B. "[SWITCHCASEMACHINE]"), danach werden alle Zeilen bis
@@ -5227,7 +5315,10 @@
         rawCalcText,
         // SWIVELANGLE (45. Runde) - siehe parseSwivelAngle oben. `null`, wenn der Block keine
         // (gültige) SWIVELANGLE-Zeile enthält - app.js fällt dann auf 45° zurück.
-        swivelAngleDeg: parseSwivelAngle(blockLines)
+        swivelAngleDeg: parseSwivelAngle(blockLines),
+        // IJMODE (Release 123) - siehe parseIJMode oben. `null`, wenn der Block keine (gültige)
+        // IJMODE-Zeile enthält - app.js fällt dann auf 'incremental' zurück.
+        ijMode: parseIJMode(blockLines)
       });
     }
     return result;
@@ -5292,7 +5383,7 @@
     return dupes;
   }
 
-  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle };
+  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode };
 });
 </script>
 <script>
@@ -5369,8 +5460,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 122;
-  const APP_RELEASE_TIMESTAMP = '01.10.2026, 13:38 Uhr';
+  const APP_RELEASE_NUMBER = 123;
+  const APP_RELEASE_TIMESTAMP = '01.10.2026, 14:12 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5513,6 +5604,16 @@
   // SWIVELANGLE=45 bleiben unverändert. "CR=->R" ist dabei dieselbe Regel, die auch der SCM-Block
   // bereits verwendet (siehe dort) - zwei verschiedene Maschinentypen können dieselbe
   // Austauschregel unabhängig voneinander enthalten, das ist kein Widerspruch.
+  // Release 123 (Sebastian: "Nächster Versuch I und J für Bögenberechnung im CNC", zweites
+  // Testprogramm "1790855852087_BIESSE.CNC", Arbeitsgang "Kontur"): neue Zeile "IJMODE=absolute"
+  // im Biesse-Block (siehe parseIJMode() in swap.js sowie die ausführliche Dokumentation bei
+  // ARC_PARAM_RE in parser.js) - geometrisch verifiziert, dass BIESSE/CIX die G02/G03-Parameter I/J
+  // als ABSOLUTE Mittelpunkt-Koordinaten ausgibt, nicht als Versatz vom Startpunkt. Außerdem neue
+  // Zeile "IJMODE=incremental" im KRC-Block, verifiziert gegen "1790855201568_KRC.CNC"
+  // (Arbeitsgang "Stufen/Setzstufen Gesamtkontur") - dort gilt die entgegengesetzte, inkrementelle
+  // Konvention. Beide Zeilen sind rein additiv (bestehende SWITCHCASEMACHINE-/CALCMACHINE-Regeln
+  // beider Blöcke bleiben unverändert) und ändern nichts an Maschinentypen ohne eigene IJMODE-Zeile
+  // (Standard dort weiterhin 'incremental', siehe interpolateArc() in parser.js).
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -5536,6 +5637,7 @@ Y*-1
 Z*-1
 C*-1
 [/CALCMACHINE]
+IJMODE=absolute
 [/MACHINETYPE Name="Biesse"]
 
 [MACHINETYPE Name="FORMAT4"]
@@ -5614,6 +5716,7 @@ Y*1
 Z*1
 C*-1
 [/CALCMACHINE]
+IJMODE=incremental
 [/MACHINETYPE Name="KRC"]
 
 [MACHINETYPE Name="MAKA"]
@@ -6624,7 +6727,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // der tatsächlich gezeichnete/angefahrene Punkt ist dann state.x + state.offsetX usw. - genau
   // die vom Benutzer beschriebene Verschiebung "programmierter und absoluter Koordinaten" um den
   // in der G92-Zeile genannten Betrag.
-  function extractMotion(lines, startLineIdx, state, usedAxes) {
+  // ijMode (Release 123, neuer letzter Parameter, optional): wird unverändert an interpolateArc()
+  // durchgereicht (siehe dort für die Bedeutung) - der Aufrufer (setScope() weiter unten) löst dafür
+  // den IJMODE-Wert des aktuell aktiven Maschinentyps auf (activeMt.ijMode, Standard 'incremental'
+  // falls kein Maschinentyp aktiv ist oder dieser keine eigene IJMODE-Zeile hat).
+  function extractMotion(lines, startLineIdx, state, usedAxes, ijMode) {
     const points = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -6686,7 +6793,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         let arcPts = null;
         if (arcDir) {
           const arcParams = parseArcParams(line);
-          if (arcParams) arcPts = interpolateArc(prevX, prevY, endX, endY, arcParams, arcDir);
+          if (arcParams) arcPts = interpolateArc(prevX, prevY, endX, endY, arcParams, arcDir, ijMode);
         }
         if (arcPts && arcPts.length) {
           arcPts.forEach((pt, idx) => {
@@ -9287,6 +9394,15 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     scopeMode = mode;
     segments = [];
     usedAxes = new Set();
+    // I/J-Bogenkonvention des aktuell aktiven Maschinentyps (Release 123, siehe die ausführliche
+    // Dokumentation bei ARC_PARAM_RE/parseIJMode) - exakt dieselbe Ermittlung des aktiven
+    // Maschinentyps wie in displayCurrentProgram() (activeMt). 'incremental' als Standard, wenn kein
+    // Maschinentyp aktiv ist oder dieser keine eigene IJMODE-Zeile hat - unverändertes Verhalten für
+    // alle bisherigen Konfigurationen.
+    const activeMtForIJ = activeMachineTypeName && activeMachineTypeName.toLowerCase() !== 'iso'
+      ? machineTypes.find(mt => mt.name.toLowerCase() === activeMachineTypeName.toLowerCase())
+      : null;
+    const activeIJMode = (activeMtForIJ && activeMtForIJ.ijMode) || 'incremental';
     // Eine laufende Messung bezieht sich auf die vorherige Geometrie - bei Scope-/Programmwechsel
     // zurücksetzen (der Messmodus selbst bleibt aktiv, falls eingeschaltet).
     measureStart = null;
@@ -9303,7 +9419,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           // Gesamtes Programm: alle Arbeitsgänge gleichwertig, vollfarbig, in Original-Reihenfolge.
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
-            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes);
+            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode);
             // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
             // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
             // setScope()-Neuaufbau, siehe dort.
@@ -9318,7 +9434,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           let colorCursor = 0;
           splitAtOriginResets(current.lines).forEach(chunk => {
             const state = newModalState();
-            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes);
+            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes, activeIJMode);
             if (!pts.length) return;
             segments.push({ color: pathColor(colorCursor), colorCursor, title: `Programmteil ${colorCursor + 1}`, opIndex: null, points: pts, context: false });
             colorCursor++;
@@ -9332,7 +9448,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           const isActive = sec.index === mode.index;
           const state = newModalState();
           const axesSink = isActive ? usedAxes : new Set();
-          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink);
+          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode);
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
