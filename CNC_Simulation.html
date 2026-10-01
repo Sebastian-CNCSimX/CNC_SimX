@@ -13463,13 +13463,29 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // exakt gleich reagieren. Dieselbe Eingabefeld-Ausnahme wie bei den Pfeiltasten oben (sonst
   // würde die Leertaste z. B. beim Tippen im Zeilensprung-Feld oder in einer Textarea statt eines
   // Leerzeichens versehentlich die Simulation schalten). e.preventDefault() verhindert zusätzlich
-  // das native Scrollen der Seite durch die Leertaste UND unterdrückt einen doppelten Klick, falls
-  // gerade ein Symbolleisten-Knopf per Tastatur fokussiert ist (Browser lösen "click" bei Buttons
-  // sonst zusätzlich selbst beim "keyup" der Leertaste aus).
+  // das native Scrollen der Seite durch die Leertaste.
+  //
+  // Bugfix (01.10.2026, Sebastian: "Wenn ich bei einem geladenen Programm bei den Arbeitsgängen
+  // '3D' auswählt, spielt Space nicht die Simulation in dem Bereich/Segment ab, sondern wählt
+  // 'Gesamtes Programm' aus. Space soll immer den gewählten Programmteil abspielen/pausieren."):
+  // "BUTTON" stand bis hierhin mit in der Ausnahmeliste unten - dadurch griff diese Funktion
+  // GAR NICHT, solange irgendein Symbolleisten-Knopf gerade den Tastaturfokus hatte (z. B. der
+  // "3D"-Knopf neben einem Arbeitsgang, siehe dessen Klick-Handler bei btn3d weiter oben, der nach
+  // dem Anklicken fokussiert bleibt). Stattdessen löste der Browser sein eigenes Standardverhalten
+  // für die Leertaste aus: ein erneuter nativer Klick auf GENAU DIESEN fokussierten Knopf - beim
+  // "3D"-Knopf also ein zweiter Klick auf denselben Arbeitsgang, was wegen dessen eigener
+  // Umschalter-Logik (siehe dort, 59. Runde) den Scope zurück auf "Gesamtes Programm" sprang,
+  // statt die Wiedergabe zu starten. "BUTTON" wird deshalb jetzt NICHT mehr ausgenommen - die
+  // echten Eingabefelder (Text/Zahl, Textarea, Dropdown, contenteditable) bleiben weiterhin
+  // ausgenommen, da dort ein Leerzeichen bzw. das Öffnen eines Dropdowns die erwartete Standard-
+  // bedeutung behalten soll. e.preventDefault() unterdrückt dabei weiterhin zuverlässig den
+  // nativen Klick, den der Browser sonst selbst beim "keyup" der Leertaste auf einem fokussierten
+  // Knopf auslösen würde (z. B. auch bei #btnPlay selbst, falls dieser gerade fokussiert ist) -
+  // dadurch bleibt es in jedem Fall bei genau einem (dem hier ausgelösten) Play/Pause-Klick.
   window.addEventListener('keydown', (e) => {
     if (e.code !== 'Space' && e.key !== ' ') return;
     const activeTag = document.activeElement && document.activeElement.tagName;
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'BUTTON' || activeTag === 'SELECT' || (document.activeElement && document.activeElement.isContentEditable)) return;
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || (document.activeElement && document.activeElement.isContentEditable)) return;
     if (!points.length) return;
     e.preventDefault();
     btnPlay.click();
