@@ -4510,6 +4510,143 @@
   }
 
   // ============================================================
+  // Eckenverrundung "P71:" (MAKA-Dialekt, Release 124, Sebastian: "Zu Maka: Maka gibt die
+  // Verrundung im CNC Code mit 'P71:' an. Wenn sich zwei Linien 'treffen' wird dann der
+  // dementsprechende Radius dort eingebaut. Kannst du das einmal simulieren wie eben bei Biesse
+  // und KRC ohne das direkt einzubauen." - nach einer zunächst rein probeweisen Simulation
+  // (Python-Prototyp, geometrisch gegen das mitgelieferte Beispielprogramm verifiziert) auf
+  // ausdrücklichen Wunsch ("Setz das bitte um") jetzt fest eingebaut):
+  //
+  // Am Beispielprogramm beobachtetes Muster: "G1 G12 X.. Y.. P71:<Radius>;" markiert den
+  // ZIELPUNKT dieser Zeile als Ecke, die mit dem angegebenen Radius verrundet werden soll - die
+  // Verrundung wirkt an der Ecke ZWISCHEN dieser Bewegung und der NÄCHSTEN (klassisches
+  // "Eckenfillet" zwischen zwei Linienzügen, wie es z. B. auch von CAD-/CAM-Software beim
+  // "Ecke abrunden" verwendet wird). Anders als bei IJMODE (siehe oben) ist "P71:" KEIN
+  // mehrdeutiger, pro Maschinentyp unterschiedlich interpretierter Wert, sondern eine konkrete,
+  // eindeutige Syntax (Schlüsselwort + Radius-Zahl) - die Erkennung läuft daher bewusst direkt
+  // über die Programmzeile selbst, unabhängig vom aktuell gewählten Maschinentyp, genau wie bei
+  // R/I/J für G02/G03 weiter oben. "G12" selbst (MAKA's modale Kennzeichnung "mit
+  // Eckenverrundung") wird NICHT ausgewertet/benötigt - das explizite "P71:<Radius>" auf
+  // derselben Zeile reicht als eindeutiges Signal.
+  //
+  // Verifiziert gegen das vom Benutzer mitgelieferte Beispielprogramm (3 Konturen á 5
+  // P71:7.00-markierte Ecken, u. a. ein Eckpunkt, der im Code zweimal vorkommt - Konturschluss
+  // eines Fünfecks): alle 15 Ecken ergeben geometrisch saubere, tangential anschließende 7mm-
+  // Fillets ohne Überschneidung, auch am doppelt vorkommenden Eckpunkt (dort entstehen zwei
+  // unabhängig berechnete Fillets, je einmal für die Ecke beim ERSTEN und beim ZWEITEN
+  // Durchlaufen desselben Punkts - geometrisch korrekt, da jeweils andere Nachbarpunkte beteiligt
+  // sind).
+  const CORNER_RADIUS_RE = /P71\s*:\s*(-?\d+(?:\.\d+)?)/;
+  function parseCornerRadius(line) {
+    const m = CORNER_RADIUS_RE.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  // Berechnet die Eckenverrundung (Fillet) zwischen den Strecken A->B und B->C mit Radius r (B =
+  // die zu verrundende Ecke). Liefert die beiden Tangentenpunkte (t1 auf der Strecke B->A, t2 auf
+  // der Strecke B->C), den Mittelpunkt sowie die Durchlaufrichtung des Bogens von t1 nach t2
+  // zurück - oder `null`, wenn geometrisch nicht sinnvoll (A, B oder C praktisch identisch, oder
+  // der Winkel bei B nahezu 0°/180° - keine echte Ecke, nichts zu verrunden). Ist der angeforderte
+  // Radius größer, als die kürzere der beiden angrenzenden Strecken erlaubt (die Tangentenpunkte
+  // dürften sonst über A bzw. C hinausreichen), wird er konservativ auf 90% dieser Streckenlänge
+  // gekappt (dieselbe Rundungstoleranz-Philosophie wie bei arcCenterFromRadius() oben) - robuster
+  // als ein harter Fehlschlag (= scharfe statt zu großer Ecke), passiert an den bisher getesteten
+  // Beispieldaten aber nicht (alle 15 Ecken kommen ohne jede Kappung mit dem vollen
+  // angeforderten Radius aus).
+  function computeFillet(a, b, c, r) {
+    if (!(r > 0)) return null;
+    const v1x = a.x - b.x, v1y = a.y - b.y;
+    const v2x = c.x - b.x, v2y = c.y - b.y;
+    const len1 = Math.hypot(v1x, v1y), len2 = Math.hypot(v2x, v2y);
+    if (len1 < 1e-6 || len2 < 1e-6) return null;
+    const u1x = v1x / len1, u1y = v1y / len1;
+    const u2x = v2x / len2, u2y = v2y / len2;
+    const dot = Math.max(-1, Math.min(1, u1x * u2x + u1y * u2y));
+    const angle = Math.acos(dot);
+    if (angle < 1e-4 || angle > Math.PI - 1e-4) return null;
+    const half = angle / 2;
+    let d = r / Math.tan(half);
+    const maxD = Math.min(len1, len2) * 0.9;
+    let rr = r;
+    if (d > maxD) { d = maxD; rr = d * Math.tan(half); }
+    const t1 = { x: b.x + u1x * d, y: b.y + u1y * d };
+    const t2 = { x: b.x + u2x * d, y: b.y + u2y * d };
+    let bisx = u1x + u2x, bisy = u1y + u2y;
+    const bisLen = Math.hypot(bisx, bisy);
+    if (bisLen < 1e-9) return null;
+    bisx /= bisLen; bisy /= bisLen;
+    const distCenter = rr / Math.sin(half);
+    const center = { x: b.x + bisx * distCenter, y: b.y + bisy * distCenter };
+    // Vorzeichen des Kreuzprodukts (A-B) x (C-B) bestimmt, auf welcher Seite die Ecke "einknickt"
+    // und damit, in welcher Richtung der Bogen von t1 nach t2 verläuft (geometrisch gegen das
+    // Beispielprogramm verifiziert, siehe Dokumentation oben).
+    const cross = v1x * v2y - v1y * v2x;
+    const direction = cross > 0 ? 'cw' : 'ccw';
+    return { t1, t2, center, r: rr, direction };
+  }
+
+  // Tessellierung des Fillet-Bogens (von t1 nach t2) - dieselbe Winkel-/Richtungslogik wie
+  // tessellateArc() oben, dieselbe gemeinsame Segmentanzahl-Formel (computeSegmentCount()), damit
+  // Bogen- und Ecken-Tessellierung optisch gleich fein/grob ausfallen. Gibt t1 selbst NICHT mit
+  // zurück (das übernimmt applyCornerFillets() als eigenen Punkt), nur die Zwischenpunkte bis
+  // einschließlich des exakten t2.
+  function tessellateFillet(fillet) {
+    const { center: c, r, direction } = fillet;
+    const a0 = Math.atan2(fillet.t1.y - c.y, fillet.t1.x - c.x);
+    const a1 = Math.atan2(fillet.t2.y - c.y, fillet.t2.x - c.x);
+    const TWO_PI = Math.PI * 2;
+    const sweep = direction === 'ccw' ? ((a1 - a0) % TWO_PI + TWO_PI) % TWO_PI : ((a0 - a1) % TWO_PI + TWO_PI) % TWO_PI;
+    const arcLength = r * sweep;
+    const segments = computeSegmentCount(arcLength);
+    const dirSign = direction === 'ccw' ? 1 : -1;
+    const pts = [];
+    for (let s = 1; s <= segments; s++) {
+      if (s === segments) { pts.push({ x: fillet.t2.x, y: fillet.t2.y }); break; }
+      const angle = a0 + dirSign * sweep * (s / segments);
+      pts.push({ x: c.x + r * Math.cos(angle), y: c.y + r * Math.sin(angle) });
+    }
+    return pts;
+  }
+
+  // Öffentliche Hauptfunktion: nimmt die von extractMotion() (app.js) bereits fertig gebaute
+  // Punkteliste entgegen (x,y,z,a,b,c,rapid,comp,lineIdx je Punkt, siehe dort) und ersetzt darin
+  // jeden Punkt, der ein `cornerRadius` trägt (von extractMotion() nur auf dem EINEN, nicht aus
+  // einer Bogen-Tessellierung stammenden Zielpunkt einer G1/G0-Zeile gesetzt, wenn parseCornerRadius()
+  // dort einen Wert findet - echte Bogenpunkte bekommen nie ein cornerRadius und bleiben unangetastet),
+  // durch Tangenten-Einstiegspunkt + tessellierten Fillet-Bogen (siehe computeFillet()/
+  // tessellateFillet() oben). Nachbarpunkte (für die Geometrie) sind dabei IMMER die direkten
+  // Vor-/Nachfolger in der ROHEN, noch unveränderten Eingabeliste - bei mehreren aufeinanderfolgenden
+  // verrundeten Ecken (wie im gesamten Beispielprogramm) wird dadurch jede Ecke unabhängig von den
+  // bereits eingefügten Fillet-Punkten der Nachbarecken berechnet, exakt wie im zuvor erprobten
+  // Python-Prototyp. Nicht sinnvoll verrundbare Randfälle (erster/letzter Punkt einer Zeilengruppe
+  // ohne Vor-/Nachfolger, oder computeFillet() liefert null) bleiben unverändert als scharfe Ecke
+  // stehen - das bisherige Verhalten (P71 ignoriert) ist damit der automatische Fallback, nie ein
+  // Absturz oder eine verfälschte Kontur. Die Zusatzfelder `cornerRadius` existieren nur innerhalb
+  // dieser Funktion - die zurückgegebenen Punkte haben wieder exakt dieselbe Form wie vorher
+  // (x,y,z,a,b,c,rapid,comp,lineIdx), für alle nachgelagerten Verwender unsichtbar.
+  function applyCornerFillets(points) {
+    const n = points.length;
+    const result = [];
+    const strip = p => ({ x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, lineIdx: p.lineIdx });
+    for (let i = 0; i < n; i++) {
+      const p = points[i];
+      if (p.cornerRadius && i > 0 && i < n - 1) {
+        const fillet = computeFillet(points[i - 1], p, points[i + 1], p.cornerRadius);
+        if (fillet) {
+          const base = strip(p);
+          result.push(Object.assign({}, base, { x: fillet.t1.x, y: fillet.t1.y }));
+          tessellateFillet(fillet).forEach(pt => {
+            result.push(Object.assign({}, base, { x: pt.x, y: pt.y }));
+          });
+          continue;
+        }
+      }
+      result.push(strip(p));
+    }
+    return result;
+  }
+
+  // ============================================================
   // DXF-Import (46./47. Runde, Benutzer: "Ich möchte ein DXF importieren was am Ende quasi unter
   // der gefrästen Kontur liegt. Das DXF braucht auch eine eingebbare Verschiebung in X, Y und Z.
   // Das DXF soll separat über Datei -> 'DXF Import' eingefügt werden können.")
@@ -4956,7 +5093,7 @@
     return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors };
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
 });
 </script>
 <script>
@@ -5460,8 +5597,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 123;
-  const APP_RELEASE_TIMESTAMP = '01.10.2026, 14:12 Uhr';
+  const APP_RELEASE_NUMBER = 124;
+  const APP_RELEASE_TIMESTAMP = '01.10.2026, 15:52 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5614,6 +5751,22 @@
   // Konvention. Beide Zeilen sind rein additiv (bestehende SWITCHCASEMACHINE-/CALCMACHINE-Regeln
   // beider Blöcke bleiben unverändert) und ändern nichts an Maschinentypen ohne eigene IJMODE-Zeile
   // (Standard dort weiterhin 'incremental', siehe interpolateArc() in parser.js).
+  // Release 124 (Sebastian, zu MAKA: "Maka gibt die Verrundung im CNC Code mit 'P71:' an. [...]
+  // Kannst du das einmal simulieren [...]", danach "Setz das bitte um"): echte Eckenverrundung
+  // für die MAKA-Notation "P71:<Radius>" eingebaut (siehe parseCornerRadius()/computeFillet()/
+  // tessellateFillet()/applyCornerFillets() in parser.js, ausführlich dokumentiert dort). Dabei
+  // musste die bereits bestehende SWITCHCASEMACHINE-Regel "P71:->R" aus diesem MAKA-Block ENTFERNT
+  // werden (ursprünglich Release 111, siehe Kommentar oben) - sie hätte den literalen Text
+  // "P71:7.00" bereits VOR dem eigentlichen Parsen (displayCurrentProgram() wendet
+  // SWITCHCASEMACHINE immer zuerst an, siehe 5.5) in "R7.00" umgewandelt, sodass
+  // parseCornerRadius() (das exakt auf "P71:<Zahl>" matcht) die Markierung nie zu Gesicht bekommen
+  // hätte - die neue Verrundung wäre für MAKA selbst, dem einzigen Maschinentyp mit dieser
+  // Notation, lautlos wirkungslos geblieben. Die Regel war schon vor diesem Release faktisch
+  // folgenlos (ein "R7.00" auf einer reinen G1/G12-Zeile ohne G02/G03 wird von scanArcDirection()/
+  // parseArcParams() ohnehin nie als Bogenradius ausgewertet - R wird nur auf G02/G03-Zeilen
+  // interpretiert), ihr Entfernen ändert also am sichtbaren Verhalten aller bisherigen MAKA-Dateien
+  // nichts, macht aber jetzt erst die neue Verrundung nutzbar. Die übrigen MAKA-Regeln
+  // (G03->G3/G02->G2/B->A/A->C) sowie CALCMACHINE (X*1/Y*1/Z*1) bleiben unverändert.
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -5723,7 +5876,6 @@ IJMODE=incremental
 [SWITCHCASEMACHINE]
 G03->G3
 G02->G2
-P71:->R
 B->A
 A->C
 [/SWITCHCASEMACHINE]
@@ -6805,15 +6957,28 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
             });
           });
         } else {
+          // Eckenverrundung "P71:" (Release 124, siehe ausführliche Dokumentation bei
+          // CORNER_RADIUS_RE/applyCornerFillets() in parser.js): nur auf diesem EINEN, direkt
+          // programmierten Zielpunkt gesetzt (nie auf einem Bogen-Tessellierungspunkt oben) -
+          // applyCornerFillets() ersetzt diesen Punkt weiter unten ggf. durch die verrundete
+          // Ecke, das temporäre Feld selbst verlässt extractMotion() nie nach außen.
+          const cornerRadius = parseCornerRadius(line);
           points.push({
             x: endX, y: endY, z: endZ,
             a: state.a, b: state.b, c: state.c,
-            rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i
+            rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i,
+            cornerRadius
           });
         }
       }
     }
-    return points;
+    // Eckenverrundung "P71:" (Release 124): erst NACH dem vollständigen Aufbau der Punkteliste
+    // angewendet, nicht während der Schleife oben - ein Fillet braucht sowohl den vorherigen als
+    // auch den NÄCHSTEN Punkt, der innerhalb der Schleife (die Zeile für Zeile vorgeht) an der
+    // Stelle der aktuellen Zeile noch gar nicht bekannt ist. Siehe applyCornerFillets() in
+    // parser.js für die Geometrie sowie dafür, dass die zurückgegebenen Punkte wieder exakt
+    // dieselbe Form haben wie vorher (das cornerRadius-Feld oben ist rein intern).
+    return applyCornerFillets(points);
   }
 
   function newModalState() {
@@ -6822,8 +6987,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
 
   // splitAtOriginResets/ORIGIN_RESET_RE/parseArcParams/interpolateArc leben in parser.js (reine
   // Logik ohne DOM-Bezug, dort auch per Node-Test abgesichert) - Letztere für die
-  // G02/G03-Bogeninterpolation (34. Runde, siehe extractMotion unten).
-  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc } = window.CNCParser;
+  // G02/G03-Bogeninterpolation (34. Runde, siehe extractMotion unten). parseCornerRadius/
+  // applyCornerFillets (Release 124) ebenso, für die "P71:"-Eckenverrundung (MAKA), siehe dort.
+  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, applyCornerFillets } = window.CNCParser;
 
   // ============================================================
   // App-Zustand
