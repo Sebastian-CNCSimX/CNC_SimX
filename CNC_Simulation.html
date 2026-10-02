@@ -1881,6 +1881,16 @@
   /* Warnung bei doppelt vergebenen Maschinentyp-Namen (DropdownMachinetype.txt Punkt 5) - nicht
      blockierend, daher als auffällige, aber nicht rote (keine echte Fehlermeldung) Warnfarbe. */
   #machineTypeDupWarning { color: var(--warn); font-weight: 600; }
+  /* Release 128, Punkt 2 (Sebastian: "Das Maschinentyp bearbeiten-Fenster soll auch ca. 30%
+     größer sein in der Länge nach oben und unten (jeweils 15%)"): eigene, höhere Textfeld-Höhe
+     NUR für "Maschinentypen bearbeiten" statt die gemeinsame ".paste-card textarea"-Basisregel
+     (220px, siehe weiter unten) zu ändern, die auch die vier übrigen Editor-Textfelder betrifft
+     (Code einfügen/Programm bearbeiten/Arbeitsgang-Namen/Austauschdatei) - deren Größe soll
+     unverändert bleiben. 220px * 1,3 = 286px; da ".paste-panel" den Dialog per Flexbox zentriert
+     (align-items/justify-content: center), wächst die höhere Karte beim Zentrieren automatisch
+     symmetrisch nach oben UND unten - exakt die gewünschten "jeweils 15%", ohne eigene
+     Positionierungslogik. */
+  #machineTypeEditArea { height: 286px; }
   /* Warnung bei einem Knowledge-Base-Eintrag, der nicht mit "[" beginnt bzw. nicht mit "]" endet
      (Release 106, Sebastian: "Warnung ausgeben, wenn neuer Hilfeeintrag in Knowledge Base nicht
      mit [ oder ] gestartet bzw. beendet worden ist. Jetzt fällt der Eintrag einfach unter den
@@ -4542,6 +4552,62 @@
     return m ? parseFloat(m[1]) : null;
   }
 
+  // ============================================================
+  // Eckenverrundung "G302 I<Radius>" (Beckhoff TwinCAT/HOMAG-Dialekt, Release 128, Sebastian:
+  // "G302 wird noch nicht richtig erkannt. G302 ist ein Befehl für eine Eckenrundung" - mit Link
+  // auf https://infosys.beckhoff.com/.../tccncprogramming/15556782219.html und Beispiel:
+  //   G1 X50 Y0 F1000   ; Fährt zum Startpunkt
+  //   G1 X50 Y50        ; Fährt zur Ecke
+  //   G302 I5           ; Fügt an der Ecke einen Radius von 5 mm ein
+  //   G1 X100 Y50       ; Fährt zum nächsten Punkt weiter
+  //
+  // Anders als "P71:" (MAKA, siehe oben), das direkt AUF der Zielpunkt-Zeile der Ecke selbst
+  // steht, steht "G302 I<Radius>" auf einer EIGENEN, der Ecke NACHFOLGENDEN Zeile ohne eigene
+  // Bewegung (kein X/Y auf dieser Zeile) - sie bezieht sich auf den Punkt, der von der
+  // UNMITTELBAR VORHERIGEN Bewegungszeile erreicht wurde. "I" ist hier (anders als bei G02/G03)
+  // kein Bogenmittelpunkt-Offset, sondern direkt der gewünschte Eckenradius - rein textuelle,
+  // von der I/J-Bogenkonvention (IJMODE, siehe 5.12a der Doku) komplett unabhängige Syntax.
+  // Erkennung bewusst direkt über die Programmzeile selbst, unabhängig vom aktuell gewählten
+  // Maschinentyp - genau wie bei P71:/R/I/J weiter oben. Da "G302" von G_RE (nur 1-2-stellige,
+  // führende Nullen tolerierende G-Codes wie "G1"/"G02") nicht erfasst wird, bleibt scanRapid()/
+  // scanArcDirection() von dieser Zeile unberührt; da sie zudem kein X/Y/Z/A/B/C enthält, erzeugt
+  // sie in extractMotion() (app.js) auch regulär keinen eigenen Bahnpunkt - stattdessen wird dort
+  // der zuletzt bereits erzeugte Punkt (die Ecke) nachträglich mit `cornerRadius` versehen, bevor
+  // applyCornerFillets() (siehe unten) greift - identischer Verrundungsmechanismus wie bei P71:,
+  // nur mit anderer Herkunft des cornerRadius-Werts.
+  const G302_CORNER_RADIUS_RE = /\bG302\b[^;]*?\bI\s*(-?\d+(?:\.\d+)?)/;
+  function parseG302CornerRadius(line) {
+    const m = G302_CORNER_RADIUS_RE.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  // ============================================================
+  // Eckenverrundung "GFIL r=<Radius>" (SCM/WinPPZ-Dialekt, Release 130, Sebastian: "Bei SCM z.B.:
+  // GFIL erzeugt einen Radius an der Ecke (ähnlich der ganzen anderen letzten Änderungen). Die
+  // Information über den Radius erfolgt immer nach dem GFIL als 'r='" - mit Beispielprogramm):
+  //   G1  X0.000 V6000
+  //   GFIL r=5.000  V6000
+  //   G1  Y253.711 V3500
+  //
+  // Strukturell identisch zu "G302 I<Radius>" (HOMAG, siehe oben): "GFIL" steht auf einer EIGENEN,
+  // der Ecke NACHFOLGENDEN Zeile ohne eigene Bewegung (kein X/Y/Z - "V.." ist hier wie überall bei
+  // SCM nur der Vorschub, siehe AXIS_RE, das V nicht als Achsbuchstaben kennt) und bezieht sich auf
+  // den Punkt, der von der UNMITTELBAR VORHERIGEN Bewegungszeile erreicht wurde. Anders als bei
+  // G302 (Großbuchstabe "I") steht der Radius hier hinter einem kleingeschriebenen "r=" - nach dem
+  // im Beispielprogramm tatsächlich vorkommenden Schreibweise, daher bewusst case-sensitiv (nicht
+  // "/i") erkannt, analog zu P71:/G302 oben. Erkennung wieder dialektunabhängig direkt über die
+  // Programmzeile selbst. Da "GFIL" (kein G, gefolgt von Ziffern) von G_RE nicht erfasst wird,
+  // bleiben scanRapid()/scanArcDirection() unberührt; die Einfügung in die Bahn (nachträgliches
+  // cornerRadius auf dem zuletzt erzeugten Punkt) funktioniert identisch zu G302, siehe
+  // extractMotion() in app.js. Die bereits bestehende SCM-SWITCHCASEMACHINE-Regel "R->A" (siehe
+  // 5.6 der Doku) betrifft nur das GROSSE "R" (Rundachsenwort), nicht das hier verwendete
+  // kleine "r=" - beide Vorkommen kollidieren daher nicht.
+  const GFIL_CORNER_RADIUS_RE = /\bGFIL\b[^;]*?\br\s*=\s*(-?\d+(?:\.\d+)?)/;
+  function parseGFILCornerRadius(line) {
+    const m = GFIL_CORNER_RADIUS_RE.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
   // Berechnet die Eckenverrundung (Fillet) zwischen den Strecken A->B und B->C mit Radius r (B =
   // die zu verrundende Ecke). Liefert die beiden Tangentenpunkte (t1 auf der Strecke B->A, t2 auf
   // der Strecke B->C), den Mittelpunkt sowie die Durchlaufrichtung des Bogens von t1 nach t2
@@ -5093,7 +5159,7 @@
     return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors };
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
 });
 </script>
 <script>
@@ -5694,8 +5760,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 127;
-  const APP_RELEASE_TIMESTAMP = '01.10.2026, 18:40 Uhr';
+  const APP_RELEASE_NUMBER = 130;
+  const APP_RELEASE_TIMESTAMP = '02.10.2026, 12:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5920,6 +5986,7 @@ CALL _DINISO ( VAL CODE:='->/
 ')->/
 G03->G3
 G02->G2
+R=->R
 [/SWITCHCASEMACHINE]
 [CALCMACHINE]
 X*1
@@ -7088,6 +7155,31 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           });
         }
       }
+      // Eckenverrundung "G302 I<Radius>" (Beckhoff TwinCAT/HOMAG-Dialekt, Release 128, siehe
+      // ausführliche Dokumentation bei G302_CORNER_RADIUS_RE/parseG302CornerRadius() in
+      // parser.js): Anders als "P71:" oben steht diese Direktive auf einer EIGENEN Zeile ohne
+      // eigenes X/Y - "found" ist auf dieser Zeile daher immer false, der obige
+      // "if (found && !isOriginReset)"-Block greift also nicht. Stattdessen wird hier,
+      // unabhängig davon, bereits unmittelbar geprüft, ob DIESE Zeile ein "G302 I<Radius>" trägt,
+      // und falls ja, der zuletzt in `points` erzeugte Punkt (die Ecke, die mit der vorherigen
+      // Bewegungszeile erreicht wurde) nachträglich mit `cornerRadius` versehen - applyCornerFillets()
+      // unten verrundet ihn dann genau wie einen P71:-Punkt. Kein vorheriger Punkt vorhanden
+      // (G302 ganz am Anfang, ohne vorherige Bewegung) oder der vorherige Punkt stammt bereits aus
+      // einer Bogen-Tessellierung (reiner Bogenpunkt, keine "scharfe" Ecke) -> wird hier bewusst
+      // NICHT unterschieden; ein Bogen-Endpunkt bekommt also ebenfalls ein cornerRadius-Feld,
+      // was applyCornerFillets() unverändert verarbeitet (dieselbe Form wie jeder andere Punkt).
+      const g302CornerRadius = parseG302CornerRadius(line);
+      if (g302CornerRadius !== null && points.length) {
+        points[points.length - 1].cornerRadius = g302CornerRadius;
+      }
+      // Eckenverrundung "GFIL r=<Radius>" (SCM/WinPPZ-Dialekt, Release 130, siehe ausführliche
+      // Dokumentation bei GFIL_CORNER_RADIUS_RE/parseGFILCornerRadius() in parser.js): strukturell
+      // identisch zu G302 oben (eigene, der Ecke nachfolgende Zeile ohne eigene Bewegung) - exakt
+      // derselbe Mechanismus, nur mit anderer Erkennungssyntax.
+      const gfilCornerRadius = parseGFILCornerRadius(line);
+      if (gfilCornerRadius !== null && points.length) {
+        points[points.length - 1].cornerRadius = gfilCornerRadius;
+      }
     }
     // Eckenverrundung "P71:" (Release 124): erst NACH dem vollständigen Aufbau der Punkteliste
     // angewendet, nicht während der Schleife oben - ein Fillet braucht sowohl den vorherigen als
@@ -7106,7 +7198,23 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Logik ohne DOM-Bezug, dort auch per Node-Test abgesichert) - Letztere für die
   // G02/G03-Bogeninterpolation (34. Runde, siehe extractMotion unten). parseCornerRadius/
   // applyCornerFillets (Release 124) ebenso, für die "P71:"-Eckenverrundung (MAKA), siehe dort.
-  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, applyCornerFillets } = window.CNCParser;
+  // Release 129 (Bugfix zu Release 128, Sebastian: "Irgendwas ist kaputt gegangen. Die
+  // Playfunktion ist nicht mehr da und das Programm wird auch nicht mehr komplett angezeigt
+  // nachdem es geladen worden ist."): Release 128 hatte `parseG302CornerRadius` (siehe
+  // G302_CORNER_RADIUS_RE in parser.js) zwar in parser.js eingeführt und exportiert, aber beim
+  // Übertragen HIERHER - der einzigen Stelle, an der app.js seine CNCParser-Funktionen aus
+  // `window.CNCParser` entgegennimmt - schlicht vergessen mit aufzunehmen. Da `extractMotion()`
+  // (siehe unten) den Bezeichner trotzdem unbedingt (nicht nur im G302-Fall) aufruft, warf
+  // JEDER Aufruf von extractMotion() - also bei JEDEM geladenen Programm, nicht nur bei
+  // G302-Zeilen - einen "parseG302CornerRadius is not defined"-ReferenceError. Da `setScope()`
+  // darüber sowohl die 3D-Segmente als auch die Wiedergabe-Punkteliste aufbaut, blieb dadurch
+  // der komplette 3D-Bereich leer und die Wiedergabe(Play)-Funktion faktisch tot - exakt
+  // Sebastians beschriebenes Symptom. Durch einen eigenen Node-Test bestätigt, der den
+  // betroffenen Code-Abschnitt BYTE-IDENTISCH aus der ausgelieferten Datei lädt (nicht nur eine
+  // von Hand nachgebaute Kopie wie in früheren Tests dieser Fehlerklasse) und ohne diese
+  // Ergänzung exakt denselben ReferenceError reproduziert, mit ihr dagegen auch ein ganz
+  // gewöhnliches Programm ohne jede G302/P71/Bogen-Sonderzeile wieder anstandslos verarbeitet.
+  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, applyCornerFillets } = window.CNCParser;
 
   // ============================================================
   // App-Zustand
@@ -12311,11 +12419,43 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // parst die Konfiguration neu, prüft auf doppelte Namen (nicht blockierend, nur Warnung),
   // persistiert sie, baut das Dropdown neu auf und wendet - falls bereits ein Programm geladen
   // ist - den (ggf. weiterhin gültigen) aktiven Maschinentyp sofort erneut an.
+  // Release 128, Punkt 1 (Sebastian: "Wenn bei Maschinentyp ein Maschinentyp gewählt worden ist
+  // (z.B. Holzher) und man ins Menü ... 'Maschinentyp bearbeiten' geht, soll das Menü direkt da
+  // hinspringen was als Maschinentyp ausgewählt UND mit Ok bestätigt worden ist."): Springt beim
+  // Öffnen direkt zum Block des aktuell AKTIVEN (zuletzt per "Ok" bestätigten, nicht nur im
+  // Dropdown vorausgewählten) Maschinentyps - activeMachineTypeName, siehe applyActiveMachineType()
+  // weiter oben. Ist kein Maschinentyp aktiv ("ISO") oder wird dessen öffnender
+  // "[MACHINETYPE Name=\"…\"]"-Marker im aktuellen Konfigurationstext aus irgendeinem Grund nicht
+  // gefunden (z. B. zwischenzeitlich von Hand umbenannt), bleibt der Cursor wie bisher am Anfang
+  // stehen - kein Fehler, reiner Komfort-Fallback. Suche bewusst case-insensitiv (groß-/
+  // kleinschreibungsunabhängig, wie auch das Dropdown selbst den Namen vergleicht, siehe
+  // z. B. setScope()) über den gesamten Marker statt nur den nackten Namen, um nicht versehentlich
+  // auf den Namen irgendeiner anderen Stelle im Text (z. B. als Teil eines Kommentars) zu treffen.
   btnEditMachineTypes.addEventListener('click', () => {
     machineTypeEditArea.value = machineTypesConfigText;
     checkMachineTypeDuplicates();
     machineTypeEditPanel.classList.add('open');
     machineTypeEditArea.focus();
+    let jumped = false;
+    if (activeMachineTypeName && activeMachineTypeName.toLowerCase() !== 'iso') {
+      const marker = '[machinetype name="' + activeMachineTypeName.toLowerCase() + '"]';
+      const idx = machineTypeEditArea.value.toLowerCase().indexOf(marker);
+      if (idx !== -1) {
+        machineTypeEditArea.setSelectionRange(idx, idx);
+        // scrollTop statt nur setSelectionRange (von manchen Browsern allein kaum wahrnehmbar
+        // gescrollt): Zeilennummer der Fundstelle mal Zeilenhöhe. line-height ist auf dieser
+        // Textarea nicht explizit gesetzt (".paste-card textarea", siehe CSS) - der Browser liefert
+        // dafür "normal" statt eines Pixelwerts zurück, daher der Fallback über die Schriftgröße
+        // (gängige Daumenregel ca. 1,2x), falls kein numerischer Wert ermittelbar ist.
+        const linesBefore = machineTypeEditArea.value.slice(0, idx).split('\n').length - 1;
+        const computedLineHeight = parseFloat(getComputedStyle(machineTypeEditArea).lineHeight);
+        const lineHeight = isFinite(computedLineHeight) ? computedLineHeight
+          : parseFloat(getComputedStyle(machineTypeEditArea).fontSize) * 1.2;
+        machineTypeEditArea.scrollTop = linesBefore * lineHeight;
+        jumped = true;
+      }
+    }
+    if (!jumped) machineTypeEditArea.setSelectionRange(0, 0);
   });
   el('btnMachineTypeEditCancel').addEventListener('click', () => machineTypeEditPanel.classList.remove('open'));
   el('btnMachineTypeEditApply').addEventListener('click', () => {
