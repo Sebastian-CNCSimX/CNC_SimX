@@ -2827,7 +2827,22 @@
     <p class="panel-hint">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span>, z.&nbsp;B. <span class="k">Y*-1</span>), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
     <textarea id="machineTypeEditArea" placeholder='[MACHINETYPE Name="Biesse"]&#10;[SWITCHCASEMACHINE]&#10;CR=->R&#10;[/SWITCHCASEMACHINE]&#10;[CALCMACHINE]&#10;Y*-1&#10;Z*-1&#10;[/CALCMACHINE]&#10;[/MACHINETYPE Name="Biesse"]' spellcheck="false"></textarea>
     <p class="panel-hint" id="machineTypeDupWarning" hidden></p>
+    <!-- "Maschinentypen zurücksetzen" (Release 134, Sebastian: "Einen Reset-Knopf nur für
+         Maschinentypen in 'Maschinentypen bearbeiten'" - Antwort auf die Frage, ob sich das manuelle
+         Löschen des gecachten Maschinentyp-localStorage, das Sebastian bislang über
+         "exe schließen + HTML überschreiben + WebView2-Profilordner löschen" erledigt hat, auch per
+         Knopf im Programm selbst nachbilden lässt). Bewusst mit margin-left:auto statt eines
+         dritten gleichwertigen Knopfs stumpf in der von ".paste-actions" vorgegebenen
+         flex-end-Reihe: schiebt den Reset-Knopf sichtbar von Abbrechen/Übernehmen weg an den
+         linken Rand der Knopfzeile, damit ein hastiger Klick nicht versehentlich den (deutlich
+         folgenreicheren) Reset statt Abbrechen/Übernehmen trifft - exakt dieselbe Begründung wie
+         bei Sebastians eigenem "Originalgröße"-Knopf im Skalieren-Dialog (siehe Kommentar bei den
+         Enter/Escape-Dialog-Konventionen in app.js), nur horizontal statt nur optisch abgesetzt.
+         Eigene, nicht auf "Cancel" endende ID UND keine ".btn.primary"-Klasse, damit weder der
+         globale Escape- noch der globale Enter-Handler (siehe dort) diesen Knopf versehentlich
+         anstelle von Abbrechen/Übernehmen auslösen. -->
     <div class="paste-actions">
+      <button class="btn ghost" id="btnMachineTypeResetDefaults" type="button" style="margin-right:auto" title="Setzt ALLE Maschinentypen sowie den aktiven Maschinentyp auf die eingebauten Standardwerte zurück (löscht die gespeicherte Maschinentyp-Konfiguration). Betrifft NICHT die Arbeitsgang-Namensliste, die Knowledge Base oder Anzeigeeinstellungen." data-i18n-en="Reset to defaults" data-i18n-en-title="Resets ALL machine types and the active machine type to the built-in defaults (deletes the saved machine type configuration). Does NOT affect the operation name list, the knowledge base, or display settings.">Maschinentypen zurücksetzen</button>
       <button class="btn ghost" id="btnMachineTypeEditCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnMachineTypeEditApply" type="button">Übernehmen</button>
     </div>
@@ -5909,8 +5924,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 133;
-  const APP_RELEASE_TIMESTAMP = '02.10.2026, 18:20 Uhr';
+  const APP_RELEASE_NUMBER = 134;
+  const APP_RELEASE_TIMESTAMP = '02.10.2026, 19:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12673,6 +12688,49 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     persistActiveMachineTypeName(activeMachineTypeName);
     if (rawProgramText != null) displayCurrentProgram();
     machineTypeEditPanel.classList.remove('open');
+  });
+
+  // "Maschinentypen zurücksetzen" (Release 134, siehe Markup-Kommentar bei
+  // #btnMachineTypeResetDefaults in template_top.html). Sebastian fragte, ob sich das manuelle
+  // Löschen des gecachten Maschinentyp-localStorage (bislang nur über "exe schließen + HTML
+  // überschreiben + WebView2-Profilordner löschen" bzw. das Browser-eigene "Websitedaten löschen"
+  // möglich) auch per eingebautem Knopf nachbilden lässt - diese Funktion ist die Antwort darauf,
+  // bewusst ENG auf die Maschinentyp-Konfiguration begrenzt (Option "nur für Maschinentypen in
+  // 'Maschinentypen bearbeiten'" aus den drei angebotenen Varianten). Spiegelt bewusst exakt die
+  // gleiche "entfernen statt mit Standardtext überschreiben"-Architektur wie
+  // resetAllDisplaySettingsToDefaults() (siehe dort, Abschnitt "Standardwerte wiederherstellen"):
+  // window.localStorage.removeItem() statt eines expliziten persistMachineTypesConfig(
+  // DEFAULT_MACHINETYPES_TEXT)-Aufrufs, damit nach dem Zurücksetzen nachweislich KEIN eigener
+  // Eintrag mehr unter LS_KEY_MACHINETYPES_CONFIG/LS_KEY_ACTIVE_MACHINETYPE liegt (siehe
+  // loadPersistedMachineTypesConfig()/loadPersistedActiveMachineTypeName() weiter oben, die bei
+  // fehlendem Eintrag ohnehin automatisch auf DEFAULT_MACHINETYPES_TEXT/
+  // DEFAULT_ACTIVE_MACHINETYPE_NAME zurückfallen) - exakt der Zustand, der bislang nur über den
+  // WebView2-Profilordner-Umweg erreichbar war. Der restliche Ablauf (machineTypes neu parsen,
+  // Textfeld/Dropdown neu befüllen, ein ggf. geladenes Programm mit dem jetzt aktiven
+  // Standard-Maschinentyp neu anzeigen) entspricht 1:1 dem bestehenden
+  // "Übernehmen"-Klick-Handler oben, nur mit DEFAULT_MACHINETYPES_TEXT/
+  // DEFAULT_ACTIVE_MACHINETYPE_NAME statt dem Textarea-Inhalt als Quelle. Betrifft bewusst NICHT
+  // opNameListText/knowledgeBaseText oder irgendeine Anzeigeeinstellung - exakt wie bei Sebastians
+  // Variantenwahl abgegrenzt.
+  function resetMachineTypesToDefaults() {
+    try { window.localStorage.removeItem(LS_KEY_MACHINETYPES_CONFIG); } catch (e) { /* siehe Kommentar bei loadPersistedMachineTypesConfig() oben */ }
+    try { window.localStorage.removeItem(LS_KEY_ACTIVE_MACHINETYPE); } catch (e) { /* siehe Kommentar bei loadPersistedActiveMachineTypeName() oben */ }
+    machineTypesConfigText = DEFAULT_MACHINETYPES_TEXT;
+    machineTypes = CNCSwap.parseMachineTypes(machineTypesConfigText);
+    machineTypeEditArea.value = machineTypesConfigText;
+    checkMachineTypeDuplicates();
+    populateMachineTypeSelect(DEFAULT_ACTIVE_MACHINETYPE_NAME);
+    activeMachineTypeName = machineTypeSelect.value;
+    if (rawProgramText != null) displayCurrentProgram();
+    machineTypeEditPanel.classList.remove('open');
+  }
+  // Sicherheitsabfrage analog zu #btnResetDisplayDefaults oben (nativer window.confirm(), bewusst
+  // kein eigenes .paste-panel-Overlay) - bei "Abbrechen" (Nein) passiert nichts, insbesondere wird
+  // resetMachineTypesToDefaults() dann gar nicht erst aufgerufen und die gerade angezeigte
+  // Maschinentyp-Konfiguration bleibt unverändert sichtbar.
+  el('btnMachineTypeResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Alle Maschinentypen werden auf die eingebauten Standardwerte zurückgesetzt, eigene Änderungen an den Maschinentypen gehen dabei verloren. Fortführen?')) return;
+    resetMachineTypesToDefaults();
   });
 
   // "Maschinentypen laden" (#btnLoadMachineTypes/#machineTypeFileInput, ersetzte früher die
