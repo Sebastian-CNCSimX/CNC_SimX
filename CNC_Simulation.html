@@ -4608,6 +4608,113 @@
     return m ? parseFloat(m[1]) : null;
   }
 
+  // ============================================================
+  // Eckenverrundung "BR=<Radius>" (Biesse/CIX-Dialekt, Release 131, Sebastian: "Bei Biesse kommt
+  // die Rundung in den Ecken nicht raus. 'BR='. Das tausche ich über die Austauschdatei gegen ein
+  // R aus, aber das wird nicht berücksichtigt." - mit Beispielprogramm):
+  //   N135 G1 X0.00 BR=6.00 F5.000
+  //   N140 G1 Y-300.00 BR=6.00 F4.000
+  //
+  // Anders als G302/GFIL (siehe oben), die auf einer EIGENEN, der Ecke NACHFOLGENDEN Zeile stehen,
+  // steht "BR=<Radius>" wie "P71:" (MAKA, siehe ganz oben) DIREKT auf derselben Zeile wie die
+  // Bewegung selbst, die den zu verrundenden Zielpunkt programmiert - der Radius gilt für den
+  // Zielpunkt GENAU DIESER Zeile, nicht für den vorherigen Punkt.
+  //
+  // Ursache der vom Benutzer gemeldeten Fehlfunktion: Der Benutzer hatte eine eigene
+  // SWITCHCASEMACHINE-Regel "BR=->R" im Biesse-Block angelegt, in der (nachvollziehbaren, aber
+  // falschen) Annahme, "BR=" sei nur eine abweichende Schreibweise des R-Bogenradius-Formats
+  // (ARC_PARAM_RE, siehe 9.1 der Doku) und müsse wie "CR=->R" lediglich auf "R" normalisiert
+  // werden. Das griff aber nicht: Die betroffenen Zeilen sind reine G1-Geradenzüge OHNE eigenes
+  // G02/G03 - ein "R6.00" auf einer solchen Zeile wird von parseArcParams() nie ausgewertet (das
+  // R-Bogenformat greift nur in Kombination mit einem expliziten G02/G03 auf derselben Zeile,
+  // siehe extractMotion()) - die Eckinformation ging dadurch vollständig verloren. Wie bereits bei
+  // "P71:" dokumentiert (siehe 5.6 der Doku, Absatz "Der MAKA-Block"), ist eine
+  // SWITCHCASEMACHINE-Textersetzung für eine Eckenverrundungs-Markierung grundsätzlich ungeeignet:
+  // SWITCHCASEMACHINE-Regeln laufen auf dem gesamten Rohtext, BEVOR überhaupt geparst wird - eine
+  // Regel, die "BR=" gegen irgendeinen anderen Text tauscht, entfernt die literale Markierung
+  // bereits, bevor parseBRCornerRadius() (siehe unten) sie zu Gesicht bekommt. Erkennung daher
+  // bewusst direkt über die Programmzeile selbst, unabhängig vom aktuell gewählten Maschinentyp -
+  // genau wie bei P71:/G302/GFIL. Die eigene "BR=->R"-Regel im Biesse-Block muss deshalb aus der
+  // Maschinentyp-Konfiguration entfernt werden, damit diese native Erkennung greifen kann.
+  const BR_CORNER_RADIUS_RE = /\bBR\s*=\s*(-?\d+(?:\.\d+)?)/;
+  function parseBRCornerRadius(line) {
+    const m = BR_CORNER_RADIUS_RE.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  // ============================================================
+  // Eckenverrundung "E<Radius>" (FORMAT4/Felder-Dialekt, Release 132, Sebastian: "Nächster Fall,
+  // Format 4, der Eckenradiusbuchstabe ist nicht R, sondern E. Vermutlich E wie Ecke." - mit
+  // Beispielprogramm):
+  //   G1  X930.0000 Z-2.0000 E5.0000 F6000
+  //   G1  X930.0000 Y300.0000 Z-2.0000 E5.0000 F4000
+  //
+  // Strukturell identisch zu "BR=" (Biesse, siehe oben) und "P71:" (MAKA, ganz oben): "E<Radius>"
+  // steht DIREKT auf derselben Zeile wie die Bewegung selbst, die den zu verrundenden Zielpunkt
+  // programmiert - der Radius gilt für den Zielpunkt GENAU DIESER Zeile. Anders als bei "BR=" gibt
+  // es hier kein "="-Zeichen - "E" wird direkt, ohne Trennzeichen, von der Radius-Zahl gefolgt
+  // (klassische Achswort-Notation, wie AXIS_RE sie für X/Y/Z/A/B/C auch kennt - nur dass "E" selbst
+  // kein Achsbuchstabe ist und daher dort nie erfasst wird). Derselbe negative Lookbehind wie bei
+  // AXIS_RE ((?<![A-Za-z])) verhindert, dass ein "E" mitten in einem längeren Wort (z. B. im
+  // FORMAT4-Zwischenstopp-/Programmende-Freitext wie "# PAUSE"/"# END OF PROGRAM", siehe 4.3 der
+  // Doku) versehentlich als Eckenradius gelesen wird - in beiden Beispielen folgt auf das "E" kein
+  // unmittelbarer Zahlenwert, der Lookbehind ist aber ohnehin die erste Verteidigungslinie, sobald
+  // "E" einmal direkt hinter einem anderen Buchstaben steht. Erkennung bewusst direkt über die
+  // Programmzeile selbst, unabhängig vom aktuell gewählten Maschinentyp - genau wie bei
+  // P71:/G302/GFIL/BR=.
+  const FORMAT4_CORNER_RADIUS_RE = /(?<![A-Za-z])E\s*(-?\d+(?:\.\d+)?)/;
+  function parseFormat4CornerRadius(line) {
+    const m = FORMAT4_CORNER_RADIUS_RE.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  // Generisches, maschinentyp-abhängiges Eckenradius-Erkennungs-RegExp (Release 133, Sebastian:
+  // "Generelles Setting im 'Maschinentypen bearbeiten' einbauen, was vorgelagert ist:
+  // 'CORNERRADIUS=' als Pendant zu 'IJMODE=' bzw. 'SWIVELANGLE='. [...] Dann könnte man [...] auch
+  // ein 'CORNERRADIUS=CLAUDERADIUS' einbauen und es wird erkannt 'CLAUDERADIUS 5.53' erzeugt einen
+  // Eckenradius von 5.53mm"). Baut aus dem per CORNERRADIUS= konfigurierten Marker-TEXT (z.B.
+  // "P71:", "BR=", "E", "G302 I", "GFIL r=") ein RegExp, das strukturell genau wie die fest
+  // einprogrammierten P71_/BR_/FORMAT4_CORNER_RADIUS_RE oben funktioniert: Marker gefolgt
+  // (irgendwann, nicht zwingend direkt) von einer Zahl.
+  //
+  // Der Marker-Text wird auf Leerzeichen in TOKENS zerlegt (z.B. "G302 I" -> ["G302", "I"]), jedes
+  // Token einzeln regex-escaped (damit Sonderzeichen wie "." oder "=" in Markern wie "BR=" oder
+  // "GFIL r=" nicht als Regex-Metazeichen wirken) und mit einer NICHT-gierigen Lücke "[^;]*?"
+  // zwischen den Tokens wieder zusammengesetzt - exakt dieselbe Toleranz für "dazwischenliegenden
+  // Text", die G302_CORNER_RADIUS_RE/GFIL_CORNER_RADIUS_RE (siehe oben) bereits für ihre jeweils
+  // zweiteiligen Marker ("G302" ... "I<Zahl>" bzw. "GFIL" ... "r=<Zahl>") verwenden - ein
+  // einteiliger Marker wie "P71:"/"BR="/"E" ergibt dabei einfach ein einzelnes escaptes Token ohne
+  // Lücke, strukturell identisch zu P71_CORNER_RADIUS_RE/BR_CORNER_RADIUS_RE/
+  // FORMAT4_CORNER_RADIUS_RE. Davor ein negativer Lookbehind `(?<![A-Za-z0-9])` (Stil wie AXIS_RE),
+  // damit z.B. ein Marker "E" nicht mitten in einem anderen Wort anschlägt.
+  //
+  // Liefert `null`, wenn kein Marker konfiguriert ist (leerer/fehlender String) - der Aufrufer
+  // (extractMotion() in app.js) fällt dann auf die fest einprogrammierten Erkenner zurück (siehe
+  // parseConfiguredCornerRadius unten sowie die ausführliche Dokumentation bei
+  // CORNERRADIUS_RE/parseCornerRadiusMarker() in swap.js).
+  function buildCornerRadiusMarkerRegex(marker) {
+    if (!marker || !String(marker).trim()) return null;
+    const tokens = String(marker).trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return null;
+    const escaped = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = '(?<![A-Za-z0-9])' + escaped.join('[^;]*?') + '[^;]*?(-?\\d+(?:\\.\\d+)?)';
+    try {
+      return new RegExp(pattern);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Wendet ein per buildCornerRadiusMarkerRegex() gebautes RegExp auf eine Zeile an (Release 133,
+  // siehe dort). `markerRegex` ist `null`, wenn der aktuelle Maschinentyp keinen CORNERRADIUS-Marker
+  // konfiguriert hat - dann liefert diese Funktion ebenfalls `null`, ohne Fehler (Aufrufer fällt auf
+  // die fest einprogrammierten Erkenner zurück).
+  function parseConfiguredCornerRadius(line, markerRegex) {
+    if (!markerRegex) return null;
+    const m = markerRegex.exec(line);
+    return m ? parseFloat(m[1]) : null;
+  }
+
   // Berechnet die Eckenverrundung (Fillet) zwischen den Strecken A->B und B->C mit Radius r (B =
   // die zu verrundende Ecke). Liefert die beiden Tangentenpunkte (t1 auf der Strecke B->A, t2 auf
   // der Strecke B->C), den Mittelpunkt sowie die Durchlaufrichtung des Bogens von t1 nach t2
@@ -5159,7 +5266,7 @@
     return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors };
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
 });
 </script>
 <script>
@@ -5554,6 +5661,44 @@
     return null;
   }
 
+  // Parst einen optionalen "CORNERRADIUS=<Marker>"-Parameter direkt innerhalb eines
+  // [MACHINETYPE ...]-Blocks (Release 133, Sebastian: "Generelles Setting im 'Maschinentypen
+  // bearbeiten' einbauen, was vorgelagert ist: 'CORNERRADIUS=' als Pendant zu 'IJMODE=' bzw.
+  // 'SWIVELANGLE='. Bei Maka z.B. 'CORNERRADIUS=P71:' -> Programm erkennt beim jeweiligen
+  // Maschinentypen automatisch den Eckenradius. Bei HOMAG z.B: 'CORNERRADIUS=G302'. Bei Biesse
+  // 'CORNERRADIUS=BR='"). Exakt nach demselben Muster wie SWIVELANGLE/IJMODE direkt darüber: eine
+  // einzelne, schlichte "Schlüsselwort=Wert"-Zeile, Schlüsselwort case-insensitiv, Suche über ALLE
+  // Zeilen des Blocks - ANDERS als dort bleibt der WERT selbst aber bewusst case-SENSITIV (nicht
+  // per "i"-Flag kleingeschrieben), da die realen Marker-Schreibweisen selbst case-sensitiv sind
+  // (z. B. GFILs kleines "r=" vs. G302s großes "I", siehe parser.js/buildCornerRadiusMarkerRegex).
+  //
+  // <Marker> ist der exakte Text, der im Programmcode UNMITTELBAR VOR der Radius-Zahl steht, z. B.:
+  //   CORNERRADIUS=P71:        (MAKA: "P71:7.00")
+  //   CORNERRADIUS=BR=         (Biesse: "BR=6.00")
+  //   CORNERRADIUS=E           (FORMAT4: "E5.0000")
+  //   CORNERRADIUS=G302 I      (HOMAG: "G302 I5" - mehrteiliger Marker, Leerzeichen getrennt)
+  //   CORNERRADIUS=GFIL r=     (SCM: "GFIL r=5.000")
+  // Ein hypothetischer neuer Dialekt mit einer Notation wie "CLAUDERADIUS 5.53" bräuchte dafür
+  // nur die eine Zeile "CORNERRADIUS=CLAUDERADIUS" - keine Code-Änderung.
+  //
+  // WICHTIG - Rückwärtskompatibilität: Ist KEINE eigene CORNERRADIUS-Zeile vorhanden (z. B. bei
+  // einem bereits vor dieser Funktion angelegten/gespeicherten Maschinentyp, dessen Konfiguration
+  // per localStorage weiterlebt), fällt extractMotion() (app.js) unverändert auf die bisherigen,
+  // fest einprogrammierten Erkenner zurück (parseCornerRadius/parseG302CornerRadius/
+  // parseGFILCornerRadius/parseBRCornerRadius/parseFormat4CornerRadius) - eine bereits gespeicherte
+  // Maschinentyp-Konfiguration ohne diese neue Zeile funktioniert dadurch unverändert genau wie
+  // bisher weiter, der Benutzer muss NICHTS nachpflegen. Ist die Zeile dagegen vorhanden, hat sie
+  // Vorrang vor den fest einprogrammierten Erkennern UND gilt (anders als diese bisher) nur noch
+  // für GENAU DIESEN Maschinentyp, nicht mehr maschinentyp-unabhängig für jedes Programm.
+  const CORNERRADIUS_RE = /^CORNERRADIUS\s*=\s*(.+)$/i;
+  function parseCornerRadiusMarker(blockLines) {
+    for (let i = 0; i < blockLines.length; i++) {
+      const m = CORNERRADIUS_RE.exec(blockLines[i].trim());
+      if (m) return m[1].trim();
+    }
+    return null;
+  }
+
   // Extrahiert den Inhalt EINES Abschnitts (z.B. SWITCHCASEMACHINE oder CALCMACHINE) aus einem
   // Array bereits aufgeteilter Zeilen: gesucht wird zunaechst die Zeile, auf die "startPredicate"
   // zutrifft (der oeffnende Marker, z.B. "[SWITCHCASEMACHINE]"), danach werden alle Zeilen bis
@@ -5618,7 +5763,11 @@
         swivelAngleDeg: parseSwivelAngle(blockLines),
         // IJMODE (Release 123) - siehe parseIJMode oben. `null`, wenn der Block keine (gültige)
         // IJMODE-Zeile enthält - app.js fällt dann auf 'incremental' zurück.
-        ijMode: parseIJMode(blockLines)
+        ijMode: parseIJMode(blockLines),
+        // CORNERRADIUS (Release 133) - siehe parseCornerRadiusMarker oben. `null`, wenn der Block
+        // keine (gültige) CORNERRADIUS-Zeile enthält - app.js fällt dann auf die fest
+        // einprogrammierten Erkenner (P71:/G302/GFIL/BR=/E) zurück.
+        cornerRadiusMarker: parseCornerRadiusMarker(blockLines)
       });
     }
     return result;
@@ -5683,7 +5832,7 @@
     return dupes;
   }
 
-  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode };
+  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode, parseCornerRadiusMarker };
 });
 </script>
 <script>
@@ -5760,8 +5909,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 130;
-  const APP_RELEASE_TIMESTAMP = '02.10.2026, 12:30 Uhr';
+  const APP_RELEASE_NUMBER = 133;
+  const APP_RELEASE_TIMESTAMP = '02.10.2026, 18:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -5966,6 +6115,7 @@ Z*-1
 C*-1
 [/CALCMACHINE]
 IJMODE=absolute
+CORNERRADIUS=BR=
 [/MACHINETYPE Name="Biesse"]
 
 [MACHINETYPE Name="FORMAT4"]
@@ -5978,6 +6128,7 @@ X*1
 Y*1
 Z*1
 [/CALCMACHINE]
+CORNERRADIUS=E
 [/MACHINETYPE Name="FORMAT4"]
 
 [MACHINETYPE Name="HolzHer"]
@@ -6019,6 +6170,7 @@ X*1
 Y*1
 Z*1
 [/CALCMACHINE]
+CORNERRADIUS=G302 I
 [/MACHINETYPE Name="HOMAG"]
 
 [MACHINETYPE Name="Houfek"]
@@ -6060,6 +6212,7 @@ X*1
 Y*1
 Z*1
 [/CALCMACHINE]
+CORNERRADIUS=P71:
 [/MACHINETYPE Name="MAKA"]
 
 [MACHINETYPE Name="MKM"]
@@ -6112,6 +6265,7 @@ Y*1
 Z*1
 [/CALCMACHINE]
 IJMODE=absolute
+CORNERRADIUS=GFIL r=
 [/MACHINETYPE Name="SCM"]
 `;
   // SIM_SAVE:MACHINETYPES_DEFAULT:END
@@ -7066,7 +7220,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // scanArcDirection() angewendet, BEVOR interpolateArc() aufgerufen wird - interpolateArc()
   // selbst bekommt dadurch, genau wie zuvor, nur ein fertiges 'cw'/'ccw' übergeben und muss
   // nichts von alldem wissen.
-  function extractMotion(lines, startLineIdx, state, usedAxes, ijMode, chiralityFlip) {
+  function extractMotion(lines, startLineIdx, state, usedAxes, ijMode, chiralityFlip, cornerRadiusMarkerRegex) {
     const points = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -7146,7 +7300,24 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           // programmierten Zielpunkt gesetzt (nie auf einem Bogen-Tessellierungspunkt oben) -
           // applyCornerFillets() ersetzt diesen Punkt weiter unten ggf. durch die verrundete
           // Ecke, das temporäre Feld selbst verlässt extractMotion() nie nach außen.
-          const cornerRadius = parseCornerRadius(line);
+          // Release 131 (Biesse "BR=<Radius>") und Release 132 (FORMAT4 "E<Radius>", siehe
+          // ausführliche Dokumentation bei BR_CORNER_RADIUS_RE/parseBRCornerRadius() bzw.
+          // FORMAT4_CORNER_RADIUS_RE/parseFormat4CornerRadius() in parser.js): strukturell
+          // identisch zu "P71:" (alle drei stehen auf dieser EINEN Zielpunkt-Zeile selbst), daher
+          // hier gemeinsam ausgewertet - Reihenfolge P71: > BR= > E ist reine Vorrang-Konvention
+          // für den (in der Praxis nie vorkommenden) Fall, dass eine Zeile mehrere dieser Marker
+          // gleichzeitig trüge.
+          // Release 133 (CORNERRADIUS=<Marker>, siehe buildCornerRadiusMarkerRegex()/
+          // parseConfiguredCornerRadius() in parser.js): hat der AKTIVE Maschinentyp einen eigenen
+          // CORNERRADIUS-Marker konfiguriert (cornerRadiusMarkerRegex !== null), hat dessen Treffer
+          // Vorrang vor ALLEN fest einprogrammierten Erkennern darunter - diese bleiben nur noch der
+          // Fallback für Maschinentypen ohne eigene CORNERRADIUS-Zeile (z. B. bereits gespeicherte,
+          // ältere Konfigurationen), siehe ausführliche Begründung dort.
+          const configuredRadius = parseConfiguredCornerRadius(line, cornerRadiusMarkerRegex);
+          const p71Radius = configuredRadius !== null ? null : parseCornerRadius(line);
+          const brRadius = (configuredRadius !== null || p71Radius !== null) ? null : parseBRCornerRadius(line);
+          const cornerRadius = configuredRadius !== null ? configuredRadius :
+            (p71Radius !== null ? p71Radius : (brRadius !== null ? brRadius : parseFormat4CornerRadius(line)));
           points.push({
             x: endX, y: endY, z: endZ,
             a: state.a, b: state.b, c: state.c,
@@ -7168,7 +7339,23 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // einer Bogen-Tessellierung (reiner Bogenpunkt, keine "scharfe" Ecke) -> wird hier bewusst
       // NICHT unterschieden; ein Bogen-Endpunkt bekommt also ebenfalls ein cornerRadius-Feld,
       // was applyCornerFillets() unverändert verarbeitet (dieselbe Form wie jeder andere Punkt).
-      const g302CornerRadius = parseG302CornerRadius(line);
+      //
+      // Release 133 (CORNERRADIUS=<Marker>, "own-line"-Variante wie "G302 I"/"GFIL r="): wird NUR
+      // geprüft, wenn diese Zeile selbst KEINE eigene Bewegung trägt - hatte sie eine (found &&
+      // !isOriginReset), wurde der konfigurierte Marker bereits oben im SAME-LINE-Zweig geprüft;
+      // ohne diese Absicherung würde eine SAME-LINE-Marker-Zeile hier ein zweites Mal (und u. U.
+      // auf dem FALSCHEN Punkt - dem VORHERIGEN statt dem gerade erzeugten) ausgewertet. Diese
+      // automatische SAME-LINE-vs-OWN-LINE-Unterscheidung allein über das vorhandene `found`-Flag
+      // ist genau das in Sebastians Anfrage offen gelassene "wie erkennt das Programm, ob der
+      // Marker auf derselben oder einer eigenen Zeile steht" - keine eigene Konfiguration nötig.
+      const configuredRetroRadius = (found && !isOriginReset) ? null : parseConfiguredCornerRadius(line, cornerRadiusMarkerRegex);
+      if (configuredRetroRadius !== null && points.length) {
+        points[points.length - 1].cornerRadius = configuredRetroRadius;
+      }
+      // Fest einprogrammierte Fallback-Erkenner (G302 I.../GFIL r=...) - greifen nur noch, wenn
+      // der konfigurierte Marker oben NICHT gegriffen hat (kein CORNERRADIUS= für den aktiven
+      // Maschinentyp konfiguriert, oder diese Zeile trägt trotzdem keinen Treffer dafür).
+      const g302CornerRadius = configuredRetroRadius !== null ? null : parseG302CornerRadius(line);
       if (g302CornerRadius !== null && points.length) {
         points[points.length - 1].cornerRadius = g302CornerRadius;
       }
@@ -7176,7 +7363,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // Dokumentation bei GFIL_CORNER_RADIUS_RE/parseGFILCornerRadius() in parser.js): strukturell
       // identisch zu G302 oben (eigene, der Ecke nachfolgende Zeile ohne eigene Bewegung) - exakt
       // derselbe Mechanismus, nur mit anderer Erkennungssyntax.
-      const gfilCornerRadius = parseGFILCornerRadius(line);
+      const gfilCornerRadius = configuredRetroRadius !== null ? null : parseGFILCornerRadius(line);
       if (gfilCornerRadius !== null && points.length) {
         points[points.length - 1].cornerRadius = gfilCornerRadius;
       }
@@ -7214,7 +7401,12 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // von Hand nachgebaute Kopie wie in früheren Tests dieser Fehlerklasse) und ohne diese
   // Ergänzung exakt denselben ReferenceError reproduziert, mit ihr dagegen auch ein ganz
   // gewöhnliches Programm ohne jede G302/P71/Bogen-Sonderzeile wieder anstandslos verarbeitet.
-  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, applyCornerFillets } = window.CNCParser;
+  // Release 133 (Sebastian: "CORNERRADIUS=" als generisches, maschinentyp-abhängiges Pendant zu
+  // IJMODE=/SWIVELANGLE=, siehe ausführliche Dokumentation bei buildCornerRadiusMarkerRegex()/
+  // parseConfiguredCornerRadius() in parser.js): beide NEUEN Bezeichner hier mit aufgenommen -
+  // nach der in der Release-129-Notiz direkt darüber dokumentierten Lehre, dass das Vergessen
+  // genau dieses Schritts jeden extractMotion()-Aufruf zum Absturz bringt.
+  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, applyCornerFillets } = window.CNCParser;
 
   // ============================================================
   // App-Zustand
@@ -9798,6 +9990,15 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // in swap.js) - aus denselben, bereits oben aufgelösten activeMtForIJ.calcRules abgeleitet, kein
     // eigener Maschinentyp-Lookup nötig. false (kein Tausch), wenn kein Maschinentyp aktiv ist.
     const activeChiralityFlip = CNCSwap.computeArcChiralityFlip(activeMtForIJ && activeMtForIJ.calcRules);
+    // CORNERRADIUS=<Marker> des aktuell aktiven Maschinentyps (Release 133, siehe ausführliche
+    // Dokumentation bei CORNERRADIUS_RE/parseCornerRadiusMarker() in swap.js sowie
+    // buildCornerRadiusMarkerRegex()/parseConfiguredCornerRadius() in parser.js) - exakt dasselbe
+    // Auflösungsmuster wie activeIJMode/activeChiralityFlip oben: einmal pro setScope()-Aufruf aus
+    // dem bereits ermittelten activeMtForIJ abgeleitet und unverändert an jeden extractMotion()-
+    // Aufruf unten durchgereicht. `null`, wenn kein Maschinentyp aktiv ist oder dieser keine (gültige)
+    // CORNERRADIUS-Zeile hat - extractMotion() fällt dann unverändert auf die fest einprogrammierten
+    // Erkenner (P71:/G302/GFIL/BR=/E) zurück, exakt wie vor Release 133.
+    const activeCornerRadiusMarkerRegex = buildCornerRadiusMarkerRegex(activeMtForIJ && activeMtForIJ.cornerRadiusMarker);
     // Eine laufende Messung bezieht sich auf die vorherige Geometrie - bei Scope-/Programmwechsel
     // zurücksetzen (der Messmodus selbst bleibt aktiv, falls eingeschaltet).
     measureStart = null;
@@ -9814,7 +10015,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           // Gesamtes Programm: alle Arbeitsgänge gleichwertig, vollfarbig, in Original-Reihenfolge.
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
-            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip);
+            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
             // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
             // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
             // setScope()-Neuaufbau, siehe dort.
@@ -9829,7 +10030,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           let colorCursor = 0;
           splitAtOriginResets(current.lines).forEach(chunk => {
             const state = newModalState();
-            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip);
+            const pts = extractMotion(chunk.lines, chunk.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
             if (!pts.length) return;
             segments.push({ color: pathColor(colorCursor), colorCursor, title: `Programmteil ${colorCursor + 1}`, opIndex: null, points: pts, context: false });
             colorCursor++;
@@ -9843,7 +10044,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           const isActive = sec.index === mode.index;
           const state = newModalState();
           const axesSink = isActive ? usedAxes : new Set();
-          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip);
+          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
