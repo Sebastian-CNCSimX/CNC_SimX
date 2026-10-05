@@ -2824,7 +2824,7 @@
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
     <h3>Maschinentypen bearbeiten</h3>
-    <p class="panel-hint">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span>, z.&nbsp;B. <span class="k">Y*-1</span>), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
+    <p class="panel-hint">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span> zum Multiplizieren, z.&nbsp;B. <span class="k">Y*-1</span>, ODER <span class="k">Achse+Zahl</span>/<span class="k">Achse-Zahl</span> zum Addieren/Subtrahieren, z.&nbsp;B. <span class="k">C+90</span> – gilt für jeden Achsbuchstaben, also auch für die Dreh-/Kippwinkel A/B/C, und mehrere Zeilen je Achse werden nacheinander angewendet), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
     <textarea id="machineTypeEditArea" placeholder='[MACHINETYPE Name="Biesse"]&#10;[SWITCHCASEMACHINE]&#10;CR=->R&#10;[/SWITCHCASEMACHINE]&#10;[CALCMACHINE]&#10;Y*-1&#10;Z*-1&#10;[/CALCMACHINE]&#10;[/MACHINETYPE Name="Biesse"]' spellcheck="false"></textarea>
     <p class="panel-hint" id="machineTypeDupWarning" hidden></p>
     <!-- "Maschinentypen zurücksetzen" (Release 134, Sebastian: "Einen Reset-Knopf nur für
@@ -5539,8 +5539,41 @@
     if (/^-0(\.0+)?$/.test(out)) out = out.slice(1); // "-0"/"-0.000..." -> vorzeichenlose Null
     return out;
   }
-  // calcRules: [{axis: 'X'|'Y'|'Z'|..., factor: number}, ...] - siehe parseMachineTypes()
-  // unten für die Herkunft (CALCMACHINE-Abschnitt der Maschinentypdatei, z.B. "Y*-1").
+  // Release 138 (Sebastian: "Bei den Dreh- und Kippwinkeln bzw. X Y und Z muss auch gerechnet
+  // werden können und zwar auch plus und minus"): Ergänzt applyAxisCalc()/CALCMACHINE um echte
+  // ADDITION/SUBTRAKTION (Offset) als zweite Rechenart neben der bereits bestehenden
+  // Multiplikation (Faktor) - gilt für JEDEN Achsbuchstaben, also genau wie die Multiplikation
+  // sowohl für X/Y/Z als auch für die Dreh-/Kippwinkel A/B/C (siehe toolAxisDirection()/die
+  // Labels "Kipp A"/"Kipp B"/"Dreh C", Abschnitt 9.6 der Doku), da makeAxisValueRe() ohnehin
+  // schon beliebige einzelne Großbuchstaben als Achse akzeptiert.
+  //
+  // offsetNumberText() ist das additive Gegenstück zu scaleNumberText() direkt oberhalb: exakt
+  // dieselbe Format-Erhaltung (gleiche Anzahl Nachkommastellen wie im Original, "-0"/"-0.000…"
+  // wird zu vorzeichenloser Null normalisiert), nur mit Addition statt Multiplikation. Ein
+  // Offset von 0 bleibt - analog zu Faktor 1 bei scaleNumberText() - ein reines No-op (keine
+  // Neuformatierung einer unveränderten Zahl).
+  function offsetNumberText(num, offset) {
+    if (offset === 0) return num;
+    const dotIdx = num.indexOf('.');
+    const decimals = dotIdx === -1 ? 0 : (num.length - dotIdx - 1);
+    let out = (parseFloat(num) + offset).toFixed(decimals);
+    if (/^-0(\.0+)?$/.test(out)) out = out.slice(1); // "-0"/"-0.000..." -> vorzeichenlose Null
+    return out;
+  }
+  // calcRules: [{axis: 'X'|'Y'|'Z'|..., factor: number}, ...] (Multiplikations-Regel) ODER
+  // [{axis: 'X'|'Y'|'Z'|..., offset: number}, ...] (Additions-/Subtraktions-Regel, seit Release
+  // 138) - siehe parseMachineTypes() unten für die Herkunft (CALCMACHINE-Abschnitt der
+  // Maschinentypdatei, z.B. "Y*-1" ODER "C+90"/"C-90"). Beide Regelarten unterscheiden sich rein
+  // strukturell darüber, welches der beiden Felder ("factor" vs. "offset") gesetzt ist - nie
+  // beide gleichzeitig an ein und demselben Regel-Objekt (für eine Achse, die sowohl skaliert als
+  // auch verschoben werden soll, werden einfach zwei separate CALCMACHINE-Zeilen angelegt, z.B.
+  // "C*-1" gefolgt von "C+90" - applyAxisCalc() wendet beide nacheinander in Datei-Reihenfolge an,
+  // siehe dort). deriveArcLetterRules() und computeArcChiralityFlip() (beide weiter unten)
+  // berücksichtigen deshalb ausschließlich Regeln mit gesetztem "factor"-Feld und ignorieren
+  // reine Offset-Regeln bewusst vollständig - ein konstanter Stellenversatz auf X/Y/Z hat
+  // geometrisch keinen Einfluss auf Bogenmittelpunkt-Mitspiegelung (I/J/K) oder Drehsinn (beides
+  // bleibt reine Skalierungs-/Spiegelungs-Mathematik), und für die Dreh-/Kippwinkel A/B/C gibt es
+  // ohnehin keinen zugehörigen Bogenparameter-Buchstaben (siehe AXIS_TO_ARC_LETTER unten).
   // Beachtet - wie applySwapRules oben - die per computeCommentMask() erkannten Kommentar-
   // bereiche (32. Runde): ein Achswert, der (auch nur teilweise) in einem Kommentar liegt,
   // wird NICHT umgerechnet und bleibt unveraendert stehen. Die Maske wird auf dem
@@ -5586,10 +5619,15 @@
   // Release 125 bleibt unverändert korrekt (SCM hat keine Achsspiegelung, CALCMACHINE X*1/Y*1/
   // Z*1 - die neue I/J/K-Mitspiegelung ist dort ein No-Op).
   const AXIS_TO_ARC_LETTER = { X: 'I', Y: 'J', Z: 'K' };
+  // Seit Release 138 (siehe offsetNumberText() oben): nur Regeln mit gesetztem "factor"-Feld
+  // (Multiplikation/Spiegelung) werden auf I/J/K mitabgeleitet - reine Additions-/
+  // Subtraktions-Regeln (gesetztes "offset"-Feld statt "factor") werden hier bewusst
+  // übersprungen, siehe Begründung beim "calcRules:"-Kommentar oberhalb von applyAxisCalc().
   function deriveArcLetterRules(calcRules) {
     const hasOwnRule = letter => calcRules.some(r => r.axis === letter);
     const derived = [];
     calcRules.forEach(rule => {
+      if (rule.factor === undefined) return; // Offset-Regel: keine Arc-Buchstaben-Ableitung
       const arcLetter = AXIS_TO_ARC_LETTER[rule.axis];
       if (!arcLetter || hasOwnRule(arcLetter)) return;
       derived.push({ axis: arcLetter, factor: rule.factor });
@@ -5601,12 +5639,14 @@
     const effectiveRules = calcRules.concat(deriveArcLetterRules(calcRules));
     let out = text;
     effectiveRules.forEach(rule => {
-      if (rule.factor === 1) return; // No-op: Achse bleibt unangetastet, keine Regex-Anwendung nötig
+      const isOffsetRule = rule.factor === undefined;
+      if (!isOffsetRule && rule.factor === 1) return; // No-op: Achse bleibt unangetastet, keine Regex-Anwendung nötig
+      if (isOffsetRule && (!rule.offset || rule.offset === 0)) return; // No-op: Offset 0
       const re = makeAxisValueRe(rule.axis);
       const mask = computeCommentMask(out);
-      out = out.replace(re, (full, axis, ws, num, offset) => {
-        if (!isRangeUncommented(mask, offset, full.length)) return full;
-        return axis + ws + scaleNumberText(num, rule.factor);
+      out = out.replace(re, (full, axis, ws, num, matchOffset) => {
+        if (!isRangeUncommented(mask, matchOffset, full.length)) return full;
+        return axis + ws + (isOffsetRule ? offsetNumberText(num, rule.offset) : scaleNumberText(num, rule.factor));
       });
     });
     return out;
@@ -5653,8 +5693,13 @@
   // exakt dasselbe "riesengroße Kreise"-Muster wie vor Release 126, nur durch das Fehlen des
   // Drehsinn-Tauschs statt durch die I/J-Mittelpunkt-Berechnung verursacht.
   function computeArcChiralityFlip(calcRules) {
+    // Seit Release 138: findet gezielt die Skalierungs-Regel (gesetztes "factor"-Feld) der
+    // jeweiligen Achse - eine zusätzliche reine Offset-Regel (z.B. "X+10", gesetztes "offset"-
+    // Feld statt "factor") für dieselbe Achse wird hier übersprungen, da ein konstanter
+    // Stellenversatz den Drehsinn geometrisch nicht beeinflusst (siehe Begründung oben bei
+    // deriveArcLetterRules()/offsetNumberText()).
     const axisSign = axis => {
-      const rule = (calcRules || []).find(r => r.axis === axis);
+      const rule = (calcRules || []).find(r => r.axis === axis && r.factor !== undefined);
       if (!rule) return 1;
       return rule.factor < 0 ? -1 : 1;
     };
@@ -5668,21 +5713,38 @@
     return applyAxisCalc(text, [{ axis: 'Y', factor: -1 }, { axis: 'Z', factor: -1 }]);
   }
 
-  // Parst den CALCMACHINE-Abschnitt einer Maschinentypdatei: eine Regel je Zeile im Format
-  // "<Achsbuchstabe>*<Faktor>", z.B. "X*1", "Y*-1", "Z*-1". Zeilen, die nicht in dieses einfache
-  // Schema passen (siehe DropdownMachinetype.txt Punkt 11: "Die Formel können auch komplizierter
-  // sein ... Das ist nur ein Beispiel!!!" - komplexere Formeln wie Winkelberechnungen über
-  // Vektor-Kosinus sind bewusst NICHT umgesetzt, siehe bekannte Einschraenkungen in der
-  // Projekt-Doku) werden stillschweigend ignoriert statt einen Fehler zu werfen - konsistent mit
-  // der sonstigen tolerant-gegenueber-Tippfehlern-Philosophie dieses Projekts.
+  // Parst den CALCMACHINE-Abschnitt einer Maschinentypdatei: eine Regel je Zeile, in einem von
+  // zwei Schemata:
+  //   1. Multiplikation (Faktor): "<Achsbuchstabe>*<Faktor>", z.B. "X*1", "Y*-1", "Z*-1".
+  //   2. Addition/Subtraktion (Offset, seit Release 138, Sebastian: "Bei den Dreh- und
+  //      Kippwinkeln bzw. X Y und Z muss auch gerechnet werden können und zwar auch plus und
+  //      minus"): "<Achsbuchstabe>+<Zahl>" bzw. "<Achsbuchstabe>-<Zahl>", z.B. "C+90", "A-45".
+  //      Gilt für JEDEN Achsbuchstaben, also genau wie Schema 1 sowohl für X/Y/Z als auch für
+  //      die Dreh-/Kippwinkel A/B/C (siehe offsetNumberText() weiter oben für die Begründung).
+  // Beide Schemata können für dieselbe Achse auch gemischt und mehrfach vorkommen (z.B. erst
+  // "C*-1", dann in einer zweiten Zeile "C+90") - applyAxisCalc() wendet alle Regeln strikt in
+  // der Reihenfolge an, in der sie hier aus dem Text geparst wurden (siehe dort). Zeilen, die in
+  // keines der beiden Schemata passen (siehe DropdownMachinetype.txt Punkt 11: "Die Formel können
+  // auch komplizierter sein ... Das ist nur ein Beispiel!!!" - komplexere Formeln wie
+  // Winkelberechnungen über Vektor-Kosinus sind bewusst NICHT umgesetzt, siehe bekannte
+  // Einschraenkungen in der Projekt-Doku) werden stillschweigend ignoriert statt einen Fehler zu
+  // werfen - konsistent mit der sonstigen tolerant-gegenueber-Tippfehlern-Philosophie dieses
+  // Projekts.
   function parseCalcRules(text) {
     const rules = [];
     (text || '').replace(/\r\n/g, '\n').split('\n').forEach(line => {
       const t = line.trim();
       if (!t) return;
-      const m = /^([A-Za-z])\s*\*\s*(-?\d+(?:\.\d+)?)$/.exec(t);
+      const m = /^([A-Za-z])\s*([*+-])\s*(-?\d+(?:\.\d+)?)$/.exec(t);
       if (!m) return;
-      rules.push({ axis: m[1].toUpperCase(), factor: parseFloat(m[2]) });
+      const axis = m[1].toUpperCase();
+      const op = m[2];
+      const value = parseFloat(m[3]);
+      if (op === '*') {
+        rules.push({ axis, factor: value });
+      } else {
+        rules.push({ axis, offset: (op === '-') ? -value : value });
+      }
     });
     return rules;
   }
@@ -5988,8 +6050,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 137;
-  const APP_RELEASE_TIMESTAMP = '05.10.2026, 13:40 Uhr';
+  const APP_RELEASE_NUMBER = 138;
+  const APP_RELEASE_TIMESTAMP = '05.10.2026, 15:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
