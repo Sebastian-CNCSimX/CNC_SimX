@@ -5924,8 +5924,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 134;
-  const APP_RELEASE_TIMESTAMP = '02.10.2026, 19:05 Uhr';
+  const APP_RELEASE_NUMBER = 136;
+  const APP_RELEASE_TIMESTAMP = '05.10.2026, 11:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11765,15 +11765,19 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // ist eine reine Duplikat-Zeile der ersten, rückwärts - beim Übernehmen bewusst ignoriert). Die
   // DXF selbst definiert das Profil über Y=0..103mm mit Y=103 als SCHMALES Ende (r=0..18mm, flache
   // Stirnfläche) und Y=0 als BREITERES Ende (r=0..25.857mm, ebenfalls flache Stirnfläche) - hier
-  // bereits umgerechnet auf "dist = 103 - Y", damit dist=0 exakt am schmalen Ende liegt.
-  // ANNAHME (am realen Bauteil nicht verifizierbar, da aus einer reinen 2D-Profilzeichnung ohne
-  // Kontext übernommen): Das schmale Ende (r=18mm, dist=0) ist die Seite, die am Werkzeug an-
-  // setzt - deshalb unten in drawToolHolder() an "top" (das vom Werkstück abgewandte Ende des
-  // Werkzeug-Zylinders aus drawTool()) angehängt; das breitere Ende (bis r=30.87mm, inkl. der Nut
-  // bei dist 41-53mm - vermutlich die Spannnut für den Zugbolzen) zeigt von dort aus weiter weg
-  // vom Werkstück, Richtung Spindel. Sollte die Ausrichtung am realen Halter umgekehrt sein, hier
-  // einfach jedes "dist" durch "103 - dist" ersetzen.
-  const TOOL_HOLDER_HSK63_PROFILE = [
+  // bereits umgerechnet auf "dist = 103 - Y", damit dist=0 exakt am schmalen Ende liegt. Dieses
+  // rohe, noch unveränderte Profil heißt deshalb "_RAW" - siehe TOOL_HOLDER_HSK63_PROFILE weiter
+  // unten für die tatsächlich verwendete (seit Release 135 gespiegelte) Fassung.
+  // EHEMALIGE ANNAHME, seit Release 135 widerlegt (Sebastian nach Betrachtung der Live-3D-Ansicht:
+  // "Das Spannfutter ist im 3D falsch herum dargestellt... Das muss so herum dargestellt werden
+  // wie in dem PNG" - dem zuvor aus genau diesem _RAW-Profil rekonstruierten Kontrollbild der
+  // ProfilHSK.DXF): Ursprünglich wurde angenommen, das schmale Ende (r=18mm, dist=0 in _RAW) sei
+  // die Seite, die am Werkzeug ansetzt. Das war falsch - tatsächlich setzt das BREITERE Ende
+  // (r=25.857mm) am Werkzeug an, das schmale Ende (r=18mm) zeigt von dort aus weiter weg vom
+  // Werkstück, Richtung Spindel. Exakt der schon vorher an dieser Stelle dokumentierte
+  // Notlösungs-Einzeiler ("hier einfach jedes 'dist' durch '103 - dist' ersetzen") - jetzt über
+  // mirrorProfile() unten tatsächlich angewendet, statt nur als Kommentar bereitzustehen.
+  const TOOL_HOLDER_HSK63_PROFILE_RAW = [
     { r: 0.000000, dist: 0.000000 },
     { r: 18.000000, dist: 0.000000 },
     { r: 18.872487, dist: 24.984771 },
@@ -11790,6 +11794,25 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     { r: 25.857258, dist: 103.000000 },
     { r: 0.000000, dist: 103.000000 },
   ];
+  // Gesamtlänge des unveränderten Standardprofils (103mm, siehe _RAW oben) - eigene Konstante statt
+  // des wiederholt hart codierten Literals 103, damit mirrorProfile() unten (Release 135) exakt
+  // dieselbe Zahl verwendet, die auch beim Herleiten von TOOL_HOLDER_HSK63_PROFILE_RAW zugrunde lag.
+  const HSK63_PROFILE_TOTAL_LENGTH = 103;
+  // Spiegelt ein {r,dist}[]-Profil entlang seiner Achse (dist -> totalLength - dist, Reihenfolge der
+  // Punkte bleibt unverändert - die Nachbarschaft/Kettenreihenfolge für die Mantellinien in
+  // drawToolHolder() ist davon nicht betroffen, nur die tatsächliche Position jedes Punkts entlang
+  // der Achse). Release 135: generische Fassung des bereits vorher dokumentierten
+  // "dist durch 103-dist ersetzen"-Einzeilers, als eigene Funktion statt direkt im Array
+  // reingeschrieben, damit sie unten auf BEIDE Profilvarianten (Standard UND verlängert/Säge)
+  // gleichermaßen angewendet werden kann, ohne die jeweilige Gesamtlänge (103mm bzw. 143mm) jedes
+  // Mal von Hand nachrechnen zu müssen.
+  function mirrorProfile(profile, totalLength) {
+    return profile.map(pt => ({ r: pt.r, dist: totalLength - pt.dist }));
+  }
+  // Tatsächlich verwendetes Standardprofil (Release 135, siehe Kommentar bei _RAW oben) - identische
+  // Form wie _RAW, nur an der Achse gespiegelt, sodass jetzt das breitere Ende (dist=0 nach der
+  // Spiegelung) am Werkzeug ansetzt statt wie zuvor fälschlich das schmale Ende.
+  const TOOL_HOLDER_HSK63_PROFILE = mirrorProfile(TOOL_HOLDER_HSK63_PROFILE_RAW, HSK63_PROFILE_TOTAL_LENGTH);
 
   // Sägeblatt-Adapterstück (53. Runde, Sebastian: "Wird ein Sägeblatt über '; BLADE' erkannt,
   // zwischen HSK63-Kegel und Sägeblatt einen zusätzlichen Kegel einfügen: Durchmesser: 30 mm,
@@ -11807,17 +11830,30 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Argument) - ein "Kegel"-Objekt ist hier also technisch nur ein Halter mit einem zwei-
   // punktigen statt fünfzehnpunktigen Profil.
   // "T-Längen" (60. Runde, Sebastian, "Umsetzung Werkzeuglängen:": "Eingespannte Länge = eingegebene
-  // bzw. übergebene Länge - 24,98mm -> Zylinder für Werkzeug geht 24,98mm in die HSK63 rein"). Der
-  // Wert 24.98 fällt auffällig genau mit dist=24.984771 in TOOL_HOLDER_HSK63_PROFILE oben zusammen
-  // - exakt die Stelle, an der das Profil vom schmalen Ansatz (r=18mm) auf den breiteren Kegel
-  // (r=30.87mm) springt, also die Länge des schmalen "Ansatz"-Stücks des HSK63-Halters selbst. Wird
-  // in drawTool() unten verwendet, um bei "Eingespannt" NUR den Ansatzpunkt der Halter-Baugruppe
-  // (Adapter+Halter bzw. Halter direkt) um diesen Betrag entlang der Werkzeugachse zurückzusetzen -
-  // der gezeichnete Werkzeugzylinder selbst (tip->top) behält in JEDEM Modus immer die volle
-  // eingegebene Länge (siehe dortiger Kommentar); bei "Eingespannt" überdeckt die Halter-Baugruppe
-  // dadurch optisch genau das letzte Stück dieses Zylinders ("geht ... rein"), bei "Ausgespannt"
-  // (Standard, wie bisher) bleibt der Ansatzpunkt unverändert bei "top" (Versatz 0).
-  const HSK63_CLAMP_INSET = 24.98;
+  // bzw. übergebene Länge - [HSK63_CLAMP_INSET]mm -> Zylinder für Werkzeug geht [HSK63_CLAMP_INSET]mm
+  // in die HSK63 rein"). Wird in drawTool() unten verwendet, um bei "Eingespannt" NUR den
+  // Ansatzpunkt der Halter-Baugruppe (Adapter+Halter bzw. Halter direkt) um diesen Betrag entlang
+  // der Werkzeugachse zurückzusetzen - der gezeichnete Werkzeugzylinder selbst (tip->top) behält in
+  // JEDEM Modus immer die volle eingegebene Länge (siehe dortiger Kommentar); bei "Eingespannt"
+  // überdeckt die Halter-Baugruppe dadurch optisch genau das letzte Stück dieses Zylinders ("geht
+  // ... rein"), bei "Ausgespannt" (Standard, wie bisher) bleibt der Ansatzpunkt unverändert bei
+  // "top" (Versatz 0).
+  // Ursprünglicher Wert 24.98 (bis Release 135): fiel exakt mit dist=24.984771 in
+  // TOOL_HOLDER_HSK63_PROFILE_RAW zusammen - der damaligen Länge des schmalen Ansatzstücks (r=18mm),
+  // das VOR der Spiegelung unmittelbar am Zylinder ansetzte.
+  // Release 135 (Spannfutter-Orientierung umgedreht, siehe TOOL_HOLDER_HSK63_PROFILE_RAW/
+  // mirrorProfile() oben): Seither setzt am Zylinder das BREITERE Ende an - der alte Wert 24.98
+  // passte dadurch nicht mehr zu einer tatsächlichen Profil-Übergangsstelle (siehe damalige
+  // Rückmeldung an Sebastian).
+  // Release 136 (Sebastian, direkte Anweisung: "Ändere den Versatz bitte auf 78.01mm"): Neuer Wert
+  // 78.01 - fällt (wie zuvor 24.98 vor der Spiegelung) wieder exakt mit einer echten
+  // Profil-Übergangsstelle zusammen, jetzt im gespiegelten TOOL_HOLDER_HSK63_PROFILE: dist≈78.015229
+  // ist genau dort, wo das Profil vom breiten Flansch/den beiden Nuten auf das schmale Ansatzstück
+  // (r=18mm, jetzt am FERNEN Ende Richtung Spindel) übergeht. Bei "Eingespannt" verschwindet dadurch
+  // der komplette breite Flansch- und Nutenbereich (78,01mm) im Werkzeugzylinder, sichtbar bleibt nur
+  // noch das schmale Ansatzstück (die restlichen 24,98mm bis zum Gesamtprofil von 103mm) - wieder
+  // eine exakte, nicht nur zufällig in der Mitte einer Nut endende Ausrichtung.
+  const HSK63_CLAMP_INSET = 78.01;
 
   const BLADE_ADAPTER_DIAMETER = 30;
   const BLADE_ADAPTER_LENGTH = 55;
@@ -11833,9 +11869,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // umgesetzte Idee: austauschbare, per DXF-Import definierte Aufnahmen allgemein, keine
   // "verlängerte HSK63" im Speziellen). Mangels Vorgabe daher eine bewusste, dem Benutzer in der
   // Rückmeldung zu dieser Runde explizit offengelegte Annahme: Das bestehende
-  // TOOL_HOLDER_HSK63_PROFILE bleibt in Form/Reihenfolge unverändert, lediglich sein bereits
+  // TOOL_HOLDER_HSK63_PROFILE_RAW bleibt in Form/Reihenfolge unverändert, lediglich sein bereits
   // vorhandener zylindrischer Abschnitt mit dem größten Durchmesser (r=30.872487mm, im Original
-  // von dist=74.984771 bis 97.984771, siehe TOOL_HOLDER_HSK63_PROFILE oben) wird um
+  // von dist=74.984771 bis 97.984771, siehe TOOL_HOLDER_HSK63_PROFILE_RAW oben) wird um
   // HSK63_EXTENDED_EXTRA_LENGTH verlängert - alle danach folgenden Profilpunkte (der Übergang zum
   // Flansch sowie die Stirnfläche) verschieben sich dadurch um denselben Betrag nach hinten.
   // Gesamtlänge damit 103mm (Standard) -> 143mm ("verlängert"). Wird NUR beim finalen
@@ -11843,10 +11879,18 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Sägeblatt aktiv ist (p.toolIsBlade) - das bereits bestehende, unveränderte Sägeblatt-
   // Adapterstück (BLADE_ADAPTER_PROFILE, 53. Runde) bleibt davon komplett unberührt und wird
   // weiterhin unverändert vor diesem (jetzt verlängerten) Halter eingefügt.
+  // Release 135 (Spannfutter-Orientierung umgedreht, siehe TOOL_HOLDER_HSK63_PROFILE_RAW/
+  // mirrorProfile() oben): Diese Verlängerungs-Berechnung arbeitet bewusst weiterhin auf dem
+  // UNGESPIEGELTEN _RAW-Profil (Schwellenwert "pt.dist > 74.984771" bezieht sich unverändert auf
+  // dessen ursprüngliche Koordinaten) - die Spiegelung selbst passiert erst danach, einheitlich für
+  // Standard- UND verlängertes Profil, über mirrorProfile(). Dadurch bleibt diese bereits bestehende
+  // und funktionierende Verlängerungslogik unangetastet, unabhängig davon, an welchem Ende das
+  // fertige Profil später am Werkzeug ansetzt.
   const HSK63_EXTENDED_EXTRA_LENGTH = 40;
-  const TOOL_HOLDER_HSK63_EXTENDED_PROFILE = TOOL_HOLDER_HSK63_PROFILE.map(pt =>
+  const TOOL_HOLDER_HSK63_EXTENDED_PROFILE_RAW = TOOL_HOLDER_HSK63_PROFILE_RAW.map(pt =>
     pt.dist > 74.984771 ? { r: pt.r, dist: pt.dist + HSK63_EXTENDED_EXTRA_LENGTH } : pt
   );
+  const TOOL_HOLDER_HSK63_EXTENDED_PROFILE = mirrorProfile(TOOL_HOLDER_HSK63_EXTENDED_PROFILE_RAW, HSK63_PROFILE_TOTAL_LENGTH + HSK63_EXTENDED_EXTRA_LENGTH);
 
   // Rotiert ein rotationssymmetrisches Profil (Standard: TOOL_HOLDER_HSK63_PROFILE, siehe
   // optionales profile-Argument sowie BLADE_ADAPTER_PROFILE oben für den zweiten Verwendungsfall)
