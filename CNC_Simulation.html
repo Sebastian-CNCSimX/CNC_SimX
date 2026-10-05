@@ -3959,6 +3959,70 @@
     }
   };
 
+  // --- Werkzeugwechsel / C_TOOLCHANGE (Release 137) ---
+  // Sebastian, reales Programm ohne jedes bisher unterstützte Arbeitsgang-Kommentarschema (keine
+  // Trennzeilen, keine Übereinstimmung mit der Arbeitsgang-Namensliste): "Bei diesem CNC Programm
+  // gibt es Werkzeuginformationen (Radius und Length) aber die Werkzeuge werden nicht dargestellt,
+  // weil die Arbeitsgänge nicht erkannt werden ... Die Kommentare gäbe es, aber die Struktur ist
+  // anders und mir fällt dafür ein Automatismus ein." Auf Nachfrage (drei angebotene Varianten)
+  // wollte er die vollwertige Lösung: ein echter neuer Arbeitsgang-Stil statt nur einer isolierten
+  // Werkzeug-3D-Sonderbehandlung, damit automatisch auch Arbeitsgangliste/Einfärbung/3D-pro-
+  // Arbeitsgang mitfunktionieren.
+  // Jeder Werkzeugwechsel in diesem realen Beispielprogramm (5-Achs-Aggregat-Postprozessor) folgt
+  // demselben, sehr spezifischen, mehrzeiligen Muster:
+  //   (KONTUR)                                      <- optionale Titel-Zeile, siehe unten
+  //   ; Werkzeugwechsel  T 1
+  //   ;Toolchange 5-axis aggregate
+  //   C_TOOLCHANGE(5,1,M03,18000) ; Setzstufe fräsen
+  //   ;RADIUS 7.00
+  //   ;LENGTH 164.78
+  //   T1M16
+  // Anker für den Start ist die "; Werkzeugwechsel ... T <n>"-Zeile, BESTÄTIGT durch eine innerhalb
+  // der nächsten Zeilen folgende "C_TOOLCHANGE("-Zeile (über matchSequence() oben, das genau für
+  // diesen Fall - eine Sequenz von Markern mit variablem Zeilenabstand - vorgesehen ist) -
+  // "Werkzeugwechsel" allein wäre als einzelnes deutsches Wort zu generisch/riskant für einen
+  // eigenen Arbeitsgang-Stil (dieselbe Sorge wie bei der dauerhaft deaktivierten einzeiligen
+  // KRC-Form, siehe MACHINES.KRC oben); "C_TOOLCHANGE(" dagegen ist als konkreter Funktionsaufruf
+  // hochspezifisch für genau diesen Postprozessor-Dialekt. RADIUS/LENGTH selbst werden bewusst
+  // NICHT Teil des Erkennungsmusters - ihre Suche bleibt vollständig extractToolData() (9.7.1 der
+  // Haupt-Doku) überlassen, das ohnehin über den gesamten erkannten Arbeitsgang-Bereich läuft und
+  // dieselbe ";RADIUS .."/"​;LENGTH .."-Notation bereits unterstützt.
+  // Titel: die unmittelbar VOR der "Werkzeugwechsel"-Zeile stehende Zeile, sofern sie ein reiner
+  // "(...)"-Kommentar ist (reale Beispiele: "(KONTUR)", "(AUSSENKANTE SEPARAT)") - dieselbe
+  // Klammer-Titel-Konvention wie bei der einzeiligen KRC-Form (MACHINES.KRC oben), hier aber
+  // bewusst NICHT eigenständig als Arbeitsgang-Start gewertet (das bliebe wegen der KRC-Erfahrung
+  // riskant), sondern nur als optionale Titel-Quelle für einen bereits anderweitig (über
+  // "Werkzeugwechsel" + "C_TOOLCHANGE(") bestätigten Treffer übernommen - startIdx wandert in
+  // diesem Fall auf die Titel-Zeile selbst, damit Einfärbung/Arbeitsgang-Bereich bei ihr beginnen,
+  // nicht erst bei "Werkzeugwechsel". Ohne eine solche Zeile (z. B. zwei Werkzeugwechsel-Blöcke
+  // ohne eigene Zwischenüberschrift direkt hintereinander) Fallback-Titel "Werkzeug T<n>".
+  MACHINES.TOOLCHANGE = {
+    label: 'Werkzeugwechsel',
+    findStart(lines, fromIdx) {
+      for (let i = fromIdx; i < lines.length; i++) {
+        const m = /;\s*Werkzeugwechsel\b.*?T\s*(\d+)/i.exec(lines[i]);
+        if (!m) continue;
+        const seq = matchSequence(lines, i + 1, [/C_TOOLCHANGE\s*\(/i], 5);
+        if (!seq) continue;
+        let startIdx = i;
+        let title = 'Werkzeug T' + m[1];
+        const prevIdx = i - 1;
+        if (prevIdx >= fromIdx) {
+          const pm = /^\(([^()]+)\)$/.exec(lines[prevIdx].trim());
+          if (pm && pm[1].trim()) { startIdx = prevIdx; title = pm[1].trim(); }
+        }
+        return { startIdx, blockEndIdx: seq.endIdx, title };
+      }
+      return null;
+    },
+    // Kein eigenständiges Ende-Muster bekannt (analog zu KRC_BLOCK/CIX/NAMED) - der Arbeitsgang
+    // reicht bis unmittelbar vor den nächsten erkannten Arbeitsgang bzw. bis Dateiende.
+    findEnd(lines, afterBlockIdx, nextStartIdx) {
+      const limit = nextStartIdx === -1 ? lines.length : nextStartIdx;
+      return limit - 1;
+    }
+  };
+
   // --- Listenbasierte Arbeitsgang-Erkennung ohne Trennzeilen (seit der 20. Runde) ---
   // Benutzer, 20. Runde: "Darüber hinaus gibt es ein anderes Arbeitsgangformat bei anderen
   // Postprozessoren. Da kommen keine 'Trennzeilen' davor/dahinter. Könnten Arbeitsgänge
@@ -5924,8 +5988,8 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 136;
-  const APP_RELEASE_TIMESTAMP = '05.10.2026, 11:10 Uhr';
+  const APP_RELEASE_NUMBER = 137;
+  const APP_RELEASE_TIMESTAMP = '05.10.2026, 13:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
