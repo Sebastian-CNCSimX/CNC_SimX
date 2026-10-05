@@ -2971,10 +2971,26 @@
       </label>
     </div>
     <div class="tool-data-row">
+      <!-- "Spannzange, Änderung" (Release 140, Sebastian: "Es gibt keine eingespannte und
+           ausgespannte Länge mehr. Länge Werkzeug ist immer eingespannt.") - die frühere
+           Zweiteilung "Ausgespannte Länge"/"Eingespannte Länge" (60. Runde) ist entfallen: die
+           Werkzeuglänge wird jetzt IMMER als eingespannt behandelt (siehe HSK63_CLAMP_INSET/
+           drawTool() in app.js, kein toolMode-abhängiger Versatz mehr). An die Stelle der alten
+           "Ausgespannte Länge"-Option tritt "Ohne HSK63-Sample" - fachlich nicht mehr eine
+           andere Längendarstellung, sondern (Sebastian: "'Ohne HSK63-Sample' ist quasi wie
+           'Spannzange ausgeblendet'") dieselbe Sache wie die bereits bestehende globale
+           "Spannzange ausblenden/einblenden"-Funktion (btnToggleToolHolder/showToolHolder
+           weiter oben, 74. Runde) - nur direkt hier im Dialog zusätzlich erreichbar. Beide
+           Bedienwege sind bewusst zu EINEM einzigen Zustand (showToolHolder) zusammengeführt,
+           nicht zwei unabhängige Schalter: das Umschalten über den Werkzeugleisten-Knopf
+           aktualisiert bei geöffnetem Dialog live dieses Dropdown (siehe
+           btnToggleToolHolder-Klick-Handler weiter unten), und das Bestätigen dieses Dropdowns
+           per "Ok" setzt umgekehrt auch den globalen Zustand (siehe confirmInsertToolData()
+           weiter unten) - siehe dort jeweils für die genaue Herleitung. -->
       <label class="tool-data-field">T-Längen:
-        <select id="toolModeSelect" class="filename-input" title="Bestimmt, wie die eingegebene Länge am 3D-Werkzeugzylinder relativ zum HSK63-Halter dargestellt wird" data-i18n-en-title="Determines how the entered length is displayed on the 3D tool cylinder relative to the HSK63 holder">
-          <option value="ausgespannt">Ausgespannte Länge</option>
+        <select id="toolModeSelect" class="filename-input" title="Bestimmt, ob der HSK63-Halter für dieses Werkzeug angezeigt wird - dieselbe Einstellung wie 'Spannzange ausblenden/einblenden' in der Werkzeugleiste" data-i18n-en-title="Determines whether the HSK63 holder is shown for this tool - the same setting as 'Hide/show collet' in the toolbar">
           <option value="eingespannt">Eingespannte Länge</option>
+          <option value="ohnehsk63">Ohne HSK63-Sample</option>
         </select>
       </label>
     </div>
@@ -3534,11 +3550,25 @@
   // über den "+Werkzeug (T)"-Dialog gesetzte Kommentar-Marker (siehe insertToolDataComment() in
   // app.js), dieselbe "; SCHLÜSSELWORT WERT"-Notation wie RADIUS/LENGTH/BLADE oben, aber mit einem
   // festen Wortwert statt einer Zahl:
-  //   TOOLMODE EINGESPANNT | AUSGESPANNT - siehe "T-Längen:"-Dropdown im Dialog. Bestimmt NUR die
-  //   3D-Darstellung des HSK63-Halters (siehe drawTool()/HSK63_CLAMP_INSET in app.js), NICHT den
-  //   eingelesenen toolLength-Zahlenwert selbst. Fehlt der Marker (z.B. bei allen älteren, vor
-  //   dieser Runde erzeugten Programmen/Werkzeugdaten-Kommentaren), ist toolMode null - app.js
-  //   behandelt das identisch zu AUSGESPANNT (unverändertes bisheriges Verhalten).
+  //   TOOLMODE EINGESPANNT | OHNEHSK63 - siehe "T-Längen:"-Dropdown im Dialog. Bis einschließlich
+  //   Release 139 bestimmte dieser Marker NUR die 3D-Darstellung des HSK63-Halter-Ansatzpunkts
+  //   (EINGESPANNT = mit Versatz um HSK63_CLAMP_INSET, AUSGESPANNT/fehlender Marker = ohne
+  //   Versatz), NICHT den eingelesenen toolLength-Zahlenwert selbst. Seit Release 140
+  //   ("Spannzange, Änderung", Sebastian: "Es gibt keine eingespannte und ausgespannte Länge
+  //   mehr. Länge Werkzeug ist immer eingespannt.") entfällt diese Versatz-Unterscheidung
+  //   komplett - drawTool() wendet den Versatz jetzt IMMER an, unabhängig von diesem Marker. An
+  //   die Stelle von AUSGESPANNT tritt die neue Option OHNEHSK63 (Sebastian: "'Ohne HSK63-Sample'
+  //   ist quasi wie 'Spannzange ausgeblendet'") - sie ist KEINE eigene Darstellungsvariante mehr,
+  //   sondern lediglich der im Programmtext gespeicherte Spiegel desselben globalen
+  //   showToolHolder-Zustands, den auch der Werkzeugleisten-Knopf "Spannzange aus-/einblenden"
+  //   schaltet (siehe btnInsertToolData/btnToggleToolHolder/confirmInsertToolData() in app.js) -
+  //   extractToolData() selbst liefert den Marker nur noch zur Vorbelegung des Dropdowns beim
+  //   erneuten Öffnen weiter, OHNE dass drawTool() ihn noch ausliest. AUSGESPANNT wird hier
+  //   weiterhin als gültiger Markerwert ERKANNT (reine Rückwärtskompatibilität, damit ältere,
+  //   vor Release 140 geschriebene Kommentarzeilen nicht als "kein Marker" fehlinterpretiert
+  //   werden), hat aber ab Release 140 keine eigene Bedeutung mehr und wird vom Dialog nicht
+  //   mehr neu geschrieben. Fehlt der Marker komplett (z.B. bei allen vor der 60. Runde erzeugten
+  //   Werkzeugdaten-Kommentaren), ist toolMode null.
   //   TOOLTYPE SAEGE | FRAESER - siehe Werkzeugtyp-Dropdown im Dialog. app.js faltet
   //   "TOOLTYPE SAEGE" direkt in dieselbe isBlade-Kennzeichnung wie eine echte "; BLADE .."-Zeile
   //   (Sebastian: "wird ... die Säge dargestellt wie bei der Übergabe über '; BLADE'") - hier daher
@@ -3546,15 +3576,17 @@
   //   verknüpft, damit extractToolData() weiterhin ausschließlich das im Text tatsächlich
   //   Gefundene meldet. Fehlt der Marker, ist toolType null - app.js behandelt das identisch zu
   //   FRAESER (unverändertes bisheriges Verhalten).
-  const TOOL_MODE_RE = /TOOLMODE\s+(EINGESPANNT|AUSGESPANNT)/i;
+  const TOOL_MODE_RE = /TOOLMODE\s+(EINGESPANNT|AUSGESPANNT|OHNEHSK63)/i;
   const TOOL_TYPE_RE = /TOOLTYPE\s+(SAEGE|FRAESER)/i;
 
   // Durchsucht die übergebenen Zeilen (typischerweise ein einzelner Arbeitsgang-Abschnitt) nach
   // Radius/Länge und liefert {radius, length, isBlade, toolMode, toolType} (radius/length jeweils
   // Zahl oder null, falls nicht gefunden; isBlade true, wenn der Abschnitt als Säge gilt - app.js
   // nutzt das, um in der Anzeige "Sägeblattstärke" statt "Länge" zu beschriften; toolMode/toolType
-  // siehe TOOL_MODE_RE/TOOL_TYPE_RE oben, jeweils klein geschrieben - 'eingespannt'/'ausgespannt'
-  // bzw. 'saege'/'fraeser' - oder null, falls kein entsprechender Marker gefunden wurde). "BLADE"
+  // siehe TOOL_MODE_RE/TOOL_TYPE_RE oben, jeweils klein geschrieben - 'eingespannt'/'ausgespannt'/
+  // 'ohnehsk63' bzw. 'saege'/'fraeser' - oder null, falls kein entsprechender Marker gefunden
+  // wurde; seit Release 140 liest drawTool() toolMode nicht mehr aus, siehe TOOL_MODE_RE oben).
+  // "BLADE"
   // wird bewusst ZUERST und UNABHÄNGIG von der Zeilenreihenfolge über alle Zeilen gesucht: Ist eine
   // "BLADE"-Zeile irgendwo vorhanden UND wurde der "+Werkzeug (T)"-Dialog für diesen Abschnitt noch
   // NIE bestätigt (kein TOOLTYPE-Marker, siehe unten), gewinnt ihr Wert immer - auch dann, wenn eine
@@ -6050,8 +6082,15 @@
   // internen Rebuild während der Entwicklung/Verifikation einer Runde hochzählen würde (davon gibt
   // es pro Runde typischerweise mehrere, das würde die Zahl unkontrolliert in die Höhe treiben und
   // nicht mehr "unseren Versionsdurchgängen" entsprechen, wie vom Benutzer gemeint).
-  const APP_RELEASE_NUMBER = 138;
-  const APP_RELEASE_TIMESTAMP = '05.10.2026, 15:10 Uhr';
+  // Release 139 (Sebastian, Performance-Frage: "Gibt es noch irgendwas ... um die Performance
+  // noch einen Ticken besser zu machen?" -> Vorschlag "Bau mir das ruhig mal direkt ein, ich
+  // vertraue dir."): Reiner Tooling-Zusatz, KEINE Änderung an dieser Datei selbst - siehe
+  // make_release_build.py und Abschnitt 15 der Projekt-Doku. Die Versionsnummer wird trotzdem
+  // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
+  // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
+  // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
+  const APP_RELEASE_NUMBER = 140;
+  const APP_RELEASE_TIMESTAMP = '05.10.2026, 17:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -9302,11 +9341,16 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         // gewählte Dropdown-Option vorbelegen kann (siehe btnInsertToolData-Klick-Handler weiter
         // unten); für Anzeige/3D-Darstellung selbst zählt ausschließlich sec.toolIsBlade oben.
         sec.toolType = toolData.toolType;
-        // "TOOLMODE" (60. Runde, Sebastian: "Eingespannte Länge"/"Ausgespannte Länge") - bestimmt
-        // in drawTool() (siehe HSK63_CLAMP_INSET) ausschließlich den Ansatzpunkt des HSK63-Halters,
-        // NICHT den toolLength-Zahlenwert selbst. Fehlender Marker (null, z.B. bei allen vor dieser
-        // Runde erzeugten Werkzeugdaten-Kommentaren) wird dort wie 'ausgespannt' behandelt -
-        // unverändertes bisheriges Verhalten.
+        // "TOOLMODE" (60. Runde, Sebastian: "Eingespannte Länge"/"Ausgespannte Länge") - bestimmte
+        // bis einschließlich Release 139 in drawTool() (siehe HSK63_CLAMP_INSET) ausschließlich den
+        // Ansatzpunkt des HSK63-Halters, NICHT den toolLength-Zahlenwert selbst. Seit Release 140
+        // ("Spannzange, Änderung") wendet drawTool() diesen Versatz IMMER an und liest sec.toolMode
+        // dafür nicht mehr aus (siehe dort) - die Zuweisung hier bleibt trotzdem bestehen, denn
+        // sec.toolMode wird weiterhin für die Dropdown-Vorbelegung beim erneuten Öffnen des
+        // "+Werkzeug (T)"-Dialogs benötigt (jetzt 'eingespannt'/'ohnehsk63', siehe
+        // btnInsertToolData-Klick-Handler weiter unten; 'ausgespannt' bleibt als Lesewert für
+        // ältere, vor Release 140 geschriebene Kommentarzeilen erhalten, siehe TOOL_MODE_RE in
+        // parser.js).
         sec.toolMode = toolData.toolMode;
       });
     }
@@ -12223,21 +12267,30 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // Runde (Sebastian: "Es soll aber noch das Spannfutter (also das HSK63) ausgeblendet werden
     // können") ist sie über einen eigenen, unabhängigen Zustand (showToolHolder) separat
     // schaltbar - der Werkzeug-Zylinder kann dadurch z. B. sichtbar bleiben, während nur der
-    // Halter ausgeblendet wird, oder umgekehrt.
+    // Halter ausgeblendet wird, oder umgekehrt. "Spannzange, Änderung" (Release 140) führt das
+    // frühere "+Werkzeug (T)"-Dropdown ("Eingespannte Länge"/"Ausgespannte Länge") UND diesen
+    // Knopf zu demselben einzigen showToolHolder-Zustand zusammen (siehe
+    // btnInsertToolData/btnToggleToolHolder/confirmInsertToolData() weiter unten) - das Dropdown
+    // bietet seitdem nur noch "Eingespannte Länge" (= Halter sichtbar) und "Ohne HSK63-Sample"
+    // (= dasselbe wie hier ausgeblendet), keine eigenständige Darstellungsvariante mehr.
     if (showToolHolder) {
-      // "T-Längen" (60. Runde, siehe HSK63_CLAMP_INSET oben): "Eingespannt" verschiebt NUR den
-      // Ansatzpunkt der kompletten Halter-Baugruppe (Adapter+Halter bzw. Halter direkt) um
-      // HSK63_CLAMP_INSET entlang der Achse ZURÜCK (Richtung Werkstück) - der Zylinder selbst
-      // (tip->top, s.o.) bleibt in jedem Modus unverändert die volle eingegebene Länge.
-      // "Ausgespannt" (Standard/p.toolMode ist null bei allen älteren, vor dieser Runde erzeugten
-      // Werkzeugdaten) ergibt Versatz 0 und damit exakt das bisherige Verhalten (Halter setzt
-      // direkt an "top" an).
-      const clampInset = (p.toolMode === 'eingespannt') ? HSK63_CLAMP_INSET : 0;
-      const holderAttach = clampInset > 0 ? {
+      // "T-Längen" (60. Runde, siehe HSK63_CLAMP_INSET oben): verschiebt NUR den Ansatzpunkt der
+      // kompletten Halter-Baugruppe (Adapter+Halter bzw. Halter direkt) um HSK63_CLAMP_INSET
+      // entlang der Achse ZURÜCK (Richtung Werkstück) - der Zylinder selbst (tip->top, s.o.)
+      // bleibt davon unverändert die volle eingegebene Länge. Bis einschließlich Release 139 war
+      // dieser Versatz an p.toolMode === 'eingespannt' gekoppelt (sonst Versatz 0, "Ausgespannt").
+      // Seit Release 140 ("Spannzange, Änderung", Sebastian: "Länge Werkzeug ist immer
+      // eingespannt") entfällt diese Unterscheidung: der Versatz wird jetzt IMMER angewendet,
+      // sobald der Halter überhaupt sichtbar ist (showToolHolder) - p.toolMode wird hier
+      // absichtlich nicht mehr gelesen (siehe TOOL_MODE_RE/sec.toolMode-Zuweisung in parser.js
+      // bzw. oben für die weiterhin bestehende, aber auf die Dialog-Vorbelegung beschränkte Rolle
+      // von toolMode).
+      const clampInset = HSK63_CLAMP_INSET;
+      const holderAttach = {
         x: top.x - axis.x * clampInset,
         y: top.y - axis.y * clampInset,
         z: top.z - axis.z * clampInset
-      } : top;
+      };
       // Sägeblatt-Adapterstück (53. Runde, siehe BLADE_ADAPTER_PROFILE oben): nur bei erkanntem
       // Sägeblatt (p.toolIsBlade, siehe extractToolData()/BLADE-Erkennung sowie 60. Runde/TOOLTYPE
       // "Säge" oben, Abschnitt 9.7) zusätzlich zwischen den bereits gezeichneten Zylinder (= die
@@ -14124,6 +14177,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Spannfutter (HSK63-Werkzeughalter) unabhängig vom Werkzeug-Zylinder ein-/ausblenden (74.
   // Runde, siehe showToolHolder/drawTool() oben) - dieselbe Technik wie beim Werkzeug-Knopf direkt
   // darüber, nur eigener, unabhängiger Zustand.
+  //
+  // "Spannzange, Änderung" (Release 140, Sebastian: "Spannzange ausblenden bleibt als Funktion
+  // erhalten. Wenn ich die Spannzange ausblende, ist im Menü auch direkt bei '+Werkzeug (T)'
+  // 'Ohne HSK63-Sample' ausgewählt. Wenn ich dann wieder die Spannzange einblende ..., dann ist
+  // wieder 'Eingespannte Länge' ausgewählt."): kein zusätzlicher Code HIER nötig, um das zu
+  // erfüllen - #toolDataPanel ist ein waschechtes, die komplette Seite (inkl. dieses Knopfes hier)
+  // abdeckendes Modal (siehe ".paste-panel"/".paste-panel.open" im CSS, position:fixed/inset:0/
+  // z-index:20), lässt sich also gar nicht erst anklicken, während der "+Werkzeug (T)"-Dialog
+  // geöffnet ist. Die Spiegelung passiert stattdessen beim (Wieder-)Öffnen des Dialogs selbst -
+  // siehe toolModeSelect-Vorbelegung im btnInsertToolData-Klick-Handler weiter unten (liest dafür
+  // direkt den aktuellen showToolHolder-Wert) sowie confirmInsertToolData() für die umgekehrte
+  // Richtung (Dropdown-Auswahl -> showToolHolder).
   btnToggleToolHolder.addEventListener('click', () => {
     showToolHolder = !showToolHolder;
     btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
@@ -14261,10 +14326,21 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // erkannten/gesetzten Werten (siehe extractToolData()/sec.toolMode/sec.toolType oben) -
     // fehlender Marker (null, z.B. bei noch nie über diesen Dialog gesetzten Werkzeugdaten oder
     // einer per "; BLADE" erkannten Säge ohne eigene TOOLTYPE-Zeile) fällt auf den jeweiligen
-    // Standard zurück: 'ausgespannt' (unverändertes bisheriges Verhalten) bzw. - da sec.toolIsBlade
-    // hier bereits eine erkannte "; BLADE"-Zeile mit einschließt (siehe oben) - 'saege', falls
-    // sec.toolIsBlade true ist, sonst 'fraeser'.
-    toolModeSelect.value = sec.toolMode === 'eingespannt' ? 'eingespannt' : 'ausgespannt';
+    // Standard zurück - bzw. da sec.toolIsBlade hier bereits eine erkannte "; BLADE"-Zeile mit
+    // einschließt (siehe oben) - 'saege', falls sec.toolIsBlade true ist, sonst 'fraeser'.
+    //
+    // toolModeSelect ("Spannzange, Änderung", Release 140): bildet NICHT mehr sec.toolMode ab,
+    // sondern immer den aktuellen globalen showToolHolder-Zustand (Sebastian: "Wenn ich die
+    // Spannzange ausblende, ist im Menü auch direkt ... 'Ohne HSK63-Sample' ausgewählt" / "wieder
+    // die Spannzange einblende ..., dann ist wieder 'Eingespannte Länge' ausgewählt") - bewusst
+    // unabhängig davon, was für DIESEN Arbeitsgang zuletzt im Programmtext gespeichert wurde
+    // (sec.toolMode dient seit Release 140 nur noch als per insertToolDataComment() geschriebener,
+    // informativer Abdruck dieser Auswahl, siehe dort; drawTool() liest ihn nicht mehr aus - eine
+    // Vorbelegung ausgehend von sec.toolMode könnte sonst vom tatsächlich sichtbaren 3D-Zustand
+    // abweichen). Siehe auch btnToggleToolHolder-Klick-Handler weiter oben, der genau deshalb
+    // KEINE eigene Dropdown-Synchronisierung braucht: #toolDataPanel deckt als Modal ohnehin die
+    // gesamte Seite inklusive dieses Knopfes ab, solange der Dialog offen ist.
+    toolModeSelect.value = showToolHolder ? 'eingespannt' : 'ohnehsk63';
     toolTypeSelect.value = sec.toolIsBlade ? 'saege' : 'fraeser';
     // "BLADE" (41. Runde) / live (61. Runde) / Radius-/Längenfelder (Release 112): siehe
     // applyToolTypeUI() oben - hier direkt nach der Vorbelegung von #toolTypeSelect aufgerufen,
@@ -14284,9 +14360,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!sec) { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; return; }
     const radiusStr = normalizeToolValue(toolRadiusInput.value, 8);
     const lengthStr = normalizeToolValue(toolLengthInput.value, 200);
-    const toolMode = toolModeSelect.value === 'eingespannt' ? 'eingespannt' : 'ausgespannt';
+    const toolMode = toolModeSelect.value === 'ohnehsk63' ? 'ohnehsk63' : 'eingespannt';
     const toolType = toolTypeSelect.value === 'saege' ? 'saege' : 'fraeser';
     insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType);
+    // "Spannzange, Änderung" (Release 140, Sebastian: "'Ohne HSK63-Sample' ist quasi wie
+    // 'Spannzange ausgeblendet'"): die Dropdown-Auswahl wirkt beim Bestätigen NICHT nur auf den
+    // für diesen Arbeitsgang geschriebenen Kommentar-Marker (oben), sondern auch direkt auf den
+    // globalen showToolHolder-Zustand (denselben, den btnToggleToolHolder in der Werkzeugleiste
+    // schaltet) - "Ohne HSK63-Sample" blendet den Halter global aus, "Eingespannte Länge" wieder
+    // ein; der nachfolgende requestRender() (s.u.) übernimmt die Änderung sofort sichtbar.
+    showToolHolder = (toolMode !== 'ohnehsk63');
+    btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
     const prevScope = scopeMode;
     // Kamera (Zoom/Blickpunkt) sichern (62. Runde, Sebastian: "Wenn Werkzeug editiert/eingefügt
     // wird, geht der Zoom wieder raus. Der Focus darf sich nicht ändern (Ansicht vom 3D bleibt
