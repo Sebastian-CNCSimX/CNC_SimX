@@ -1481,19 +1481,83 @@
   }
   .move-tag.feed { background: var(--ok-soft); color: var(--ok); }
 
-  /* Rhombenkuboktaeder-Gizmo (70. Runde, Sebastian, Punkt 3) - #btnHomeView "wird neben dem
-     Würfel gesetzt, im 3D": das Gizmo selbst wird direkt auf die Canvas gezeichnet (siehe
-     drawViewGizmo() in app.js, dieselbe Technik wie der bestehende kleine Achsen-Gizmo
-     drawAxisGizmo()), oben rechts mit demselben Randabstand wie das Gizmo (siehe GIZMO_MARGIN in
-     app.js); #btnHomeView bleibt dagegen ein echtes, klickbares HTML-Element und wird hier als
-     eigenes kleines Overlay UNMITTELBAR LINKS daneben positioniert - dieselbe ".view-btn"-Optik
-     wie zuvor in der Symbolleiste (30x30px), nur jetzt frei im 3D-Bereich statt in
-     "#toolbarRow2"/".view-presets" (die "Perspektive:"-Beschriftung und die sechs Pfeil-Icons
-     sind komplett entfallen, siehe Kommentar bei #viewerToolbar oben - das Gizmo übernimmt deren
-     komplette Funktion). Funktion/ID/Klick-Handler von #btnHomeView bleiben dabei unverändert
-     (siehe app.js). */
+  /* Würfel+Kompass-Gizmo (70. Runde, Sebastian, Punkt 3, Geometrie in Release 141 auf einen
+     einfachen 6-seitigen Würfel mit umgebendem Kompass-Ring vereinfacht, siehe GIZMO_FACES/
+     COMPASS_DIRS/drawViewGizmo() in app.js) - #btnHomeView "wird neben dem Würfel gesetzt, im 3D":
+     das Gizmo selbst wird direkt auf die Canvas gezeichnet (siehe drawViewGizmo() in app.js,
+     dieselbe Technik wie der bestehende kleine Achsen-Gizmo drawAxisGizmo()), oben rechts mit
+     demselben Randabstand wie das Gizmo (siehe GIZMO_MARGIN in app.js); #btnHomeView bleibt
+     dagegen ein echtes, klickbares HTML-Element und wird hier als eigenes kleines Overlay
+     UNMITTELBAR LINKS daneben positioniert - dieselbe ".view-btn"-Optik wie zuvor in der
+     Symbolleiste (30x30px), nur jetzt frei im 3D-Bereich statt in "#toolbarRow2"/".view-presets"
+     (die "Perspektive:"-Beschriftung und die sechs Pfeil-Icons sind komplett entfallen, siehe
+     Kommentar bei #viewerToolbar oben - das Gizmo übernimmt deren komplette Funktion). Funktion/
+     ID/Klick-Handler von #btnHomeView bleiben dabei unverändert (siehe app.js). "right" in
+     Release 141 von 112px auf 151px vergrößert, da das neue Gizmo durch den hinzugekommenen
+     Kompass-Ring (samt N/W/E/S-Beschriftung, siehe GIZMO_TOTAL_RADIUS in app.js) einen größeren
+     Gesamt-Platzbedarf als der vorherige, kompaktere Rhombenkuboktaeder hat - derselbe ca. 12px
+     Abstand zwischen Knopf und Gizmo wie zuvor (per Playwright-Screenshot nachgemessen). */
   .gizmo-home-btn {
-    position: absolute; top: 18px; right: 112px;
+    position: absolute; top: 18px; right: 151px;
+    pointer-events: auto;
+  }
+  /* "Top"-Knopf (Release 147, Sebastian: "Rechts oben vom Compass einen Knopf einbauen, auf
+     derselben Höhe wie der 'Home'-Button, der 'Top' heißt. Der verhält sich wie der jetzige
+     'Home'-Button") - übernimmt die BISHERIGE Funktion von #btnHomeView (feste Ansicht von oben,
+     siehe goTopView() in app.js), nachdem "Home" selbst seit Release 147 eine neue, schräge
+     Standardansicht bekommen hat (siehe goHomeView()/HOME_VIEW_ANGLES dort).
+     Release 148 - Sebastian wollte "Top" zunächst unten links DIREKT AM Kompass-Ring - exakt
+     30x30px wie #btnHomeView, siehe Punkt 2 unten (unverändert seit Release 148).
+     Release 149 - "Das 'Top' bitte am linken Rand auf derselben Höhe wie den 'Home'-Button
+     positionieren" wurde versuchsweise auf den GEGENÜBERLIEGENDEN linken Rand des 3D-Bereichs
+     umgesetzt (`top: 18px; left: 18px`) - stellte sich im folgenden Rückmeldungs-Austausch aber als
+     Fehlinterpretation heraus (siehe Release 150).
+     Release 150 - Sebastian: "Jetzt ist das Top verschwunden. Das 'Top' sollte unten links am
+     Kompass sein, aber linksrandig auf derselben Höhe wie der Home-Button" - da "unten links am
+     Kompass" (Release 148) und "dieselbe Höhe wie Home" (Release 149) sich geometrisch kaum
+     vereinbaren lassen (Home sitzt bereits fast am Kompass-Ring, dort ist kein Platz für einen
+     zweiten 30x30px-Knopf auf derselben Zeile), wurden zwei Bildschirm-Kandidaten gerendert und
+     Sebastian zur Auswahl vorgelegt - bestätigt wurde die Position UNTERHALB des Kompass-Rings,
+     mit deutlich mehr Abstand als in Release 148 (per zusätzlich eingereichtem Screenshot aus der
+     eigenen - dunkel eingefärbten - Installation nochmals bestätigt). `top: 165px; right: 161px`.
+     Release 151 - Sebastian, mit Skizze (eigener Screenshot, Home oben links/Top unten links,
+     Ring rechts daneben): "Wir nähern uns. Bitte so anordnen wie auf dem Bild (dieses mal
+     pixelgenau). Der linke Rand der umschließenden Buttonkästchen von Home und Top sind in einer
+     Flucht/auf einer Linie. Der Abstand des oberen Randes vom Home-Button hin zum oberen Rand vom
+     N ist gleich wie der untere Rand des Top-Buttons zur Unterkante des S." Zwei exakte
+     geometrische Bedingungen statt einer Schätzung - deshalb diesmal rechnerisch aus den
+     tatsächlichen Pixelkoordinaten hergeleitet (per Playwright an einer Debug-Kopie gemessen,
+     Ansicht "Top" = echter Kreis, damit "Oberkante N"/"Unterkante S" eindeutige Bildschirmpunkte
+     sind): `gizmoCompassHits` liefert für N/S je `{x, y, halfH}` (Trefferzonen-Mittelpunkt/
+     -Halbhöhe, siehe unten) - Oberkante N = N.y − N.halfH, Unterkante S = S.y + S.halfH. Home
+     selbst bleibt unverändert bei `top:18px; right:151px` (reale Bildschirm-Oberkante dadurch bei
+     y=18, linke Kante bei x = Canvas-Breite − 151 − 30). Bedingung 1 ("linke Kante in einer
+     Flucht"): Top bekommt dieselbe linke Kante wie Home, also ebenfalls `right: 151px` (beide
+     30px breit, identischer "right"-Wert ergibt identische linke Kante - beide Knöpfe landen
+     dadurch exakt in derselben senkrechten Spalte, Top direkt unter Home). Bedingung 2 ("Abstand
+     Home-oben→N-oben = Abstand Top-unten→S-unten"): mit `gap = (Oberkante N) − (Oberkante Home)`
+     ergibt sich die gesuchte `top`-Position aus `Top-Unterkante = (Unterkante S) − gap`, also
+     `top = (Unterkante S) − gap − 30`. Mit den gemessenen Werten (Canvas 1119px breit, Home-
+     Oberkante y=18, N-Oberkante y≈10,05, S-Unterkante y≈146,95, gap≈−7,95) ergibt das `top:125px;
+     right:151px` (ganzzahlig gerundet - Abweichung <0,1px, deutlich unter jeder sichtbaren
+     Toleranz). Vor dem Bauen als Vorschau-Screenshot (noch ungebaute Debug-Kopie) vorgelegt und
+     von Sebastian bestätigt ("Perfekt!"), dann unverändert in den Master übernommen.
+     2) Größe (unverändert seit Release 148): "beide Button ... gleich groß" - 30x30px, exakt
+        dieselbe feste Quadratgröße wie #btnHomeView (dort über die gemeinsame ".view-btn"-Klasse,
+        siehe dort; hier bewusst lokal auf .gizmo-top-btn dupliziert statt ".view-btn" zusätzlich zu
+        vergeben, damit die für andere Knöpfe geltende, dort fest mit 16px-Symbol-Schriftgröße
+        verknüpfte ".view-btn"-Klasse unangetastet bleibt). Die Beschriftung "Top" (3 Zeichen) passt
+        bei 30px Breite nicht mehr bei der ursprünglichen 12px-Schrift - auf 11px samt -0.3px
+        Buchstabenabstand verkleinert, damit der Text nicht an den Rand stößt (per Screenshot
+        nachgemessen: "Top" bei 11px/-0.3px ca. 19px breit, bleibt bei 30px Knopfbreite beidseitig
+        mit Luft). */
+  .gizmo-top-btn {
+    position: absolute; top: 125px; right: 151px;
+    width: 30px; height: 30px;
+    padding: 0;
+    font-size: 11px;
+    letter-spacing: -0.3px;
+    display: flex; align-items: center; justify-content: center;
     pointer-events: auto;
   }
 
@@ -2253,6 +2317,19 @@
                    'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
                    siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
               <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
+              <!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen ->
+                   Erscheinungsbild gibt es einen neuen Menüpunkt: 'Rotation'. Dort kann die
+                   Kipprichtung invertiert werden.") - direkt flach nach "Spalten" (kein eigenes
+                   Untermenü, analog zu "Spalten" selbst), siehe #rotationSettingsPanel weiter
+                   unten sowie invertTiltPreference/LS_KEY_INVERT_TILT in app.js. -->
+              <button class="menu-item" id="btnRotationSettings" type="button" title="Kipprichtung der 3D-Ansicht (vertikale Mausbewegung) umkehren" data-i18n-en="Rotation" data-i18n-en-title="Invert the tilt direction of the 3D view (vertical mouse movement)">Rotation</button>
+              <!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt
+                   es einen Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus'
+                   einbauen.") - direkt flach nach "Rotation" (kein eigenes Untermenü, analog zu
+                   "Spalten"/"Rotation" selbst), siehe #gridSettingsPanel weiter unten sowie
+                   gridVisible/LS_KEY_GRID_VISIBLE in app.js. Derselbe Zustand ist zusätzlich über
+                   das Rechtsklick-Kontextmenü im 3D-Bereich erreichbar, siehe dort. -->
+              <button class="menu-item" id="btnGridSettings" type="button" title="Bodenraster im 3D-Bereich ein-/ausblenden" data-i18n-en="Grid" data-i18n-en-title="Show/hide the floor grid in the 3D area">Raster</button>
               <!-- "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button bei den
                    Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
                    Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt.") - direkt flach
@@ -2291,7 +2368,7 @@
             </div>
           </div>
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings">Einstellungen importieren</button>
-          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
+          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
         </div>
       </div>
       <!-- "Infos" -> "Knowledge Base" (Release 105, Sebastian: "Ein neuer Menüpunkt 'Infos'
@@ -2541,7 +2618,7 @@
       <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">⬍ DXF</button>
       <button class="toolbar-btn" id="btnDxfMirrorY" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">⬌ DXF</button>
       <button class="toolbar-btn" id="btnDxfRotate" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">↻ DXF</button>
-      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, tiefer liegende Kontur samt Verbindungslinien dargestellt) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second, deeper contour including connecting lines) - only available once a DXF has been imported">🧱 DXF</button>
+      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, nach oben versetzte Kontur samt Verbindungslinien dargestellt; negative Werte versetzen stattdessen nach unten) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second contour offset upward, including connecting lines; negative values offset downward instead) - only available once a DXF has been imported">🧱 DXF</button>
       <!-- "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal
            sein, dass das in cm exportiert worden ist ... Da müsste man um den Faktor 10 skalieren.
            Umgekehrt gibt es das Problem auch. Lösung: DXF Skalier Icon rechts neben
@@ -2778,8 +2855,24 @@
           <span class="scope-chip" id="scopeChip" hidden></span>
         </div>
         <!-- Home-Knopf neben dem Gizmo (70. Runde, Punkt 3) - siehe ausführlichen Kommentar bei
-             ".gizmo-home-btn" im Stylesheet oben. ID/Funktion/Klick-Handler unverändert. -->
-        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Ansicht zurücksetzen: Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Reset view: top-down view, zoomed out and centered on the currently displayed program">⌂</button>
+             ".gizmo-home-btn" im Stylesheet oben. ID/Klick-Handler unverändert; die FUNKTION
+             dahinter (goHomeView()) wurde in Release 147 auf eine schräge Diagonalansicht
+             umgestellt - siehe Kommentar dort sowie bei #btnTopView direkt daneben, das die
+             bisherige Home-Funktion (reine Ansicht von oben) übernimmt. Release 152 - Sebastian:
+             "Bei Klick auf Home-Button ändert sich die Isometrische Perspektive/Ansicht" (vier
+             Ansichten im Kreis, je 90° weitergedreht, siehe HOME_VIEW_ANGLE_SEQUENCE/goHomeView()
+             in app.js) - Titel-Tooltip entsprechend angepasst, da "Home" nicht mehr IMMER auf
+             dieselbe feste Ansicht springt. -->
+        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Isometrische Ansicht - wechselt bei jedem Klick im Kreis zur nächsten von vier um 90° gedrehten Isometrie-Ansichten, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Isometric view - cycles to the next of four 90°-rotated isometric views on each click, zoomed out and centered on the currently displayed program">⌂</button>
+        <!-- "Top"-Knopf (Release 147 neu eingeführt, Release 148 unten links an den Kompass-Ring
+             verschoben + gleich groß wie Home gemacht, Release 149 versuchsweise an den linken Rand
+             des 3D-Bereichs verschoben, Release 150 unterhalb des Kompass-Rings mit mehr Abstand
+             platziert, Release 151 pixelgenau nach Sebastians Vorgabe ausgerichtet: linke Kante von
+             Home und Top in einer Flucht, Abstand Home-oben↔N-oben = Abstand Top-unten↔S-unten,
+             rechnerisch aus den tatsächlichen Gizmo-Pixelkoordinaten hergeleitet und vor dem Bauen
+             als Vorschau bestätigt) - siehe ausführlichen Kommentar bei ".gizmo-top-btn" im
+             Stylesheet oben sowie bei goTopView() in app.js. -->
+        <button class="toolbar-btn gizmo-top-btn" id="btnTopView" type="button" title="Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Top-down view, zoomed out and centered on the currently displayed program">Top</button>
         <!-- Verschiebbares Info-Fenster (70. Runde, Punkte 2/10/13) - siehe ausführlichen
              Kommentar bei ".info-panel" im Stylesheet oben. Startet hidden, genau wie #readout
              vorher (siehe readoutEl.hidden-Zuweisung in app.js, dort um infoPanelEl.hidden
@@ -3053,7 +3146,7 @@
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
     <h3>Bauteilstärke</h3>
-    <p class="panel-hint">Stärke (mm) des durch das DXF dargestellten Bauteils. Bei einem Wert größer 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke nach unten versetzte Kontur samt Verbindungslinien gezeichnet - eine reine Drahtgitter-Darstellung der Bauteilstärke, keine gefüllte Fläche.</p>
+    <p class="panel-hint">Stärke (mm) des durch das DXF dargestellten Bauteils. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur samt Verbindungslinien gezeichnet - eine reine Drahtgitter-Darstellung der Bauteilstärke, keine gefüllte Fläche. Positive Werte versetzen nach oben, negative Werte nach unten.</p>
     <div class="tool-data-row">
       <label class="tool-data-field">Stärke (mm)
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
@@ -3361,6 +3454,61 @@
   </div>
 </div>
 
+<!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen -> Erscheinungsbild gibt
+     es einen neuen Menüpunkt: 'Rotation'. Dort kann die Kipprichtung invertiert werden. Die
+     Schwenkrichtungen nach links/rechts, wenn die Maus bewegt wird, bleibt nach links und rechts,
+     nur oben/unten sind vertauscht, bei der Auswahl von 'Ja' bei 'Kipprichtung invertieren'
+     (andere Auswahl dort ist 'Nein', dann bleibt alles auf Standard), wird die Richtung beim
+     Kippen (Bewegung der Maus nach oben/unten) umgekehrt") - eine einzige Radiogruppe
+     (Ja/Nein), Aufbau 1:1 nach dem Muster der "Arbeitsgänge"-Gruppe im #columnScalePanel oben,
+     siehe invertTiltPreference/LS_KEY_INVERT_TILT sowie die Klick-Verdrahtung in app.js. -->
+    <!-- Release 154 (Sebastian: "Bitte den Text übersetzen für EN-Version") - bis einschließlich
+         Release 153 trug dieses Panel (anders als die meisten übrigen Texte der App) noch KEINE
+         [data-i18n-en]-Attribute und blieb beim Wechsel auf Englisch dadurch unübersetzt deutsch
+         stehen - siehe applyLanguage()/T() weiter unten für den allgemeinen Mechanismus. Die
+         Überschrift "Rotation" bleibt bewusst ohne eigenes [data-i18n-en]: Das Wort ist im
+         Englischen identisch, ein Attribut mit demselben Wert wäre reine Redundanz. -->
+<div class="paste-panel" id="rotationSettingsPanel">
+  <div class="paste-card">
+    <h3>Rotation</h3>
+    <p class="panel-hint" data-i18n-en="Direction of the 3D view rotation when dragging the mouse up or down (tilting). The direction of rotation to the left or right (panning) always remains unchanged.">Richtung der 3D-Ansichts-Drehung beim Ziehen mit der Maus nach oben/unten (Kippen). Die Drehrichtung nach links/rechts (Schwenken) bleibt davon immer unverändert.</p>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Invert tilt direction">Kipprichtung invertieren</div>
+      <div class="scale-choice" id="invertTiltChoice">
+        <label class="scale-option"><input type="radio" name="invertTilt" value="0"> <span data-i18n-en="No">Nein</span></label>
+        <label class="scale-option"><input type="radio" name="invertTilt" value="1"> <span data-i18n-en="Yes">Ja</span></label>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnRotationSettingsCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnRotationSettingsApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt es einen
+     Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus' einbauen.") - eine einzige
+     Radiogruppe, Aufbau 1:1 nach dem Muster von #rotationSettingsPanel oben, nur mit den
+     Options-Beschriftungen "Raster an"/"Raster aus" selbst statt "Ja"/"Nein" (Sebastian nennt
+     diese beiden Beschriftungen wörtlich), siehe gridVisible/LS_KEY_GRID_VISIBLE sowie die
+     Klick-Verdrahtung in app.js. -->
+<div class="paste-panel" id="gridSettingsPanel">
+  <div class="paste-card">
+    <h3>Raster</h3>
+    <p class="panel-hint" data-i18n-en="Shows or hides the floor grid (square boxes) under the part in the 3D area.">Blendet das Bodenraster (quadratische Kästchen) unter dem Bauteil im 3D-Bereich ein oder aus.</p>
+    <div class="scale-group">
+      <div class="scale-choice" id="gridVisibleChoice">
+        <label class="scale-option"><input type="radio" name="gridVisible" value="1"> <span data-i18n-en="Grid on">Raster an</span></label>
+        <label class="scale-option"><input type="radio" name="gridVisible" value="0"> <span data-i18n-en="Grid off">Raster aus</span></label>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnGridSettingsCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnGridSettingsApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
 <!-- "Buttonfarbe einstellen" (53. Runde, Sebastian: "Highlight-Farbe für 'Datei', 'Bearbeiten' und
      'Ansicht', wenn aktiv. Standard bleibt Rot. Schrift- und Hintergrundfarbe dürfen nicht
      identisch sein. Eine gewählte Farbe gilt für alle drei Menüpunkte") - zwei Hexcode-Zeilen
@@ -3456,6 +3604,16 @@
   <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
   <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
   <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
+  <!-- "Raster aus"/"Raster an" (Release 154, Sebastian: "Mit einem Rechtsklick in der 3D Sim ->
+       Kontextmenü: ganz unten unter dem DXF-Block, Trennstrich danach dann 'Raster aus', wenn
+       'Raster aus' geklickt worden ist, soll 'Raster an' eingeblendet sein, was das Raster wieder
+       anstellt.") - eigene, fünfte Gruppe ganz unten, per eigenem Trennstrich von der DXF-Gruppe
+       abgesetzt. Direkt-Umschalter (ein Klick = ein Zustandswechsel), exakt dieselbe Technik wie
+       "Alle Arbeitsgänge ausblenden"/"DXF-Layer ausblenden" weiter oben - siehe
+       toggleGridFromContextMenu()/updateContextMenuState() in app.js für die dynamische
+       Beschriftung. -->
+  <div class="context-menu-divider"></div>
+  <button class="menu-item" id="ctxToggleGrid" type="button" data-i18n-en="Grid off">Raster aus</button>
 </div>
 
 <script>
@@ -6089,8 +6247,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 140;
-  const APP_RELEASE_TIMESTAMP = '05.10.2026, 17:20 Uhr';
+  const APP_RELEASE_NUMBER = 154;
+  const APP_RELEASE_TIMESTAMP = '06.10.2026, 11:17 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -6273,6 +6431,33 @@
   // von Kommentaren in den betroffenen Zeilen). Ein Programm, dessen SCM-Dialekt tatsächlich
   // inkrementelle I/J-Werte verwendet, müsste diese Zeile in "Maschinentypen bearbeiten" wieder auf
   // "IJMODE=incremental" ändern bzw. entfernen (siehe 5.12a der Doku).
+  // Release 144 (Sebastian, an einem realen SCM-Sägeprogramm mit zwei nahezu identischen
+  // ";Saegen"-Blöcken, die sich nur im Kopfzeilen-Stil und im literalen "C=1" bzw. "C=2"
+  // unterscheiden: "Beim Sägen (SCM) geht noch was nicht korrekt vonstatten: Im CNC Code steht
+  // C=1 -> Säge 'liegt'. Bei C=2 ist alles korrekt. Bitte so anpassen, dass die Säge da auch
+  // steht wie bei C=2") - neue Regel "C=1->;C=1" im SCM-Block, direkt neben der bereits
+  // bestehenden "C=2->G41". Ursache (siehe drawTool()/AXIS_RE weiter unten für die volle
+  // Herleitung): Ein alleinstehendes "C=1" im Programmtext (exakt wie "C=2" in echten SCM-
+  // Dateien stets eine eigene, einzelne Zeile ohne weitere Tokens - verifiziert u. a. anhand
+  // eines realen SCM/GFIL-Beispielprogramms) wurde von der generischen Achswort-Erkennung
+  // (AXIS_RE) als EXPLIZITER C-Achs-Drehwinkel (C=1°) gelesen, obwohl das für diesen SCM-Dialekt
+  // gar keine echte Drehachsenbewegung ist, sondern - analog zu "C=2" - ein reiner Status-/
+  // Auswahlcode. Dadurch griff in drawTool() fälschlich der Zweig für "Säge MIT echten Dreh-/
+  // Kippwinkeln" statt des eigentlich zutreffenden automatischen 90°-Kippungs-Sonderfalls für
+  // Sägen OHNE Dreh-/Kippwinkel (62./64. Runde) - sichtbar als liegend dargestellte Säge. "C=2"
+  // blieb davon schon bisher verschont, weil die bestehende Regel "C=2->G41" das Token vorher
+  // bereits vollständig in "G41" umwandelt (kein "C" mehr im Ergebnistext). Für "C=1" bewusst
+  // NICHT ebenfalls auf ein G41/G42 abgebildet (das würde unbeabsichtigt echte Radiuskorrektur
+  // [state.comp, siehe 9.7b] aktivieren, die laut Sebastians Beschreibung nur die Säge-
+  // Darstellung betrifft, nicht die Kontur) - stattdessen exakt dasselbe, bereits etablierte
+  // Vorgehen wie bei den anderen reinen Achswort-Fehlalarmen in diesem Block ("PB->;PB",
+  // "XN X=->;X=", "X=-->;X="): das Token wird per vorangestelltem ";" auskommentiert und bleibt
+  // dadurch für AXIS_RE (das pro Zeile computeCommentMask()/isRangeUncommented() aus swap.js
+  // respektiert, siehe extractMotion() in parser.js) unsichtbar, ohne sonst irgendeine Wirkung zu
+  // entfalten. Da applySwapRules() ersetzten Text nie erneut scannt (siehe dortiger Kommentar),
+  // ist diese Regel trotz des auf den ersten Blick selbstbezüglich wirkenden Musters
+  // ("C=1"->";C=1", enthält "C=1" also auch im Ersetzungstext) gefahrlos - keine Kaskaden-/
+  // Endlosschleifen-Möglichkeit.
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -6435,6 +6620,7 @@ O ->G91
 Q->C
 R->A
 C=2->G41
+C=1->;C=1
 PB->;PB
 XN X=->;X=
 X=-->;X=
@@ -6739,6 +6925,81 @@ CORNERRADIUS=GFIL r=
   // unten) - PROG_STAGE_PCT.indexOf(columnScalePreference.code) liefert daraus in
   // autoFitColumnWidths() die passende progCollapseStage-Startstufe.
   let columnScalePreference = Object.assign({}, DEFAULT_COLUMN_SCALE);
+
+  // ============================================================
+  // "Rotation" ("Einstellungen" -> "Erscheinungsbild" -> "Rotation", Release 141, Punkt 8,
+  // Sebastian: "In den Einstellungen -> Erscheinungsbild gibt es einen neuen Menüpunkt:
+  // 'Rotation'. Dort kann die Kipprichtung invertiert werden. Die Schwenkrichtungen nach links/
+  // rechts, wenn die Maus bewegt wird, bleibt nach links und rechts, nur oben/unten sind
+  // vertauscht, bei der Auswahl von 'Ja' bei 'Kipprichtung invertieren' (andere Auswahl dort ist
+  // 'Nein', dann bleibt alles auf Standard), wird die Richtung beim Kippen (Bewegung der Maus
+  // nach oben/unten) umgekehrt") - genau EIN Bool-Wert, ob die vertikale Zieh-Richtung (cam.phi,
+  // siehe pointermove-Handler weiter unten) umgekehrt angewendet wird. Persistenz-Muster 1:1
+  // analog zu LS_KEY_COLUMN_SCALE oben (gleiches Projekt, gleiche Konvention).
+  const LS_KEY_INVERT_TILT = 'cncsim.invertTilt';
+  const DEFAULT_INVERT_TILT = false; // "Nein" ist die Standard-Auswahl im Dialog (s.o.)
+  function loadPersistedInvertTilt() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_INVERT_TILT);
+      if (raw === null) return DEFAULT_INVERT_TILT;
+      return raw === '1' || raw === 'true';
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return DEFAULT_INVERT_TILT;
+  }
+  function persistInvertTilt(invert) {
+    try { window.localStorage.setItem(LS_KEY_INVERT_TILT, invert ? '1' : '0'); } catch (e) { /* s.o. */ }
+  }
+  // Aktuell aktive Vorgabe (nach dem Start aus localStorage geladen, siehe Seitenstart-Block ganz
+  // unten) - direkt im pointermove-Handler des 3D-Bereichs abgefragt (siehe dort).
+  let invertTiltPreference = DEFAULT_INVERT_TILT;
+
+  // ============================================================
+  // "Raster" (Release 154, Sebastian, drei zusammenhängende Punkte): "Aktuell liegt ein Raster
+  // unter dem Bauteil (quadratische Kästchen). Das bitte aus- und wieder anstellbar machen. Mit
+  // einem Rechtsklick in der 3D Sim -> Kontextmenü: ganz unten unter dem DXF-Block, Trennstrich
+  // danach dann 'Raster aus', wenn 'Raster aus' geklickt worden ist, soll 'Raster an' eingeblendet
+  // sein, was das Raster wieder anstellt." sowie "Unter 'Einstellungen -> Erscheinungsbild' gibt es
+  // einen Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus' einbauen." - genau EIN
+  // Bool-Wert (gridVisible), ob drawGrid() (siehe render() weiter unten) das Bodenraster
+  // überhaupt zeichnet - Persistenz-Muster 1:1 analog zu LS_KEY_INVERT_TILT oben (gleiches
+  // Projekt, gleiche Konvention). ZWEI gleichberechtigte Bedienwege für denselben Zustand (genau
+  // wie bei "Alle Arbeitsgänge ausblenden"/"DXF-Layer ausblenden", die ja auch sowohl über das
+  // Kontextmenü als auch über ihre jeweils eigene Stelle erreichbar sind): der Kontextmenü-Eintrag
+  // schaltet sofort um (ein Klick = ein Zustandswechsel, dieselbe "Direkt-Umschalten"-Logik wie
+  // toggleAllOps()/toggleAllDxfLayers(), siehe dort), das "Raster"-Panel unter "Erscheinungsbild"
+  // bietet stattdessen eine explizite Zwei-Wege-Radiogruppe ("Raster an"/"Raster aus", bewusst NICHT
+  // "Ja"/"Nein" wie bei "Rotation", da die beiden Werte hier selbst schon die vom Benutzer
+  // gewünschten Beschriftungen sind) mit Abbrechen/Übernehmen - exakt dasselbe Muster wie bei
+  // "Rotation" (Release 141) gleich oberhalb, nur mit anderen Options-Beschriftungen.
+  const LS_KEY_GRID_VISIBLE = 'cncsim.gridVisible';
+  const DEFAULT_GRID_VISIBLE = true; // Raster war vor dieser Funktion immer fest an - Standard bleibt "an"
+  function loadPersistedGridVisible() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_GRID_VISIBLE);
+      if (raw === null) return DEFAULT_GRID_VISIBLE;
+      return raw === '1' || raw === 'true';
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return DEFAULT_GRID_VISIBLE;
+  }
+  function persistGridVisible(visible) {
+    try { window.localStorage.setItem(LS_KEY_GRID_VISIBLE, visible ? '1' : '0'); } catch (e) { /* s.o. */ }
+  }
+  // Aktuell aktive Vorgabe (nach dem Start aus localStorage geladen, siehe Seitenstart-Block ganz
+  // unten) - direkt von render() ausgewertet (siehe dort).
+  let gridVisible = DEFAULT_GRID_VISIBLE;
+  // Setzt gridVisible, persistiert, und stößt einen vollständigen Rebake an (dieselbe
+  // bakeParams=null-Technik wie bei recolorOpSegmentsAndPoints()/applyOpColors() oben - das Raster
+  // wird ausschließlich im gebackenen Hintergrund gezeichnet, siehe render() weiter unten, ein
+  // reines requestRender() ohne Rebake würde die Änderung daher nicht sichtbar machen). Von BEIDEN
+  // Bedienwegen (Kontextmenü-Direktumschalter UND "Raster"-Panel-Übernehmen-Knopf, siehe jeweils
+  // dort) gemeinsam verwendet, damit beide garantiert exakt gleichwertig bleiben - exakt dasselbe
+  // "ein Name, ein Zustand"-Prinzip wie bereits bei goHomeView()/Knopf+Taste (Release 147).
+  function setGridVisible(visible) {
+    gridVisible = !!visible;
+    persistGridVisible(gridVisible);
+    bakeParams = null;
+    requestRender();
+  }
 
   // ============================================================
   // "Buttonfarbe einstellen" ("Ansicht" -> "Buttonfarbe einstellen", 53. Runde, Sebastian:
@@ -7257,6 +7518,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
   const len = a => Math.sqrt(dot(a, a));
   const normalize = a => { const l = len(a) || 1e-9; return { x: a.x / l, y: a.y / l, z: a.z / l }; };
+  // scaleVec (Release 143, für die inkrementelle Kamera-Rotation unten benötigt) - Vektor mit
+  // einem Skalar multipliziert.
+  const scaleVec = (a, s) => ({ x: a.x * s, y: a.y * s, z: a.z * s });
 
   // CNC-Koordinaten (X,Y,Z) -> Render-Koordinaten (Z zeigt nach "oben")
   const toRender = p => ({ x: p.x, y: p.z, z: p.y });
@@ -7699,6 +7963,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const btnCodeJump = el('btnCodeJump');
   const btnWholeProgram = el('btnWholeProgram');
   const btnHomeView = el('btnHomeView');
+  // "Top"-Knopf (Release 147) - siehe ausführlichen Kommentar bei goTopView()/goHomeView() weiter
+  // unten sowie bei ".gizmo-top-btn" im Stylesheet.
+  const btnTopView = el('btnTopView');
   const btnClearProgram = el('btnClearProgram');
   const btnClearProgramIcon = el('btnClearProgramIcon'); // 70. Runde, Punkt 9, siehe template_top.html
   // "Mehrere Programme in Programmliste laden" (Release 113) - siehe Kommentar bei
@@ -8089,17 +8356,105 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const PROG_STAGE_MAX = PROG_STAGE_PCT.length - 1; // = 4
   let progCollapseStage = 0;
 
+  // VIEW_PRESETS (unverändert aus den Vorgänger-Runden, siehe historische Begründung unten) - jede
+  // feste Voreinstellung bleibt weiterhin über ein theta/phi-Winkelpaar beschrieben; NUR die Art,
+  // wie daraus beim DURCHGEHENDEN ZIEHEN/DREHEN eine Kamera-Basis wird, hat sich in Release 143
+  // grundlegend geändert (siehe die ausführliche Herleitung bei "const cam"/rotateCamOrientation()
+  // weiter unten) - VIEW_PRESETS selbst bleibt davon komplett unberührt, deshalb absichtlich VOR
+  // "cam" definiert (cam.orient wird direkt aus VIEW_PRESETS.top berechnet, siehe dort).
+  //
+  // "Vorn"/"Hinten" (Benutzer: "Bitte bei den Ansichten 'Oben', 'Unten' usw. noch die Ansicht
+  // 'Vorn' und 'Hinten' ergänzen für die Ansicht von vorne und hinten"): dieselbe horizontale
+  // Kamera-Höhe wie "Links"/"Rechts" (phi=0), aber um die Y-Achse statt der X-Achse geschwenkt
+  // (theta=0/π statt ±π/2). Welche Seite "vorne" bzw. "hinten" ist, folgt direkt aus der vom
+  // Benutzer bestätigten Achs-Konvention ("X+ nach rechts, Y+ nach hinten, Z+ nach oben") -
+  // "hinten" ist also die +Y-Seite, "vorne" die -Y-Seite. Mit z = eyeDist·cos(phi)·cos(theta)
+  // (siehe basisFromAngles() weiter unten) und toRender() (render-Z = CNC-Y) liefert theta=0 eine
+  // Kamera auf der +Y-Seite (blickt Richtung -Y, also von hinten nach vorne = "Ansicht von
+  // hinten"), theta=π entsprechend eine Kamera auf der -Y-Seite ("Ansicht von vorne") - exakt
+  // demselben Muster wie "Links" (Kamera auf der -X-Seite, theta=-π/2) und "Rechts" (Kamera auf
+  // der +X-Seite, theta=+π/2) folgend.
+  //
+  // Warum "top" ausgerechnet phi=-1.45 (nicht z.B. 0) zugeordnet ist: historisch bedingt (frühe
+  // Runden dieses Projekts) - die Kamera-Position, die bei "X rechts" zwangsläufig "Y oben"
+  // liefert (Chiralitäts-Zwang eines rechtshändigen Dreibeins, siehe basisFromAngles() weiter
+  // unten), ist exakt die mit NEGATIVEM phi; die mit positivem phi liefert zwangsläufig "Y unten"
+  // und trägt deshalb den Namen "bottom". Eine reine Namenskonvention, keine physikalische
+  // Notwendigkeit - an der grundsätzlichen Stetigkeit der Formel ändert das nichts.
+  const VIEW_PRESETS = {
+    top: { theta: 0, phi: -1.45 },
+    bottom: { theta: 0, phi: 1.45 },
+    left: { theta: -Math.PI / 2, phi: 0 },
+    right: { theta: Math.PI / 2, phi: 0 },
+    front: { theta: Math.PI, phi: 0 },
+    back: { theta: 0, phi: 0 }
+  };
+
+  // "Home"-Diagonalansicht (Release 147, Sebastian: "Beim Klick auf 'Home' im 3D -> Schräg von
+  // oben/links, so dass N und E auf einer horizontalen Linie sind und W und S [auf einer
+  // horizontalen Linie sind]") - anders als die sechs VIEW_PRESETS oben (die exakt einer
+  // Würfel-Hauptseite entsprechen) ist das hier eine eigene, siebte feste Blickrichtung, NUR für
+  // den "Home"-Knopf verwendet (siehe goHomeView() weiter unten) - deshalb bewusst als eigene
+  // Konstante statt als zusätzlicher VIEW_PRESETS-Eintrag (VIEW_PRESETS wird sonst ausschließlich
+  // für Würfel-/Kompass-Klicks mit zugehörigem "view"-Namen verwendet, siehe applyViewPreset()).
+  //
+  // Herleitung von theta=-3π/4 (-135°): Der Kompass zeigt die vier festen Weltrichtungen E=(1,0,0)/
+  // N=(0,0,1)/W=(-1,0,0)/S=(0,0,-1) (COMPASS_DIRS unten) über dieselbe {right,up}-Basis wie der
+  // Würfel (proj2D() in drawViewGizmo()). Rechnerisch (siehe up = (-sinθ·sinφ, cosφ, -cosθ·sinφ)
+  // in basisFromAngles() weiter unten) liegen E und N GENAU DANN auf derselben Bildschirmhöhe
+  // (up·E = up·N, und durch Punktsymmetrie damit zugleich auch up·W = up·S), wenn sinθ = cosθ gilt,
+  // also θ = π/4 + k·π. Von den beiden verbleibenden Lösungen (π/4 bzw. -3π/4) liegt NUR -3π/4 in
+  // der von "Front" (θ=π, Kamera auf der Süd-Seite) UND "Left" (θ=-π/2, Kamera auf der West-Seite)
+  // aufgespannten Himmelsrichtung (Südwesten, genau zwischen beiden) - exakt das von Sebastian
+  // verlangte "von oben/links" (ein kombinierter Front-Links-Blick, wie die in CAD-Programmen
+  // übliche Standard-Isometrie "von vorne-links-oben"); π/4 läge dagegen zwischen "Rear" und
+  // "Right" (Nordosten), also "von hinten/rechts" - erkennbar falsch. Per Playwright-Screenshot
+  // verifiziert: -3π/4 zeigt tatsächlich Top-, Front- UND Left-Fläche des Würfels gleichzeitig,
+  // mit S/W-Beschriftung oben und N/E-Beschriftung unten am Kompass-Ring (siehe Projekt-
+  // Dokumentation für den Screenshot-Vergleich).
+  //
+  // phi = -asin(1/√3) ≈ -35.26°: der klassische, in der technischen Isometrie übliche Kippwinkel
+  // (alle drei Würfelkanten erscheinen bei diesem Winkel gleich lang/im selben 120°-Abstand) -
+  // deutlich flacher als "Top" (phi=-1.45 ≈ -83°, fast senkrecht von oben), aber steiler als die
+  // reinen Seitenansichten (phi=0) - genau die von Sebastian verlangte "schräge" (weder flache
+  // noch senkrechte) Ansicht von oben. Negatives Vorzeichen aus demselben Grund wie bei "top"
+  // oben: liefert bei diesem rechtshändigen Dreibein die Kamera-Position tatsächlich OBERHALB
+  // (nicht unterhalb) des Werkstücks.
+  //
+  // Release 152 - Sebastian, mit Referenzbild (Koordinatenkreuz X/Y/Z je 120° zueinander, 30° zur
+  // Horizontalen, v_x=v_y=v_z=1 - die Lehrbuchdefinition der Isometrie): "Bei Klick auf
+  // Home-Button ändert sich die Isometrische Perspektive/Ansicht. Klick 1 = Ansicht 1 (wie im
+  // Bild) ... Klick 4 = Ansicht 4 (Ansicht 3 nach links gedreht) ... Klick 5 -> wieder bei
+  // Ansicht 1." Die bisherige EINZELNE HOME_VIEW_ANGLES-Konstante (Ansicht 1, s.o.) wird dadurch
+  // zu einer 4er-Sequenz erweitert: alle vier Ansichten verwenden denselben Kippwinkel phi (s.o. -
+  // bleibt für jede der vier Ansichten eine exakte Isometrie, "v_x=v_y=v_z=1" ist unabhängig vom
+  // Azimut theta), nur theta wird in 90°-Schritten weitergedreht ("nach links" - siehe
+  // ausführliche Herleitung der Drehrichtung bei goHomeView() weiter unten). Ansicht 1 bleibt
+  // exakt die bisherige, bereits in Release 147 per Playwright-Screenshot gegen Sebastians
+  // Vorgabe verifizierte theta=-3π/4 (Front+Left-Blickrichtung, siehe Herleitung oben) - dadurch
+  // bleibt das Verhalten für alle, die nur einmal klicken, unverändert zu vorher.
+  const HOME_VIEW_ANGLE_SEQUENCE = [0, 1, 2, 3].map(k => ({
+    theta: -3 * Math.PI / 4 + k * (Math.PI / 2),
+    phi: -Math.asin(1 / Math.sqrt(3))
+  }));
+
+  // Kamera-Orientierung als ROTIERTE BASIS statt als theta/phi-Winkelpaar (Release 143, Bugfix zu
+  // Release 141/142) - siehe die vollständige Herleitung/den Bugfix-Hintergrund im Kommentar bei
+  // rotateCamOrientation() weiter unten (Kurzfassung: ein aus theta/phi per Kreuzprodukt mit einer
+  // FESTEN Welt-Hochachse neu berechnetes "right" kippt beim Überqueren des Zenits/Nadirs
+  // unvermeidbar um 180° - das war der tatsächliche, in Release 142 noch nicht behobene Grund für
+  // das von Sebastian gemeldete "Umklappen"). cam.orient = {right, up, fwd} ist deshalb seit
+  // Release 143 der alleinige, persistente Ausgangspunkt für die Kamera-Blickrichtung; theta/phi
+  // existieren nur noch als Winkelpaare INNERHALB von VIEW_PRESETS (feste Sprungziele), nicht mehr
+  // als laufender Kamera-Zustand. cam.orient startet mit genau der Basis, die VIEW_PRESETS.top
+  // (die Standardansicht "Oben") entspricht, per basisFromAngles() berechnet (sicher, da phi=-1.45
+  // deutlich vom exakten Pol ±π/2 entfernt liegt).
+  //
   // minEyeDist (Benutzer: "Wenn man nah ranzoomt verschwinden die Fräskonturen" - siehe
   // cameraPosition()/frameCamera() unten für die volle Herleitung) hält die Kamera unabhängig
   // vom Zoom-Stand (cam.dist) immer weit genug vom Zielpunkt entfernt, damit sie beim
   // Heranzoomen niemals durch nahe Bahnpunkte "hindurchfährt" und diese fälschlich als "hinter
   // der Kamera" verwirft. Startwert 220 = derselbe Fallback wie in frameCamera() ohne Geometrie.
-  // cam.roll (73. Runde, Punkt 1c: "Der Würfel sollte sich auch um die eigene Achse drehen
-  // können") - zusätzlicher Freiheitsgrad neben theta/phi: dreht "right"/"up" in buildBasis()
-  // gemeinsam um die Blickachse ("fwd"), ändert also NICHT die Blickrichtung selbst, sondern nur,
-  // welche Bildschirmrichtung "oben" ist (wie das Kippen des Kopfes). Wird über den Ring um das
-  // Gizmo bedient (siehe hitTestGizmoRing()/gizmoRollPointerId weiter unten) und bei jedem Sprung
-  // auf eine feste Voreinstellung (applyViewAngles()) wieder auf 0 zurückgesetzt.
   // cam.maxDist (Bugfix, Sebastian: "Bauteil ca. 10000mm groß machen, Home drücken, dann Zoomen
   // -> zoomt ran, man kommt nicht wieder weiter weg") - der Mausrad-Zoom (siehe wheel-Handler
   // unten) begrenzte cam.dist bislang auf einen FESTEN Maximalwert von 4000 Welteinheiten. Bei
@@ -8111,124 +8466,41 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // sichtbar zu sein. cam.maxDist wird deshalb dynamisch in frameCamera() an die tatsächliche
   // Bauteilgröße angepasst (mit 4000 als Untergrenze, damit sich am Verhalten bei normal großen
   // Bauteilen nichts ändert) und vom wheel-Handler statt der alten festen 4000 verwendet.
-  const cam = { theta: 0, phi: -1.45, roll: 0, dist: 260, minEyeDist: 220, maxDist: 4000, target: { x: 0, y: 0, z: 0 } };
+  const cam = {
+    orient: basisFromAngles(VIEW_PRESETS.top.theta, VIEW_PRESETS.top.phi),
+    dist: 260, minEyeDist: 220, maxDist: 4000, target: { x: 0, y: 0, z: 0 }
+  };
   let dragging = false, lastPX = 0, lastPY = 0;
   let rafPending = false;
 
-  // Bugfix 25. Runde (Benutzer: "Der Flip ist aber komplett nicht nachvollziehbar ... schau von
-  // oben drauf, drehe etwas nach links/rechts und das ganze Bauteil dreht sich auf den Kopf. Das
-  // ist jetzt schlimmer als vorher."). Die 24. Runde hatte versucht, den seit der 21. Runde
-  // bekannten Rest-"Flip" beim Verlassen der Oben-Ansicht als ~240ms-Animation (poleCorrectT) zu
-  // kaschieren, statt ihn hart springen zu lassen. Der Fehler dabei: Diese Animation lief nach
-  // einer FESTEN ZEIT ab, unabhängig davon, wie WEIT tatsächlich gedreht wurde - schon eine winzige
-  // Mausbewegung startete den kompletten, immer bis zum Ende durchlaufenden 180°-Dreh der "up"-
-  // Achse. Das fühlte sich für den Benutzer wie ein noch schlimmerer, jetzt sogar in Zeitlupe
-  // ablaufender Flip an, exakt bei der kleinsten Drehung.
-  //
-  // Eigene erneute Nachrechnung (Node-Skript, siehe /tmp/verify_continuous.js aus der 25. Runde)
-  // klärt die eigentliche Ursache abschließend: Die durchgehende, überall glatte Kamera-Formel
-  // unten (right = Kreuzprodukt aus Blickrichtung und Welt-Y, up = Kreuzprodukt daraus) ist über
-  // den GESAMTEN erlaubten phi-Bereich (±83°, der exakte Pol bei 90° wird nie erreicht) und für
-  // JEDEN Drehwinkel theta nachweislich glatt (maximale "up"-Richtungsänderung < 0,06° pro 0,001-
-  // rad-Schritt, überall). Der einzige Grund, warum es überhaupt zu einem Sprung/einer Animation
-  // kam, war die zusätzliche, in der 14./21./24. Runde eingeführte Sonderkorrektur, die exakt beim
-  // Ansicht auf "Oben" den "up"-Vektor künstlich um 180° dreht, um dort "Y positiv nach oben"
-  // zu erzwingen - und die dann beim Verlassen dieser Ansicht wieder zurückgedreht werden musste.
-  // Diese Sonderkorrektur (poleCorrectT/cam.snapView/die alte harte Formel) wurde komplett entfernt -
-  // buildBasis() verwendet seither IMMER und ausnahmslos dieselbe, durchgehende Formel (siehe dort).
-  // Jede Drehung, egal wie klein oder groß, egal von welchem Startwinkel aus, erzeugt dadurch eine
-  // dazu proportionale, glatte Änderung der Ansicht - kein Sprung, keine erzwungene Animation, nirgends.
-  //
-  // Bugfix 27. Runde (Benutzer: "Die Darstellung ist falsch beim Laden des Programms. Die
-  // Programme haben alle dieselbe Logik (X+ nach rechts, Y+ nach hinten, Z+ nach oben), aber hier
-  // ist die 'Top'-Ansicht eigentlich die 'Unten'-Ansicht"): Rechnerisch beweisbar (siehe Herleitung
-  // im Kommentar bei buildBasis() unten) liefert diese eine durchgehende, stetige Formel für JEDE
-  // Kamera-Position OBERHALB des Bauteils mit korrektem "X nach rechts" zwangsläufig "Y nach
-  // unten" (Chiralitäts-Zwang eines rechtshändigen Dreibeins - keine vermeidbare Eigenart der
-  // Formel, sondern eine mathematische Tatsache), und für JEDE Position UNTERHALB des Bauteils
-  // zwangsläufig "Y nach oben". Bis zur 26. Runde war deshalb ausgerechnet die als "top" benannte
-  // Kamera-Position (senkrecht OBERHALB) mit dem Vorschau-Knopf "↑ Oben" verknüpft - exakt die
-  // Position, die "Y nach unten" liefert. Der Fix vertauscht deshalb NUR, welche der beiden
-  // ohnehin bereits vorhandenen (und weiterhin unverändert glatten) Kamera-Positionen den Namen
-  // "top" bzw. "bottom" trägt (siehe VIEW_PRESETS unten) - "↑ Oben" (und damit auch das
-  // Standard-Laden eines Programms sowie der "⌂ Home"-Knopf, die beide VIEW_PRESETS.top
-  // verwenden) zeigt jetzt die Position, die "X rechts, Y oben" liefert (vormals als "bottom"
-  // bezeichnet); "↓ Unten" zeigt entsprechend die andere. An buildBasis() selbst, an der
-  // durchgehenden Formel oder an ihrer bewiesenen Stetigkeit ändert sich dadurch NICHTS - eine
-  // reine Umbenennung, kein neuer Sonderfall, keinerlei Risiko eines erneuten Sprungs beim Drehen.
-
-  // "Vorn"/"Hinten" (Benutzer: "Bitte bei den Ansichten 'Oben', 'Unten' usw. noch die Ansicht
-  // 'Vorn' und 'Hinten' ergänzen für die Ansicht von vorne und hinten"): dieselbe horizontale
-  // Kamera-Höhe wie "Links"/"Rechts" (phi=0), aber um die Y-Achse statt der X-Achse geschwenkt
-  // (theta=0/π statt ±π/2). Welche Seite "vorne" bzw. "hinten" ist, folgt direkt aus der bereits
-  // an anderer Stelle vom Benutzer selbst bestätigten Achs-Konvention (siehe Kommentar bei der
-  // 27. Runde oben: "X+ nach rechts, Y+ nach hinten, Z+ nach oben") - "hinten" ist also die +Y-
-  // Seite, "vorne" die -Y-Seite. Mit z = eyeDist·cos(phi)·cos(theta) (siehe cameraPosition() unten)
-  // und toRender() (render-Z = CNC-Y) liefert theta=0 eine Kamera auf der +Y-Seite (blickt Richtung
-  // -Y, also von hinten nach vorne = "Ansicht von hinten"), theta=π entsprechend eine Kamera auf
-  // der -Y-Seite ("Ansicht von vorne") - exakt demselben Muster wie "Links" (Kamera auf der -X-
-  // Seite, theta=-π/2) und "Rechts" (Kamera auf der +X-Seite, theta=+π/2) folgend.
-  const VIEW_PRESETS = {
-    top: { theta: 0, phi: -1.45 },
-    bottom: { theta: 0, phi: 1.45 },
-    left: { theta: -Math.PI / 2, phi: 0 },
-    right: { theta: Math.PI / 2, phi: 0 },
-    front: { theta: Math.PI, phi: 0 },
-    back: { theta: 0, phi: 0 }
-  };
-
-  // Leitet theta/phi direkt aus einer beliebigen Blickrichtungs-Normale her (71. Runde, direkte
-  // Folgemeldung: "Alle Kanten des Würfels sollten anklickbar sein ... Beim Klick auf die Ecke,
-  // soll der dann auch auf die Perspektive springen") - die Umkehrung der Formel aus
-  // cameraPosition() weiter unten (x = cos(phi)*sin(theta), y = sin(phi), z = cos(phi)*cos(theta)
-  // relativ zum Zielpunkt, jeweils ein Einheitsvektor): phi = asin(ny), theta = atan2(nx, nz).
-  // Für die 12 Kanten-Facetten des Gizmos (Normale mit zwei gleich großen Komponenten, |ny| =
-  // 1/√2 ≈ 0.707 -> phi ≈ ±45°) und die 8 Eck-Facetten (drei gleich große Komponenten, |ny| =
-  // 1/√3 ≈ 0.577 -> phi ≈ ±35,26°) liegt phi dadurch immer deutlich innerhalb des ohnehin beim
-  // Drehen per Maus geltenden Grenzbereichs (±1.45, siehe pointermove-Verdrahtung weiter unten)
-  // und niemals am exakten Pol (±π/2) - der Clamp unten ist rein defensiv (identische Grenzen wie
-  // beim manuellen Drehen), nicht rechnerisch nötig. Die sechs Hauptseiten verwenden bewusst
-  // WEITERHIN ihre benannten VIEW_PRESETS-Werte statt dieser generischen Formel, da "top"/"bottom"
-  // dort absichtlich NICHT den exakten Pol (phi=±π/2) tragen (siehe Kommentar bei buildBasis()
-  // weiter unten, der diesen speziellen Sonderfall ausführlich herleitet) - eine rein normalen-
-  // basierte Berechnung für (0,∓1,0) würde exakt auf diesen Pol treffen und dort eine entartete
-  // Kamera-Basis riskieren.
-  function viewAnglesFromNormal(n) {
-    const phi = Math.max(-1.45, Math.min(1.45, Math.asin(Math.max(-1, Math.min(1, n.y)))));
-    const theta = Math.atan2(n.x, n.z);
-    return { theta, phi };
-  }
-
   // ============================================================
-  // Rhombenkuboktaeder-Gizmo (70. Runde, Sebastian, Punkt 3: "Bitte ein Rhombenkuboktaeder
-  // einbauen für die Ansichten, rechts oben im 3D der Simulation ... Die Hauptseiten sollen
-  // beschriftet sein mit 'Top' ... 'Bottom' ... 'Left' ... 'Right' ... 'Front' ... 'Rear'")
+  // Würfel + Kompass-Gizmo ("Würfel zum Drehen", Release 141, Sebastian: "Bitte einen anderen
+  // Würfel zum Drehen umsetzen, da die Bedienung etwas irritierend ist") - ersetzt den bis
+  // einschließlich Release 140 verwendeten Rhombenkuboktaeder-Gizmo (70./71./73. Runde) durch
+  // einen klassischen, nur noch 6-seitigen Würfel (Punkt 1: "Es gibt nur noch einen
+  // 'klassischen' 6-seitigen Würfel ... Top, Bottom, Front, Rear, Left, Right") mit einem
+  // umgebenden Kompass-Ring (Punkt 2: "N" "W" "E" "S"). Die 12 Kanten-/8 Eck-Facetten des
+  // vorherigen Gizmos (samt der dafür nötigen viewAnglesFromNormal()-Normalenformel) entfallen
+  // dadurch ersatzlos - nur noch die sechs benannten Hauptseiten sind überhaupt vorhanden bzw.
+  // anklickbar (Punkt 6: "Das Konzept ist ähnlich des aktuellen Würfels, nur etwas simpler").
   // ============================================================
-  // Geometrie: Standard-Eckpunktkonstruktion eines Rhombenkuboktaeders = alle Permutationen von
-  // (±1, ±1, ±(1+√2)) - 24 Ecken, 26 Flächen (6 große, achsenparallele Quadrate = die
-  // "Hauptseiten" unten, 12 kleinere Fasen-Quadrate an den Kanten des gedachten Würfels, 8
-  // Eck-Dreiecke), 48 Kanten (Euler-Probe: 24-48+26=2, stimmt). Wird EINMALIG beim Laden des
-  // Skripts berechnet (kein CNC-Bezug, rein statische Geometrie) und bewusst DIREKT im
+  // Geometrie: ein einfacher, im Ursprung zentrierter Würfel (±1 in jeder Achse) - EINMALIG beim
+  // Laden des Skripts berechnet (kein CNC-Bezug, rein statische Geometrie) und bewusst DIREKT im
   // Render-Koordinatensystem aufgebaut (Y = Bildschirm-"oben", identisch zu toRender()/
   // cameraPosition()/buildBasis() weiter unten) - dadurch lässt sich buildBasis(cameraPosition())
   // 1:1 unverändert für die Gizmo-Rotation wiederverwenden, siehe drawViewGizmo() weiter unten.
   //
-  // Zuordnung Hauptseite -> Beschriftung/View-Preset: rechnerisch hergeleitet (nicht geraten,
-  // siehe Rückmeldung an Sebastian zu dieser Runde) aus der tatsächlichen Kamera-Position der
-  // sechs VIEW_PRESETS (cameraPosition() für jedes Preset ausgewertet, jeweils als Einheitsvektor
-  // von cam.target aus): "top" sitzt (trotz des Namens, siehe historischer Kommentar bei
-  // VIEW_PRESETS/buildBasis oben) bei render-Y ≈ -0.99 (nicht +1) usw. - die sichtbare
-  // Hauptseite bei einer bestimmten Kamera-Position ist immer die, deren Flächennormale zur
-  // Kamera zeigt, also näherungsweise dieselbe Richtung wie der jeweilige camPos-Einheitsvektor
-  // hat. Daraus ergibt sich diese eindeutige, achsenreine Zuordnung:
+  // Zuordnung Hauptseite -> Beschriftung/View-Preset: unverändert aus dem vorherigen Gizmo
+  // übernommen (dort rechnerisch aus der tatsächlichen Kamera-Position der sechs VIEW_PRESETS
+  // hergeleitet, siehe Projekt-Dokumentation Abschnitt zum Würfel-Gizmo für die Herleitung):
   //   Normale (0,-1,0) -> "Top"    -> VIEW_PRESETS.top
   //   Normale (0, 1,0) -> "Bottom" -> VIEW_PRESETS.bottom
   //   Normale (-1,0,0) -> "Left"   -> VIEW_PRESETS.left
   //   Normale (1, 0,0) -> "Right"  -> VIEW_PRESETS.right
   //   Normale (0,0,-1) -> "Front"  -> VIEW_PRESETS.front
   //   Normale (0,0, 1) -> "Rear"   -> VIEW_PRESETS.back (intern weiterhin "back" benannt, siehe
-  //                                    VIEW_PRESETS - "Rear" ist nur die von Sebastian
-  //                                    vorgegebene Beschriftung dieser Seite, keine neue Ansicht)
+  //                                    VIEW_PRESETS - "Rear" ist nur die Beschriftung dieser
+  //                                    Seite, keine neue Ansicht)
   const GIZMO_MAIN_FACES = [
     { axis: 'x', sign: 1, label: 'Right', view: 'right' },
     { axis: 'x', sign: -1, label: 'Left', view: 'left' },
@@ -8238,84 +8510,81 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     { axis: 'z', sign: -1, label: 'Front', view: 'front' }
   ];
   const GIZMO_FACES = (function buildGizmoFaces() {
-    const b = 1 + Math.SQRT2; // "große" Koordinate (Kantenlänge des gedachten Würfels + Fase)
     const AXES = ['x', 'y', 'z'];
-    // Baut einen Eckpunkt aus expliziten Achse-Name -> Wert-Zuordnungen (statt einer
-    // positionsbasierten "übrige Achsen"-Reihenfolge, die bei den Fasen-Quadraten unten leicht zu
-    // Verwechslungen führt, WELCHE der beiden übrigen Achsen gerade gemeint ist, sobald die beiden
-    // Hauptachsen des jeweiligen Achsenpaars nicht direkt aufeinanderfolgen, z. B. x/z statt x/y -
-    // ausführlich per Node-Skript gegengeprüft, siehe Rückmeldung an Sebastian zu dieser Runde:
-    // Euler-Probe V-E+F=2, alle 48 Kanten exakt doppelt geteilt, alle Flächen exakt eben/planar).
     function coord(overrides) {
       const p = { x: 0, y: 0, z: 0 };
       Object.assign(p, overrides);
       return p;
     }
-    const faces = [];
-    // 6 Hauptseiten (große Quadrate) - Eckpunkt-Reihenfolge um die Fläche herum (nicht nach
-    // Vorzeichen-Bitmuster), damit daraus ein einfaches (nicht überkreuztes) Viereck entsteht.
-    GIZMO_MAIN_FACES.forEach(mf => {
+    // Nur noch die 6 Würfel-Hauptseiten (±1 je Achse) - Eckpunkt-Reihenfolge um die Fläche herum
+    // (nicht nach Vorzeichen-Bitmuster), damit daraus ein einfaches (nicht überkreuztes) Viereck
+    // entsteht. Die Flächennormale eines achsenparallelen Würfels ist trivial (die Achsenrichtung
+    // selbst) - keine eigene Durchschnittsberechnung wie beim vorherigen Rhombenkuboktaeder nötig.
+    return GIZMO_MAIN_FACES.map(mf => {
       const others = AXES.filter(a => a !== mf.axis);
       const verts = [
-        coord({ [mf.axis]: mf.sign * b, [others[0]]: 1, [others[1]]: 1 }),
-        coord({ [mf.axis]: mf.sign * b, [others[0]]: 1, [others[1]]: -1 }),
-        coord({ [mf.axis]: mf.sign * b, [others[0]]: -1, [others[1]]: -1 }),
-        coord({ [mf.axis]: mf.sign * b, [others[0]]: -1, [others[1]]: 1 })
+        coord({ [mf.axis]: mf.sign, [others[0]]: 1, [others[1]]: 1 }),
+        coord({ [mf.axis]: mf.sign, [others[0]]: 1, [others[1]]: -1 }),
+        coord({ [mf.axis]: mf.sign, [others[0]]: -1, [others[1]]: -1 }),
+        coord({ [mf.axis]: mf.sign, [others[0]]: -1, [others[1]]: 1 })
       ];
-      faces.push({ verts, label: mf.label, view: mf.view, main: true });
+      const normal = coord({ [mf.axis]: mf.sign });
+      return { verts, label: mf.label, view: mf.view, normal };
     });
-    // 12 Fasen-Quadrate (je zwei Hauptachsen i/j, je zwei Vorzeichen si/sj - zwei Eckpunkte aus
-    // der "i"-Klasse (Achse j fest bei sj), zwei aus der "j"-Klasse (Achse i fest bei si), jeweils
-    // über die dritte, freie Achse (±1) verbunden - "freeAxis" wird explizit ermittelt statt
-    // positionsbasiert angenommen, siehe Kommentar bei coord() oben).
-    const AXIS_PAIRS = [['x', 'y'], ['x', 'z'], ['y', 'z']];
-    AXIS_PAIRS.forEach(([i, j]) => {
-      const freeAxis = AXES.find(a => a !== i && a !== j);
-      [1, -1].forEach(si => {
-        [1, -1].forEach(sj => {
-          const verts = [
-            coord({ [i]: si * b, [j]: sj, [freeAxis]: 1 }),
-            coord({ [i]: si * b, [j]: sj, [freeAxis]: -1 }),
-            coord({ [j]: sj * b, [i]: si, [freeAxis]: -1 }),
-            coord({ [j]: sj * b, [i]: si, [freeAxis]: 1 })
-          ];
-          faces.push({ verts, label: null, view: null, main: false });
-        });
-      });
-    });
-    // 8 Eck-Dreiecke (je ein Eckpunkt pro Klasse, gleiches Vorzeichen-Tripel).
-    [1, -1].forEach(sx => {
-      [1, -1].forEach(sy => {
-        [1, -1].forEach(sz => {
-          const verts = [
-            coord({ x: sx * b, y: sy, z: sz }),
-            coord({ y: sy * b, x: sx, z: sz }),
-            coord({ z: sz * b, x: sx, y: sy })
-          ];
-          faces.push({ verts, label: null, view: null, main: false });
-        });
-      });
-    });
-    // Flächennormale eines konvexen, im Ursprung zentrierten Polyeders ≈ normalisierter
-    // Eckpunkt-Durchschnitt - für Rückflächenausblendung/Beleuchtung ausreichend genau, ohne
-    // eigene Kreuzprodukt-Berechnung je Fläche.
-    faces.forEach(f => {
-      let nx = 0, ny = 0, nz = 0;
-      f.verts.forEach(v => { nx += v.x; ny += v.y; nz += v.z; });
-      const len = Math.hypot(nx, ny, nz) || 1;
-      f.normal = { x: nx / len, y: ny / len, z: nz / len };
-    });
-    return faces;
   })();
-  const GIZMO_MARGIN = 18;   // Bildschirm-Randabstand (px) - siehe .gizmo-home-btn im Stylesheet
-  const GIZMO_RADIUS = 34;   // Ziel-Bildschirmgröße (px) der größten Gizmo-Ausdehnung
-  const GIZMO_SCALE = GIZMO_RADIUS / (1 + Math.SQRT2); // Welt- auf Bildschirm-Einheiten
-  const GIZMO_RING_WIDTH = 14; // Breite (px) des Rings knapp außerhalb des Würfels, der die
-  // Roll-Drehung um die eigene Achse auslöst (73. Runde, Punkt 1c) - siehe hitTestGizmoRing().
+  // Kompass (Punkt 2/3/4: "Um den Würfel herum gibt es einen Kompass ... beschriftet mit 'N' 'W'
+  // 'E' und 'S' ... Standardansicht ... zeigt 'N' auch nach oben, 'S' nach unten, E ist rechts und
+  // W links ... dreht sich mit"). N/S/E/W sind vier FESTE Richtungen im selben Weltkoordinaten-
+  // system wie die Würfel-Hauptseiten, rechnerisch so gewählt, dass sie in der Standard-"Top"-
+  // Ansicht exakt die vom Benutzer verlangte Lage ergeben (per Node-Nachrechnung der tatsächlichen
+  // buildBasis()-Vektoren bei VIEW_PRESETS.top verifiziert: dort zeigt "up" auf der Bildfläche
+  // ganz überwiegend in render-+Z, "right" in render-+X) - East/West fallen damit mit der
+  // Right/Left-Würfelseite zusammen, North/South mit der Rear/Front-Würfelseite:
+  //   (1,0,0) -> "E" (= dieselbe Richtung wie die "Right"-Seite)
+  //   (-1,0,0) -> "W" (= dieselbe Richtung wie die "Left"-Seite)
+  //   (0,0,1) -> "N" (= dieselbe Richtung wie die "Rear"-Seite)
+  //   (0,0,-1) -> "S" (= dieselbe Richtung wie die "Front"-Seite)
+  // Da sich der Würfel UND der Kompass über dieselbe Kamera-"basis" drehen (siehe drawViewGizmo()
+  // weiter unten), dreht sich die Beschriftung des Kompasses automatisch exakt synchron mit, ganz
+  // ohne eigene Rotationslogik (Punkt 4) - ein Drehen der Ansicht "am Würfel" bzw. direkt im 3D
+  // (dieselbe pointermove-Verdrahtung, siehe weiter unten) wirkt sich auf beide gleichermaßen aus.
+  //
+  // "view" (Release 147, Sebastian: "Beim Klick auf 'W' -> Ansicht von Left [usw.]") - jeder
+  // Kompass-Buchstabe bekommt jetzt genau das VIEW_PRESETS-Ziel der Würfelseite, mit der er laut
+  // obiger Zuordnung ohnehin dieselbe Weltrichtung teilt (W=Left/E=Right/N=Rear="back"/S=Front) -
+  // ein Klick auf den Buchstaben landet dadurch exakt bei derselben Ansicht wie ein Klick auf die
+  // gleichnamige Würfelseite, siehe hitTestGizmo()/drawViewGizmo() weiter unten für die
+  // Klick-Erkennung.
+  const COMPASS_DIRS = [
+    { label: 'E', dir: { x: 1, y: 0, z: 0 }, view: 'right' },
+    { label: 'N', dir: { x: 0, y: 0, z: 1 }, view: 'back' },
+    { label: 'W', dir: { x: -1, y: 0, z: 0 }, view: 'left' },
+    { label: 'S', dir: { x: 0, y: 0, z: -1 }, view: 'front' }
+  ];
+  const GIZMO_MARGIN = 18;      // Bildschirm-Randabstand (px) - siehe .gizmo-home-btn im Stylesheet
+  const GIZMO_SCALE = 20;       // Welt- (Würfel-Halbkante = 1) auf Bildschirm-Pixel-Einheiten
+  const GIZMO_RING_LOCAL_RADIUS = 2.3; // Kompass-Kreisradius in denselben Welteinheiten wie der
+  // Würfel - deutlich außerhalb von dessen Eckpunkt-Abstand vom Zentrum (√3 ≈ 1.73), damit immer
+  // ein sichtbarer Spalt zwischen Würfel und Kompass bleibt, unabhängig vom Blickwinkel.
+  const GIZMO_RING_WIDTH = 15;  // Breite (px) des Kompass-Rings - exakt der von Sebastian
+  // vorgegebene Wert ("leicht grau hinterlegtem 15 Pixel breitem Kreis", Punkt 2). Derselbe Ring
+  // dient weiterhin (73. Runde, Punkt 1c, unverändert übernommen) als Ziehfläche für die
+  // Roll-Drehung um die eigene Achse - siehe hitTestGizmoRing() weiter unten.
+  const GIZMO_TOTAL_RADIUS = GIZMO_RING_LOCAL_RADIUS * GIZMO_SCALE + GIZMO_RING_WIDTH / 2 + 7;
+  // Gesamter Platzbedarf (px) inkl. Ring UND Beschriftung, für die Bildschirm-Platzierung
+  // (gcx/gcy in drawViewGizmo()) sowie den äußeren Rand der Ring-Ziehfläche in hitTestGizmoRing().
   let gizmoHitFaces = []; // vom letzten drawViewGizmo()-Aufruf befüllt, siehe hitTestGizmo()
   let gizmoCenterPos = null; // Bildschirm-Mittelpunkt {x,y} des zuletzt gezeichneten Gizmos, oder
   // null, wenn das Gizmo im aktuellen Frame gar nicht gezeichnet wurde (73. Runde) - Grundlage für
   // hitTestGizmoRing() unten.
+  // Kompass-Beschriftung (Release 147, Sebastian, zwei Wünsche in derselben Runde: "1 W E N und S
+  // 50% größer machen 2 ... Beim Klick auf 'W' -> Ansicht von Left [usw.]"):
+  // GIZMO_COMPASS_FONT_SIZE = 8.5px (bisherige, weiterhin für die Würfel-Beschriftung verwendete
+  // Schriftgröße, siehe drawViewGizmo()) * 1.5 = 12.75px. gizmoCompassHits (analog zu
+  // gizmoHitFaces, aber für die vier Kompass-Buchstaben statt der sechs Würfelseiten) wird bei
+  // jedem drawViewGizmo()-Aufruf neu befüllt und von hitTestGizmo() mitgeprüft, siehe dort.
+  const GIZMO_COMPASS_FONT_SIZE = 8.5 * 1.5;
+  let gizmoCompassHits = [];
 
   // Anzeige-Label für die Maschinen-Badge, wenn der Maschinentyp per Kopftext-Erkennung
   // eindeutig ermittelt wurde (current.machine !== 'UNKNOWN'). Sebastian, 9. Runde: "Wenn
@@ -8520,13 +8789,18 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // Kamera zuvor (beim vorherigen Programm) gedreht war. Beim bloßen Wechsel zwischen
     // Arbeitsgängen innerhalb desselben Programms (setScope) bleibt der Blickwinkel dagegen
     // erhalten, nur die Kamera-Distanz/das Ziel wird neu eingerahmt.
-    cam.theta = VIEW_PRESETS.top.theta;
-    cam.phi = VIEW_PRESETS.top.phi;
-    // Roll (73. Runde, Punkt 1c) ebenfalls zurücksetzen - dieselbe Begründung wie bei
-    // applyViewAngles()/#btnHomeView (siehe dort): ein neu geladenes Programm soll immer exakt
-    // aufrecht von "Oben" starten, unabhängig von einer beim vorherigen Programm/DXF evtl. per
-    // Ring-Drehung gesetzten Neigung.
-    cam.roll = 0;
+    // Release 143: cam.orient (statt theta/phi/roll einzeln) direkt auf die Top-Orientierung
+    // gesetzt - basisFromAngles() ist sicher für diesen festen Winkel (siehe Herleitung dort),
+    // schließt zugleich die vormals separate Roll-Rücksetzung mit ein (Top-Orientierung hat keine
+    // Neigung).
+    cam.orient = basisFromAngles(VIEW_PRESETS.top.theta, VIEW_PRESETS.top.phi);
+    // Release 153 - ein neu geladenes Programm setzt die Blickrichtung oben direkt auf dieselbe
+    // Top-Orientierung wie der "Top"-Knopf (siehe goTopView()) - zählt damit konsequenterweise
+    // ebenfalls als "Perspektive wurde zwischendurch geändert" und setzt den Home-Zyklus-Zähler
+    // zurück, siehe homeViewCycleIndex/goHomeView() weiter unten. Ein reiner Arbeitsgang-Scope-
+    // Wechsel (setScope) ändert cam.orient dagegen NICHT (siehe Kommentar direkt oberhalb) und
+    // lässt den Zähler deshalb bewusst unangetastet.
+    homeViewCycleIndex = 0;
     // Jedes neu geladene Programm startet mit allen Arbeitsgängen sichtbar (siehe
     // toggleOpVisibility) - Ausblendungen eines vorherigen Programms sollen sich nicht auf ein
     // neu geladenes übertragen.
@@ -10007,11 +10281,36 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     scrubToLineIdx(lineIdx);
   }
 
+  // Release 153 (Sebastian: "Anderes Verhalten, wenn 'Arbeitsgänge' zugeklappt wird. Ist-Zustand
+  // beim 'Zuklappen' Arbeitsgänge klappen zu, das CNC-Programmcode Fenster wird breiter und
+  // springt mit dem rechten Rand dorthin wo vorher die Grenze von 'Arbeitsgänge' war. Soll-Zustand:
+  // Arbeitsgänge wird zugeklappt und das CNC-Programmcode Fenster bleibt gleich breit. Man hat also
+  // mehr vom Simulationsbereich quasi.") - Ursache: ".tree" (CNC-Programmcode) ist innerhalb von
+  // ".program-body" als "flex:1 1 auto" angelegt (siehe Stylesheet weiter oben) und füllt dadurch
+  // automatisch JEDEN Freiraum, den ".ops-col" beim Einklappen (Breite 182px -> 32px, siehe
+  // ".ops-col.collapsed") innerhalb der UNVERÄNDERTEN Gesamtbreite ".sidebar" (= sidebarWidth,
+  // siehe setSidebarWidth() weiter unten) freigibt - exakt das von Sebastian beschriebene
+  // "Programmcode wird breiter, rechter Rand wandert". Fix: Die Gesamtbreite der Seitenleiste wird
+  // beim Ein-/Ausklappen jetzt UM GENAU DEN BETRAG mitgeändert, den "Arbeitsgänge" dabei frei gibt
+  // bzw. wieder beansprucht (opsColSpacePx() VOR und NACH dem Umschalten verglichen, siehe dort) -
+  // ".tree" bleibt dadurch rechnerisch exakt gleich breit (derselbe Freiraum bleibt ihm erhalten),
+  // während die Gesamtbreite ".sidebar"/"--sidebar-w" entsprechend schrumpft bzw. wächst. Da
+  // ".main" diese Breite als feste Grid-Spalte neben dem 3D-Bereich (".main { grid-template-
+  // columns: var(--sidebar-w) 6px 1fr }", 3D-Spalte "1fr") führt, wandert der dadurch frei
+  // werdende Platz automatisch und unmittelbar dem 3D-Simulationsbereich zu - "mehr vom
+  // Simulationsbereich", exakt wie gefordert. setSidebarWidth() klemmt das Ergebnis weiterhin auf
+  // den üblichen Mindest-/Höchstwert (siehe dort), eine Seitenleiste, die bereits am unteren
+  // Anschlag war, kann dadurch nicht unter diesen Mindestwert schrumpfen - ".tree" wird in diesem
+  // Randfall minimal breiter als zuvor, statt die Mindestbreite der gesamten Seitenleiste zu
+  // unterschreiten.
   btnOpsToggle.addEventListener('click', () => {
+    const opsSpaceBefore = opsColSpacePx();
     opsCollapsed = !opsCollapsed;
     opsColEl.classList.toggle('collapsed', opsCollapsed);
     opsResizerEl.classList.toggle('inert', opsCollapsed);
     btnOpsToggle.textContent = opsCollapsed ? '«' : '»';
+    const opsSpaceAfter = opsColSpacePx();
+    setSidebarWidth(sidebarWidth - (opsSpaceBefore - opsSpaceAfter));
   });
 
   // Hebt die aktuell simulierte Zeile (points[scrubIdx].lineIdx) in der linken Programmansicht
@@ -10394,9 +10693,13 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Unterlage für das Kamera-Framing - leeres Array, solange kein DXF geladen ist ODER es gerade
   // ausgeblendet ist (dann soll es, wie das Werkzeug bei showTool=false, auch die automatische
   // Rahmung nicht mehr beeinflussen). Bei gesetzter Bauteilstärke (67. Runde) wird zusätzlich die
-  // um die Stärke nach unten versetzte "Unterseite" mit eingerechnet, damit die komplette
-  // Extrusion (siehe drawDxf()) vollständig im Bild bleibt statt am unteren Rand abgeschnitten
-  // zu werden.
+  // um die Stärke versetzte zweite Kontur mit eingerechnet, damit die komplette Extrusion (siehe
+  // drawDxf()) vollständig im Bild bleibt statt am Rand abgeschnitten zu werden. Release 146
+  // (Sebastian: "Wenn ich die Stärke angebe, wird die nach unten berechnet, also ins negative Z.
+  // Die soll nach oben gehen!"): Vorzeichen gedreht - "+dxfThickness" statt "-dxfThickness" (siehe
+  // ausführliche Begründung bei drawDxf() unten) - bei einem negativen Stärkewert (seit Release
+  // 146 möglich, s. confirmDxfThickness()) ergibt sich dadurch automatisch wieder die alte
+  // Richtung (nach unten, ins negative Z).
   function dxfPointsForBounds() {
     if (!dxfGeometry || !dxfVisible) return [];
     const pts = [];
@@ -10407,7 +10710,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     dxfGeometry.strokes.filter(s => !dxfHiddenLayers.has(s.layer)).forEach(s => s.points.forEach(p => {
       const tp = dxfTransformPoint(p);
       pts.push(tp);
-      if (dxfThickness) pts.push({ x: tp.x, y: tp.y, z: tp.z - dxfThickness });
+      if (dxfThickness) pts.push({ x: tp.x, y: tp.y, z: tp.z + dxfThickness });
     }));
     return pts;
   }
@@ -10456,53 +10759,150 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Einfluss (rechnerisch beweisbar: cx/cy hängen nur von der Blickrichtung ab, nicht vom Abstand
   // der Kamera zum Ziel, und "scale" verwendet ohnehin weiterhin unverändert cam.dist) - einzig
   // der für die Clipping-Prüfung verwendete Tiefenwert cz verschiebt sich um genau die Differenz.
+  // Bugfix (Release 142, Sebastian: "Wenn ich ein Programm lade und nach oben Kippe (nichts ist
+  // invertiert eingestellt), dann springt das Programm plötzlich auf den Kopf", mit GIF-Beleg) -
+  // Release 142 faltete cam.phi beim Auswerten ("asin(sin(phi))" + kompensierender theta-Versatz),
+  // um das unbegrenzte Ziehen aus Release 141 (Punkt 7) numerisch sicher zu halten. Das behob
+  // zuverlässig einen (seltenen) Sonderfall bei SEHR weit gezogenem phi, NICHT aber den eigentlich
+  // gemeldeten Bug: Sebastian (nach Release 142 erneut): "Der Flip ist immer noch drin ... aus der
+  // Top-Ansicht die Simulation 'greifen', dann ein Stück nach oben bewegen -> Zeichnung 'flippt'.
+  // Nach unten bewegen ist in Ordnung, nur nach oben nicht." Eigene Nachrechnung (Playwright,
+  // buildBasis() direkt für phi-Werte knapp vor/nach dem Pol ausgewertet, theta dabei exakt
+  // konstant gehalten) zeigt den TATSÄCHLICHEN Mechanismus: Die Faltung aus Release 142 ändert an
+  // "camPos" für den ERSTEN Pol-Durchgang rechnerisch GAR NICHTS (foldedPhi/foldedTheta liefern
+  // exakt dieselbe camPos wie unmittelbar OHNE Faltung, solange phi noch keinen zweiten Pol
+  // überschritten hat) - das eigentliche Problem liegt nicht in der POSITION (die war, mit oder
+  // ohne Faltung, immer schon stetig), sondern im ANSCHLIESSENDEN buildBasis()-Schritt selbst:
+  // "right = normalize(cross(fwd, {0,1,0}))" ist das Kreuzprodukt aus der Blickrichtung und einer
+  // FESTEN Welt-Hochachse. Exakt am Zenit/Nadir (fwd parallel zu {0,1,0}) schrumpft dieses
+  // Kreuzprodukt auf Länge 0 UND WÄCHST DIREKT DANACH IN DIE ENTGEGENGESETZTE RICHTUNG wieder (eine
+  // numerisch nachgerechnete, mathematische Tatsache: beim stetigen Durchqueren des Pols entlang
+  // eines Meridians - konstantes theta - kehrt sich die Steigung des Kreuzprodukts zwangsläufig um,
+  // vergleichbar damit, dass "Osten" unmittelbar jenseits des Nordpols plötzlich in die
+  // entgegengesetzte Himmelsrichtung zeigt). Normalisiert ("right = ...normalize(...)") wird daraus
+  // ein scharfer 180°-Sprung GENAU am Pol - unabhängig davon, ob phi vorher gefaltet wurde oder
+  // nicht, da beide Varianten exakt dieselbe camPos liefern. Das ist KEIN vermeidbarer Formelfehler,
+  // sondern dieselbe Tatsache, die diese Kamera-Formel schon in der 14./21./24./27. Runde dieses
+  // Projekts beschäftigt hat (siehe historischer Kontext bei VIEW_PRESETS oben) - damals umgangen,
+  // indem phi per Clamping NIE den exakten Pol erreichte. Release 141 (Punkt 7) hat dieses Clamping
+  // bewusst entfernt, wodurch der Pol beim Ziehen jetzt tatsächlich überquert wird - der seitdem
+  // sichtbare Flip ist die zwangsläufige Folge.
+  //
+  // Fix (Release 143): Nicht mehr versuchen, "right"/"up" bei JEDEM Frame neu aus der aktuellen
+  // Blickrichtung und einer FESTEN externen Referenz (Welt-Hochachse) zu berechnen - genau dieser
+  // Rückgriff auf eine feste äußere Referenz ist es, der am Pol zwangsläufig entartet. Stattdessen
+  // wird die Kamera-Orientierung (cam.orient = {right, up, fwd}) jetzt als EIGENER, dauerhafter
+  // Zustand geführt und bei jeder Zieh-Bewegung nur noch INKREMENTELL weitergedreht (siehe
+  // rotateCamOrientation() weiter unten) - wie eine echte, in der Hand gehaltene Kamera, die beim
+  // Neigen nie "vergisst", wo "rechts" gerade ist, auch nicht beim Überqueren des Zenits. theta/phi
+  // bleiben als feste Zielwinkel für die VIEW_PRESETS (Würfel-Seiten/"Home") erhalten, sind aber
+  // nicht mehr der laufende Kamera-Zustand selbst - deshalb liefert cameraPosition() die Position
+  // jetzt direkt aus cam.orient.fwd + Zieldistanz.
   function cameraPosition() {
-    const cp = Math.cos(cam.phi);
     const eyeDist = Math.max(cam.dist, cam.minEyeDist);
     return {
-      x: cam.target.x + eyeDist * cp * Math.sin(cam.theta),
-      y: cam.target.y + eyeDist * Math.sin(cam.phi),
-      z: cam.target.z + eyeDist * cp * Math.cos(cam.theta)
+      x: cam.target.x - cam.orient.fwd.x * eyeDist,
+      y: cam.target.y - cam.orient.fwd.y * eyeDist,
+      z: cam.target.z - cam.orient.fwd.z * eyeDist
     };
   }
 
-  function buildBasis(camPos) {
-    const fwd = normalize(sub(cam.target, camPos));
-    // Bugfix (Benutzer, 14. Runde, seit der 25. Runde OHNE jede Sonderfall-Korrektur mehr - siehe
-    // die ausführliche Herleitung im Kommentar bei "const VIEW_PRESETS" weiter oben, der die
-    // Vorgeschichte (14./21./24. Runde) und den Grund für die Entfernung dokumentiert). Diese EINE,
-    // immer und ausnahmslos verwendete Formel - "right" per Kreuzprodukt aus Blickrichtung und
-    // Welt-Y-Achse, "up" als rechtshändiges Kreuzprodukt daraus - ist über den gesamten erlaubten
-    // phi-Bereich (±83°, der exakte Pol bei 90° wird durch das cam.phi-Clamping nie erreicht) und
-    // für jeden Drehwinkel theta nachweislich glatt/stetig (rechnerisch bestätigt, siehe Bugfix
-    // 25. Runde) - jede noch so kleine Kamera-Drehung erzeugt dadurch garantiert nur eine dazu
-    // proportional kleine Änderung von "right"/"up", nie einen Sprung.
-    //
-    // Mathematische Tatsache (nicht vermeidbar, siehe Kommentar bei VIEW_PRESETS oben): Für JEDE
-    // Kamera-Position OBERHALB des Bauteils liefert ein rechtshändiges Dreibein mit korrektem "X
-    // nach rechts" zwangsläufig "Y nach UNTEN" (Chiralitäts-Zwang des Kreuzprodukts), für JEDE
-    // Position UNTERHALB dagegen zwangsläufig "Y nach OBEN". Jede Korrektur, die "Y oben" für eine
-    // bestimmte Kamera-Position dennoch erzwingt, obwohl die Formel dort eigentlich "Y unten"
-    // liefert, muss beim Verlassen dieser Position zwangsläufig wieder rückgängig gemacht werden -
-    // und genau das war in der 21./24. Runde die Ursache der gemeldeten Flip-Bugs (siehe oben). Der
-    // Fix in der 27. Runde umgeht das, ohne diese eine, durchgehend stetige Formel anzutasten: Statt
-    // die Formel für eine bestimmte Kamera-Position zu verbiegen, ist seitdem einfach die Position
-    // mit VON HAUS AUS "X rechts, Y oben" (früher als "bottom" bezeichnet) mit dem Namen "top"
-    // verknüpft (siehe VIEW_PRESETS) - "Unten"/"Links"/"Rechts" liefern unverändert ebenfalls "X
-    // rechts, Y oben" bzw. lagen ohnehin nie in der Kritik.
+  // Rodrigues-Rotationsformel: dreht den Vektor "v" um die als EINHEITSVEKTOR vorausgesetzte Achse
+  // "axis" um den Winkel "angle" (rad, positiv = gegen den Uhrzeigersinn von der Achsenspitze aus
+  // gesehen). Reine, überall glatte Trigonometrie - kein Kreuzprodukt mit einer externen Referenz,
+  // deshalb ohne jede Pol-Problematik, siehe rotateCamOrientation() unten.
+  function rotateAroundAxis(v, axis, angle) {
+    const c = Math.cos(angle), s = Math.sin(angle);
+    const d = dot(axis, v), cr = cross(axis, v);
+    return {
+      x: v.x * c + cr.x * s + axis.x * d * (1 - c),
+      y: v.y * c + cr.y * s + axis.y * d * (1 - c),
+      z: v.z * c + cr.z * s + axis.z * d * (1 - c)
+    };
+  }
+
+  // Berechnet die Kamera-Basis EINMALIG/direkt aus einem festen theta/phi-Winkelpaar - die alte,
+  // vor Release 143 überall verwendete Formel (right per Kreuzprodukt aus Blickrichtung und
+  // Welt-Y-Achse). Für einen festen, bekannten Winkel (wie die sechs VIEW_PRESETS) ist das
+  // weiterhin exakt richtig und sicher, SOLANGE phi nicht genau ±π/2 trifft - keiner der sechs
+  // Voreinstellungen liegt dort (Top/Bottom bewusst bei ±1.45, 83°, siehe VIEW_PRESETS oben).
+  // Ausschließlich für Sprünge auf eine feste Voreinstellung verwendet (applyViewAngles()/
+  // goHomeView()/Programm-Laden) - NIEMALS für die laufende Zieh-Drehung selbst (siehe
+  // rotateCamOrientation() unten, der eigentliche Release-143-Fix).
+  function basisFromAngles(theta, phi) {
+    const cp = Math.cos(phi);
+    const dir = { x: cp * Math.sin(theta), y: Math.sin(phi), z: cp * Math.cos(theta) };
+    const fwd = normalize({ x: -dir.x, y: -dir.y, z: -dir.z });
     let right = normalize(cross(fwd, { x: 0, y: 1, z: 0 }));
     if (!isFinite(right.x) || len(right) < 1e-6) right = { x: 1, y: 0, z: 0 };
-    let up = cross(right, fwd);
-    // Roll (73. Runde, siehe Kommentar bei "const cam" oben): dreht "right"/"up" gemeinsam um die
-    // Blickachse "fwd" - eine reine 2D-Drehung innerhalb der zu "fwd" senkrechten Ebene, ändert an
-    // "fwd" selbst nichts. cam.roll ist 0 im Normalfall (jede feste Voreinstellung setzt es
-    // zurück), deshalb hier bewusst kein Kurzschluss-"if" nötig - cos(0)=1/sin(0)=0 ist ohnehin
-    // die Identität.
-    const cr = Math.cos(cam.roll), sr = Math.sin(cam.roll);
-    const rolledRight = { x: right.x * cr + up.x * sr, y: right.y * cr + up.y * sr, z: right.z * cr + up.z * sr };
-    const rolledUp = { x: up.x * cr - right.x * sr, y: up.y * cr - right.y * sr, z: up.z * cr - right.z * sr };
-    right = rolledRight; up = rolledUp;
-    return { fwd, right, up };
+    const up = cross(right, fwd);
+    return { right, up, fwd };
+  }
+
+  // Nach jeder inkrementellen Drehung neu orthonormalisiert: "fwd" normalisiert, "right" per
+  // Gram-Schmidt gegen "fwd" orthogonalisiert und erneut normalisiert, "up" aus beiden frisch per
+  // Kreuzprodukt hergeleitet. Die Rodrigues-Drehung selbst erhält Orthonormalität rechnerisch exakt
+  // - dies ist reine Vorsicht gegen Gleitkomma-Drift bei sehr vielen aufeinanderfolgenden kleinen
+  // Drehschritten (z. B. ein langes, langsames Ziehen).
+  function renormalizeOrient(o) {
+    const fwd = normalize(o.fwd);
+    const right = normalize(sub(o.right, scaleVec(fwd, dot(o.right, fwd))));
+    const up = cross(right, fwd);
+    return { right, up, fwd };
+  }
+
+  // Der eigentliche Release-143-Fix: dreht die PERSISTENTE Kamera-Orientierung (cam.orient)
+  // inkrementell um die seit dem letzten Frame gezogene Strecke, statt sie (wie vor Release 143)
+  // bei jedem Frame komplett neu aus einer festen Welt-Referenz zu berechnen. dTheta (horizontal)
+  // dreht die GESAMTE Basis um die feste Welt-Y-Achse - unverändert dieselbe Drehachse wie das
+  // bisherige "theta", exakt dasselbe Drehgefühl. dPhi (vertikal) dreht anschließend um die
+  // AKTUELLE (soeben horizontal mitgedrehte) "right"-Achse DER KAMERA SELBST, nicht um eine feste
+  // externe Referenz - das ist der entscheidende Unterschied zur alten Formel: Weil "right" hier
+  // niemals mehr "von außen" (fixe Welt-Hochachse) neu nachgeschlagen, sondern immer nur aus seinem
+  // eigenen letzten Wert heraus weitergedreht wird, kann es beim Überqueren des Zenits/Nadirs nicht
+  // mehr abrupt invertieren - es dreht sich stattdessen einfach glatt mit, wie bei einer echten, in
+  // der Hand gehaltenen Kamera. Dasselbe gilt jetzt uneingeschränkt für beliebig viele
+  // aufeinanderfolgende Pol-Durchquerungen (Punkt 7, "keine unsichtbare Barriere", bleibt dadurch
+  // sogar robuster erfüllt als in Release 141/142).
+  function rotateCamOrientation(dTheta, dPhi) {
+    const worldUp = { x: 0, y: 1, z: 0 };
+    let right = rotateAroundAxis(cam.orient.right, worldUp, dTheta);
+    let up = rotateAroundAxis(cam.orient.up, worldUp, dTheta);
+    let fwd = rotateAroundAxis(cam.orient.fwd, worldUp, dTheta);
+    up = rotateAroundAxis(up, right, dPhi);
+    fwd = rotateAroundAxis(fwd, right, dPhi);
+    cam.orient = renormalizeOrient({ right, up, fwd });
+    // Release 153 (Sebastian: "Wenn zwischendurch die Perspektive manuell geändert worden ist ...,
+    // springt man beim Klick auf 'Home' wieder auf Ansicht 1. Aktuell wird die letzte Ansicht
+    // gespeichert und 'fortgesetzt'.") - ein manuelles Ziehen (freier 3D-Bereich UND Ziehen auf dem
+    // Würfel-Gizmo selbst, beide laufen über diese eine Funktion, siehe deren einzige Aufrufstelle
+    // weiter unten) setzt den Home-Zyklus-Zähler zurück, damit der NÄCHSTE "Home"-Klick wieder bei
+    // Ansicht 1 beginnt, statt den zuletzt erreichten Zählerstand unbemerkt "fortzusetzen". Siehe
+    // homeViewCycleIndex/goHomeView() weiter unten für die vollständige Herleitung der Sequenz.
+    homeViewCycleIndex = 0;
+  }
+
+  // Reine Drehung um die eigene Blickachse (Ring-Ziehen am Gizmo, siehe gizmoRollPointerId weiter
+  // unten) - dieselbe Rodrigues-Drehung wie rotateCamOrientation(), nur um die aktuelle "fwd"-Achse
+  // statt um Welt-Y/"right". Ersetzt das bisherige separate "cam.roll" (das erst in buildBasis()
+  // angewendet wurde) durch eine direkte, sofortige Drehung von cam.orient selbst.
+  function rollCamOrientation(deltaRoll) {
+    const right = rotateAroundAxis(cam.orient.right, cam.orient.fwd, deltaRoll);
+    const up = rotateAroundAxis(cam.orient.up, cam.orient.fwd, deltaRoll);
+    cam.orient = renormalizeOrient({ right, up, fwd: cam.orient.fwd });
+    // Release 153 - manuelles Rollen (Ring-Ziehen am Gizmo) zählt ebenfalls als manuelle
+    // Perspektivänderung, siehe ausführliche Begründung bei rotateCamOrientation() direkt oberhalb.
+    homeViewCycleIndex = 0;
+  }
+
+  function buildBasis(camPos) {
+    // camPos wird nicht mehr ausgewertet - seit Release 143 ist cam.orient der alleinige,
+    // persistente Ausgangspunkt (siehe Herleitung bei cameraPosition()/rotateCamOrientation()
+    // oben); camPos wird UMGEKEHRT aus cam.orient.fwd abgeleitet, nicht umgekehrt. Der Parameter
+    // bleibt aus Kompatibilitätsgründen erhalten (alle bisherigen Aufrufstellen rufen weiterhin
+    // "buildBasis(cameraPosition())" auf). Eine flache Kopie wird zurückgegeben, damit kein
+    // Aufrufer versehentlich den persistenten Kamera-Zustand selbst mutiert.
+    return { right: { ...cam.orient.right }, up: { ...cam.orient.up }, fwd: { ...cam.orient.fwd } };
   }
 
   // Verschiebt (pan) den Kamera-Zielpunkt in Bildschirmrichtung, sodass die Bahn dem Mauszeiger
@@ -10601,14 +11001,18 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   function computeBakeParams(w, h) {
     return {
       w, h,
-      theta: cam.theta, phi: cam.phi, dist: cam.dist,
-      // roll (73. Runde, Punkt 1c) muss hier ZWINGEND mit rein: buildBasis() liefert bei
-      // geändertem cam.roll ein anderes right/up und damit eine andere Projektion (proj()) für
-      // Raster/Achsen/DXF/Bahn - ohne diesen Eintrag würde ein reines Rollen (theta/phi/dist
-      // bleiben dabei unverändert) vom Bake-Cache fälschlich als "keine strukturelle Änderung"
-      // erkannt, wodurch nur das ungebackene Gizmo/Werkzeug/Marker (siehe render()) sichtbar
-      // mitgedreht hätte, Raster/DXF/Bahn aber eingefroren stehen geblieben wären.
-      roll: cam.roll,
+      dist: cam.dist,
+      // Kamera-Orientierung (Release 143: cam.orient statt theta/phi/roll) muss hier ZWINGEND mit
+      // rein: buildBasis() liefert bei geänderter Orientierung ein anderes right/up/fwd und damit
+      // eine andere Projektion (proj()) für Raster/Achsen/DXF/Bahn - ohne diese Einträge würde eine
+      // reine Dreh-/Roll-Bewegung (dist/target bleiben dabei unverändert) vom Bake-Cache fälschlich
+      // als "keine strukturelle Änderung" erkannt, wodurch nur das ungebackene Gizmo/Werkzeug/
+      // Marker (siehe render()) sichtbar mitgedreht hätte, Raster/DXF/Bahn aber eingefroren stehen
+      // geblieben wären. right UND fwd zusammen erfassen jede mögliche Orientierungsänderung
+      // (horizontal/vertikal/Roll) vollständig - "up" ergibt sich aus beiden und muss nicht separat
+      // verglichen werden.
+      orRx: cam.orient.right.x, orRy: cam.orient.right.y, orRz: cam.orient.right.z,
+      orFx: cam.orient.fwd.x, orFy: cam.orient.fwd.y, orFz: cam.orient.fwd.z,
       tx: cam.target.x, ty: cam.target.y, tz: cam.target.z,
       showRapid, hasStarted,
       hiddenOpsVersion,
@@ -10631,7 +11035,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   function bakeParamsEqual(a, b) {
     return !!a && !!b &&
       a.w === b.w && a.h === b.h &&
-      a.theta === b.theta && a.phi === b.phi && a.dist === b.dist && a.roll === b.roll &&
+      a.dist === b.dist &&
+      a.orRx === b.orRx && a.orRy === b.orRy && a.orRz === b.orRz &&
+      a.orFx === b.orFx && a.orFy === b.orFy && a.orFz === b.orFz &&
       a.tx === b.tx && a.ty === b.ty && a.tz === b.tz &&
       a.showRapid === b.showRapid && a.hasStarted === b.hasStarted &&
       a.hiddenOpsVersion === b.hiddenOpsVersion &&
@@ -10701,7 +11107,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // Benutzerfarben gesetzt hat, sonst unverändert wie bisher --panel-2.
       ctx.fillStyle = newParams.bg;
       ctx.fillRect(0, 0, w, h);
-      drawGrid(proj);
+      // Release 154 - Bodenraster jetzt ein-/ausschaltbar (siehe gridVisible/setGridVisible()
+      // weiter oben), Standard unverändert "an" (DEFAULT_GRID_VISIBLE).
+      if (gridVisible) drawGrid(proj);
       drawAxisGizmo(proj);
       // DXF-Unterlage (Sebastian: "was am Ende quasi unter der gefrästen Kontur liegt") - VOR der
       // Kontur (segments-Schleife direkt danach) gezeichnet: dieser Canvas-Renderer arbeitet ohne
@@ -11347,38 +11755,49 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     });
   }
 
-  // Rhombenkuboktaeder-Gizmo (70. Runde, Punkt 3) - siehe GIZMO_FACES/GIZMO_MAIN_FACES weiter
-  // oben. Wird direkt auf die sichtbare Canvas gezeichnet (ctx statt proj/Bake-Canvas - jeden
-  // Frame frisch wie drawMeasure()/drawAngleMeasure() weiter oben, NICHT gebacken, da es sich mit
-  // jeder Kamera-Drehung live mitdrehen muss), rechts oben mit demselben Randabstand wie der
-  // Home-Knopf daneben (siehe .gizmo-home-btn in template_top.html). "basis" ist exakt dieselbe
-  // {fwd,right,up}, die auch die Haupt-Kamera für den 3D-Bereich selbst verwendet (siehe
-  // buildBasis()/cameraPosition() weiter oben) - das Gizmo dreht sich dadurch IMMER exakt
-  // synchron zur tatsächlichen Blickrichtung, ganz ohne eigene Kamera-/Rotationslogik. Da
-  // buildBasis() nachweislich nur von cam.theta/cam.phi abhängt (siehe ausführliche Herleitung
-  // dort), NICHT von cam.dist/cam.target, ist diese Wiederverwendung 1:1 korrekt, auch während
-  // Zoom/Pan der Hauptansicht.
+  // Würfel + Kompass-Gizmo (Release 141, ersetzt den Rhombenkuboktaeder aus 70./71./73. Runde -
+  // siehe GIZMO_FACES/GIZMO_MAIN_FACES/COMPASS_DIRS weiter oben für die Geometrie/Herleitung).
+  // Wird direkt auf die sichtbare Canvas gezeichnet (ctx statt proj/Bake-Canvas - jeden Frame
+  // frisch wie drawMeasure()/drawAngleMeasure() weiter oben, NICHT gebacken, da es sich mit jeder
+  // Kamera-Drehung live mitdrehen muss), rechts oben mit demselben Randabstand wie der Home-Knopf
+  // daneben (siehe .gizmo-home-btn in template_top.html). "basis" ist exakt dieselbe {fwd,right,
+  // up}, die auch die Haupt-Kamera für den 3D-Bereich selbst verwendet (siehe buildBasis()/
+  // cameraPosition() weiter oben) - sowohl Würfel ALS AUCH Kompass-Ring/-Beschriftung drehen sich
+  // dadurch IMMER exakt synchron zur tatsächlichen Blickrichtung mit, ganz ohne eigene Kamera-/
+  // Rotationslogik (Punkt 4: "die aktuelle Position der Sim wird korrekt mit dem Würfel oben
+  // rechts dargestellt, das N, W, E und S dreht sich mit"). Da buildBasis() nachweislich nur von
+  // cam.theta/cam.phi abhängt (siehe ausführliche Herleitung dort), NICHT von cam.dist/cam.target,
+  // ist diese Wiederverwendung 1:1 korrekt, auch während Zoom/Pan der Hauptansicht.
   //
-  // Sichtbarkeit/Rückflächenausblendung: bei einem konvexen, im Ursprung zentrierten Polyeder
-  // ist eine Fläche GENAU DANN von außen sichtbar, wenn ihre (nach außen zeigende) Normale zur
-  // Kamera hin zeigt - "fwd" zeigt (siehe buildBasis()) von der Kamera WEG in die Szene hinein,
-  // eine sichtbare Fläche hat also dot(normal, fwd) < 0. Diese eine Bedingung reicht bei einem
-  // konvexen Körper bereits vollständig aus (keine sich gegenseitig verdeckenden sichtbaren
-  // Flächen möglich) - ein zusätzliches Tiefensortieren (Painter's Algorithm, wie sonst im
-  // 3D-Bereich bei den DXF-/Fräsbahn-Strichzügen nötig) entfällt hier bewusst.
+  // Würfel-Rückflächenausblendung: bei einem konvexen, im Ursprung zentrierten Körper ist eine
+  // Fläche GENAU DANN von außen sichtbar, wenn ihre (nach außen zeigende) Normale zur Kamera hin
+  // zeigt - "fwd" zeigt (siehe buildBasis()) von der Kamera WEG in die Szene hinein, eine sichtbare
+  // Fläche hat also dot(normal, fwd) < 0. Diese eine Bedingung reicht bei einem konvexen Körper
+  // bereits vollständig aus (keine sich gegenseitig verdeckenden sichtbaren Flächen möglich).
+  //
+  // Der Kompass-Ring dagegen ist eine ECHTE 3D-Kreislinie (Radius GIZMO_RING_LOCAL_RADIUS) in der
+  // horizontalen Weltebene (y=0) und wird DESHALB NIE kulliert/weggelassen, nur über dieselbe
+  // proj2D()-Projektion wie der Würfel gezeichnet - dadurch erscheint er bei schräger Ansicht ganz
+  // natürlich als Ellipse (wie im von Sebastian geschickten Referenzbild) und bei exakter Top-/
+  // Bottom-Ansicht als echter Kreis. Bei exakter Front-/Rear-/Left-/Right-Ansicht (phi=0) liegt die
+  // y=0-Ebene exakt in der Blickrichtung ("von der Seite betrachtet") und der Ring projiziert sich
+  // dadurch rechnerisch korrekt auf eine flache Linie zusammen - das ist physikalisch richtig
+  // (ein von der Seite betrachteter horizontaler Ring ist eine Linie) und kein Darstellungsfehler,
+  // braucht also keine Sonderbehandlung.
   function drawViewGizmo(basis, w, h) {
     gizmoHitFaces = [];
+    gizmoCompassHits = [];
     gizmoCenterPos = null;
     // Ursprünglich (70./71. Runde) nur bei geladenem CNC-Programm sichtbar ("!points.length"
-    // -> kein 3D-Bereich, kein Gizmo nötig). Wunsch (73. Runde, Punkt 3): "Der Rhombenkuboktaeder
-    // soll auch beim DXF zu sehen sein" - das Gizmo dient dem Drehen der Ansicht, und die braucht
-    // man beim reinen DXF-Betrachten (ohne geladenes Programm) genauso. Deshalb zusätzlich
-    // sichtbar, wenn eine DXF geladen UND eingeblendet ist (dxfVisible, siehe drawDxf()); ohne
-    // Programm UND ohne (sichtbare) DXF bleibt es weiterhin ausgeblendet, da dann gar kein
-    // 3D-Inhalt existiert, den man drehen könnte.
+    // -> kein 3D-Bereich, kein Gizmo nötig). Wunsch (73. Runde, Punkt 3): "Das Gizmo soll auch
+    // beim DXF zu sehen sein" - das Gizmo dient dem Drehen der Ansicht, und die braucht man beim
+    // reinen DXF-Betrachten (ohne geladenes Programm) genauso. Deshalb zusätzlich sichtbar, wenn
+    // eine DXF geladen UND eingeblendet ist (dxfVisible, siehe drawDxf()); ohne Programm UND ohne
+    // (sichtbare) DXF bleibt es weiterhin ausgeblendet, da dann gar kein 3D-Inhalt existiert, den
+    // man drehen könnte.
     if (!points.length && !(dxfGeometry && dxfVisible)) return;
-    const gcx = w - GIZMO_MARGIN - GIZMO_RADIUS;
-    const gcy = GIZMO_MARGIN + GIZMO_RADIUS;
+    const gcx = w - GIZMO_MARGIN - GIZMO_TOTAL_RADIUS;
+    const gcy = GIZMO_MARGIN + GIZMO_TOTAL_RADIUS;
     gizmoCenterPos = { x: gcx, y: gcy };
     const proj2D = v => {
       const rx = v.x * basis.right.x + v.y * basis.right.y + v.z * basis.right.z;
@@ -11390,6 +11809,49 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     ctx.font = '700 8.5px "Open Sans", ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+
+    // --- Kompass-Ring zuerst zeichnen (Punkt 2), damit der Würfel optisch darüber liegt --------
+    const RING_SEGMENTS = 48; // genug Segmente für eine optisch glatte Ellipse/Kreis
+    ctx.beginPath();
+    for (let i = 0; i <= RING_SEGMENTS; i++) {
+      const ang = (i / RING_SEGMENTS) * Math.PI * 2;
+      const p = proj2D({ x: GIZMO_RING_LOCAL_RADIUS * Math.cos(ang), y: 0, z: GIZMO_RING_LOCAL_RADIUS * Math.sin(ang) });
+      if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+    }
+    // "leicht grau hinterlegt" (Punkt 2) - dezentes, halbtransparentes Grau, Breite exakt
+    // GIZMO_RING_WIDTH (15px, siehe Konstante weiter oben).
+    ctx.strokeStyle = 'rgba(120,120,132,0.35)';
+    ctx.lineWidth = GIZMO_RING_WIDTH;
+    ctx.stroke();
+
+    // Kompass-Beschriftung (N/W/E/S, Punkt 2/3/4) - radial knapp außerhalb des Rings platziert,
+    // damit die Buchstaben nicht vom grauen Ring-Strich überdeckt werden. Immer gezeichnet, keine
+    // Rückflächenausblendung - der Kompass ist eine flache Ebene, "hinten" ergibt für ihn keinen
+    // Sinn (anders als beim Würfel).
+    // Release 147 (Sebastian, Punkt 1: "W E N und S 50% größer machen") - eigene, größere
+    // Schriftgröße NUR für diese vier Buchstaben (GIZMO_COMPASS_FONT_SIZE = 8.5px*1.5, siehe
+    // Konstante oben); direkt danach wieder auf die bisherigen 8.5px zurückgesetzt, damit die
+    // Würfel-Seitenbeschriftung (Top/Bottom/Left/Right/Front/Rear weiter unten) unverändert bleibt.
+    ctx.fillStyle = cssVar('--ink') || '#1a1a1a';
+    ctx.font = `700 ${GIZMO_COMPASS_FONT_SIZE}px "Open Sans", ui-sans-serif, system-ui, sans-serif`;
+    const labelLocalRadius = GIZMO_RING_LOCAL_RADIUS + (GIZMO_RING_WIDTH / 2 + 5) / GIZMO_SCALE;
+    // Release 147, Punkt 2 (Sebastian: "Beim Klick auf 'W' -> Ansicht von Left [usw.]") - für jeden
+    // Buchstaben wird zusätzlich zur Darstellung eine rechteckige Klickfläche (Bildschirmposition
+    // ± halbe gemessene Textbreite/-höhe, plus etwas Toleranz) in gizmoCompassHits gemerkt;
+    // hitTestGizmo() prüft sie zusammen mit den Würfelseiten, siehe dort.
+    COMPASS_DIRS.forEach(c => {
+      const p = proj2D({ x: c.dir.x * labelLocalRadius, y: 0, z: c.dir.z * labelLocalRadius });
+      ctx.fillText(c.label, p.x, p.y);
+      const tw = ctx.measureText(c.label).width;
+      gizmoCompassHits.push({
+        x: p.x, y: p.y,
+        halfW: tw / 2 + 4, halfH: GIZMO_COMPASS_FONT_SIZE / 2 + 4,
+        view: c.view
+      });
+    });
+    ctx.font = '700 8.5px "Open Sans", ui-sans-serif, system-ui, sans-serif';
+
+    // --- Würfel (Punkt 1), auf dem Kompass-Ring liegend -----------------------------------------
     GIZMO_FACES.forEach(f => {
       const facing = f.normal.x * basis.fwd.x + f.normal.y * basis.fwd.y + f.normal.z * basis.fwd.z;
       if (facing > -0.02) return; // Rückseite - siehe Kommentar oben, nicht zeichnen
@@ -11398,34 +11860,25 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       ctx.beginPath();
       pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
       ctx.closePath();
-      if (f.main) {
-        // Hauptseiten (beschriftet) dezent in der Akzentfarbe eingefärbt, damit sie sich von den
-        // reinen Fasen-/Eck-Facetten abheben - Helligkeit variiert mit "shade" für einen
-        // einfachen, aber erkennbaren 3D-Schattierungs-Eindruck.
-        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${(0.28 + shade * 0.42).toFixed(3)})`;
-      } else {
-        ctx.fillStyle = `rgba(120,120,132,${(0.14 + shade * 0.22).toFixed(3)})`;
-      }
+      // Alle sechs Seiten sind jetzt gleichrangige Hauptseiten (kein main/Fasen-Unterschied mehr
+      // wie beim vorherigen Rhombenkuboktaeder) - einheitlich dezent in der Akzentfarbe gefüllt,
+      // Helligkeit variiert mit "shade" für einen einfachen, aber erkennbaren 3D-Schattierungs-
+      // Eindruck.
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${(0.28 + shade * 0.42).toFixed(3)})`;
       ctx.fill();
       ctx.strokeStyle = cssVar('--panel') || '#fff';
       ctx.lineWidth = 1;
       ctx.stroke();
-      if (f.main && f.label) {
-        let lx = 0, ly = 0;
-        pts.forEach(p => { lx += p.x; ly += p.y; });
-        lx /= pts.length; ly /= pts.length;
-        ctx.fillStyle = cssVar('--ink') || '#1a1a1a';
-        ctx.fillText(f.label, lx, ly);
-      }
-      // 71. Runde, direkte Folgemeldung: "Alle Kanten des Würfels sollten anklickbar sein,
-      // aktuell sind das nur Top, Bottom, Rear, Front, Left, Right. Beim Klick auf die Ecke, soll
-      // der dann auch auf die Perspektive springen" - bislang wurden nur die sechs beschrifteten
-      // Hauptseiten in gizmoHitFaces aufgenommen (siehe historischer Kommentar oben); jetzt jede
-      // sichtbare der 26 Flächen (Hauptseiten UND die 12 Kanten-/8 Eck-Facetten), unabhängig von
-      // Beschriftung - "view" bleibt für Hauptseiten der bekannte VIEW_PRESETS-Schlüssel, bei
-      // Kanten/Ecken ist es null und hitTestGizmo() liefert stattdessen "normal" zurück, aus der
-      // der Klick-Handler die Zielperspektive per viewAnglesFromNormal() (siehe oben) berechnet.
-      gizmoHitFaces.push({ points: pts, view: f.view, normal: f.normal });
+      let lx = 0, ly = 0;
+      pts.forEach(p => { lx += p.x; ly += p.y; });
+      lx /= pts.length; ly /= pts.length;
+      ctx.fillStyle = cssVar('--ink') || '#1a1a1a';
+      ctx.fillText(f.label, lx, ly);
+      // Jede der sechs (jetzt immer genau sechs, keine Kanten-/Eck-Facetten mehr) sichtbaren
+      // Seiten hat IMMER ein gültiges "view" (siehe GIZMO_MAIN_FACES weiter oben) - der
+      // Klick-Handler (siehe pointerup-Verdrahtung weiter unten) kann daher direkt
+      // applyViewPreset(hit.view) aufrufen, ohne Sonderfall für fehlendes "view".
+      gizmoHitFaces.push({ points: pts, view: f.view });
     });
     ctx.restore();
   }
@@ -11441,36 +11894,46 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     return inside;
   }
 
-  // Liefert die getroffene Gizmo-Fläche ({view, normal}) an der angegebenen Bildschirmposition
-  // (Client-Koordinaten, wie von Pointer-Events geliefert), oder null - gizmoHitFaces wird bei
-  // jedem drawViewGizmo()-Aufruf (also bei jedem Frame) neu befüllt, spiegelt also immer den
-  // zuletzt gezeichneten, aktuell sichtbaren Zustand wider. Seit der 71. Runde liefert dies für
-  // JEDE der 26 Flächen einen Treffer (nicht mehr nur die sechs beschrifteten Hauptseiten, siehe
-  // Kommentar bei drawViewGizmo() oben) - "view" ist bei Kanten-/Eck-Facetten null, der Aufrufer
-  // (siehe pointerup-Verdrahtung weiter unten) fällt in diesem Fall auf "normal" zurück.
+  // Liefert die getroffene Würfelseite ODER den getroffenen Kompass-Buchstaben ({view, ...}) an
+  // der angegebenen Bildschirmposition (Client-Koordinaten, wie von Pointer-Events geliefert),
+  // oder null - gizmoHitFaces/gizmoCompassHits werden bei jedem drawViewGizmo()-Aufruf (also bei
+  // jedem Frame) neu befüllt, spiegeln also immer den zuletzt gezeichneten, aktuell sichtbaren
+  // Zustand wider. Da der Würfel jetzt nur noch die sechs Hauptseiten hat, liefert ein
+  // Würfel-Treffer immer ein gültiges "view" (Punkt 5: "Wenn ich auf die dementsprechende Seite
+  // beim Würfel klicke, ändert sich die Ansicht in die Richtung"). Release 147 (Sebastian, Punkt 2:
+  // "Beim Klick auf 'W' -> Ansicht von Left [usw.]") - dieselbe Funktion prüft jetzt zusätzlich die
+  // vier Kompass-Buchstaben (gizmoCompassHits, siehe drawViewGizmo()); da beide Ergebnisformen
+  // ({view: ...}) identisch von applyViewPreset() konsumiert werden (siehe pointerdown/pointerup-
+  // Verdrahtung weiter unten), war dafür keine Änderung an den Aufrufstellen nötig - ein Klick auf
+  // den Kompass verhält sich seither exakt wie ein Klick auf die entsprechende Würfelseite.
   function hitTestGizmo(clientX, clientY) {
-    if (!gizmoHitFaces.length) return null;
+    if (!gizmoHitFaces.length && !gizmoCompassHits.length) return null;
     const rect = canvas.getBoundingClientRect();
     const px = clientX - rect.left, py = clientY - rect.top;
     for (const f of gizmoHitFaces) {
       if (pointInPolygon(px, py, f.points)) return f;
     }
+    for (const c of gizmoCompassHits) {
+      if (px >= c.x - c.halfW && px <= c.x + c.halfW && py >= c.y - c.halfH && py <= c.y + c.halfH) return c;
+    }
     return null;
   }
 
   // Ring knapp außerhalb des Würfels (73. Runde, Punkt 1c: "Der Würfel sollte sich auch um die
-  // eigene Achse drehen können") - anders als hitTestGizmo() (Punkt-in-Polygon je Facette) reicht
-  // hier ein einfacher Abstandstest zum zuletzt gezeichneten Gizmo-Mittelpunkt, da der Ring keine
-  // eigene 3D-Geometrie hat, sondern rein 2D um die Bildschirm-Projektion des Würfels liegt. Der
-  // innere Rand liegt knapp INNERHALB von GIZMO_RADIUS, damit auch die abgeflachten Ecken des
-  // Rhombenkuboktaeders (die etwas näher am Zentrum liegen als die "Idealkugel" mit GIZMO_RADIUS)
-  // keine Lücke zwischen Würfel-Fläche und Ring lassen.
+  // eigene Achse drehen können", in Release 141 unverändert übernommen) - ein einfacher
+  // Abstandstest zum zuletzt gezeichneten Gizmo-Mittelpunkt, unabhängig davon, wie der Kompass-Ring
+  // im aktuellen Blickwinkel tatsächlich aussieht (Kreis, Ellipse oder entartet eine flache Linie,
+  // siehe Kommentar bei drawViewGizmo() oben) - als reine Ziehfläche muss er nur "knapp außerhalb
+  // des Würfels" treffen, nicht pixelgenau dem jeweils gezeichneten Ring folgen. Nominal-Radius
+  // GIZMO_RING_LOCAL_RADIUS*GIZMO_SCALE entspricht der Ring-Mittellinie (siehe drawViewGizmo()),
+  // +/- die halbe Ring-Breite plus 4px Toleranz ergibt die Greifzone.
   function hitTestGizmoRing(clientX, clientY) {
     if (!gizmoCenterPos) return false;
     const rect = canvas.getBoundingClientRect();
     const px = clientX - rect.left, py = clientY - rect.top;
     const d = Math.hypot(px - gizmoCenterPos.x, py - gizmoCenterPos.y);
-    return d > GIZMO_RADIUS - 4 && d <= GIZMO_RADIUS + GIZMO_RING_WIDTH;
+    const ringR = GIZMO_RING_LOCAL_RADIUS * GIZMO_SCALE;
+    return d > ringR - GIZMO_RING_WIDTH / 2 - 4 && d <= ringR + GIZMO_RING_WIDTH / 2 + 4;
   }
 
   // Wunsch (Benutzer: "Besser wäre, wenn bei der ersten Bearbeitung die Ansicht leer startet und
@@ -11604,16 +12067,26 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // Bauteilstärke (67. Runde, Sebastian: "DXF Funktion um Bauteilstärke anzugeben") - Annahme
     // (siehe Dokumentation 9.8a): die DXF-Unterlage stellt die Aufstandsfläche/Oberseite des
     // Werkstücks dar (liegt "unter der gefrästen Kontur", siehe Abschnitt 9.8) - eine angegebene
-    // Bauteilstärke > 0 wird deshalb NACH UNTEN (kleineres Z) extrudiert: dieselbe Kontur nochmal
-    // um die Stärke tiefer gezeichnet (etwas transparenter, als "Unterseite" erkennbar), plus
-    // dünne senkrechte Verbindungslinien an jedem Konturpunkt - ein reines Drahtgitter-Volumen,
-    // keine gefüllte Fläche, konsistent mit der bestehenden, bewusst dezenten Drahtgitter-Optik
-    // der DXF-Unterlage selbst (siehe Kommentar oben, "dezent und einheitlich in --dxf-color").
-    // Seit der 72. Runde je Strichzug in dessen aufgelöster Farbe (s.o.), nicht mehr zwingend
-    // einheitlich - sonst unverändert.
+    // Bauteilstärke wird als zweite Kontur um die Stärke versetzt gezeichnet (etwas
+    // transparenter, als "Unterseite"/"zweite Ebene" erkennbar), plus dünne senkrechte
+    // Verbindungslinien an jedem Konturpunkt - ein reines Drahtgitter-Volumen, keine gefüllte
+    // Fläche, konsistent mit der bestehenden, bewusst dezenten Drahtgitter-Optik der DXF-
+    // Unterlage selbst (siehe Kommentar oben, "dezent und einheitlich in --dxf-color"). Seit der
+    // 72. Runde je Strichzug in dessen aufgelöster Farbe (s.o.), nicht mehr zwingend einheitlich -
+    // sonst unverändert.
+    // Release 146 (Sebastian: "Wenn ich die Stärke angebe, wird die nach unten berechnet, also
+    // ins negative Z. Die soll nach oben gehen! ... Negative Eingaben beim DXF ermöglichen.
+    // Dadurch wandert das Bauteil dann tatsächlich ins negative Z"): Bis einschließlich Release
+    // 145 wurde hier IMMER mit "-dxfThickness" nach unten versetzt, UND negative Eingaben wurden
+    // in confirmDxfThickness() auf 0 geklemmt (`Math.max(0, val)`) - ein positiver Wert ging
+    // also zwangsläufig ins negative Z, eine andere Richtung war gar nicht erreichbar. Jetzt
+    // "+dxfThickness" (nach OBEN, ins positive Z, bei positivem Wert) UND der Klemmwert in
+    // confirmDxfThickness() entfernt: Ein negativer Stärkewert ergibt dadurch wieder exakt die
+    // alte Richtung (nach unten, ins negative Z) - beide Richtungen sind damit über das
+    // Vorzeichen der Eingabe frei wählbar, ohne zwei getrennte Felder/Schalter einzuführen.
     if (dxfThickness) {
       ctx.globalAlpha = 0.5;
-      strokeGroupedByColor(transformedStrokes, proj, -dxfThickness);
+      strokeGroupedByColor(transformedStrokes, proj, dxfThickness);
       ctx.globalAlpha = 0.65;
       ctx.setLineDash(dashed ? [2, 3] : []);
       // Performance (79. Runde): dieselbe Bündelung wie oben, jetzt auch für die senkrechten
@@ -11633,7 +12106,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         for (const s of strokesOfColor) {
           for (const p of s.pts) {
             const sTop = proj(toRender({ x: p.x, y: p.y, z: p.z }));
-            const sBottom = proj(toRender({ x: p.x, y: p.y, z: p.z - dxfThickness }));
+            const sBottom = proj(toRender({ x: p.x, y: p.y, z: p.z + dxfThickness }));
             if (!sTop || !sBottom) continue;
             ctx.moveTo(sTop.x, sTop.y);
             ctx.lineTo(sBottom.x, sBottom.y);
@@ -12184,7 +12657,27 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // Schnittrichtung gegenüber einer eventuell angrenzenden, ganz anders ausgerichteten
       // Eilgang-Positionierbewegung.
       const t = sawCutDirectionAt(scrubIdx);
-      axis = { x: -t.y, y: t.x, z: 0 };
+      // Release 145 (Sebastian, Korrektur zu Release 144, mit zwei gegenübergestellten
+      // Screenshots/roter Markierung: "Die Mitte des Sägeblatts soll an der Mitte des
+      // Spannfutters sitzen, aber am unteren Ende des Zylinders. Aktuell sitzt die Säge fast
+      // mittig im Spannfutter."): Das Vorzeichen von `axis` selbst wird jetzt gegenüber vorher
+      // UMGEDREHT (statt wie in Release 144 stattdessen `tip`/`top` zu vertauschen) - rechnerisch
+      // ergibt das in Weltkoordinaten DIESELBE Seite für `tip`/`top` wie der Release-144-Fix
+      // (behebt also weiterhin Sebastians ursprüngliche Seiten-Beschwerde, "Spannfutter war
+      // falsch herum"), behält aber zusätzlich die Grundannahme bei, auf der die gesamte
+      // Halter-Berechnung weiter unten (`holderAttach`/`holderOrigin`, direkt an `top`) beruht:
+      // `axis` zeigt IMMER von `tip` Richtung `top` (genau wie beim normalen, nicht-Sägeblatt-
+      // Werkzeug im `else`-Zweig: dort "top = tip + axis*toolLength"). Der reine tip/top-Tausch
+      // aus Release 144 hatte diese Annahme unbemerkt verletzt (bei UNVERÄNDERTEM `axis`, aber
+      // vertauschtem tip/top, zeigte `axis` danach von `top` RICHTUNG `tip`, also genau
+      // andersherum) - dadurch wuchs die Halter-Baugruppe (die immer "von `origin` aus in
+      // +axis-Richtung" gezeichnet wird, siehe drawToolHolder()) nicht mehr vom Sägeblatt WEG,
+      // sondern AUF es ZU bzw. bei größeren Profillängen sogar DURCH es hindurch - kombiniert mit
+      // dem ohnehin viel zu großen HSK63_CLAMP_INSET für ein nur wenige mm dickes Sägeblatt (s.u.)
+      // das Ergebnis: ein großer, falsch orientierter Leerraum zwischen Scheibe und Halter, den
+      // Sebastian hier zurückmeldet. Mit der Achsumkehr hier wächst die Halter-Baugruppe wieder
+      // korrekt vom Sägeblatt weg (wie bei jedem normalen Werkzeug auch).
+      axis = { x: t.y, y: -t.x, z: 0 };
       // Mittelpunkt (Punkt d: "an der Stelle der X und Y Koordinate") - bewusst die UNVERÄNDERTEN
       // Programmkoordinaten `p.x`/`p.y`, NICHT `tipX`/`tipY` mit einem eventuellen G41/G42-
       // Seitenversatz: Ein Seitenversatz um den vollen Sägeradius (typischerweise deutlich über
@@ -12198,7 +12691,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // Die Sägeblattstärke (`p.toolLength`, siehe 9.7 "BLADE") wird - anders als die Länge eines
       // normalen Fräsers (einseitig von der Spitze weg) - MITTIG auf die Kontur-Mittellinie
       // zentriert (die Scheibe schneidet symmetrisch um den programmierten Bahnpunkt), da die
-      // Bahn selbst die Mitte des gesägten Schlitzes darstellt.
+      // Bahn selbst die Mitte des gesägten Schlitzes darstellt. `tip`/`top` verwenden hier wieder
+      // dieselbe Formel wie ursprünglich (vor Release 144) - "top = center + axis*half" -, jetzt
+      // aber mit dem oben umgekehrten `axis`: welche der beiden (für sich genommen
+      // gleichwertigen, da die Scheibe symmetrisch ist) Stirnseiten in Weltkoordinaten "top" wird
+      // (und damit, wo das Spannfutter ansetzt), bleibt dadurch identisch zu Release 144.
       const half = p.toolLength / 2;
       tip = { x: center.x - axis.x * half, y: center.y - axis.y * half, z: center.z - axis.z * half };
       top = { x: center.x + axis.x * half, y: center.y + axis.y * half, z: center.z + axis.z * half };
@@ -12285,7 +12782,19 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // absichtlich nicht mehr gelesen (siehe TOOL_MODE_RE/sec.toolMode-Zuweisung in parser.js
       // bzw. oben für die weiterhin bestehende, aber auf die Dialog-Vorbelegung beschränkte Rolle
       // von toolMode).
-      const clampInset = HSK63_CLAMP_INSET;
+      // Release 145 (Sebastian, Sägenposition-Korrektur, siehe ausführlichen Kommentar oben bei
+      // der `axis`-Berechnung): HSK63_CLAMP_INSET (78.01mm) ist für die "eingespannte Länge"
+      // eines normalen Fräser-SCHAFTS kalibriert (siehe dessen Kommentar oben, typische
+      // Schaftlängen deutlich über 78mm) - bei einem Sägeblatt ist `p.toolLength` aber nicht die
+      // Schaftlänge, sondern die SägeblattSTÄRKE (häufig nur wenige mm, hier z. B. 3.06mm). Der
+      // Versatz würde dadurch nicht - wie beabsichtigt - nur den breiten Flansch im (viel
+      // längeren) Werkzeugzylinder "verschwinden" lassen, sondern um ein Vielfaches über das
+      // dünne Sägeblatt hinausschießen und Adapter+Halter mit großem Leerraum vom Sägeblatt
+      // abgesetzt erscheinen lassen - exakt Sebastians Beschwerde ("sitzt fast mittig im
+      // Spannfutter" statt "am unteren Ende des Zylinders"). Für Sägeblätter daher kein Versatz
+      // (0): die Halter-Baugruppe setzt direkt, bündig an `top` an - ein Schaft-Einspann-Konzept
+      // gibt es bei einer dünnen Scheibe ohnehin nicht.
+      const clampInset = p.toolIsBlade ? 0 : HSK63_CLAMP_INSET;
       const holderAttach = {
         x: top.x - axis.x * clampInset,
         y: top.y - axis.y * clampInset,
@@ -12625,7 +13134,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     loadDxf: el('ctxLoadDxf'),
     clearDxf: el('ctxClearDxf'),
     toggleDxfLayers: el('ctxToggleDxfLayers'),
-    moveDxf: el('ctxMoveDxf')
+    moveDxf: el('ctxMoveDxf'),
+    toggleGrid: el('ctxToggleGrid') // Release 154
   };
 
   function closeContextMenu() {
@@ -12652,6 +13162,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     ctxItems.moveDxf.disabled = btnDxfMoveMenu.disabled;
     ctxItems.toggleDxfLayers.disabled = !dxfLayers.length;
     ctxItems.toggleDxfLayers.textContent = dxfHiddenLayers.size > 0 ? T('DXF-Layer anzeigen', 'Show DXF layers') : T('DXF-Layer ausblenden', 'Hide DXF layers');
+
+    // "Raster an"/"Raster aus" (Release 154) - dieselbe Dynamisch-Beschriftung wie bei den beiden
+    // Einträgen oben, hier aber ohne .disabled-Abhängigkeit (das Raster lässt sich unabhängig von
+    // Programm/DXF jederzeit ein-/ausblenden).
+    ctxItems.toggleGrid.textContent = gridVisible ? T('Raster aus', 'Grid off') : T('Raster an', 'Grid on');
   }
 
   function openContextMenu(x, y) {
@@ -12710,6 +13225,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   ctxItems.clearDxf.addEventListener('click', clearDxf);
   ctxItems.toggleDxfLayers.addEventListener('click', toggleAllDxfLayers);
   ctxItems.moveDxf.addEventListener('click', openDxfMovePanel);
+  // "Raster an"/"Raster aus" (Release 154) - Direkt-Umschalter, ruft dieselbe setGridVisible() auf
+  // wie "Übernehmen" im "Raster"-Panel unter "Einstellungen" -> "Erscheinungsbild" (siehe dort) -
+  // beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
+  ctxItems.toggleGrid.addEventListener('click', () => setGridVisible(!gridVisible));
 
   // Enter/Escape in allen Eingabe-Dialogen (Sebastian: "In allen Menüs/Dialogen der Sim wo ich
   // Dinge eingeben kann, möchte ich mit Enter rausgehen können (Bestätigung der Eingabe) oder mit
@@ -13353,6 +13872,60 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // bestätigte Auswahl), z.B. um sie auf einen anderen Rechner/Browser zu übertragen oder als
   // externe Sicherung aufzubewahren. Format: einfaches JSON, damit es sowohl menschenlesbar als
   // auch verlustfrei wieder einlesbar ist.
+  //
+  // Release 154 (Sebastian: "Export der Einstellungen erweitern: Alle Einstellungsmöglichkeiten
+  // wie auch Farben sollen exportiert werden ... Kurz gesagt: Alles was einstellbar ist, soll
+  // aktuell und auch zukünftig(!) mitexportiert werden"): Zwei konkrete Lücken geschlossen (siehe
+  // die beiden folgenden Absätze) UND ein generisches Sicherheitsnetz eingebaut, das auch jede
+  // KÜNFTIGE, versehentlich noch nicht explizit verdrahtete Einstellung automatisch mit exportiert
+  // - "zukünftig(!)" lässt sich in einer reinen Textdatei ohne Build-/Lint-Schritt nicht durch
+  // einen Compile-Fehler erzwingen, wohl aber durch einen Laufzeit-Sammelmechanismus, siehe
+  // KNOWN_EXPORTED_LS_KEYS/collectOtherCncsimSettings() direkt unten.
+  //
+  // (1) Arbeitsgangfarbe (Sebastian: "Bei den Arbeitsgängen-Farben kam nicht alles mit, dort
+  // sollen alle 10 einstellbaren Farben exportiert werden"): Bis einschließlich Release 153 schrieb
+  // "opColors" bei NICHT aktiver eigener Überschreibung bewusst "null" (siehe die seinerzeitige
+  // Begründung, jetzt überholt). Exportiert werden jetzt IMMER alle zehn tatsächlich aktuell
+  // wirksamen Hexcodes - bei aktiver Überschreibung activeOpColors selbst, sonst die gerade live
+  // aufgelösten Theme-Standardfarben (pathColor(i), exakt dieselbe Quelle wie bei
+  // syncOpColorPanelFromActive() oben) - dadurch stehen buchstäblich "alle 10 ... Farben" in jeder
+  // exportierten Datei, genau wie bei "Hintergrundfarbe"/colorProfileText (siehe
+  // buildColorProfileExportText() weiter oben: "exportiert werden immer die gerade tatsächlich
+  // aktiven (aufgelösten) Hintergrundfarben, unabhängig vom Profil-Typ") - beide Farbeinstellungen
+  // verhalten sich damit jetzt konsistent. Die Kehrseite (bewusst in Kauf genommen, exakt wie beim
+  // Farbprofil): Ein Re-Import setzt die zehn Farben fortan immer als FESTE Überschreibung
+  // (activeOpColors), auch wenn sie zum Exportzeitpunkt nur "automatisch" aufgelöst waren - das
+  // Import-Verhalten selbst (siehe weiter unten) bleibt dabei unverändert, nur die Export-Quelle
+  // liefert jetzt nie mehr "null".
+  //
+  // (2) Generisches Sicherheitsnetz (collectOtherCncsimSettings()): ALLE oben bereits über
+  // LS_KEY_* benannten localStorage-Schlüssel (einheitlich "cncsim."-Prefix) sind in
+  // KNOWN_EXPORTED_LS_KEYS aufgeführt und bleiben von diesem Mechanismus unberührt, da sie bereits
+  // mit eigener, auf ihre jeweilige Bedeutung abgestimmter Logik oben im JSON stehen (z.B. "null
+  // bedeutet automatisch" bei Spalteneinstellungen, eigenes Text-Format beim Farbprofil usw.).
+  // JEDER ÜBRIGE "cncsim."-Schlüssel landet automatisch im Sammel-Feld "otherSettings" - eine
+  // künftige Runde, die eine neue Einstellung per LS_KEY_NEUES_DING='cncsim.neuesDing' persistiert,
+  // aber vergisst, sie hier oben explizit auszulesen, verliert sie dadurch NICHT beim Export,
+  // sondern bekommt sie automatisch (als roher String) mit - siehe Import weiter unten für die
+  // entsprechende Rückschreib-Logik.
+  const KNOWN_EXPORTED_LS_KEYS = [
+    LS_KEY_MACHINETYPES_CONFIG, LS_KEY_ACTIVE_MACHINETYPE, LS_KEY_COLOR_PROFILE,
+    LS_KEY_COLUMN_SCALE, LS_KEY_INVERT_TILT, LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
+    LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
+    LS_KEY_GRID_VISIBLE // Release 154, siehe eigenes "gridVisible"-Feld weiter unten
+  ];
+  function collectOtherCncsimSettings() {
+    const out = {};
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key && key.indexOf('cncsim.') === 0 && KNOWN_EXPORTED_LS_KEYS.indexOf(key) === -1) {
+          out[key] = window.localStorage.getItem(key);
+        }
+      }
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return out;
+  }
   function buildSettingsExport() {
     return JSON.stringify({
       version: 1,
@@ -13374,6 +13947,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // da es sich um simple Zahlen-/Hexcode-Werte ohne eigenes externes Austauschformat handelt.
       columnScaleCode: columnScalePreference.code,
       columnScaleOps: columnScalePreference.ops,
+      // "Rotation" (Release 141, Punkt 8) - genau wie bei den Spalteneinstellungen oben als
+      // eigenes, einfaches JSON-Feld (simpler Bool-Wert).
+      invertTilt: invertTiltPreference,
       menuHighlightBg: activeMenuColor.bg,
       menuHighlightInk: activeMenuColor.ink,
       // Schriftfarbe (66. Runde, Sebastian: "Das und alle vorherigen Einstellungen [...] werden
@@ -13382,11 +13958,23 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // darin schlicht nicht auf (kein "null"-Wert), exakt wie im internen activeFontColors.
       fontColors: Object.assign({}, activeFontColors),
       // Arbeitsgangfarbe (Release 100, Sebastian: "Die 'Arbeitsgangfarben' sollen auch in die
-      // json kommen beim Einstellungsexport") - dieselbe Regel wie bei den übrigen Farbeinstell-
-      // ungen: "automatisch" (kein Override) exportiert bewusst null statt der aktuell wirksamen,
-      // theme-abhängigen Hexcodes, damit ein Re-Import auf einem anderen Rechner/Theme weiterhin
-      // "automatisch" bleibt statt versehentlich einen festen Stand einzufrieren.
-      opColors: activeOpColors ? activeOpColors.slice() : null
+      // json kommen beim Einstellungsexport"; Release 154, siehe ausführliche Herleitung oben bei
+      // buildSettingsExport(): "alle 10 einstellbaren Farben exportiert werden" - exportiert
+      // werden jetzt immer alle zehn gerade wirksamen Hexcodes, nie mehr "null").
+      opColors: activeOpColors ? activeOpColors.slice() : Array.from({ length: OP_COLOR_COUNT }, (_, i) => normalizeHex(pathColor(i)) || '#000000'),
+      // Sprache (Release 154, Sebastian: "Alles was einstellbar ist, soll ... mitexportiert
+      // werden") - die DE/EN-Umschaltung (#langSwitch, siehe applyLanguage() weiter oben) wurde
+      // bislang bewusst NICHT exportiert (rein clientseitig über 'cncsimx_lang' gemerkt, siehe
+      // dortiger historischer Kommentar) - zählt nach der jetzt geltenden "alles Einstellbare"-
+      // Vorgabe aber ebenfalls dazu.
+      uiLanguage: currentLang,
+      // "Raster" (Release 154, Sebastian: "Die Einstellung vom Grid wird auch mitexportiert") -
+      // genau wie bei "Rotation" ein einfacher Bool-Wert.
+      gridVisible,
+      // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
+      // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
+      // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
+      otherSettings: collectOtherCncsimSettings()
     }, null, 2);
   }
   el('btnSaveSettings').addEventListener('click', () => {
@@ -13477,6 +14065,20 @@ Sebastian Bäcker (Anschrift wie oben)`,
           applyProgCollapseStage();
         }
       }
+      // "Rotation" (Release 141, Punkt 8): fehlt das Feld (ältere/handgeschriebene Datei), bleibt
+      // die aktuell aktive Vorgabe unangetastet - dieselbe Regel wie bei den übrigen
+      // Einstellungsteilen oben.
+      if (data.invertTilt !== undefined) {
+        invertTiltPreference = data.invertTilt === true || data.invertTilt === '1' || data.invertTilt === 1;
+        persistInvertTilt(invertTiltPreference);
+        syncRotationSettingsPanelFromActive();
+      }
+      // "Raster" (Release 154): fehlt das Feld (ältere Datei), bleibt die aktuell aktive Vorgabe
+      // unangetastet - dieselbe Regel wie bei "Rotation" direkt oberhalb.
+      if (data.gridVisible !== undefined) {
+        setGridVisible(data.gridVisible === true || data.gridVisible === '1' || data.gridVisible === 1);
+        syncGridSettingsPanelFromActive();
+      }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
       // in diesem Fall unverändert activeMenuColor zurück, siehe dort).
@@ -13520,6 +14122,40 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // liefern, dabei aber schon vorher --path-1…10 per Seiteneffekt auf "automatisch"
       // zurückgesetzt und damit die tatsächlich aktive Arbeitsgangfarbe fälschlich überschrieben
       // haben, statt sie wirklich unangetastet zu lassen.
+      //
+      // Sprache (Release 154): fehlt das Feld (ältere Datei), bleibt die aktuell aktive Sprache
+      // unangetastet - dieselbe Regel wie bei den übrigen Einstellungsteilen oben. applyLanguage()
+      // selbst fängt einen ungültigen Wert bereits ab (alles außer 'en' wird zu 'de', siehe dort).
+      if (typeof data.uiLanguage === 'string') {
+        applyLanguage(data.uiLanguage);
+      }
+      // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung bei
+      // buildSettingsExport()/collectOtherCncsimSettings() weiter oben): jeder in "otherSettings"
+      // mitgelieferte Schlüssel wird 1:1 roh in localStorage zurückgeschrieben - das deckt jede
+      // künftige, zum Exportzeitpunkt noch nicht explizit verdrahtete Einstellung ab, OHNE dass
+      // diese Stelle hier wissen muss, was der Schlüssel bedeutet. Bewusste Einschränkung: Da nicht
+      // bekannt ist, welche In-Memory-Variable/welches DOM-Element zu einem unbekannten Schlüssel
+      // gehört, wird NICHT versucht, sie sofort live anzuwenden (anders als bei allen oben namentlich
+      // bekannten Feldern) - sie wirkt nach einem Neuladen der Seite (derselbe Zeitpunkt, zu dem
+      // jede der "loadPersisted...()"-Funktionen ohnehin erstmals liest). Ein einziger Hinweis am
+      // Ende dieses Imports informiert darüber, aber nur, falls tatsächlich mindestens ein
+      // unbekannter Schlüssel dabei war - der weit überwiegende Normalfall (Datei enthält nur
+      // bereits bekannte Einstellungen) bleibt dadurch frei von einer zusätzlichen Meldung.
+      let otherSettingsRestored = 0;
+      if (data.otherSettings && typeof data.otherSettings === 'object') {
+        Object.keys(data.otherSettings).forEach(key => {
+          if (typeof key !== 'string' || key.indexOf('cncsim.') !== 0) return;
+          const value = data.otherSettings[key];
+          if (typeof value !== 'string') return;
+          try { window.localStorage.setItem(key, value); otherSettingsRestored++; } catch (e) { /* s.o. */ }
+        });
+      }
+      if (otherSettingsRestored > 0) {
+        alert(T(
+          otherSettingsRestored + ' zusätzliche Einstellung(en) aus der Datei wurden übernommen und werden nach einem Neuladen der Seite vollständig wirksam.',
+          otherSettingsRestored + ' additional setting(s) from the file were applied and will take full effect after reloading the page.'
+        ));
+      }
     });
     e.target.value = '';
   });
@@ -13818,6 +14454,49 @@ Sebastian Bäcker (Anschrift wie oben)`,
       applyProgCollapseStage();
     }
     columnScalePanel.classList.remove('open');
+  });
+
+  // "Einstellungen" -> "Erscheinungsbild" -> "Rotation" (Release 141, Punkt 8) - eine einzige
+  // Ja/Nein-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Spalten" oben, nur ohne die
+  // Sofort-Anwenden-Logik auf ein geladenes Programm (invertTiltPreference wird direkt im
+  // pointermove-Handler des 3D-Bereichs abgefragt, siehe dort - "Übernehmen" muss daher nichts
+  // anderes tun als zu persistieren, eine bereits laufende Zieh-Bewegung gibt es zum
+  // Klick-Zeitpunkt ohnehin nie, da das Menü dafür geschlossen werden müsste).
+  const rotationSettingsPanel = el('rotationSettingsPanel');
+  function syncRotationSettingsPanelFromActive() {
+    const radio = document.querySelector('input[name="invertTilt"][value="' + (invertTiltPreference ? '1' : '0') + '"]');
+    if (radio) radio.checked = true;
+  }
+  el('btnRotationSettings').addEventListener('click', () => {
+    syncRotationSettingsPanelFromActive();
+    rotationSettingsPanel.classList.add('open');
+  });
+  el('btnRotationSettingsCancel').addEventListener('click', () => rotationSettingsPanel.classList.remove('open'));
+  el('btnRotationSettingsApply').addEventListener('click', () => {
+    const checked = document.querySelector('input[name="invertTilt"]:checked');
+    invertTiltPreference = checked ? checked.value === '1' : invertTiltPreference;
+    persistInvertTilt(invertTiltPreference);
+    rotationSettingsPanel.classList.remove('open');
+  });
+
+  // "Einstellungen" -> "Erscheinungsbild" -> "Raster" (Release 154) - eine einzige
+  // An/Aus-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Rotation" direkt oberhalb. "Übernehmen"
+  // ruft dieselbe setGridVisible() auf wie der Kontextmenü-Direktumschalter weiter unten (siehe
+  // dort) - beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
+  const gridSettingsPanel = el('gridSettingsPanel');
+  function syncGridSettingsPanelFromActive() {
+    const radio = document.querySelector('input[name="gridVisible"][value="' + (gridVisible ? '1' : '0') + '"]');
+    if (radio) radio.checked = true;
+  }
+  el('btnGridSettings').addEventListener('click', () => {
+    syncGridSettingsPanelFromActive();
+    gridSettingsPanel.classList.add('open');
+  });
+  el('btnGridSettingsCancel').addEventListener('click', () => gridSettingsPanel.classList.remove('open'));
+  el('btnGridSettingsApply').addEventListener('click', () => {
+    const checked = document.querySelector('input[name="gridVisible"]:checked');
+    setGridVisible(checked ? checked.value === '1' : gridVisible);
+    gridSettingsPanel.classList.remove('open');
   });
 
   // "Ansicht" -> "Buttonfarbe einstellen" (53. Runde) - zwei Hexcode-Zeilen (Hintergrund/Schrift),
@@ -14667,15 +15346,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
   canvas.addEventListener('pointermove', (e) => {
     if (gizmoRollPointerId === e.pointerId) {
       // Ring-Ziehen (73. Runde, Punkt 1c) - Winkeländerung zum Gizmo-Mittelpunkt seit dem letzten
-      // Frame direkt auf cam.roll aufaddiert; über die ±180°-Naht des atan2()-Wertebereichs hinweg
-      // (z.B. von +179° auf -179°) würde eine ungekürzte Differenz sonst einen 360°-Sprung liefern
-      // -> auf den kürzeren Weg (-180°..+180°) normalisiert.
+      // Frame direkt als inkrementelle Drehung auf cam.orient angewendet (Release 143:
+      // rollCamOrientation(), siehe Herleitung dort - ersetzt das vormalige separate "cam.roll");
+      // über die ±180°-Naht des atan2()-Wertebereichs hinweg (z.B. von +179° auf -179°) würde eine
+      // ungekürzte Differenz sonst einen 360°-Sprung liefern -> auf den kürzeren Weg (-180°..+180°)
+      // normalisiert.
       const rect = canvas.getBoundingClientRect();
       const ang = Math.atan2(e.clientY - rect.top - gizmoCenterPos.y, e.clientX - rect.left - gizmoCenterPos.x);
       let delta = ang - rollLastAngle;
       if (delta > Math.PI) delta -= 2 * Math.PI;
       else if (delta < -Math.PI) delta += 2 * Math.PI;
-      cam.roll += delta;
+      rollCamOrientation(delta);
       rollLastAngle = ang;
       requestRender();
       return;
@@ -14703,8 +15384,32 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (dragButton === 2) {
       panCamera(dx, dy);
     } else {
-      cam.theta -= dx * 0.006;
-      cam.phi = Math.max(-1.45, Math.min(1.45, cam.phi + dy * 0.006));
+      // Punkt 7 (Release 141, Sebastian: "Es soll auch 'nach vorne' gedreht werden können,
+      // aktuell ist da eine unsichtbare Barriere") - unverändert KEINE Begrenzung von dTheta/dPhi
+      // hier; beliebig langes Ziehen dreht beliebig oft um die Kamera herum, auch mehrfach über den
+      // Zenit/Nadir hinweg.
+      //
+      // Bugfix (Release 142 -> 143, Sebastian zweimal gemeldet: erst "springt das Programm
+      // plötzlich auf den Kopf", dann nach Release 142 erneut "Der Flip ist immer noch drin ...
+      // aus der Top-Ansicht ... nach oben bewegen -> Zeichnung 'flippt'") - Release 142 faltete nur
+      // cam.phi beim Auswerten, änderte an der eigentlichen Ursache aber nichts (siehe die
+      // ausführliche Herleitung bei cameraPosition()/rotateCamOrientation() weiter oben): Der
+      // tatsächliche Flip entstand, weil "right" vor Release 143 bei JEDEM Frame neu aus der
+      // aktuellen Blickrichtung und einer FESTEN Welt-Hochachse berechnet wurde - exakt am
+      // Zenit/Nadir entartet das unvermeidbar. Seit Release 143 wird die Kamera-Orientierung
+      // stattdessen als eigener, persistenter Zustand (cam.orient) nur noch INKREMENTELL gedreht
+      // (rotateCamOrientation(), siehe dort) - "right" wird dadurch nie wieder "von außen" neu
+      // nachgeschlagen und kann beim Überqueren des Pols nicht mehr abrupt kippen.
+      //
+      // Punkt 8 (Release 141, Sebastian: "In den Einstellungen -> Erscheinungsbild gibt es einen
+      // neuen Menüpunkt: 'Rotation'. Dort kann die Kipprichtung invertiert werden ... nur oben/
+      // unten sind vertauscht") - invertTiltPreference (siehe LS_KEY_INVERT_TILT weiter oben)
+      // kehrt NUR das Vorzeichen des vertikalen Mausbewegungsanteils (dy, hier dPhi) um; der
+      // horizontale Anteil (dx, hier dTheta) bleibt davon explizit unberührt ("Die
+      // Schwenkrichtungen nach links/rechts ... bleibt nach links und rechts").
+      const dTheta = -dx * 0.006;
+      const dPhi = (invertTiltPreference ? -1 : 1) * dy * 0.006;
+      rotateCamOrientation(dTheta, dPhi);
     }
     requestRender();
   });
@@ -14732,16 +15437,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (gizmoPointerId === e.pointerId) {
       gizmoPointerId = null;
       if (Math.hypot(e.clientX - downPX, e.clientY - downPY) <= 6) {
+        // Release 141: der Würfel hat jetzt nur noch die sechs Hauptseiten (keine Kanten-/Eck-
+        // Facetten mehr, siehe GIZMO_FACES/drawViewGizmo() oben) - ein Treffer hat daher IMMER ein
+        // gültiges "view" (Punkt 5: "Wenn ich auf die dementsprechende Seite beim Würfel klicke,
+        // ändert sich die Ansicht in die Richtung, z.B. auf Left klicken -> Ansicht von links").
         const hit = hitTestGizmo(e.clientX, e.clientY);
-        // 71. Runde: "hit" ist jetzt eine beliebige der 26 Flächen, nicht mehr nur eine der sechs
-        // benannten Hauptseiten (siehe hitTestGizmo()/drawViewGizmo() oben) - eine Hauptseite
-        // (hit.view gesetzt) verwendet weiterhin ihren benannten VIEW_PRESETS-Eintrag, eine
-        // Kanten-/Eck-Facette (hit.view === null) berechnet ihre Zielperspektive direkt aus der
-        // eigenen Flächennormale (viewAnglesFromNormal()) - beide münden in applyViewAngles().
-        if (hit) {
-          if (hit.view) applyViewPreset(hit.view);
-          else { const a = viewAnglesFromNormal(hit.normal); applyViewAngles(a.theta, a.phi); }
-        }
+        if (hit) applyViewPreset(hit.view);
       }
       return;
     }
@@ -14833,18 +15534,22 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // aufrufen - #btnHomeView (bleibt bestehen, siehe eigener Klick-Handler weiter unten) ist davon
   // unabhängig und unverändert.
   //
-  // applyViewAngles() (71. Runde, direkte Folgemeldung: "Alle Kanten des Würfels sollten
-  // anklickbar sein ... Beim Klick auf die Ecke, soll der dann auch auf die Perspektive
-  // springen") ist die gemeinsame Kernfunktion, die tatsächlich cam.theta/cam.phi setzt -
-  // applyViewPreset() ruft sie für die sechs benannten Hauptseiten mit den festen VIEW_PRESETS-
-  // Werten auf, der Gizmo-Klick-Handler weiter unten für eine Kanten-/Eck-Facette mit den aus
-  // deren Flächennormale berechneten Werten (viewAnglesFromNormal(), siehe oben bei
-  // VIEW_PRESETS) - beide Wege landen dadurch garantiert in genau demselben Code.
+  // applyViewAngles() ist die gemeinsame Kernfunktion, die tatsächlich cam.orient setzt (Release
+  // 143: vormals cam.theta/cam.phi, siehe Herleitung bei "const cam"/rotateCamOrientation() weiter
+  // oben) - applyViewPreset() ruft sie für die sechs benannten Würfel-Hauptseiten mit den festen
+  // VIEW_PRESETS-Werten auf (seit Release 141 der einzige Aufrufer, da der Würfel keine Kanten-/
+  // Eck-Facetten mehr hat, siehe GIZMO_FACES/drawViewGizmo() weiter oben).
   function applyViewAngles(theta, phi) {
-    cam.theta = theta; cam.phi = phi;
-    // Sprung auf eine feste Perspektive setzt eine per Ring-Drehung (73. Runde) evtl. vorhandene
-    // Roll-Neigung wieder zurück, damit z.B. "Oben" wieder garantiert exakt aufrecht ist.
-    cam.roll = 0;
+    // basisFromAngles() statt cam.theta/cam.phi direkt - setzt zugleich (wie zuvor "cam.roll = 0")
+    // eine per Ring-Drehung (73. Runde) evtl. vorhandene Neigung zurück, da die berechnete
+    // Zielorientierung für diesen festen Winkel von Haus aus keinen Roll-Anteil hat.
+    cam.orient = basisFromAngles(theta, phi);
+    // Release 153 - ein Klick auf eine Würfelseite oder einen Kompass-Buchstaben ist ebenfalls eine
+    // manuelle Perspektivänderung im Sinne von Sebastians Beschreibung ("Wenn zwischendurch die
+    // Perspektive manuell geändert worden ist bzw. Top geklickt wurde, springt man beim Klick auf
+    // 'Home' wieder auf Ansicht 1") - setzt den Home-Zyklus-Zähler zurück, siehe
+    // homeViewCycleIndex/goHomeView() weiter unten.
+    homeViewCycleIndex = 0;
     // Bugfix (Sebastian: "Beim Klick auf den Würfel, sollte die angeklickte Seite fokussiert
     // werden. Aktuell kann man die Sim außerhalb des Sichtbereichs schieben und beim Klick drauf,
     // ändert sich die Perspektive, der Fokus wird aber nicht neu gesetzt") - bis dahin änderte ein
@@ -14870,7 +15575,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // "Gesamtes Programm": alle Arbeitsgänge inkl. bereits bearbeiteter Bereiche zeigen
   btnWholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
 
-  // "Home"-Knopf (Benutzer: "'Home' Button bei der Sim einbauen, zoomt raus und zentriert das
+  // "Top"-Knopf (Release 147) - übernimmt die BISHERIGE Funktion des "Home"-Knopfs unverändert
+  // (Benutzer, ursprünglich: "'Home' Button bei der Sim einbauen, zoomt raus und zentriert das
   // angezeigte Programm" - Ergänzung: "soll automatisch Ansicht von oben herstellen und
   // zentrieren"): stellt die Blickrichtung fest auf das Oben-Preset zurück (dieselben
   // theta/phi-Werte wie der "↑ Oben"-Knopf, siehe VIEW_PRESETS.top) UND setzt Zoom/Zielpunkt der
@@ -14878,20 +15584,82 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // ersten Laden/Arbeitsgang-Wechsel, siehe dort) - anders als "Gesamtes Programm" wird dabei
   // NICHT der 3D-Scope verändert, ein zuvor auf einen einzelnen Arbeitsgang eingegrenzter Blick
   // bleibt also erhalten, nur eben wieder von oben und passend eingerahmt.
-  // goHomeView() (Release 86, herausgelöst aus dem ursprünglichen reinen "Home"-Knopf-Klick-
-  // Handler) - als benannte Funktion wiederverwendbar, damit auch DXF-Skalieren/-Drehen/-Spiegeln
-  // (siehe deren jeweilige Klick-/Bestätigen-Handler weiter unten) sie aufrufen können, siehe dort
-  // für die Begründung.
-  function goHomeView() {
-    cam.theta = VIEW_PRESETS.top.theta;
-    cam.phi = VIEW_PRESETS.top.phi;
-    // "Home" setzt (wie applyViewAngles(), siehe dort) eine per Ring-Drehung (73. Runde, Punkt 1c)
-    // evtl. vorhandene Roll-Neigung zurück - dieser Knopf setzt theta/phi bewusst direkt statt
-    // über applyViewAngles() (siehe historischer Kommentar bei dessen Definition), braucht das
-    // roll-Zurücksetzen deshalb hier als eigene Zeile.
-    cam.roll = 0;
+  // goTopView() (Release 147, aus dem bisherigen goHomeView() umbenannt/herausgelöst, siehe
+  // Kommentar bei goHomeView() direkt darunter für den Grund) - als benannte Funktion weiterhin
+  // eigenständig aufrufbar, auch wenn aktuell nur #btnTopView sie direkt verwendet.
+  function goTopView() {
+    // basisFromAngles() statt cam.theta/cam.phi (Release 143, siehe applyViewAngles()/Herleitung
+    // bei "const cam" weiter oben) - setzt zugleich eine per Ring-Drehung (73. Runde, Punkt 1c)
+    // evtl. vorhandene Neigung zurück, da die Top-Orientierung von Haus aus keinen Roll-Anteil hat.
+    cam.orient = basisFromAngles(VIEW_PRESETS.top.theta, VIEW_PRESETS.top.phi);
     frameCamera();
     requestRender();
+    // Release 153 (Sebastian, ausdrücklich genannt: "... bzw. Top geklickt wurde, springt man beim
+    // Klick auf 'Home' wieder auf Ansicht 1") - setzt den Home-Zyklus-Zähler zurück, siehe
+    // homeViewCycleIndex/goHomeView() weiter unten.
+    homeViewCycleIndex = 0;
+  }
+  btnTopView.addEventListener('click', goTopView);
+
+  // "Home"-Knopf (Release 147, Sebastian: "Beim Klick auf 'Home' im 3D -> Schräg von oben/links,
+  // so dass N und E auf einer horizontalen Linie sind und W und S [auf einer horizontalen Linie
+  // sind]. Rechts oben vom Compass einen Knopf einbauen ... der 'Top' heißt. Der verhält sich wie
+  // der jetzige 'Home'-Button"): Bis einschließlich Release 146 war "Home" die reine Ansicht von
+  // oben (siehe goTopView() direkt oberhalb, das diese alte Funktion seither unter neuem Namen
+  // weiterführt und vom neuen #btnTopView-Knopf aufgerufen wird) - "Home" selbst springt seit
+  // dieser Runde stattdessen auf die neue, schräge HOME_VIEW_ANGLES-Diagonalansicht (siehe
+  // ausführliche Herleitung der theta/phi-Werte dort). goHomeView() (als benannte Funktion bereits
+  // seit Release 86 herausgelöst, damit auch DXF-Skalieren/-Drehen/-Spiegeln sie aufrufen können,
+  // siehe deren jeweilige Klick-/Bestätigen-Handler weiter unten) bleibt unter demselben Namen
+  // bestehen - diese anderen Aufrufstellen folgen der neuen "Home"-Bedeutung dadurch automatisch
+  // mit, ohne eigens angepasst werden zu müssen, was der Namensgebung "Home" (zu dieser einen,
+  // zentralen Voreinstellung zurückkehren) konsistent entspricht.
+  // Release 152 - Zähler für die vier-Ansichten-Sequenz (siehe HOME_VIEW_ANGLE_SEQUENCE oben):
+  // jeder goHomeView()-Aufruf (Knopf-Klick ODER Pos1-Taste, siehe deren gemeinsamer Aufruf weiter
+  // unten) wendet den aktuellen Index an und zählt danach modulo 4 weiter - "Klick 5 -> wieder bei
+  // Ansicht 1" ist dadurch automatisch erfüllt. Bewusst EIN gemeinsamer Zähler für Knopf UND
+  // Taste (nicht zwei getrennte), damit "Klick 1/2/3/4/5" wie von Sebastian beschrieben auch dann
+  // konsistent bei Ansicht 1 landet, wenn abwechselnd Knopf und Pos1-Taste verwendet werden -
+  // exakt dieselbe "ein Name, ein Zustand"-Logik wie schon bei der ursprünglichen Zusammenlegung
+  // von Knopf und Taste auf dieselbe goHomeView()-Funktion (siehe Kommentar dort, Release 147).
+  // Release 153 (Korrektur zu Release 152 - Sebastian: "Kleine Änderung, war ein Fehler von mir
+  // das nicht festzuhalten: Wenn zwischendurch die Perspektive manuell geändert worden ist bzw.
+  // Top geklickt wurde, springt man beim Klick auf 'Home' wieder auf Ansicht 1. Aktuell wird die
+  // letzte Ansicht gespeichert und 'fortgesetzt'."): Der Zähler wird seit dieser Runde zusätzlich
+  // an jeder Stelle zurückgesetzt, die cam.orient auf einem anderen Weg als goHomeView() selbst
+  // verändert - manuelles Ziehen im freien 3D-Bereich/auf dem Würfel (rotateCamOrientation()),
+  // Rollen am Ring (rollCamOrientation()), Klick auf eine Würfelseite/einen Kompass-Buchstaben
+  // (applyViewAngles()) sowie "Top" (goTopView(), von Sebastian ausdrücklich genannt) - siehe deren
+  // jeweiligen Kommentar bei "homeViewCycleIndex = 0" dort. Weiterhin bewusst NICHT bei einem reinen
+  // Laden eines neuen Programms oder Scope-Wechsel zurückgesetzt, da diese den Blickwinkel selbst
+  // (cam.orient) unverändert lassen (siehe 9.2/9.3) - es geht hier ausschließlich um eine ECHTE
+  // Änderung der Blickrichtung, nicht um jede Interaktion mit der Sim.
+  let homeViewCycleIndex = 0;
+  function goHomeView() {
+    // basisFromAngles() statt cam.theta/cam.phi (Release 143, siehe applyViewAngles()/Herleitung
+    // bei "const cam" weiter oben) - setzt zugleich eine per Ring-Drehung (73. Runde, Punkt 1c)
+    // evtl. vorhandene Neigung zurück, da jede der vier HOME_VIEW_ANGLE_SEQUENCE-Ansichten von
+    // Haus aus keinen Roll-Anteil hat.
+    //
+    // Drehrichtung "nach links" (Release 152, Punkt "Ansicht 2 = Ansicht 1 nach links gedreht"):
+    // theta wird in der Sequenz um jeweils +π/2 weitergedreht (siehe HOME_VIEW_ANGLE_SEQUENCE
+    // oben). Physikalische Herleitung: Ansicht 1 (theta=-3π/4) zeigt die Kamera aus Südwesten (auf
+    // halbem Weg zwischen "Front"=Süden und "Left"=Westen, siehe Herleitung bei theta=-3π/4 oben).
+    // Ein Objekt "nach links drehen" (wie ein Lenkrad/Globus nach links/gegen den Uhrzeigersinn von
+    // oben betrachtet) bringt die bisher LINKE Seite des Objekts zur Kamera hin, d.h. die neue
+    // Ansicht entspricht einem Blick aus der Richtung, die zuvor "links" vom Betrachter lag -
+    // äquivalent dazu, dass die KAMERA selbst um +90° weiter in Richtung Westen->Norden->Osten->
+    // Süden wandert (math. positiver Drehsinn in der XY-Ebene entspricht hier wachsendem theta,
+    // siehe dir={cosφ·sinθ, sinφ, cosφ·cosθ} in basisFromAngles() weiter unten). Die Sequenz lautet
+    // damit: Ansicht 1 Südwesten (Front+Left) -> Ansicht 2 Südosten (Front+Right) ... (jeweils
+    // +π/2), siehe HOME_VIEW_ANGLE_SEQUENCE. Per Playwright-Screenshot-Vergleich der vier Schritte
+    // gegengeprüft, dass sich die sichtbaren Würfel-/Kompass-Flächen in genau dieser Reihenfolge
+    // weiterdrehen (keine Sprünge, keine Wiederholung vor dem vierten Klick).
+    const angles = HOME_VIEW_ANGLE_SEQUENCE[homeViewCycleIndex];
+    cam.orient = basisFromAngles(angles.theta, angles.phi);
+    frameCamera();
+    requestRender();
+    homeViewCycleIndex = (homeViewCycleIndex + 1) % HOME_VIEW_ANGLE_SEQUENCE.length;
   }
   btnHomeView.addEventListener('click', goHomeView);
 
@@ -15102,26 +15870,29 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // zu "👁 DXF"/btnToggleDxf oben): ein Klick kehrt den jeweiligen Zustand um, aktualisiert die
   // ".active"-Optik (siehe updateDxfUI()) und rendert sofort neu.
   //
-  // goHomeView() nach dem Spiegeln (Release 86, Sebastian: "Nach dem Skalieren, Drehen, Spiegeln
+  // goTopView() nach dem Spiegeln (Release 86, Sebastian: "Nach dem Skalieren, Drehen, Spiegeln
   // sollte der Fokus immer wieder neu mit 'Home' gesetzt werden. So kann man direkt
   // weiterarbeiten.") - anders als bei "DXF verschieben" (dort bewusst OHNE Kamera-Reset, siehe
   // confirmDxfMove() oben, damit sich der Versatz visuell gegen die feststehende Kontur beurteilen
   // lässt) verschiebt eine Spiegelung/Drehung/Skalierung die Kontur potenziell weit aus dem
   // bisherigen Bildausschnitt heraus (Spiegeln/Drehen um den DXF-eigenen Ursprung, Skalieren siehe
-  // dxfScale) - ein automatischer "Home"-Sprung (Ansicht von oben + neu eingerahmt, siehe
-  // goHomeView()) hält die Kontur danach zuverlässig sofort wieder vollständig im Bild, ohne dass
-  // von Hand nachgezoomt/-geschwenkt werden muss.
+  // dxfScale) - ein automatischer Sprung auf die Ansicht von oben + neu eingerahmt hält die Kontur
+  // danach zuverlässig sofort wieder vollständig im Bild, ohne dass von Hand nachgezoomt/
+  // -geschwenkt werden muss. Release 147: ruft seither bewusst goTopView() statt goHomeView() auf
+  // (zum damaligen Zeitpunkt identisch, siehe deren Umbenennung dort) - "Home" selbst zeigt seit
+  // dieser Runde eine schräge Diagonalansicht, die eine 2D-DXF-Spiegelung/-Drehung visuell
+  // schwerer beurteilbar machen würde als die hier weiterhin gewünschte reine Ansicht von oben.
   btnDxfMirrorX.addEventListener('click', () => {
     if (btnDxfMirrorX.disabled) return;
     dxfMirrorX = !dxfMirrorX;
     updateDxfUI();
-    goHomeView();
+    goTopView();
   });
   btnDxfMirrorY.addEventListener('click', () => {
     if (btnDxfMirrorY.disabled) return;
     dxfMirrorY = !dxfMirrorY;
     updateDxfUI();
-    goHomeView();
+    goTopView();
   });
 
   // "DXF drehen" (67. Runde) - derselbe Dialog-Ablauf wie "DXF verschieben" oben (öffnen mit
@@ -15139,17 +15910,22 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfGeometry) { dxfRotatePanel.classList.remove('open'); return; }
     dxfRotateDeg = parseFloat(normalizeToolValue(dxfRotateInput.value, 0)) || 0;
     updateDxfUI();
-    // goHomeView() statt reinem requestRender() (Release 86) - siehe Begründung beim Spiegeln
-    // oben.
-    goHomeView();
+    // goTopView() statt reinem requestRender() (Release 86, seit Release 147 goTopView() statt
+    // goHomeView() - siehe Begründung beim Spiegeln oben).
+    goTopView();
     dxfRotatePanel.classList.remove('open');
   }
   el('btnDxfRotateConfirm').addEventListener('click', confirmDxfRotate);
   dxfRotateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfRotate(); } });
 
   // "Bauteilstärke" (67. Runde) - derselbe Dialog-Ablauf wie "DXF drehen" direkt oberhalb, mit
-  // einem einzelnen Stärke-Feld (mm, negative Werte werden wie 0 behandelt - eine "negative
-  // Stärke" ergibt keinen sinnvollen Extrusionskörper).
+  // einem einzelnen Stärke-Feld (mm). Release 146 (Sebastian: "Negative Eingaben beim DXF
+  // ermöglichen. Dadurch wandert das Bauteil dann tatsächlich ins negative Z"): Bis
+  // einschließlich Release 145 wurden negative Werte hier auf 0 geklemmt (`Math.max(0, val)`) -
+  // damit war nur die (seinerzeit feste) Richtung "nach unten" überhaupt erreichbar. Seit
+  // drawDxf()/dxfPointsForBounds() standardmäßig nach OBEN (positives Z) extrudieren (s. dort),
+  // ist die Klemmung entfallen: ein negativer Wert ist jetzt die einzige Möglichkeit, weiterhin
+  // (wie vor Release 146) nach unten ins negative Z zu extrudieren.
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
     dxfThicknessInput.value = String(dxfThickness);
@@ -15162,7 +15938,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function confirmDxfThickness() {
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
-    dxfThickness = Math.max(0, val);
+    dxfThickness = val;
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
@@ -15200,17 +15976,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   btnDxfScale.addEventListener('click', openDxfScalePanel);
   el('btnDxfScaleCancel').addEventListener('click', () => dxfScalePanel.classList.remove('open'));
-  // goHomeView() statt reinem requestRender() nach dem Übernehmen (Release 86) - siehe Begründung
+  // goTopView() statt reinem requestRender() nach dem Übernehmen (Release 86, seit Release 147
+  // goTopView() statt goHomeView() - siehe Begründung beim Spiegeln oben) - siehe Begründung
   // beim Spiegeln oben: gerade eine Skalierung kann die Kontur weit über den bisherigen
   // Bildausschnitt hinaus wachsen bzw. auf einen winzigen Bruchteil davon schrumpfen lassen, ein
-  // automatischer "Home"-Sprung rahmt sie danach zuverlässig wieder vollständig ein.
+  // automatischer Sprung rahmt sie danach zuverlässig wieder vollständig ein.
   function confirmDxfScale() {
     if (!dxfGeometry) { dxfScalePanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfScaleInput.value, 1));
     const factor = (isFinite(val) && val > 0) ? val : 1;
     dxfScale = dxfScale * factor;
     updateDxfUI();
-    goHomeView();
+    goTopView();
     dxfScalePanel.classList.remove('open');
   }
   el('btnDxfScaleConfirm').addEventListener('click', confirmDxfScale);
@@ -15222,7 +15999,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (!dxfGeometry) { dxfScalePanel.classList.remove('open'); return; }
       dxfScale = 1;
       updateDxfUI();
-      goHomeView();
+      goTopView();
       dxfScalePanel.classList.remove('open');
     });
   }
@@ -15248,6 +16025,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // direkt danach geladenes Programm sofort die persistierten Werte zeigen (dieselbe Reihenfolge
   // wie beim Farbprofil oben).
   columnScalePreference = loadPersistedColumnScale();
+  // "Rotation" (Release 141, Punkt 8): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei den anderen Einstellungen
+  // hier - direkt im pointermove-Handler des 3D-Bereichs abgefragt (siehe dort), kein weiterer
+  // "Anwenden"-Schritt an dieser Stelle nötig.
+  invertTiltPreference = loadPersistedInvertTilt();
+  // "Raster" (Release 154): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
+  // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Rotation" direkt oberhalb - direkt von
+  // render() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
+  gridVisible = loadPersistedGridVisible();
   activeMenuColor = applyMenuHighlightColor(loadPersistedMenuColor());
   // "Schriftfarbe" (66. Runde): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei den drei Einstellungen oben.
