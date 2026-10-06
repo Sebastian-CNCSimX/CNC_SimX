@@ -2794,7 +2794,7 @@
         <div class="tree" id="tree">
           <div class="empty-state" id="emptyState">
             <div class="glyph">⚙</div>
-            <span data-i18n-en-html="No file has been loaded yet.&lt;br&gt;Load an NC file to identify the program, as well as machining operations, intermediate stops, and the end of the program.">Noch keine CNC-Datei geladen.<br>Lade eine CNC-Datei, um das Programm sowie Arbeitsgänge, Zwischenstopps und Programmende zu erkennen.</span>
+            <span data-i18n-en="No file has been loaded yet.">Noch keine Datei geladen.</span>
           </div>
         </div>
         <!-- "DXF-Layer"-Inhalt (78. Runde) - Geschwister von #tree, beide teilen sich denselben
@@ -6247,8 +6247,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 154;
-  const APP_RELEASE_TIMESTAMP = '06.10.2026, 11:17 Uhr';
+  const APP_RELEASE_NUMBER = 156;
+  const APP_RELEASE_TIMESTAMP = '06.10.2026, 11:46 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8375,15 +8375,37 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // demselben Muster wie "Links" (Kamera auf der -X-Seite, theta=-π/2) und "Rechts" (Kamera auf
   // der +X-Seite, theta=+π/2) folgend.
   //
-  // Warum "top" ausgerechnet phi=-1.45 (nicht z.B. 0) zugeordnet ist: historisch bedingt (frühe
-  // Runden dieses Projekts) - die Kamera-Position, die bei "X rechts" zwangsläufig "Y oben"
-  // liefert (Chiralitäts-Zwang eines rechtshändigen Dreibeins, siehe basisFromAngles() weiter
-  // unten), ist exakt die mit NEGATIVEM phi; die mit positivem phi liefert zwangsläufig "Y unten"
-  // und trägt deshalb den Namen "bottom". Eine reine Namenskonvention, keine physikalische
-  // Notwendigkeit - an der grundsätzlichen Stetigkeit der Formel ändert das nichts.
+  // Warum "top" negatives phi zugeordnet ist (nicht positives): historisch bedingt (frühe Runden
+  // dieses Projekts) - die Kamera-Position, die bei "X rechts" zwangsläufig "Y oben" liefert
+  // (Chiralitäts-Zwang eines rechtshändigen Dreibeins, siehe basisFromAngles() weiter unten), ist
+  // exakt die mit NEGATIVEM phi; die mit positivem phi liefert zwangsläufig "Y unten" und trägt
+  // deshalb den Namen "bottom". Eine reine Namenskonvention, keine physikalische Notwendigkeit -
+  // an der grundsätzlichen Stetigkeit der Formel ändert das nichts.
+  //
+  // Release 156 - exakt ±π/2 statt (bis Release 155) ±1.45 (≈83°, knapp AM Pol vorbei): Sebastian
+  // bemerkte, dass "Top" (und ebenso "Bottom") noch einen "Rest von Rear" zeigte - das Bauteil war
+  // beim Klick auf "Top" nicht WIRKLICH senkrecht von oben zu sehen, sondern um die fehlenden ca.
+  // 7° (90°−83°) leicht schräg gekippt. Ursache: Bei phi=-1.45 hat "fwd" eine kleine, aber nicht
+  // exakt null z-Komponente (fwd.z ≈ -0.1205) - dadurch ergibt sich für die "Rear"-Würfelseite
+  // (Normale (0,0,1)) ein Facing-Wert von ≈ -0.1205, der den Rückflächen-Schwellenwert von -0.02
+  // in drawViewGizmo() (siehe dort) klar überschreitet: Die Seite wird (dezent, aber sichtbar samt
+  // Beschriftung) MIT gezeichnet, obwohl man eigentlich praktisch senkrecht von oben schaut. Bei
+  // "Bottom" (phi=+1.45) passiert exakt dasselbe mit derselben "Rear"-Seite (Facing ebenfalls
+  // ≈ -0.1205, siehe GIZMO_MAIN_FACES oben). Der historische Grund für ±1.45 statt exakt ±π/2 war
+  // reine Vorsicht gegenüber der Pol-Entartung im Kreuzprodukt von basisFromAngles() (siehe dort) -
+  // per Playwright/Node direkt nachgerechnet, GREIFT der dort bereits vorhandene Sicherheitsfallback
+  // (`if (!isFinite(right.x) || len(right) < 1e-6) right = {x:1,y:0,z:0}`) exakt am Pol zuverlässig
+  // und liefert dabei GENAU dieselbe "right"-Richtung (Welt-X bleibt Bildschirm-rechts), die sich
+  // bei phi=-1.45 ohnehin schon ergab - keine Änderung der Bildschirmausrichtung/Ost-West-Zuordnung,
+  // nur eine exaktere Blickrichtung. Mit phi=±π/2 ergibt sich fwd.z rechnerisch zu ±6·10⁻¹⁷ (reines
+  // Gleitkomma-Rundungsrauschen) statt -0,1205 - weit unterhalb des -0,02-Schwellenwerts, die
+  // "Rear"-Seite (und ebenso alle anderen Seitenflächen) bleiben dadurch bei "Top"/"Bottom"
+  // zuverlässig unsichtbar, exakt wie beim manuellen Drehen bis zum tatsächlichen Geradeaus-Blick.
+  // Betrifft ausschließlich diese beiden festen Voreinstellungen - Links/Rechts/Vorn/Hinten (phi=0)
+  // und die Home-Isometrie (phi=∓asin(1/√3)) waren von diesem Leck nie betroffen.
   const VIEW_PRESETS = {
-    top: { theta: 0, phi: -1.45 },
-    bottom: { theta: 0, phi: 1.45 },
+    top: { theta: 0, phi: -Math.PI / 2 },
+    bottom: { theta: 0, phi: Math.PI / 2 },
     left: { theta: -Math.PI / 2, phi: 0 },
     right: { theta: Math.PI / 2, phi: 0 },
     front: { theta: Math.PI, phi: 0 },
@@ -8415,7 +8437,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   //
   // phi = -asin(1/√3) ≈ -35.26°: der klassische, in der technischen Isometrie übliche Kippwinkel
   // (alle drei Würfelkanten erscheinen bei diesem Winkel gleich lang/im selben 120°-Abstand) -
-  // deutlich flacher als "Top" (phi=-1.45 ≈ -83°, fast senkrecht von oben), aber steiler als die
+  // deutlich flacher als "Top" (phi=-π/2 = -90°, exakt senkrecht von oben, siehe VIEW_PRESETS/
+  // Release 156 oben), aber steiler als die
   // reinen Seitenansichten (phi=0) - genau die von Sebastian verlangte "schräge" (weder flache
   // noch senkrechte) Ansicht von oben. Negatives Vorzeichen aus demselben Grund wie bei "top"
   // oben: liefert bei diesem rechtshändigen Dreibein die Kamera-Position tatsächlich OBERHALB
@@ -8447,8 +8470,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Release 143 der alleinige, persistente Ausgangspunkt für die Kamera-Blickrichtung; theta/phi
   // existieren nur noch als Winkelpaare INNERHALB von VIEW_PRESETS (feste Sprungziele), nicht mehr
   // als laufender Kamera-Zustand. cam.orient startet mit genau der Basis, die VIEW_PRESETS.top
-  // (die Standardansicht "Oben") entspricht, per basisFromAngles() berechnet (sicher, da phi=-1.45
-  // deutlich vom exakten Pol ±π/2 entfernt liegt).
+  // (die Standardansicht "Oben") entspricht, per basisFromAngles() berechnet - seit Release 156
+  // exakt bei phi=-π/2 (dem exakten Pol), sicher dank des dortigen Sicherheitsfallbacks für genau
+  // diesen Fall (siehe Release-156-Kommentar bei VIEW_PRESETS oben und bei basisFromAngles() unten).
   //
   // minEyeDist (Benutzer: "Wenn man nah ranzoomt verschwinden die Fräskonturen" - siehe
   // cameraPosition()/frameCamera() unten für die volle Herleitung) hält die Kamera unabhängig
@@ -10824,11 +10848,17 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Berechnet die Kamera-Basis EINMALIG/direkt aus einem festen theta/phi-Winkelpaar - die alte,
   // vor Release 143 überall verwendete Formel (right per Kreuzprodukt aus Blickrichtung und
   // Welt-Y-Achse). Für einen festen, bekannten Winkel (wie die sechs VIEW_PRESETS) ist das
-  // weiterhin exakt richtig und sicher, SOLANGE phi nicht genau ±π/2 trifft - keiner der sechs
-  // Voreinstellungen liegt dort (Top/Bottom bewusst bei ±1.45, 83°, siehe VIEW_PRESETS oben).
-  // Ausschließlich für Sprünge auf eine feste Voreinstellung verwendet (applyViewAngles()/
-  // goHomeView()/Programm-Laden) - NIEMALS für die laufende Zieh-Drehung selbst (siehe
-  // rotateCamOrientation() unten, der eigentliche Release-143-Fix).
+  // weiterhin exakt richtig und sicher - auch GENAU am Pol (phi=±π/2): Zwei der sechs
+  // Voreinstellungen (Top/Bottom) liegen seit Release 156 bewusst exakt dort (siehe VIEW_PRESETS
+  // oben); der Sicherheitsfallback direkt unten (`if (!isFinite(right.x) || len(right) < 1e-6)
+  // right = {x:1,y:0,z:0}`) greift exakt an diesem Punkt zuverlässig (per Node/Playwright
+  // nachgerechnet) und liefert dabei GENAU dieselbe "right"-Richtung, die sich unmittelbar NEBEN
+  // dem Pol ohnehin ergibt - keine Diskontinuität bei diesem einmaligen, festen Sprung (anders als
+  // bei einer laufenden, kontinuierlichen Drehung DURCH den Pol hindurch - dafür ist diese Formel
+  // nach wie vor NICHT geeignet, siehe nächster Absatz). Ausschließlich für Sprünge auf eine feste
+  // Voreinstellung verwendet (applyViewAngles()/goHomeView()/Programm-Laden) - NIEMALS für die
+  // laufende Zieh-Drehung selbst (siehe rotateCamOrientation() unten, der eigentliche
+  // Release-143-Fix).
   function basisFromAngles(theta, phi) {
     const cp = Math.cos(phi);
     const dir = { x: cp * Math.sin(theta), y: Math.sin(phi), z: cp * Math.cos(theta) };
