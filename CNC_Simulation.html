@@ -2011,6 +2011,13 @@
   .font-color-row-label { display: flex; align-items: center; gap: 8px; }
   .font-color-row-label input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; flex: none; }
   .font-color-row .color-field-inputs.is-inactive { opacity: 0.45; }
+  /* "Werkzeuge" (Release 158, Säge/Spannfutter/Fräser-Darstellung) - Transparenz-Schieberegler
+     ("Standardwert ist '0%'. Das soll ein Schiebebalken werden (links 0%, rechts 100%)"): die
+     beiden Prozent-Beschriftungen fest links/rechts außen, der native input[type=range] (bereits
+     generisch gestylt, siehe oben) füllt den Platz dazwischen. */
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+  .slider-row input[type="range"] { flex: 1 1 auto; }
+  .slider-row .slider-pct-label { font-size: 11.5px; color: var(--ink-faint); flex: none; }
   .paste-card textarea {
     width: 100%;
     height: 220px;
@@ -2336,12 +2343,39 @@
                    gridVisible/LS_KEY_GRID_VISIBLE in app.js. Derselbe Zustand ist zusätzlich über
                    das Rechtsklick-Kontextmenü im 3D-Bereich erreichbar, siehe dort. -->
               <button class="menu-item" id="btnGridSettings" type="button" title="Bodenraster im 3D-Bereich ein-/ausblenden" data-i18n-en="Grid" data-i18n-en-title="Show/hide the floor grid in the 3D area">Raster</button>
+              <!-- "Werkzeuge" (Release 158, Sebastian: "Werkzeug bzw. Spannfutter-Darstellung: Bitte
+                   neue Einstellungen unter Einstellungen -> Erscheinungsbild -> 'Werkzeuge' (EN:
+                   Tools). Das ist unter 'Raster' angeordnet! Verschiedene Optionen im Menü einbauen
+                   dafür: 1. Die Einstellungen für Säge, Spannfutter und Fräser separieren. Allerdings
+                   in einem geöffneten Menü 'Werkzeuge' untereinander angeordnet") - direkt nach
+                   "Raster" (wie von Sebastian explizit verlangt), aber als eigenes, zweites
+                   Untermenü-Flyout wie "Farben" oben (nicht flach wie "Spalten"/"Rotation"/"Raster"
+                   selbst), da es drei eigenständige Unterpunkte bündelt. Dieselbe generische, rein
+                   rekursive ".menu-submenu"-Technik wie bei "Farben" (siehe Kommentar dort) -
+                   funktioniert unverändert ohne jede App.js-Änderung, nur durch diese
+                   Markup-Umhüllung. Reihenfolge der drei Einträge exakt wie von Sebastian genannt:
+                   Säge, Spannfutter, Fräser. Siehe #toolAppearanceSawPanel/#toolAppearanceColletPanel/
+                   #toolAppearanceCutterPanel weiter unten sowie applyToolAppearance()/
+                   TOOL_APPEARANCE_KINDS in app.js. -->
+              <div class="menu-submenu" id="submenuTools">
+                <button class="menu-item submenu-trigger" id="submenuToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Tools">Werkzeuge <span class="submenu-arrow">▸</span></button>
+                <div class="submenu-dropdown" id="submenuToolsDropdown" hidden>
+                  <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
+                  <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
+                  <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
+                </div>
+              </div>
               <!-- "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button bei den
                    Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
                    Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt.") - direkt flach
                    nach "Spalten" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
                    Schritt Buttonfarbe, Hintergrundfarbe, die neue Schriftfarbe UND die
-                   Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js. -->
+                   Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js.
+                   Bewusst OHNE "Werkzeuge" (Release 158, siehe oben): genau wie bei
+                   "Rotation"/"Raster" (siehe deren Kommentare oben) zählt auch "Werkzeuge" laut
+                   eigener Beschriftung/historischem Funktionsumfang dieses Knopfs nicht zum
+                   abgedeckten Umfang - er deckt ausschließlich die "Farben"-Unterpunkte sowie
+                   "Spalten" ab. -->
               <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
@@ -3445,6 +3479,131 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnGridColorCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnGridColorApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Werkzeuge" (Release 158, Sebastian: "Werkzeug bzw. Spannfutter-Darstellung: Bitte neue
+     Einstellungen unter Einstellungen -> Erscheinungsbild -> 'Werkzeuge'. ... 1. Die
+     Einstellungen für Säge, Spannfutter und Fräser separieren ... 2. Darstellung 'gefüllt'
+     anbieten mit einer Farbe. Die Farbe aus Farbpalette auswählbar machen. Wenn Farbe ausgewählt
+     ist, 'Transparenz' auswählbar machen. Die Transparenz ist von 100% (= komplett durchsichtig,
+     bis auf das Drahtgitter) bis 0% (komplett ausgefüllt) möglich. Standardwert ist '0%'. Das
+     soll ein Schiebebalken werden (links 0%, rechts 100%) 3. Wenn Darstellung nicht 'gefüllt'
+     ist, gibt's den Menüpunkt für Transparenz nicht. 'Nicht gefüllt' = Darstellung wie aktuell
+     und Standardwert dafür 4. Beim Einstellungsexport fließen alle Werte/Einstellungen mit") -
+     drei inhaltlich identisch aufgebaute Panels (Säge/Spannfutter/Fräser, siehe
+     TOOL_APPEARANCE_KINDS/applyToolAppearance() in app.js für die gemeinsame, generische
+     Verdrahtung statt dreifacher Code-Kopie): Radiogruppe "Nicht gefüllt"/"Gefüllt" (Standard:
+     "Nicht gefüllt", identisch zur bisherigen reinen Drahtgitter-Darstellung), darunter NUR bei
+     "Gefüllt" eingeblendet (per [hidden], Punkt 3 oben) eine Farbzeile (natives
+     input[type=color] = "Farbe aus Farbpalette auswählbar", dieselbe Technik wie bei
+     "3D Rasterfarbe" oben, nur ohne deren automatisch/eigene-Häkchen, da "gefüllt" hier IMMER
+     eine konkrete Farbe bedeutet) sowie eine Transparenz-Schieberegler-Zeile (0-100%, Standard 0,
+     siehe applyToolAppearance()/drawTool()/fillRevolutionBody() in app.js für die tatsächliche
+     3D-Darstellung: das Drahtgitter bleibt dabei IMMER zusätzlich gezeichnet wie bisher - bei
+     Transparenz 100% ist die gefüllte Fläche deshalb unsichtbar und es bleibt exakt beim
+     bisherigen Drahtgitter-Look ["komplett durchsichtig, bis auf das Drahtgitter"], bei 0% ist
+     sie voll deckend und überdeckt das darunterliegende Drahtgitter optisch vollständig ["komplett
+     ausgefüllt"]). -->
+<div class="paste-panel" id="toolAppearanceSawPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Set saw appearance">Säge-Darstellung einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Shows the saw blade in the 3D simulation as a wireframe (as before) or additionally filled in a selectable color/transparency.">Zeigt das Sägeblatt in der 3D-Simulation als Drahtgitter (wie bisher) oder zusätzlich gefüllt in einer wählbaren Farbe/Transparenz.</p>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Display">Darstellung</div>
+      <div class="scale-choice" id="toolAppearanceSawFilledChoice">
+        <label class="scale-option"><input type="radio" name="toolAppearanceSawFilled" value="0"> <span data-i18n-en="Not filled">Nicht gefüllt</span></label>
+        <label class="scale-option"><input type="radio" name="toolAppearanceSawFilled" value="1"> <span data-i18n-en="Filled">Gefüllt</span></label>
+      </div>
+    </div>
+    <div class="color-field-row" id="toolAppearanceSawColorRow" hidden>
+      <span data-i18n-en="Color">Farbe</span>
+      <span class="color-field-inputs">
+        <input type="color" id="toolAppearanceSawColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="toolAppearanceSawColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9cacf">
+      </span>
+    </div>
+    <p class="panel-hint" id="toolAppearanceSawColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="scale-group" id="toolAppearanceSawTransparencyRow" hidden>
+      <div class="scale-group-title"><span data-i18n-en="Transparency">Transparenz</span>: <span id="toolAppearanceSawTransparencyValue">0%</span></div>
+      <div class="slider-row">
+        <span class="slider-pct-label">0%</span>
+        <input type="range" id="toolAppearanceSawTransparencySlider" min="0" max="100" step="1" value="0">
+        <span class="slider-pct-label">100%</span>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnToolAppearanceSawCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceSawApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div class="paste-panel" id="toolAppearanceColletPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Set collet appearance">Spannfutter-Darstellung einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Shows the collet (HSK63 tool holder) in the 3D simulation as a wireframe (as before) or additionally filled in a selectable color/transparency.">Zeigt das Spannfutter (HSK63-Werkzeughalter) in der 3D-Simulation als Drahtgitter (wie bisher) oder zusätzlich gefüllt in einer wählbaren Farbe/Transparenz.</p>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Display">Darstellung</div>
+      <div class="scale-choice" id="toolAppearanceColletFilledChoice">
+        <label class="scale-option"><input type="radio" name="toolAppearanceColletFilled" value="0"> <span data-i18n-en="Not filled">Nicht gefüllt</span></label>
+        <label class="scale-option"><input type="radio" name="toolAppearanceColletFilled" value="1"> <span data-i18n-en="Filled">Gefüllt</span></label>
+      </div>
+    </div>
+    <div class="color-field-row" id="toolAppearanceColletColorRow" hidden>
+      <span data-i18n-en="Color">Farbe</span>
+      <span class="color-field-inputs">
+        <input type="color" id="toolAppearanceColletColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="toolAppearanceColletColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9cacf">
+      </span>
+    </div>
+    <p class="panel-hint" id="toolAppearanceColletColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="scale-group" id="toolAppearanceColletTransparencyRow" hidden>
+      <div class="scale-group-title"><span data-i18n-en="Transparency">Transparenz</span>: <span id="toolAppearanceColletTransparencyValue">0%</span></div>
+      <div class="slider-row">
+        <span class="slider-pct-label">0%</span>
+        <input type="range" id="toolAppearanceColletTransparencySlider" min="0" max="100" step="1" value="0">
+        <span class="slider-pct-label">100%</span>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnToolAppearanceColletCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceColletApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div class="paste-panel" id="toolAppearanceCutterPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Set cutter appearance">Fräser-Darstellung einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Shows the cutter in the 3D simulation as a wireframe (as before) or additionally filled in a selectable color/transparency.">Zeigt den Fräser in der 3D-Simulation als Drahtgitter (wie bisher) oder zusätzlich gefüllt in einer wählbaren Farbe/Transparenz.</p>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Display">Darstellung</div>
+      <div class="scale-choice" id="toolAppearanceCutterFilledChoice">
+        <label class="scale-option"><input type="radio" name="toolAppearanceCutterFilled" value="0"> <span data-i18n-en="Not filled">Nicht gefüllt</span></label>
+        <label class="scale-option"><input type="radio" name="toolAppearanceCutterFilled" value="1"> <span data-i18n-en="Filled">Gefüllt</span></label>
+      </div>
+    </div>
+    <div class="color-field-row" id="toolAppearanceCutterColorRow" hidden>
+      <span data-i18n-en="Color">Farbe</span>
+      <span class="color-field-inputs">
+        <input type="color" id="toolAppearanceCutterColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="toolAppearanceCutterColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9cacf">
+      </span>
+    </div>
+    <p class="panel-hint" id="toolAppearanceCutterColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="scale-group" id="toolAppearanceCutterTransparencyRow" hidden>
+      <div class="scale-group-title"><span data-i18n-en="Transparency">Transparenz</span>: <span id="toolAppearanceCutterTransparencyValue">0%</span></div>
+      <div class="slider-row">
+        <span class="slider-pct-label">0%</span>
+        <input type="range" id="toolAppearanceCutterTransparencySlider" min="0" max="100" step="1" value="0">
+        <span class="slider-pct-label">100%</span>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnToolAppearanceCutterCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceCutterApply" type="button">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -6282,8 +6441,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 157;
-  const APP_RELEASE_TIMESTAMP = '06.10.2026, 12:25 Uhr';
+  const APP_RELEASE_NUMBER = 159;
+  const APP_RELEASE_TIMESTAMP = '06.10.2026, 16:16 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7075,6 +7234,64 @@ CORNERRADIUS=GFIL r=
     bakeParams = null;
     requestRender();
     return gridColorOverride;
+  }
+
+  // "Werkzeuge" ("Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge", Release 158, Sebastian:
+  // "Werkzeug bzw. Spannfutter-Darstellung: Bitte neue Einstellungen unter Einstellungen ->
+  // Erscheinungsbild -> 'Werkzeuge' ... 1. Die Einstellungen für Säge, Spannfutter und Fräser
+  // separieren ... 2. Darstellung 'gefüllt' anbieten mit einer Farbe ... Transparenz ... 0% bis
+  // 100% ... Standardwert ist '0%' ... 3. Wenn Darstellung nicht 'gefüllt' ist, gibt's den
+  // Menüpunkt für Transparenz nicht. 'Nicht gefüllt' = Darstellung wie aktuell und Standardwert
+  // dafür 4. Beim Einstellungsexport fließen alle Werte/Einstellungen mit"). Drei unabhängige
+  // Einstellungsobjekte (Säge/Spannfutter/Fräser), je `{filled, color, transparency}` - anders als
+  // "3D Rasterfarbe" oben (null=automatisch/Hexcode=Übersteuerung) gibt es hier KEINEN
+  // "automatisch"-Zustand, sondern eine echte Ja/Nein-Auswahl ("Nicht gefüllt"/"Gefüllt", Punkt 3),
+  // Standard ist "Nicht gefüllt" (= unverändert nur Drahtgitter, exakt der bisherige Stand vor
+  // dieser Runde). `color` ist die Füllfarbe (nur relevant/sichtbar, wenn filled=true, siehe Punkt
+  // 3 sowie die Panel-[hidden]-Logik weiter unten), `transparency` eine Ganzzahl 0-100 (Punkt 2:
+  // "0%" = komplett ausgefüllt/deckend, "100%" = komplett durchsichtig bis auf das Drahtgitter,
+  // Standard 0 - siehe fillRevolutionBody()/drawTool() weiter unten für die tatsächliche
+  // Umrechnung in die Canvas-Deckkraft).
+  const LS_KEY_TOOL_APPEARANCE_CUTTER = 'cncsim.toolAppearance.cutter';
+  const LS_KEY_TOOL_APPEARANCE_SAW = 'cncsim.toolAppearance.saw';
+  const LS_KEY_TOOL_APPEARANCE_COLLET = 'cncsim.toolAppearance.collet';
+  // Dieselbe helle Grau-Vorgabe wie im Sebastian vorab gezeigten Vorschaubild (Fräszylinder/Säge
+  // "gefüllt" in hellem Grau) - reiner Startwert, über den Farbwähler frei änderbar.
+  const DEFAULT_TOOL_FILL_COLOR = '#c9cacf';
+  const DEFAULT_TOOL_APPEARANCE = { filled: false, color: DEFAULT_TOOL_FILL_COLOR, transparency: 0 };
+  function normalizeToolAppearance(data) {
+    const filled = !!(data && data.filled);
+    const color = normalizeHex(data && data.color) || DEFAULT_TOOL_FILL_COLOR;
+    let transparency = Number(data && data.transparency);
+    if (!Number.isFinite(transparency)) transparency = 0;
+    transparency = Math.max(0, Math.min(100, Math.round(transparency)));
+    return { filled, color, transparency };
+  }
+  function loadPersistedToolAppearance(key) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw) return normalizeToolAppearance(JSON.parse(raw));
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return Object.assign({}, DEFAULT_TOOL_APPEARANCE);
+  }
+  function persistToolAppearance(key, appearance) {
+    try { window.localStorage.setItem(key, JSON.stringify(appearance)); } catch (e) { /* s.o. */ }
+  }
+  const TOOL_APPEARANCE_LS_KEYS = { cutter: LS_KEY_TOOL_APPEARANCE_CUTTER, saw: LS_KEY_TOOL_APPEARANCE_SAW, collet: LS_KEY_TOOL_APPEARANCE_COLLET };
+  let cutterAppearance = Object.assign({}, DEFAULT_TOOL_APPEARANCE);
+  let sawAppearance = Object.assign({}, DEFAULT_TOOL_APPEARANCE);
+  let colletAppearance = Object.assign({}, DEFAULT_TOOL_APPEARANCE);
+  // Self-persisting Setter (Zustand+Persistenz+Rebake in einem Aufruf), exakt dasselbe Muster wie
+  // setGridVisible()/applyGridColor() oben - "kind" ist 'cutter'/'saw'/'collet'.
+  function applyToolAppearance(kind, data) {
+    const normalized = normalizeToolAppearance(data);
+    if (kind === 'cutter') cutterAppearance = normalized;
+    else if (kind === 'saw') sawAppearance = normalized;
+    else if (kind === 'collet') colletAppearance = normalized;
+    persistToolAppearance(TOOL_APPEARANCE_LS_KEYS[kind], normalized);
+    bakeParams = null;
+    requestRender();
+    return normalized;
   }
 
   // ============================================================
@@ -12644,22 +12861,145 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   );
   const TOOL_HOLDER_HSK63_EXTENDED_PROFILE = mirrorProfile(TOOL_HOLDER_HSK63_EXTENDED_PROFILE_RAW, HSK63_PROFILE_TOTAL_LENGTH + HSK63_EXTENDED_EXTRA_LENGTH);
 
+  // "Werkzeuge" (Release 158, siehe ausführlichen Kommentar bei applyToolAppearance() weiter
+  // oben) - gemeinsame Füll-Routine für JEDEN rotationssymmetrischen Werkzeugkörper (den
+  // einfachen zweiringigen Zylinder aus drawTool() UND das mehrringige HSK63-/Adapter-Profil aus
+  // drawToolHolder() weiter unten): aus je zwei benachbarten Ringen entsteht ein Kranz aus N
+  // Viereck-Mantelflächen, deren Flächennormale per Kreuzprodukt zweier Kantenvektoren bestimmt
+  // wird (funktioniert dadurch unverändert korrekt für echte Zylinderabschnitte UND für
+  // kegelige/profilierte Übergänge, nicht nur für eine rein radiale Normale wie bei einem reinen
+  // Zylinder) - exakt dasselbe Rückseiten-Culling/Schattierungsprinzip wie beim Würfel-Gizmo
+  // (drawViewGizmo(): facing = normal·fwd, Rückseite bei facing > -0.02, shade = -facing),
+  // zusätzlich Tiefensortierung (fern->nah, per proj(...).depth) für ein einigermaßen plausibles
+  // Maler-Algorithmus-Ergebnis ohne echten Tiefenpuffer. "startCapNormal"/"endCapNormal" (je
+  // null oder ein Einheitsvektor) lassen optional den ersten/letzten Ring zusätzlich als flache
+  // Stirnfläche schließen - der Aufrufer übergibt hier nur dann einen Vektor, wenn der
+  // betreffende Ring tatsächlich Radius > 0 hat (ein Radius-0-Ring ist bereits nur eine Spitze,
+  // keine eigene Fläche). Wird NUR gezeichnet, wenn appearance.filled true ist - das Drahtgitter
+  // selbst (siehe unten) bleibt davon komplett unberührt und wird IMMER zusätzlich gezeichnet
+  // (Transparenz 100% => Füllung unsichtbar => optisch identisch zum bisherigen reinen
+  // Drahtgitter, "komplett durchsichtig, bis auf das Drahtgitter").
+  // Bugfix (Release 158, Sebastian: "Wenn man auf das Spannfutter von oben/unten draufschaut,
+  // sind manche Flächen nicht ausgefüllt. Das ist beim Fräser auch so."): Die Flächen-Normale
+  // (nx/ny/nz) wird oben aus den WELT-/CNC-Koordinaten der Eckpunkte berechnet (dieselbe
+  // Konvention wie overall p.x/p.y/p.z aus extractMotion() - CNC-Z = Höhe), cam.orient.fwd
+  // dagegen lebt in RENDER-Koordinaten, wo CNC-Z zu render-Y wird (siehe toRender() oben:
+  // "render.y = cnc.z, render.z = cnc.y"). Die beiden Vektoren VOR dem fehlenden Fix direkt
+  // (ohne diesen Achsentausch) zu verrechnen, vergleicht also Äpfel mit Birnen - für die meisten
+  // Kamerawinkel sieht das Ergebnis "zufällig plausibel genug" aus (deshalb unbemerkt durch die
+  // bisherigen Tests gerutscht), erzeugt bei (nahezu) senkrechter Draufsicht auf eine (die
+  // allermeisten Werkzeuge stehen senkrecht, CNC-Achse (0,0,1)) aber ein fehlerhaftes Muster: die
+  // tatsächlich korrekte Normale steht dort für den GESAMTEN Ringumfang nahe 0° zur Blickrichtung
+  // (siehe Herleitung: eine radiale Normale senkrecht zur Werkzeugachse ist bei exakt axialer
+  // Draufsicht IMMER senkrecht zu "fwd"), die FALSCH verrechnete (vertauschte) Normale ergibt
+  // stattdessen einen stark schwankenden, scheinbar "normalen" Wert über den Ringumfang - mit der
+  // Folge, dass rund die HÄLFTE des Rings (statt gar keiner oder nur eines winzigen Streifens nahe
+  // der Silhouette) als "Rückseite" verworfen wird. An Zwischen-Profilstufen (zwischen zwei Ringen
+  // OHNE eigene Stirnfläche, siehe addCap() unten - die gibt's nur ganz am Anfang/Ende des
+  // Profils) gibt es dahinter keine andere Fläche, die diese Lücke stattdessen zeigen würde - der
+  // Hintergrund scheint direkt durch das Werkzeug/den Halter hindurch (sichtbar als keilförmige
+  // "Kerbe" bzw., bei einer zur Spitze zulaufenden Kontur wie dem HSK63-Profil, als rundes "Loch"
+  // in der Mitte). Fix Teil 1: beim Verrechnen mit "fwd" denselben Achsentausch wie toRender()
+  // anwenden (render-Y <- Welt-Z, render-Z <- Welt-Y) - NICHT die kompletten Weltpunkte vorher
+  // transformieren (unnötig teurer, die Bildschirmpunkte/Tiefensortierung sind davon ohnehin
+  // unabhängig), sondern nur beim Bilden des Skalarprodukts die y/z-Komponenten vertauscht lesen.
+  // Fix Teil 2 (bleibt auch nach Teil 1 nötig): selbst korrekt umgerechnet ist eine RADIALE
+  // Normale (jede reine Mantel-/Kegelfläche - nur die achsparallelen "Schulter"-Flächen an
+  // echten Durchmesser-Sprüngen sind davon nicht betroffen) bei (nahezu) axialer Draufsicht
+  // tatsächlich (fast) senkrecht zur Blickrichtung - "facing" liegt dort für den GESAMTEN
+  // Ringumfang nahe 0, im unsicheren Bereich um den -0.02-Schwellwert, und genau an
+  // Zwischen-Profilstufen ohne eigene Stirnfläche (addCap() greift nur ganz am Anfang/Ende des
+  // Profils) bleibt dahinter nichts, das eine fälschlich verworfene Fläche ersetzen könnte - der
+  // Hintergrund scheint hindurch. Deshalb zusätzlich: Nur wenn die Kamera-Blickrichtung zu
+  // <~32° auf der Werkzeugachse steht (|axis·fwd| > 0.85, "axis" hier vom Aufrufer bereits in
+  // Render-Koordinaten übergeben), wird das Culling für die Mantel-Facetten ausgesetzt und jede
+  // Facette gezeichnet, verlässlich per Tiefensortierung unten in der richtigen Reihenfolge
+  // übereinandergelegt - in jeder "normalen" Ansicht bleibt das sonstige, bereits getestete
+  // Verhalten unverändert.
+  function fillRevolutionBody(worldRings, screenRings, appearance, caps, axis) {
+    const startCapNormal = caps && caps.startCapNormal;
+    const endCapNormal = caps && caps.endCapNormal;
+    const faces = [];
+    const ringLen = worldRings[0].length;
+    const fwd = cam.orient.fwd;
+    // "axis" kommt vom Aufrufer bereits in Render-Koordinaten (siehe Kommentar oben) - hier ohne
+    // weitere Umrechnung direkt mit "fwd" verrechenbar.
+    const axisFacing = axis ? Math.abs(axis.x * fwd.x + axis.y * fwd.y + axis.z * fwd.z) : 0;
+    const skipSideCull = axisFacing > 0.85;
+    for (let r = 0; r < worldRings.length - 1; r++) {
+      const wA = worldRings[r], wB = worldRings[r + 1];
+      const sA = screenRings[r], sB = screenRings[r + 1];
+      for (let i = 0; i < ringLen - 1; i++) {
+        const p0 = wA[i], p1 = wA[i + 1], p2 = wB[i + 1], p3 = wB[i];
+        const s0 = sA[i], s1 = sA[i + 1], s2 = sB[i + 1], s3 = sB[i];
+        if (!s0 || !s1 || !s2 || !s3) continue;
+        const e1x = p1.x - p0.x, e1y = p1.y - p0.y, e1z = p1.z - p0.z;
+        const e2x = p3.x - p0.x, e2y = p3.y - p0.y, e2z = p3.z - p0.z;
+        let nx = e1y * e2z - e1z * e2y;
+        let ny = e1z * e2x - e1x * e2z;
+        let nz = e1x * e2y - e1y * e2x;
+        const nlen = Math.hypot(nx, ny, nz);
+        if (nlen < 1e-9) continue; // entarteter Ring (Radius 0 an beiden Enden) - keine Fläche
+        nx /= nlen; ny /= nlen; nz /= nlen;
+        // y/z vertauscht gelesen - siehe Kommentar oben (toRender()-Konvention).
+        const facing = nx * fwd.x + nz * fwd.y + ny * fwd.z;
+        if (!skipSideCull && facing > -0.02) continue; // Rückseite, siehe Kommentar oben
+        const depth = (s0.depth + s1.depth + s2.depth + s3.depth) / 4;
+        faces.push({ pts: [s0, s1, s2, s3], depth, shade: Math.max(0, Math.min(1, -facing)) });
+      }
+    }
+    function addCap(screenRing, outward) {
+      if (!outward || !screenRing.every(Boolean)) return;
+      const fwd = cam.orient.fwd;
+      // Dieselbe y/z-Vertauschung wie oben - "outward" ist ±axis, ebenfalls in Welt-/
+      // CNC-Koordinaten.
+      const facing = outward.x * fwd.x + outward.z * fwd.y + outward.y * fwd.z;
+      if (facing > -0.02) return;
+      const depth = screenRing.reduce((s, p) => s + p.depth, 0) / screenRing.length;
+      faces.push({ pts: screenRing, depth, shade: Math.max(0, Math.min(1, -facing)) });
+    }
+    addCap(screenRings[0], startCapNormal);
+    addCap(screenRings[screenRings.length - 1], endCapNormal);
+    if (!faces.length) return;
+    faces.sort((a, b) => b.depth - a.depth); // fern -> nah (Maler-Algorithmus)
+    const rgb = hexToRgb(appearance.color) || { r: 201, g: 202, b: 207 };
+    const alpha = Math.max(0, Math.min(1, 1 - appearance.transparency / 100));
+    if (alpha <= 0) return; // 100% Transparenz - siehe Kommentar oben, nichts zu zeichnen
+    faces.forEach(f => {
+      const light = 0.55 + f.shade * 0.45;
+      ctx.beginPath();
+      f.pts.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${Math.round(rgb.r * light)},${Math.round(rgb.g * light)},${Math.round(rgb.b * light)},${alpha})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${Math.round(rgb.r * 0.5)},${Math.round(rgb.g * 0.5)},${Math.round(rgb.b * 0.5)},${Math.min(1, alpha + 0.2)})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    });
+  }
+
   // Rotiert ein rotationssymmetrisches Profil (Standard: TOOL_HOLDER_HSK63_PROFILE, siehe
   // optionales profile-Argument sowie BLADE_ADAPTER_PROFILE oben für den zweiten Verwendungsfall)
   // um die aktuelle Werkzeugachse und zeichnet den entstehenden Körper als Drahtgitter - dieselbe
   // Grundtechnik wie der Zylinder in drawTool() (Ringe + spärliche Mantellinien), nur mit einem
-  // mehrteiligen Profil statt einer einzelnen geraden Strecke.
+  // mehrteiligen Profil statt einer einzelnen geraden Strecke. Seit Release 158 zusätzlich, wenn
+  // "appearance" übergeben wird und appearance.filled true ist, über fillRevolutionBody() oben
+  // gefüllt dargestellt ("Spannfutter"-Einstellung, siehe applyToolAppearance() weiter oben) -
+  // appearance bleibt optional (ohne Argument unverändertes reines Drahtgitter), falls diese
+  // Funktion je an anderer Stelle ohne Farbkontext aufgerufen werden sollte.
   // origin = das Achsen-Ende, an dem das Profil bei dist=0 beginnt (für den HSK63-Halter normal
   // "top" aus drawTool(), das vom Werkstück abgewandte Zylinder-Ende; für den Sägeblatt-Adapter
   // ebenfalls "top", siehe dort), axis/u/v = dieselbe orthonormale Werkzeug-Achsen-Basis wie beim
   // Zylinder (u/v stehen senkrecht auf axis) - alle so gezeichneten Teile sind dadurch immer
   // exakt gleich ausgerichtet.
-  function drawToolHolder(origin, axis, u, v, proj, profile) {
+  function drawToolHolder(origin, axis, u, v, proj, profile, appearance) {
     profile = profile || TOOL_HOLDER_HSK63_PROFILE;
     const N = 16;
-    // Für jeden Profilpunkt ein voller Ring aus N+1 3D-Weltpunkten, direkt auf Bildschirm-
-    // koordinaten projiziert (wie bottomScreen/topScreen in drawTool()).
-    const rings = profile.map(pt => {
+    // Für jeden Profilpunkt ein voller Ring aus N+1 3D-Weltpunkten - Weltkoordinaten UND
+    // Bildschirmprojektion bleiben beide erhalten (Release 158: fillRevolutionBody() oben
+    // braucht die Weltpunkte für die Flächennormalen, das bisherige Drahtgitter weiterhin nur die
+    // Bildschirmpunkte).
+    const worldRings = profile.map(pt => {
       const center = { x: origin.x + axis.x * pt.dist, y: origin.y + axis.y * pt.dist, z: origin.z + axis.z * pt.dist };
       const ring = [];
       for (let i = 0; i <= N; i++) {
@@ -12667,8 +13007,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         const ct = Math.cos(theta) * pt.r, st = Math.sin(theta) * pt.r;
         ring.push({ x: center.x + u.x * ct + v.x * st, y: center.y + u.y * ct + v.y * st, z: center.z + u.z * ct + v.z * st });
       }
-      return ring.map(p3 => proj(toRender(p3)));
+      return ring;
     });
+    const rings = worldRings.map(ring => ring.map(p3 => proj(toRender(p3))));
 
     ctx.strokeStyle = cssVar('--tool-color');
     ctx.lineWidth = 1.3;
@@ -12700,6 +13041,19 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     }
 
     ctx.globalAlpha = 1;
+
+    // Gefüllte Darstellung (Release 158, "Spannfutter") - siehe Kommentar oben. Stirnflächen nur
+    // am ersten/letzten Profilpunkt und nur, wenn dessen Radius tatsächlich > 0 ist (Ring mit
+    // Radius 0 = reine Spitze, siehe oben).
+    if (appearance && appearance.filled) {
+      const first = profile[0], last = profile[profile.length - 1];
+      const startCapNormal = first.r > 1e-6 ? { x: -axis.x, y: -axis.y, z: -axis.z } : null;
+      const endCapNormal = last.r > 1e-6 ? { x: axis.x, y: axis.y, z: axis.z } : null;
+      // "axis" fürs Culling in Render-Koordinaten übergeben (y/z vertauscht, siehe toRender()/
+      // Kommentar bei fillRevolutionBody()) - "axis" selbst bleibt in Welt-/CNC-Koordinaten (wird
+      // weiter unten/oben auch für die reine Geometrie-Berechnung in CNC-Koordinaten gebraucht).
+      fillRevolutionBody(worldRings, rings, appearance, { startCapNormal, endCapNormal }, { x: axis.x, y: axis.z, z: axis.y });
+    }
   }
 
   function drawTool(proj) {
@@ -12864,6 +13218,20 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.globalAlpha = 1;
+
+      // Gefüllte Darstellung (Release 158, "Säge"/"Fräser" - siehe applyToolAppearance() weiter
+      // oben): p.toolIsBlade entscheidet, welche der beiden unabhängigen Einstellungen für DIESEN
+      // Punkt gilt (derselbe Zylinder-Zeichencode wird für Säge UND Fräser gemeinsam genutzt,
+      // siehe Kommentar am Funktionsanfang - nur tip/top/axis unterscheiden sich). Stirnflächen an
+      // beiden Enden, da bottomPts/topPts beim Zylinder immer Radius > 0 haben (anders als beim
+      // HSK63-Profil in drawToolHolder(), wo einzelne Profilpunkte auf Radius 0 zulaufen können).
+      const activeToolAppearance = p.toolIsBlade ? sawAppearance : cutterAppearance;
+      if (activeToolAppearance.filled) {
+        fillRevolutionBody([bottomPts, topPts], [bottomScreen, topScreen], activeToolAppearance, {
+          startCapNormal: { x: -axis.x, y: -axis.y, z: -axis.z },
+          endCapNormal: { x: axis.x, y: axis.y, z: axis.z }
+        }, { x: axis.x, y: axis.z, z: axis.y });
+      }
     }
 
     // HSK63-Werkzeughalter samt Sägeblatt-Adapterstück ("Spannfutter", 52./53. Runde, siehe
@@ -12917,8 +13285,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // in diesem Fall nicht mehr direkt an holderAttach an, sondern erst an dessen um
       // BLADE_ADAPTER_LENGTH entlang der Achse verschobenem Ende.
       let holderOrigin = holderAttach;
+      // "Spannfutter"-Einstellung (Release 158): gilt für die GESAMTE Halter-Baugruppe, also
+      // sowohl das Sägeblatt-Adapterstück als auch den eigentlichen HSK63-Halter gleichermaßen -
+      // genau wie schon showToolHolder (ein einziger Ein-/Ausblend-Zustand für beide Teile).
       if (p.toolIsBlade) {
-        drawToolHolder(holderAttach, axis, u, v, proj, BLADE_ADAPTER_PROFILE);
+        drawToolHolder(holderAttach, axis, u, v, proj, BLADE_ADAPTER_PROFILE, colletAppearance);
         holderOrigin = {
           x: holderAttach.x + axis.x * BLADE_ADAPTER_LENGTH,
           y: holderAttach.y + axis.y * BLADE_ADAPTER_LENGTH,
@@ -12929,7 +13300,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       // (p.toolIsBlade) wird für den Halter selbst die verlängerte Profilvariante statt der
       // Standardaufnahme verwendet; am unveränderten Sägeblatt-Adapterstück direkt oberhalb (s.o.)
       // ändert das nichts.
-      drawToolHolder(holderOrigin, axis, u, v, proj, p.toolIsBlade ? TOOL_HOLDER_HSK63_EXTENDED_PROFILE : undefined);
+      drawToolHolder(holderOrigin, axis, u, v, proj, p.toolIsBlade ? TOOL_HOLDER_HSK63_EXTENDED_PROFILE : undefined, colletAppearance);
     }
   }
 
@@ -14022,7 +14393,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     LS_KEY_COLUMN_SCALE, LS_KEY_INVERT_TILT, LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
     LS_KEY_GRID_VISIBLE, // Release 154, siehe eigenes "gridVisible"-Feld weiter unten
-    LS_KEY_GRID_COLOR // Release 157, siehe eigenes "gridColor"-Feld weiter unten
+    LS_KEY_GRID_COLOR, // Release 157, siehe eigenes "gridColor"-Feld weiter unten
+    // Release 158, siehe eigene "toolAppearanceSaw"/"toolAppearanceCollet"/"toolAppearanceCutter"-
+    // Felder weiter unten.
+    LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -14086,6 +14460,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // bei den einzelnen Schlüsseln in "fontColors" oben, nur als eigenes, einfaches Feld statt
       // Unterobjekt (da es hier nur eine einzige Farbe statt fünf gibt).
       gridColor: gridColorOverride,
+      // "Werkzeuge" (Release 158, Sebastian, Punkt 4: "Beim Einstellungsexport fließen alle
+      // Werte/Einstellungen mit") - je ein einfaches Unterobjekt {filled, color, transparency} pro
+      // Werkzeugtyp, exakt dieselbe Struktur wie intern (siehe applyToolAppearance() weiter oben).
+      toolAppearanceSaw: Object.assign({}, sawAppearance),
+      toolAppearanceCollet: Object.assign({}, colletAppearance),
+      toolAppearanceCutter: Object.assign({}, cutterAppearance),
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -14201,6 +14581,23 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.gridColor === null || typeof data.gridColor === 'string') {
         gridColorOverride = applyGridColor(data.gridColor);
         syncGridColorPanelFromActive();
+      }
+      // "Werkzeuge" (Release 158, Sebastian, Punkt 4): fehlt eines der drei Felder (ältere Datei),
+      // bleibt die jeweils aktuell aktive Einstellung unangetastet - dieselbe Regel wie bei den
+      // übrigen Einstellungsteilen oben. normalizeToolAppearance() (über applyToolAppearance()
+      // aufgerufen) fängt dabei zusätzlich unvollständige/ungültige Teilobjekte ab (fällt dann
+      // feldweise auf den jeweiligen Standard zurück statt den ganzen Import abzubrechen).
+      if (data.toolAppearanceSaw && typeof data.toolAppearanceSaw === 'object') {
+        applyToolAppearance('saw', data.toolAppearanceSaw);
+        if (toolAppearanceSyncFns.saw) toolAppearanceSyncFns.saw();
+      }
+      if (data.toolAppearanceCollet && typeof data.toolAppearanceCollet === 'object') {
+        applyToolAppearance('collet', data.toolAppearanceCollet);
+        if (toolAppearanceSyncFns.collet) toolAppearanceSyncFns.collet();
+      }
+      if (data.toolAppearanceCutter && typeof data.toolAppearanceCutter === 'object') {
+        applyToolAppearance('cutter', data.toolAppearanceCutter);
+        if (toolAppearanceSyncFns.cutter) toolAppearanceSyncFns.cutter();
       }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
@@ -14531,6 +14928,92 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     gridColorOverride = applyGridColor(norm);
     gridColorPanel.classList.remove('open');
+  });
+
+  // "Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge" (Release 158, siehe applyToolAppearance()/
+  // TOOL_APPEARANCE_LS_KEYS weiter oben sowie #toolAppearanceSawPanel/#toolAppearanceColletPanel/
+  // #toolAppearanceCutterPanel in template_top.html). Säge/Spannfutter/Fräser teilen sich exakt
+  // denselben Panel-Aufbau (Radiogruppe "Nicht gefüllt"/"Gefüllt" + Farbzeile + Transparenz-
+  // Schieberegler, beide Letztere nur bei "Gefüllt" per [hidden] sichtbar, Punkt 3 von Sebastians
+  // Anfrage) - deshalb HIER EINE generische Verdrahtungsfunktion statt dreifacher Code-Kopie,
+  // anders als bei "Farben" (dort hat jede Zeile einen eigenen Zweck/eigene CSS-Variablen und wird
+  // deshalb weiterhin einzeln von Hand verdrahtet, siehe dort).
+  const TOOL_APPEARANCE_KINDS = [
+    { kind: 'saw', prefix: 'toolAppearanceSaw', btnId: 'btnToolAppearanceSaw', get: () => sawAppearance },
+    { kind: 'collet', prefix: 'toolAppearanceCollet', btnId: 'btnToolAppearanceCollet', get: () => colletAppearance },
+    { kind: 'cutter', prefix: 'toolAppearanceCutter', btnId: 'btnToolAppearanceCutter', get: () => cutterAppearance }
+  ];
+  const toolAppearanceSyncFns = {};
+  TOOL_APPEARANCE_KINDS.forEach(cfg => {
+    const prefix = cfg.prefix;
+    const capPrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    const panel = el(prefix + 'Panel');
+    const colorRow = el(prefix + 'ColorRow');
+    const colorHexWarning = el(prefix + 'ColorHexWarning');
+    const colorPicker = el(prefix + 'ColorPicker');
+    const colorHex = el(prefix + 'ColorHex');
+    const transparencyRow = el(prefix + 'TransparencyRow');
+    const transparencySlider = el(prefix + 'TransparencySlider');
+    const transparencyValue = el(prefix + 'TransparencyValue');
+
+    // Punkt 3 (Sebastian): "Wenn Darstellung nicht 'gefüllt' ist, gibt's den Menüpunkt für
+    // Transparenz nicht" - Farbzeile UND Transparenz-Zeile werden deshalb komplett ausgeblendet
+    // (nicht nur deaktiviert/ausgegraut wie bei "3D Rasterfarbe"), solange "Nicht gefüllt" gewählt
+    // ist.
+    function updateFilledRowsVisibility() {
+      const checked = panel.querySelector('input[name="' + prefix + 'Filled"]:checked');
+      const isFilled = !!checked && checked.value === '1';
+      colorRow.hidden = !isFilled;
+      transparencyRow.hidden = !isFilled;
+    }
+    function syncFromActive() {
+      const active = cfg.get();
+      const radio = panel.querySelector('input[name="' + prefix + 'Filled"][value="' + (active.filled ? '1' : '0') + '"]');
+      if (radio) radio.checked = true;
+      colorPicker.value = active.color;
+      colorHex.value = active.color;
+      transparencySlider.value = String(active.transparency);
+      transparencyValue.textContent = active.transparency + '%';
+      colorHexWarning.hidden = true;
+      updateFilledRowsVisibility();
+    }
+    toolAppearanceSyncFns[cfg.kind] = syncFromActive;
+
+    panel.querySelectorAll('input[name="' + prefix + 'Filled"]').forEach(r => r.addEventListener('change', updateFilledRowsVisibility));
+    colorHex.addEventListener('input', () => {
+      const norm = normalizeHex(colorHex.value);
+      if (norm) colorPicker.value = norm;
+    });
+    colorPicker.addEventListener('input', () => { colorHex.value = colorPicker.value; });
+    // Live-Prozentanzeige neben "Transparenz" (Punkt 2: "links 0%, rechts 100%") - rein optisches
+    // Feedback während des Ziehens, Übernahme erst per "Übernehmen" unten.
+    transparencySlider.addEventListener('input', () => { transparencyValue.textContent = transparencySlider.value + '%'; });
+
+    el(cfg.btnId).addEventListener('click', () => {
+      syncFromActive();
+      panel.classList.add('open');
+    });
+    el('btn' + capPrefix + 'Cancel').addEventListener('click', () => panel.classList.remove('open'));
+    el('btn' + capPrefix + 'Apply').addEventListener('click', () => {
+      const checked = panel.querySelector('input[name="' + prefix + 'Filled"]:checked');
+      const isFilled = !!checked && checked.value === '1';
+      if (!isFilled) {
+        // Farbe/Transparenz bleiben beim Zurückschalten auf "Nicht gefüllt" unverändert
+        // gespeichert (nur "filled" wechselt) - ein späteres erneutes Aktivieren von "Gefüllt"
+        // findet dadurch wieder genau die zuletzt gewählte Farbe/Transparenz vor, statt auf den
+        // Standard zurückzufallen.
+        applyToolAppearance(cfg.kind, { filled: false, color: cfg.get().color, transparency: cfg.get().transparency });
+        panel.classList.remove('open');
+        return;
+      }
+      const norm = normalizeHex(colorHex.value);
+      if (!norm) {
+        colorHexWarning.hidden = false;
+        return;
+      }
+      applyToolAppearance(cfg.kind, { filled: true, color: norm, transparency: Number(transparencySlider.value) });
+      panel.classList.remove('open');
+    });
   });
 
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
@@ -16220,6 +16703,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Raster" direkt oberhalb - direkt von
   // drawGrid() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
   gridColorOverride = loadPersistedGridColor();
+  // "Werkzeuge" (Release 158): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
+  // übernehmen, dieselbe Reihenfolge/Begründung wie bei "3D Rasterfarbe" direkt oberhalb - direkt
+  // von drawTool()/drawToolHolder() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an
+  // dieser Stelle nötig.
+  cutterAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_CUTTER);
+  sawAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_SAW);
+  colletAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_COLLET);
   activeMenuColor = applyMenuHighlightColor(loadPersistedMenuColor());
   // "Schriftfarbe" (66. Runde): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei den drei Einstellungen oben.
