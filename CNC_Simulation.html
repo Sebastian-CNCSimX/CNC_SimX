@@ -2311,6 +2311,12 @@
                        bekommt, welche der 3. usw.") - vierter Eintrag im "Farben"-Untermenü, siehe
                        #opColorPanel weiter unten sowie applyOpColors()/pathColor() in app.js. -->
                   <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)" data-i18n-en="Processing step color" data-i18n-en-title="Set the color of the six cyclically used processing step/path colors individually (1st processing step, 2nd processing step, etc.)">Arbeitsgangfarbe</button>
+                  <!-- "3D Rasterfarbe" (Release 157, Sebastian: "Neue Einstellung -> Erscheinungsbild
+                       -> Farben: '3D Rasterfarbe' (EN: 3D grid color): Ändert die Farbe des Rasters.
+                       Wird auch mitexportiert beim Einstellungsexport.") - fünfter Eintrag im
+                       "Farben"-Untermenü, siehe #gridColorPanel weiter unten sowie
+                       applyGridColor()/LS_KEY_GRID_COLOR in app.js. -->
+                  <button class="menu-item" id="btnGridColor" type="button" title="Farbe des Bodenrasters im 3D-Bereich festlegen (ansonsten automatisch passend zum Hintergrund)" data-i18n-en="3D grid color" data-i18n-en-title="Set the color of the floor grid in the 3D area (otherwise automatic, matching the background)">3D Rasterfarbe</button>
                 </div>
               </div>
               <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
@@ -2336,7 +2342,7 @@
                    nach "Spalten" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
                    Schritt Buttonfarbe, Hintergrundfarbe, die neue Schriftfarbe UND die
                    Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js. -->
-              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, and column widths to their default values">Standardwerte wiederherstellen</button>
+              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
           <!-- "Maschinentypen" + "Einstellungen exportieren"/"Einstellungen importieren" hierher
@@ -3410,6 +3416,35 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnOpColorCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnOpColorApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "3D Rasterfarbe" (Release 157, Sebastian: "Neue Einstellung -> Erscheinungsbild -> Farben: '3D
+     Rasterfarbe' (EN: 3D grid color): Ändert die Farbe des Rasters. Wird auch mitexportiert beim
+     Einstellungsexport.") - eine einzelne Zeile, dieselbe Häkchen+Text+Farbwähler-Technik wie bei
+     "Schriftfarbe" (.font-color-row, siehe #fontColorPanel oben): ein deaktiviertes Häkchen
+     bedeutet "automatisch" (die bisherige, zum Hintergrund passende --grid-line-Variable, siehe
+     drawGrid()/applyGridColor() in app.js), ein aktiviertes Häkchen übersteuert mit der daneben
+     gewählten, vollen (nicht transparenten) Farbe. -->
+<div class="paste-panel" id="gridColorPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Set 3D grid color">3D Rasterfarbe einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Color of the floor grid in the 3D area. An enabled checkbox fixes the color chosen next to it; left disabled, the grid keeps automatically using a subtle, background-matching color.">Farbe des Bodenrasters im 3D-Bereich. Ein aktiviertes Häkchen legt die daneben gewählte Farbe fest; bleibt es deaktiviert, verwendet das Raster weiterhin automatisch eine dezente, zum Hintergrund passende Farbe.</p>
+    <label class="color-field-row font-color-row">
+      <span class="font-color-row-label">
+        <input type="checkbox" id="gridColorCustom">
+        <span data-i18n-en="3D grid color">3D Rasterfarbe</span>
+      </span>
+      <span class="color-field-inputs">
+        <input type="color" id="gridColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="gridColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#8a9ba6">
+      </span>
+    </label>
+    <p class="panel-hint" id="gridColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnGridColorCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnGridColorApply" type="button">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -6247,8 +6282,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 156;
-  const APP_RELEASE_TIMESTAMP = '06.10.2026, 11:46 Uhr';
+  const APP_RELEASE_NUMBER = 157;
+  const APP_RELEASE_TIMESTAMP = '06.10.2026, 12:25 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -6999,6 +7034,47 @@ CORNERRADIUS=GFIL r=
     persistGridVisible(gridVisible);
     bakeParams = null;
     requestRender();
+  }
+
+  // "3D Rasterfarbe" ("Einstellungen" -> "Erscheinungsbild" -> "Farben" -> "3D Rasterfarbe",
+  // Release 157, Sebastian: "Neue Einstellung -> Erscheinungsbild -> Farben: '3D Rasterfarbe' (EN:
+  // 3D grid color): Ändert die Farbe des Rasters. Wird auch mitexportiert beim
+  // Einstellungsexport.") - fünfter Eintrag im "Farben"-Untermenü (siehe 2295ff), direkt nach
+  // "Arbeitsgangfarbe". Das Bodenraster (drawGrid() weiter unten) verwendet bislang AUSSCHLIESSLICH
+  // die automatisch aus der Hintergrundfarbe abgeleitete CSS-Variable "--grid-line" (dezentes, zum
+  // jeweiligen Theme passendes Grau mit 8% Deckkraft, siehe applyColorProfile()/
+  // CUSTOM_COLOR_VAR_NAMES oben) - KEINE eigene Übersteuerung. Dieselbe "null=automatisch, eigener
+  // Hexcode=Übersteuerung"-Konvention wie bei "Schriftfarbe" (FONT_COLOR_SLOTS oben, EIN einzelnes
+  // Häkchen statt fünf): fehlt eine Übersteuerung, bleibt das Raster unverändert automatisch/
+  // theme-passend; ein gewählter Hexcode wird dagegen - wie jede andere manuell gewählte Farbe in
+  // diesem Programm (Buttonfarbe/Arbeitsgangfarbe/Schriftfarbe) - als VOLLE, deckende Farbe
+  // verwendet, NICHT mit der dezenten 8%-Transparenz der automatischen Variante (siehe drawGrid()
+  // weiter unten) - wer eine eigene Rasterfarbe wählt, soll sie auch tatsächlich so sehen, wie
+  // gewählt.
+  const LS_KEY_GRID_COLOR = 'cncsim.gridColor';
+  function loadPersistedGridColor() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_GRID_COLOR);
+      return raw ? normalizeHex(raw) : null;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistGridColor(hex) {
+    try {
+      if (hex) window.localStorage.setItem(LS_KEY_GRID_COLOR, hex);
+      else window.localStorage.removeItem(LS_KEY_GRID_COLOR);
+    } catch (e) { /* s.o. */ }
+  }
+  // Aktuell aktive Übersteuerung (null = automatisch, siehe oben) - direkt von drawGrid() weiter
+  // unten ausgewertet. Self-persisting Setter (Zustand+Persistenz+Rebake in einem Aufruf), exakt
+  // dasselbe Muster wie setGridVisible() direkt oberhalb.
+  let gridColorOverride = null;
+  function applyGridColor(hex) {
+    gridColorOverride = hex ? normalizeHex(hex) : null;
+    persistGridColor(gridColorOverride);
+    bakeParams = null;
+    requestRender();
+    return gridColorOverride;
   }
 
   // ============================================================
@@ -11740,7 +11816,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     while (span / step > 12) step *= 2;
     const cx = (b.minx + b.maxx) / 2, cy = (b.miny + b.maxy) / 2;
     const half = Math.ceil((span * 0.9) / step) * step / 2 + step;
-    ctx.strokeStyle = cssVar('--grid-line');
+    // "3D Rasterfarbe" (Release 157, siehe gridColorOverride/applyGridColor() weiter oben): eine
+    // gesetzte Übersteuerung ersetzt die automatische, zum Hintergrund passende --grid-line-
+    // Variable vollständig (volle, deckende Farbe statt deren 8%-Transparenz).
+    ctx.strokeStyle = gridColorOverride || cssVar('--grid-line');
     ctx.lineWidth = 1;
     for (let gx = -half; gx <= half; gx += step) {
       const p1 = proj(toRender({ x: cx + gx, y: cy - half, z: 0 }));
@@ -13942,7 +14021,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     LS_KEY_MACHINETYPES_CONFIG, LS_KEY_ACTIVE_MACHINETYPE, LS_KEY_COLOR_PROFILE,
     LS_KEY_COLUMN_SCALE, LS_KEY_INVERT_TILT, LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
-    LS_KEY_GRID_VISIBLE // Release 154, siehe eigenes "gridVisible"-Feld weiter unten
+    LS_KEY_GRID_VISIBLE, // Release 154, siehe eigenes "gridVisible"-Feld weiter unten
+    LS_KEY_GRID_COLOR // Release 157, siehe eigenes "gridColor"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -14001,6 +14081,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // "Raster" (Release 154, Sebastian: "Die Einstellung vom Grid wird auch mitexportiert") -
       // genau wie bei "Rotation" ein einfacher Bool-Wert.
       gridVisible,
+      // "3D Rasterfarbe" (Release 157, Sebastian: "Wird auch mitexportiert beim
+      // Einstellungsexport.") - null (automatisch) oder ein Hexcode, exakt dieselbe Konvention wie
+      // bei den einzelnen Schlüsseln in "fontColors" oben, nur als eigenes, einfaches Feld statt
+      // Unterobjekt (da es hier nur eine einzige Farbe statt fünf gibt).
+      gridColor: gridColorOverride,
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -14108,6 +14193,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.gridVisible !== undefined) {
         setGridVisible(data.gridVisible === true || data.gridVisible === '1' || data.gridVisible === 1);
         syncGridSettingsPanelFromActive();
+      }
+      // "3D Rasterfarbe" (Release 157): fehlt das Feld (ältere Datei), bleibt die aktuell aktive
+      // Übersteuerung unangetastet - dieselbe Regel wie bei "Raster"/"Rotation" direkt oberhalb.
+      // Ein vorhandenes, aber explizites null setzt bewusst zurück auf "automatisch"
+      // (applyGridColor(null)), exakt wie bei "Arbeitsgangfarbe" oben.
+      if (data.gridColor === null || typeof data.gridColor === 'string') {
+        gridColorOverride = applyGridColor(data.gridColor);
+        syncGridColorPanelFromActive();
       }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
@@ -14385,6 +14478,61 @@ Sebastian Bäcker (Anschrift wie oben)`,
     opColorPanel.classList.remove('open');
   });
 
+  // "Einstellungen" -> "Farben" -> "3D Rasterfarbe" (Release 157, siehe #gridColorPanel in
+  // template_top.html sowie applyGridColor()/LS_KEY_GRID_COLOR weiter oben). EINE Zeile mit
+  // eigenem Häkchen (dieselbe Checkbox+Text<->Farbwähler-Synchronisation wie bei "Schriftfarbe",
+  // syncFontColorPanelFromActive() oben - hier nur für eine statt fünf Zeilen).
+  const gridColorPanel = el('gridColorPanel');
+  const gridColorHexWarning = el('gridColorHexWarning');
+  const gridColorCustom = el('gridColorCustom');
+  const gridColorHex = el('gridColorHex');
+  const gridColorPicker = el('gridColorPicker');
+  function updateGridColorRowEnabled() {
+    gridColorHex.disabled = !gridColorCustom.checked;
+    gridColorPicker.disabled = !gridColorCustom.checked;
+    gridColorPicker.closest('.color-field-inputs').classList.toggle('is-inactive', !gridColorCustom.checked);
+  }
+  // Belegt Häkchen + Farbwähler-Zeile mit dem aktuell tatsächlich aktiven Stand vor - ohne eigene
+  // Übersteuerung zeigt das Häkchen deaktiviert und der Farbwähler einen rein informativen
+  // Ausgangswert (--ink-faint, der dem automatischen Rasterton optisch am nächsten kommt - die
+  // tatsächliche automatische Rasterfarbe selbst ist eine teiltransparente rgba()-Variable, siehe
+  // drawGrid() weiter oben, und kann als solche nicht direkt in einen <input type="color"> Hexcode
+  // übernommen werden, exakt dieselbe Einschränkung wie bei FONT_COLOR_SLOTS.fallback oben).
+  function syncGridColorPanelFromActive() {
+    const fallbackHex = normalizeHex(getComputedStyle(root).getPropertyValue('--ink-faint')) || '#8a9ba6';
+    const hex = gridColorOverride || fallbackHex;
+    gridColorCustom.checked = !!gridColorOverride;
+    gridColorHex.value = hex;
+    gridColorPicker.value = hex;
+    updateGridColorRowEnabled();
+    gridColorHexWarning.hidden = true;
+  }
+  gridColorCustom.addEventListener('change', updateGridColorRowEnabled);
+  gridColorHex.addEventListener('input', () => {
+    const norm = normalizeHex(gridColorHex.value);
+    if (norm) gridColorPicker.value = norm;
+  });
+  gridColorPicker.addEventListener('input', () => { gridColorHex.value = gridColorPicker.value; });
+  el('btnGridColor').addEventListener('click', () => {
+    syncGridColorPanelFromActive();
+    gridColorPanel.classList.add('open');
+  });
+  el('btnGridColorCancel').addEventListener('click', () => gridColorPanel.classList.remove('open'));
+  el('btnGridColorApply').addEventListener('click', () => {
+    if (!gridColorCustom.checked) {
+      gridColorOverride = applyGridColor(null);
+      gridColorPanel.classList.remove('open');
+      return;
+    }
+    const norm = normalizeHex(gridColorHex.value);
+    if (!norm) {
+      gridColorHexWarning.hidden = false;
+      return;
+    }
+    gridColorOverride = applyGridColor(norm);
+    gridColorPanel.classList.remove('open');
+  });
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -14415,6 +14563,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     activeOpColors = applyOpColors(null);
     persistOpColors(activeOpColors);
     syncOpColorPanelFromActive();
+    // "3D Rasterfarbe" (Release 157): zurück auf "automatisch" (kein persistiertes Override) -
+    // exakt dasselbe Vorgehen wie bei Arbeitsgangfarbe/Hintergrundfarbe oben.
+    gridColorOverride = applyGridColor(null);
+    syncGridColorPanelFromActive();
     // Spaltenbreiten: zurück auf 100%/100%, inkl. sofortiger Anwendung auf ein ggf. bereits
     // geladenes Programm - identische Anwenden-Logik wie beim "Übernehmen"-Klick im
     // "Spalteneinstellungen"-Dialog (siehe dort für die ausführliche Begründung der Reihenfolge).
@@ -16064,6 +16216,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Rotation" direkt oberhalb - direkt von
   // render() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
   gridVisible = loadPersistedGridVisible();
+  // "3D Rasterfarbe" (Release 157): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
+  // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Raster" direkt oberhalb - direkt von
+  // drawGrid() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
+  gridColorOverride = loadPersistedGridColor();
   activeMenuColor = applyMenuHighlightColor(loadPersistedMenuColor());
   // "Schriftfarbe" (66. Runde): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei den drei Einstellungen oben.
