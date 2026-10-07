@@ -2411,6 +2411,30 @@
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
         </div>
       </div>
+      <!-- "Infos" -> "Vorschubskalierung"/"Ungefähre Fräszeit" (Release 161, Sebastian, "Konzept
+           'Ungefähre Fräszeit'", Punkt 1: "Neuer Menüpunkt im Menüband oben 'Infos' (rechts von
+           'Einstellungen')") - neues Menü, direkt rechts von "Einstellungen". WICHTIG zur
+           Namensgebung: Es gab bereits EINMAL ein Menü mit dem sichtbaren Namen "Infos" an exakt
+           dieser Stelle (Release 105), das in Release 106 in "Hilfe" umbenannt wurde, dabei aber
+           bewusst seine ursprünglichen IDs (menuInfos/menuInfosTrigger/menuInfosDropdown, direkt
+           im Anschluss unten) behielt - siehe deren eigener Kommentar dort. Um genau diese Art von
+           Verwechslung diesmal von vornherein zu vermeiden, bekommt dieses NEUE "Infos"-Menü
+           eigene, inhaltlich benannte IDs (menuMillTime/...), die NICHT wieder "menuInfos" lauten -
+           auch wenn eine künftige Umbenennung dieses Menüs denselben Namenskonflikt erneut
+           herstellen könnte, bliebe die ID hier diesmal von Anfang an eindeutig unterscheidbar.
+           Enthält zwei Einträge: "Vorschubskalierung" (Punkt 3: ein Faktor, mit dem der im Programm
+           gefundene Vorschub multipliziert wird, da F "manchmal in mm und manchmal in m (Meter)
+           ausgegeben" wird) und "Ungefähre Fräszeit" (Punkt 2: aktiv ausgelöste, nicht gecachete
+           Berechnung der "Nettofräszeit" aus der bereits maschinentyp-übersetzten, im CNC-
+           Programmcode angezeigten Fassung des Programms) - siehe #feedScalingPanel/#millTimePanel
+           weiter unten im Markup sowie deren Verdrahtung in app.js. -->
+      <div class="menu" id="menuMillTime">
+        <button class="menu-trigger" id="menuMillTimeTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Info">Infos</button>
+        <div class="menu-dropdown" id="menuMillTimeDropdown" hidden>
+          <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
+          <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die ungefähre Nettofräszeit anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximate milling time" data-i18n-en-title="Calculates the approximate net milling time now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Ungefähre Fräszeit</button>
+        </div>
+      </div>
       <!-- "Infos" -> "Knowledge Base" (Release 105, Sebastian: "Ein neuer Menüpunkt 'Infos'
            (rechts von 'Einstellungen') -> 'Knowledge Base'") - neues, fünftes Menü, direkt rechts
            von "Einstellungen" und damit links vom (in Release 105 umbenannten) "?"-Menü. Enthält
@@ -2420,7 +2444,11 @@
            Release 106, Sebastian: "Infos in 'Hilfe' umbenennen" - reine Beschriftungsänderung, ID
            (menuInfos/menuInfosTrigger/menuInfosDropdown) bewusst unverändert gelassen (wie schon
            beim "?"-Menü, das intern weiterhin #menuInfo/#menuInfoTrigger heißt), damit app.js und
-           diese Attribution-Kommentare hier ohne Umbenennungs-Fehlerrisiko weiterlaufen. -->
+           diese Attribution-Kommentare hier ohne Umbenennungs-Fehlerrisiko weiterlaufen.
+           Release 161: Das NEUE "Infos"-Menü (Vorschubskalierung/Ungefähre Fräszeit, siehe direkt
+           oberhalb #menuMillTime) sitzt bewusst LINKS von diesem "Hilfe"-Menü (also direkt rechts
+           von "Einstellungen", wie von Sebastian verlangt) - dieses Menü hier rutscht dadurch
+           optisch einen Platz nach rechts, bleibt aber unverändert direkt links vom "?"-Menü. -->
       <div class="menu" id="menuInfos">
         <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Help">Hilfe</button>
         <div class="menu-dropdown" id="menuInfosDropdown" hidden>
@@ -3479,6 +3507,80 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnGridColorCancel" type="button">Abbrechen</button>
       <button class="btn primary" id="btnGridColorApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Vorschubskalierung" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'", Punkt 3: "Es muss
+     einen Menüpunkt 'Vorschubskalierung' (EN 'Feed scaling') unter 'Infos' geben. Dort wird ein
+     Faktor eingegeben und multipliziert. Der Vorschub (F) wird manchmal in mm und manchmal in m
+     (Meter) ausgegeben") - strukturell das einfachste Panel im ganzen Programm (ein einzelnes
+     Zahlenfeld + Übernehmen/Abbrechen), nach demselben Grundmuster wie #gridColorPanel direkt
+     oberhalb, nur ohne dessen Häkchen+Farbwähler (hier gibt es keine "automatisch"-Option - der
+     Faktor ist immer ein konkreter Wert, Standardwert 1 = keine Umrechnung). Eingabe als Text
+     (nicht type="number") mit "inputmode=decimal", exakt dieselbe Konvention wie
+     #toolRadiusInput/#toolLengthInput (siehe normalizeToolValue() in app.js) - erlaubt auch das in
+     Deutschland übliche Komma als Dezimaltrennzeichen, wird beim Übernehmen normalisiert. -->
+<div class="paste-panel" id="feedScalingPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Feed scaling">Vorschubskalierung</h3>
+    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the approximate milling time (see 'Approximate milling time') is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der ungefähren Fräszeit (siehe „Ungefähre Fräszeit") mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
+    <label class="color-field-row font-color-row">
+      <span class="font-color-row-label">
+        <span data-i18n-en="Factor">Faktor</span>
+      </span>
+      <span class="color-field-inputs">
+        <input type="text" id="feedScalingFactorInput" class="filename-input" inputmode="decimal" spellcheck="false">
+      </span>
+    </label>
+    <p class="panel-hint" id="feedScalingFactorWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnFeedScalingCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="btnFeedScalingApply" type="button">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Ungefähre Fräszeit" / "Nettofräszeit" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'",
+     Punkte 1+2+4+5) - anders als alle anderen .paste-panel-Dialoge in diesem Programm (die
+     ausnahmslos EINGABE-Formulare sind, siehe Kommentar bei der entsprechenden Recherche) zeigt
+     dieses Panel ein BERECHNETES, rein lesbares Ergebnis (Länge + Zeit) plus den in Punkt 5 wörtlich
+     vorgegebenen Hinweistext - btnMillTime (siehe #menuMillTime oben) löst die Berechnung bei jedem
+     Klick FRISCH aus (computeApproxMillingTime() in app.js, nichts wird zwischen zwei Aufrufen
+     gecachet, siehe Punkt 2: "Die Berechnung muss aktiv angestoßen werden, es wird nichts vorher
+     gecachet dafür"), bevor dieses Panel geöffnet wird. "Neu berechnen" erlaubt eine erneute,
+     ebenso frische Berechnung OHNE das Panel zwischendurch schließen zu müssen (z.B. nach Ändern der
+     Vorschubskalierung) - rein komfortbedingt, keine der beiden Auslöser-Stellen liest je einen
+     zwischengespeicherten Wert. Aufbau der Ergebniszeilen nach dem Vorbild von .menu-info-row (siehe
+     #menuInfo/"?"-Menü weiter unten sowie das zugehörige Stylesheet) - statischer, übersetzter
+     Zeilen-Titel + separater, rein numerischer <span>, den app.js bei jeder Berechnung per
+     .textContent neu befüllt. -->
+<div class="paste-panel" id="millTimePanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Net milling time">Nettofräszeit</h3>
+    <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
+    <div id="millTimeResultState">
+      <div class="menu-info-row">
+        <span class="menu-info-label" data-i18n-en="Length">Länge</span>
+        <span class="menu-info-value" id="millTimeLengthValue">–</span>
+      </div>
+      <div class="menu-info-row">
+        <span class="menu-info-label" data-i18n-en="Net milling time">Nettofräszeit</span>
+        <span class="menu-info-value" id="millTimeMinutesValue">–</span>
+      </div>
+      <div class="menu-info-row">
+        <span class="menu-info-label" data-i18n-en="Feed scaling factor applied">Angewendete Vorschubskalierung</span>
+        <span class="menu-info-value" id="millTimeFactorValue">–</span>
+      </div>
+      <p class="panel-hint" id="millTimeNoFeedWarning" data-i18n-en="" hidden></p>
+    </div>
+    <!-- Hinweistext (Punkt 5) - wörtlich wie vorgegeben, IMMER sichtbar, wenn das Panel offen ist
+         (nicht nur beim allerersten Auslösen), da er für die Einordnung JEDES berechneten Werts
+         gilt. -->
+    <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnMillTimeClose" type="button">Schließen</button>
+      <button class="btn primary" id="btnMillTimeRecalc" type="button" data-i18n-en="Recalculate">Neu berechnen</button>
     </div>
   </div>
 </div>
@@ -5245,7 +5347,8 @@
   }
 
   // Öffentliche Hauptfunktion: nimmt die von extractMotion() (app.js) bereits fertig gebaute
-  // Punkteliste entgegen (x,y,z,a,b,c,rapid,comp,lineIdx je Punkt, siehe dort) und ersetzt darin
+  // Punkteliste entgegen (x,y,z,a,b,c,rapid,comp,lineIdx,f je Punkt, siehe dort - "f" seit Release
+  // 161, Vorschub fürs Feature "Ungefähre Fräszeit") und ersetzt darin
   // jeden Punkt, der ein `cornerRadius` trägt (von extractMotion() nur auf dem EINEN, nicht aus
   // einer Bogen-Tessellierung stammenden Zielpunkt einer G1/G0-Zeile gesetzt, wenn parseCornerRadius()
   // dort einen Wert findet - echte Bogenpunkte bekommen nie ein cornerRadius und bleiben unangetastet),
@@ -5259,11 +5362,11 @@
   // stehen - das bisherige Verhalten (P71 ignoriert) ist damit der automatische Fallback, nie ein
   // Absturz oder eine verfälschte Kontur. Die Zusatzfelder `cornerRadius` existieren nur innerhalb
   // dieser Funktion - die zurückgegebenen Punkte haben wieder exakt dieselbe Form wie vorher
-  // (x,y,z,a,b,c,rapid,comp,lineIdx), für alle nachgelagerten Verwender unsichtbar.
+  // (x,y,z,a,b,c,rapid,comp,lineIdx,f), für alle nachgelagerten Verwender unsichtbar.
   function applyCornerFillets(points) {
     const n = points.length;
     const result = [];
-    const strip = p => ({ x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, lineIdx: p.lineIdx });
+    const strip = p => ({ x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, lineIdx: p.lineIdx, f: p.f });
     for (let i = 0; i < n; i++) {
       const p = points[i];
       if (p.cornerRadius && i > 0 && i < n - 1) {
@@ -6441,8 +6544,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 160;
-  const APP_RELEASE_TIMESTAMP = '07.10.2026, 05:51 Uhr';
+  const APP_RELEASE_NUMBER = 161;
+  const APP_RELEASE_TIMESTAMP = '07.10.2026, 14:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7236,6 +7339,42 @@ CORNERRADIUS=GFIL r=
     return gridColorOverride;
   }
 
+  // "Vorschubskalierung" ("Infos" -> "Vorschubskalierung", Release 161, siehe #feedScalingPanel in
+  // template_top.html sowie "Konzept 'Ungefähre Fräszeit'", Punkt 3) - ein einzelner Multiplikator
+  // (Standard 1 = keine Umrechnung), mit dem computeApproxMillingTime() weiter unten jeden im
+  // Programm gefundenen F-Wert vor der Zeitberechnung multipliziert. Dieselbe "self-persisting
+  // Setter"-Technik wie applyGridColor() direkt oberhalb, nur OHNE bakeParams/requestRender() - die
+  // Fräszeit wird nicht laufend neu gezeichnet, sondern ausschließlich aktiv per Klick auf
+  // "Ungefähre Fräszeit"/"Neu berechnen" neu ermittelt (Punkt 2: "Die Berechnung muss aktiv
+  // angestoßen werden, es wird nichts vorher gecachet dafür").
+  const LS_KEY_FEED_SCALE = 'cncsim.feedScaleFactor';
+  function loadPersistedFeedScaleFactor() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_FEED_SCALE);
+      const n = raw !== null ? parseFloat(raw) : NaN;
+      return isFinite(n) && n > 0 ? n : null;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistFeedScaleFactor(n) {
+    try { window.localStorage.setItem(LS_KEY_FEED_SCALE, String(n)); } catch (e) { /* s.o. */ }
+  }
+  // Erlaubt - genau wie normalizeToolValue() weiter unten (#toolRadiusInput/#toolLengthInput) - das
+  // in Deutschland übliche Komma als Dezimaltrennzeichen und fängt ungültige/negative/Null-Eingaben
+  // auf den übergebenen fallback-Wert ab, statt die Anwendung mit NaN/Infinity weiterlaufen zu
+  // lassen.
+  function normalizeFeedScaleFactor(raw, fallback) {
+    const t = String(raw == null ? '' : raw).trim().replace(',', '.');
+    const n = parseFloat(t);
+    return isFinite(n) && n > 0 ? n : fallback;
+  }
+  let feedScaleFactor = 1;
+  function applyFeedScaleFactor(n) {
+    feedScaleFactor = normalizeFeedScaleFactor(n, 1);
+    persistFeedScaleFactor(feedScaleFactor);
+    return feedScaleFactor;
+  }
+
   // "Werkzeuge" ("Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge", Release 158, Sebastian:
   // "Werkzeug bzw. Spannfutter-Darstellung: Bitte neue Einstellungen unter Einstellungen ->
   // Erscheinungsbild -> 'Werkzeuge' ... 1. Die Einstellungen für Säge, Spannfutter und Fräser
@@ -7883,11 +8022,41 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // Komma statt einem "=" gefolgt wird).
   const AXIS_RE = /(?<![A-Za-z])(?:([XYZABC])\d{0,2}\s*=\s*(-?\d+(?:\.\d+)?)|([XYZABC])\s*(-?\d+(?:\.\d+)?))/g;
   const G_RE = /G0*([0-9]{1,2})(?![0-9.])/g;
+  // Vorschub "F" (Release 161, Sebastian/"Konzept 'Ungefähre Fräszeit'", Punkt 2+4: Grundlage der
+  // Fräszeit-Berechnung ist "das Programm was nach der Maschinentypänderung im CNC Programmcode
+  // angezeigt wird. Das bereinigte Programm quasi!") - läuft, genau wie AXIS_RE, über den bereits
+  // MASCHINENTYP-ÜBERSETZTEN Zeilentext (siehe displayCurrentProgram(): `text` nach
+  // applySwapRules()/applyAxisCalc(), NICHT rawProgramText), weshalb hier bewusst NUR das generische
+  // "F<Zahl>" erkannt werden muss - z.B. die SCM-Regel "V->F" (siehe Maschinentypen-Konfiguration)
+  // hat zu diesem Zeitpunkt bereits jedes "V25000" in "F25000" umgewandelt. Modal wie state.rapid
+  // (scanRapid() oben) - ein einmal gesetzter Vorschub bleibt gültig, bis eine neue "F"-Zeile folgt,
+  // unabhängig davon, ob dieselbe Zeile auch ein Achswort trägt oder "F" ganz allein auf einer
+  // eigenen Zeile steht (beides kommt in der Praxis vor, siehe die SCM-Testprogramme). Negativer
+  // Lookbehind wie bei AXIS_RE verhindert Fehltreffer mitten in einem Wort (z.B. "GFIL" - das "F"
+  // dort ist von "G" direkt vorangestellt, also kein Treffer).
+  const FEED_RE = /(?<![A-Za-z])F\s*(-?\d+(?:\.\d+)?)/g;
 
   function scanRapid(line, prevRapid) {
+    // Bugfix (Release 161, beim Bau von "Ungefähre Fräszeit" entdeckt, siehe computeApproxMillingTime()
+    // weiter unten): Bislang gewann hier IMMER der zuletzt auf der Zeile gefundene G-Code, egal ob es
+    // sich dabei überhaupt um einen der vier Bewegungs-G-Codes (G0/G1/G2/G3) handelte. Bei einer in der
+    // Praxis gar nicht seltenen Zeile wie "G0 G40 X400.00" (Eilgang + Radiuskorrektur-Aus in einer
+    // Zeile) oder "G1 G41 X570.00" (Vorschubfahrt + Radiuskorrektur-Links) matcht G_RE auch "G40"/"G41"
+    // (als zweistellige Zahl 40/41) und das war bisher der "letzte" Treffer - keiner der drei
+    // if-Zweige griff, es fiel auf `prevRapid` zurück, wodurch z. B. eine echte G1-Vorschubzeile
+    // fälschlich als Eilgang (oder umgekehrt) behandelt wurde, je nachdem was VORHER aktiv war. Das
+    // betrifft nicht nur die neue Fräszeit-Berechnung, sondern genauso die 3D-Darstellung selbst (ein
+    // solcher Streckenabschnitt wurde unbemerkt mit der falschen Eilgang/Vorschub-Einstufung
+    // gezeichnet). Fix: beim Durchlauf werden nur noch Treffer mit Zahl 0/1/2/3 als `last` übernommen -
+    // ein begleitendes G40/G41/G42/G92/... auf derselben Zeile wird für diese Einstufung schlicht
+    // ignoriert, exakt wie es z. B. schon bei der G41/G42/G40-Radiuskorrektur-Erkennung weiter unten
+    // (eigener, unabhängiger /\bG41\b/ usw.-Test) gehandhabt wird.
     let m, last = null;
     G_RE.lastIndex = 0;
-    while ((m = G_RE.exec(line))) last = parseInt(m[1], 10);
+    while ((m = G_RE.exec(line))) {
+      const n = parseInt(m[1], 10);
+      if (n === 0 || n === 1 || n === 2 || n === 3) last = n;
+    }
     if (last === 0) return true;
     if (last === 1 || last === 2 || last === 3) return false;
     // KUKA-Robotersyntax (KRC): PTP = Punkt-zu-Punkt (Eilgang), LIN/CIRC = Bahnfahrt (Vorschub)
@@ -7906,9 +8075,16 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // fälschlich als fortgesetzter Bogen-Radius missinterpretiert wird - eine bewusste, defensive
   // Einschränkung gegenüber "echtem" modalem G-Code-Verhalten.
   function scanArcDirection(line) {
+    // Derselbe Bugfix wie bei scanRapid() direkt oberhalb (Release 161): nur Treffer mit Zahl 0/1/2/3
+    // zählen als `last`, ein begleitendes G40/G41/G42/... auf derselben Zeile (z. B. "G3 G41 X.. R..")
+    // verdrängt den eigentlichen Bogen-G-Code sonst fälschlich und das Segment würde als gerade
+    // Strecke statt als Bogen gezeichnet.
     let m, last = null;
     G_RE.lastIndex = 0;
-    while ((m = G_RE.exec(line))) last = parseInt(m[1], 10);
+    while ((m = G_RE.exec(line))) {
+      const n = parseInt(m[1], 10);
+      if (n === 0 || n === 1 || n === 2 || n === 3) last = n;
+    }
     if (last === 2) return 'cw';
     if (last === 3) return 'ccw';
     return null;
@@ -7996,6 +8172,16 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
         usedAxes.add(letter);
       }
       state.rapid = scanRapid(line, state.rapid);
+      // Vorschub "F" (Release 161, siehe FEED_RE oben) - exakt dieselbe commentMask-Absicherung wie
+      // beim AXIS_RE-Durchlauf weiter oben (z.B. per SWITCHCASEMACHINE auskommentierte oder im
+      // Original bereits auskommentierte "F..."-Zeilen zählen nicht als echte Vorschubänderung).
+      // "Zuletzt gewinnt" bei mehreren F-Treffern auf derselben Zeile (in der Praxis nie der Fall).
+      FEED_RE.lastIndex = 0;
+      let fm;
+      while ((fm = FEED_RE.exec(line))) {
+        if (!CNCSwap.isRangeUncommented(commentMask, fm.index, fm[0].length)) continue;
+        state.f = parseFloat(fm[1]);
+      }
       // Werkzeug-Radiuskorrektur (Benutzer: "Bei G41 bzw. 'Radiuskorrektur links' ist der Fräser
       // links von der gefrästen Kontur" / "Bei Mittelpunktsbahn (G1 oder wenn keine
       // Radiuskorrektur aktiviert ist) ist der Fräser auf der gefrästen Kontur dargestellt"):
@@ -8028,7 +8214,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
             points.push({
               x: pt.x, y: pt.y, z: prevZ + (endZ - prevZ) * t,
               a: state.a, b: state.b, c: state.c,
-              rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i
+              rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i, f: state.f
             });
           });
         } else {
@@ -8058,7 +8244,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
           points.push({
             x: endX, y: endY, z: endZ,
             a: state.a, b: state.b, c: state.c,
-            rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i,
+            rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i, f: state.f,
             cornerRadius
           });
         }
@@ -8115,7 +8301,12 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   }
 
   function newModalState() {
-    return { x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, rapid: true, offsetX: 0, offsetY: 0, offsetZ: 0, comp: 'none' };
+    // "f" (Release 161, Vorschub fürs Feature "Ungefähre Fräszeit", siehe FEED_RE/extractMotion()
+    // oben): null = noch kein "F"-Wort in diesem Arbeitsgang/Programmteil gesehen - exakt wie bei
+    // den übrigen modalen Feldern hier wird der Zustand JE extractMotion()-Aufruf frisch begonnen
+    // (siehe setScope() in app.js, newModalState() wird dort pro Arbeitsgang neu aufgerufen), ein
+    // Vorschub aus einem vorherigen Arbeitsgang wird also bewusst NICHT automatisch übernommen.
+    return { x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, rapid: true, offsetX: 0, offsetY: 0, offsetZ: 0, comp: 'none', f: null };
   }
 
   // splitAtOriginResets/ORIGIN_RESET_RE/parseArcParams/interpolateArc leben in parser.js (reine
@@ -8360,6 +8551,13 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   const menuView = el('menuView');
   const menuViewTrigger = el('menuViewTrigger');
   const menuViewDropdown = el('menuViewDropdown');
+  // "Infos" -> "Vorschubskalierung"/"Ungefähre Fräszeit" (Release 161, siehe #menuMillTime in
+  // template_top.html sowie die ausführliche Namensgebungs-Begründung dort) - sitzt direkt rechts
+  // von "Einstellungen", also direkt zwischen menuView und dem bestehenden menuInfos ("Hilfe",
+  // siehe dessen eigener Kommentar direkt darunter).
+  const menuMillTime = el('menuMillTime');
+  const menuMillTimeTrigger = el('menuMillTimeTrigger');
+  const menuMillTimeDropdown = el('menuMillTimeDropdown');
   // "Infos" -> "Knowledge Base" (Release 105, Sebastian, Punkt 2: "Ein neuer Menüpunkt 'Infos'
   // (rechts von 'Einstellungen') -> 'Knowledge Base'") - fünftes Menü, direkt rechts von
   // "Einstellungen" (siehe DOM-Reihenfolge in template_top.html), links vom "?"-Menü. Öffnen/
@@ -10774,32 +10972,32 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // ============================================================
   // Szenen-Aufbau je nach Scope
   // ============================================================
-  function setScope(mode) {
-    scopeMode = mode;
-    segments = [];
-    usedAxes = new Set();
-    // I/J-Bogenkonvention des aktuell aktiven Maschinentyps (Release 123, siehe die ausführliche
-    // Dokumentation bei ARC_PARAM_RE/parseIJMode) - exakt dieselbe Ermittlung des aktiven
-    // Maschinentyps wie in displayCurrentProgram() (activeMt). 'incremental' als Standard, wenn kein
-    // Maschinentyp aktiv ist oder dieser keine eigene IJMODE-Zeile hat - unverändertes Verhalten für
-    // alle bisherigen Konfigurationen.
+  // Löst die drei vom aktuell aktiven Maschinentyp abhängigen Geometrie-Parameter auf, die JEDER
+  // extractMotion()-Aufruf braucht (I/J-Bogenkonvention, Drehsinn-Tausch, konfigurierter
+  // CORNERRADIUS-Marker). Release 161 (Sebastian, "Konzept 'Ungefähre Fräszeit'", Punkt 2: Die
+  // Berechnung soll "das Programm was nach der Maschinentypänderung im CNC Programmcode angezeigt
+  // wird" zugrunde legen): aus setScope() (siehe dort für die ursprüngliche, ausführliche
+  // Herleitung jedes einzelnen Parameters) HERAUSGEZOGEN, damit computeApproxMillingTime() weiter
+  // unten dieselbe, bereits erprobte Logik wiederverwenden kann, statt sie ein zweites Mal
+  // (mit Abweichungsrisiko bei künftigen Maschinentyp-Erweiterungen) zu duplizieren - reines
+  // Refactoring, keine Verhaltensänderung an setScope() selbst.
+  function resolveActiveMtGeometryParams() {
     const activeMtForIJ = activeMachineTypeName && activeMachineTypeName.toLowerCase() !== 'iso'
       ? machineTypes.find(mt => mt.name.toLowerCase() === activeMachineTypeName.toLowerCase())
       : null;
     const activeIJMode = (activeMtForIJ && activeMtForIJ.ijMode) || 'incremental';
-    // Drehsinn-Tausch (Release 127, siehe die ausführliche Dokumentation bei computeArcChiralityFlip()
-    // in swap.js) - aus denselben, bereits oben aufgelösten activeMtForIJ.calcRules abgeleitet, kein
-    // eigener Maschinentyp-Lookup nötig. false (kein Tausch), wenn kein Maschinentyp aktiv ist.
     const activeChiralityFlip = CNCSwap.computeArcChiralityFlip(activeMtForIJ && activeMtForIJ.calcRules);
-    // CORNERRADIUS=<Marker> des aktuell aktiven Maschinentyps (Release 133, siehe ausführliche
-    // Dokumentation bei CORNERRADIUS_RE/parseCornerRadiusMarker() in swap.js sowie
-    // buildCornerRadiusMarkerRegex()/parseConfiguredCornerRadius() in parser.js) - exakt dasselbe
-    // Auflösungsmuster wie activeIJMode/activeChiralityFlip oben: einmal pro setScope()-Aufruf aus
-    // dem bereits ermittelten activeMtForIJ abgeleitet und unverändert an jeden extractMotion()-
-    // Aufruf unten durchgereicht. `null`, wenn kein Maschinentyp aktiv ist oder dieser keine (gültige)
-    // CORNERRADIUS-Zeile hat - extractMotion() fällt dann unverändert auf die fest einprogrammierten
-    // Erkenner (P71:/G302/GFIL/BR=/E) zurück, exakt wie vor Release 133.
     const activeCornerRadiusMarkerRegex = buildCornerRadiusMarkerRegex(activeMtForIJ && activeMtForIJ.cornerRadiusMarker);
+    return { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex };
+  }
+
+  function setScope(mode) {
+    scopeMode = mode;
+    segments = [];
+    usedAxes = new Set();
+    // I/J-Bogenkonvention, Drehsinn-Tausch, konfigurierter CORNERRADIUS-Marker des aktuell aktiven
+    // Maschinentyps (Release 123/127/133) - siehe resolveActiveMtGeometryParams() direkt oberhalb.
+    const { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex } = resolveActiveMtGeometryParams();
     // Eine laufende Messung bezieht sich auf die vorherige Geometrie - bei Scope-/Programmwechsel
     // zurücksetzen (der Messmodus selbst bleibt aktiv, falls eingeschaltet).
     measureStart = null;
@@ -10933,6 +11131,84 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     updateReadoutAndHighlight();
     updateMeasureOutput();
     requestRender();
+  }
+
+  // "Ungefähre Fräszeit" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'") - wird NUR beim
+  // Klick auf "Ungefähre Fräszeit"/"Neu berechnen" aufgerufen (Punkt 2: "Die Berechnung muss aktiv
+  // angestoßen werden, es wird nichts vorher gecachet dafür"), nie beim Laden/Scrollen/Scrubben.
+  // Rechnet bewusst NICHT mit den aktuell im 3D-Bereich sichtbaren `segments`/`points` (die hängen
+  // vom gerade gewählten Scope ab - einzelner Arbeitsgang vs. gesamtes Programm, siehe setScope()
+  // oben) - stattdessen wird, unabhängig vom aktuell gewählten Scope, IMMER das GESAMTE geladene
+  // Programm frisch durchlaufen (dieselbe "mode.type==='all'"-Logik wie in setScope() oben, siehe
+  // dort für die ausführliche Begründung von Arbeitsgang- vs. Fallback-Aufteilung), damit "Ungefähre
+  // Fräszeit" unabhängig davon, welcher Arbeitsgang in der 3D-Ansicht gerade ausgewählt ist, immer
+  // dieselbe, vollständige Nettofräszeit liefert.
+  // Grundlage ist "das Programm was nach der Maschinentypänderung im CNC Programmcode angezeigt
+  // wird" (Punkt 2) - da `current` (siehe displayCurrentProgram()) bereits aus dem übersetzten Text
+  // aufgebaut wird (CNCParser.parse(text, ...), NICHT rawProgramText, siehe dortige Dokumentation),
+  // ist das hier automatisch erfüllt, ohne eigene Übersetzungslogik.
+  //
+  // Länge: 3D-Abstand (√(Δx²+Δy²+Δz²)) zwischen je zwei aufeinanderfolgenden Punkten DESSELBEN
+  // Arbeitsgangs, nur für Punkte mit rapid===false (G0-Eilgang zählt nicht, Punkt 5) - inkl. aller
+  // bereits von extractMotion()/applyCornerFillets() tessellierten Bogen- und Fillet-Punkte (siehe
+  // dort), die Summe der kurzen Sehnen zwischen ihnen entspricht damit automatisch sehr genau der
+  // wahren Bogen-/Fillet-Länge, ohne dass hier eigene Kreisgeometrie nötig wäre.
+  // Zeit: je Segment Länge/F*60 (F in mm/min, siehe Punkt 4), mit dem Vorschub des ZIEL-Punkts
+  // (p.f, modal fortgeschrieben - exakt der Vorschub, der für die Bewegung BIS zu diesem Punkt
+  // galt) und zusätzlich mit feedScaleFactor multipliziert (Punkt 3, "Vorschubskalierung").
+  // Segmente ohne jemals gesetzten Vorschub (p.f === null, z.B. ein Programm, das nie ein "F" trägt)
+  // zählen zwar zur Länge, aber nicht zur Zeit - wird über segmentsWithoutFeed an den Aufrufer
+  // gemeldet, der daraus einen Hinweis anzeigt (siehe #millTimeNoFeedWarning).
+  function computeApproxMillingTime() {
+    if (!current || !current.sections.length) {
+      return { ok: false };
+    }
+    const { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex } = resolveActiveMtGeometryParams();
+    const opSections = current.sections.filter(s => s.type === 'arbeitsgang');
+    const ptsPerChunk = [];
+    if (opSections.length) {
+      opSections.forEach(sec => {
+        const state = newModalState();
+        ptsPerChunk.push(extractMotion(sec.lines, sec.startIdx, state, new Set(), activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
+      });
+    } else {
+      // Kein Arbeitsgang-Schema erkannt - dieselbe "O"/G92-Aufteilung wie im Fallback-Zweig von
+      // setScope() (siehe dort), damit auch ein unstrukturiertes Programm vollständig erfasst wird.
+      splitAtOriginResets(current.lines).forEach(chunk => {
+        const state = newModalState();
+        const pts = extractMotion(chunk.lines, chunk.startIdx, state, new Set(), activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
+        if (pts.length) ptsPerChunk.push(pts);
+      });
+    }
+    let lengthMm = 0;
+    let timeSeconds = 0;
+    let segmentsWithoutFeed = 0;
+    ptsPerChunk.forEach(pts => {
+      if (!pts.length) return;
+      // Chunk-Startpunkt (Bugfix, beim Testen dieser Funktion anhand von Sebastians eigenen
+      // Handrechnungen gefunden): extractMotion() liefert selbst NIE einen Punkt für den
+      // Ausgangszustand vor der allerersten Bewegung (newModalState(): x=y=z=0) - ohne diesen
+      // zusätzlichen, synthetischen Startpunkt würde das allererste Segment eines Chunks (vom
+      // impliziten Start zu pts[0]) hier vollständig fehlen, sofern es selbst kein Eilgang ist (in
+      // der Praxis meist unauffällig, weil ein Arbeitsgang fast immer erst per G0 zum Konturanfang
+      // positioniert - bei einem Testprogramm, das direkt mit G1 beginnt, aber ein echter, mehrere
+      // Millimeter großer Fehlbetrag). Dieser Zusatzpunkt wird unten nie selbst als "b" ausgewertet
+      // (nur als "a" fürs erste echte Segment) und ändert nichts an extractMotion() oder den an
+      // anderer Stelle gemeinsam genutzten points-Arrays (3D-Darstellung, Bounds, ...).
+      const extended = [{ x: 0, y: 0, z: 0 }, ...pts];
+      for (let i = 1; i < extended.length; i++) {
+        const a = extended[i - 1], b = extended[i];
+        if (b.rapid) continue; // G0-Eilgang (Punkt 5) - zählt weder zur Länge noch zur Zeit
+        const len = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+        lengthMm += len;
+        if (b.f) {
+          timeSeconds += len / (b.f * feedScaleFactor) * 60;
+        } else {
+          segmentsWithoutFeed++;
+        }
+      }
+    });
+    return { ok: true, lengthMm, timeSeconds, segmentsWithoutFeed, feedScaleFactor };
   }
 
   function boundsOf(pts) {
@@ -13522,6 +13798,9 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     { wrapper: menuFile, trigger: menuFileTrigger, dropdown: menuFileDropdown },
     { wrapper: menuEdit, trigger: menuEditTrigger, dropdown: menuEditDropdown },
     { wrapper: menuView, trigger: menuViewTrigger, dropdown: menuViewDropdown },
+    // Release 161, siehe #menuMillTime weiter oben - zwischen "Einstellungen" und dem
+    // (umbenannten) "Infos"-Menü "Hilfe" einsortiert, exakt wie in der DOM-Reihenfolge.
+    { wrapper: menuMillTime, trigger: menuMillTimeTrigger, dropdown: menuMillTimeDropdown },
     { wrapper: menuInfos, trigger: menuInfosTrigger, dropdown: menuInfosDropdown },
     { wrapper: menuInfo, trigger: menuInfoTrigger, dropdown: menuInfoDropdown }
   ];
@@ -14405,7 +14684,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     LS_KEY_GRID_COLOR, // Release 157, siehe eigenes "gridColor"-Feld weiter unten
     // Release 158, siehe eigene "toolAppearanceSaw"/"toolAppearanceCollet"/"toolAppearanceCutter"-
     // Felder weiter unten.
-    LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER
+    LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
+    LS_KEY_FEED_SCALE // Release 161, siehe eigenes "feedScaleFactor"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -14469,6 +14749,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // bei den einzelnen Schlüsseln in "fontColors" oben, nur als eigenes, einfaches Feld statt
       // Unterobjekt (da es hier nur eine einzige Farbe statt fünf gibt).
       gridColor: gridColorOverride,
+      // "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit", Punkt 3) - einfacher
+      // Zahlenwert, exakt dieselbe Behandlung wie "Rotation"/"Raster" oben (kein Unterobjekt, da
+      // nur ein einziger Faktor existiert).
+      feedScaleFactor,
       // "Werkzeuge" (Release 158, Sebastian, Punkt 4: "Beim Einstellungsexport fließen alle
       // Werte/Einstellungen mit") - je ein einfaches Unterobjekt {filled, color, transparency} pro
       // Werkzeugtyp, exakt dieselbe Struktur wie intern (siehe applyToolAppearance() weiter oben).
@@ -14590,6 +14874,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.gridColor === null || typeof data.gridColor === 'string') {
         gridColorOverride = applyGridColor(data.gridColor);
         syncGridColorPanelFromActive();
+      }
+      // "Vorschubskalierung" (Release 161): fehlt das Feld (ältere Datei), bleibt der aktuell
+      // aktive Faktor unangetastet - dieselbe Regel wie bei "3D Rasterfarbe"/"Raster"/"Rotation"
+      // oben. normalizeFeedScaleFactor() fängt dabei einen ungültigen Wert (<=0, NaN) einzeln ab
+      // und fällt auf den zuvor aktiven Faktor zurück, statt den ganzen Import abzubrechen.
+      if (data.feedScaleFactor !== undefined) {
+        feedScaleFactor = applyFeedScaleFactor(normalizeFeedScaleFactor(data.feedScaleFactor, feedScaleFactor));
+        if (feedScalingFactorInput) feedScalingFactorInput.value = String(feedScaleFactor);
       }
       // "Werkzeuge" (Release 158, Sebastian, Punkt 4): fehlt eines der drei Felder (ältere Datei),
       // bleibt die jeweils aktuell aktive Einstellung unangetastet - dieselbe Regel wie bei den
@@ -14938,6 +15230,76 @@ Sebastian Bäcker (Anschrift wie oben)`,
     gridColorOverride = applyGridColor(norm);
     gridColorPanel.classList.remove('open');
   });
+
+  // "Infos" -> "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit", Punkt 3,
+  // sowie #feedScalingPanel in template_top.html und applyFeedScaleFactor()/LS_KEY_FEED_SCALE
+  // weiter oben). EIN Zahlenfeld + Übernehmen/Abbrechen, nach demselben Grundmuster wie die
+  // übrigen Panels hier (z.B. #gridColorPanel direkt oberhalb), nur ohne Häkchen/Farbwähler, da es
+  // hier nur einen einzigen Faktor statt einer Farbe gibt.
+  const feedScalingPanel = el('feedScalingPanel');
+  const feedScalingFactorInput = el('feedScalingFactorInput');
+  const feedScalingFactorWarning = el('feedScalingFactorWarning');
+  el('btnFeedScaling').addEventListener('click', () => {
+    feedScalingFactorInput.value = String(feedScaleFactor);
+    feedScalingFactorWarning.hidden = true;
+    feedScalingPanel.classList.add('open');
+  });
+  el('btnFeedScalingCancel').addEventListener('click', () => feedScalingPanel.classList.remove('open'));
+  el('btnFeedScalingApply').addEventListener('click', () => {
+    const n = normalizeFeedScaleFactor(feedScalingFactorInput.value, null);
+    if (n === null) {
+      feedScalingFactorWarning.hidden = false;
+      return;
+    }
+    feedScaleFactor = applyFeedScaleFactor(n);
+    feedScalingPanel.classList.remove('open');
+  });
+
+  // "Infos" -> "Ungefähre Fräszeit" (Release 161, siehe Konzept "Ungefähre Fräszeit" sowie
+  // #millTimePanel in template_top.html und computeApproxMillingTime() weiter oben). Die
+  // Berechnung wird bewusst NICHT gecachet (Punkt 2: "Das ist eine aktiv ausgelöste Berechnung") -
+  // jeder Klick auf "Ungefähre Fräszeit" bzw. "Neu berechnen" ruft computeApproxMillingTime()
+  // frisch auf und wertet dabei stets das AKTUELL geladene, maschinentyp-übersetzte Programm aus
+  // (unabhängig vom gerade in der 3D-Ansicht gewählten Arbeitsgang/Scope, siehe dort).
+  const millTimePanel = el('millTimePanel');
+  const millTimeEmptyState = el('millTimeEmptyState');
+  const millTimeResultState = el('millTimeResultState');
+  const millTimeLengthValue = el('millTimeLengthValue');
+  const millTimeMinutesValue = el('millTimeMinutesValue');
+  const millTimeFactorValue = el('millTimeFactorValue');
+  const millTimeNoFeedWarning = el('millTimeNoFeedWarning');
+  function runApproxMillingTime() {
+    const result = computeApproxMillingTime();
+    if (!result.ok) {
+      millTimeEmptyState.hidden = false;
+      millTimeResultState.hidden = true;
+      return;
+    }
+    millTimeEmptyState.hidden = true;
+    millTimeResultState.hidden = false;
+    millTimeLengthValue.textContent = `${fmt(result.lengthMm)} mm`;
+    // "Genauigkeit bis auf 5 Sekunden reicht" (Punkt 4): Gesamtsekunden vor der Umrechnung in
+    // Minuten auf die nächsten 5 Sekunden runden.
+    const roundedSeconds = Math.round(result.timeSeconds / 5) * 5;
+    const minutes = roundedSeconds / 60;
+    millTimeMinutesValue.textContent = `${fmt(minutes)} min (${roundedSeconds} s)`;
+    millTimeFactorValue.textContent = `× ${fmt(result.feedScaleFactor)}`;
+    if (result.segmentsWithoutFeed > 0) {
+      millTimeNoFeedWarning.hidden = false;
+      millTimeNoFeedWarning.textContent = T(
+        `Achtung: ${result.segmentsWithoutFeed} Streckenabschnitt(e) ohne bekannten Vorschub wurden bei der Zeitberechnung nicht berücksichtigt (fließen aber in die ausgegebene Länge ein).`,
+        `Note: ${result.segmentsWithoutFeed} path segment(s) without a known feed rate were excluded from the time calculation (but are included in the length shown).`
+      );
+    } else {
+      millTimeNoFeedWarning.hidden = true;
+    }
+  }
+  el('btnMillTime').addEventListener('click', () => {
+    runApproxMillingTime();
+    millTimePanel.classList.add('open');
+  });
+  el('btnMillTimeRecalc').addEventListener('click', runApproxMillingTime);
+  el('btnMillTimeClose').addEventListener('click', () => millTimePanel.classList.remove('open'));
 
   // "Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge" (Release 158, siehe applyToolAppearance()/
   // TOOL_APPEARANCE_LS_KEYS weiter oben sowie #toolAppearanceSawPanel/#toolAppearanceColletPanel/
@@ -16712,6 +17074,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Raster" direkt oberhalb - direkt von
   // drawGrid() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
   gridColorOverride = loadPersistedGridColor();
+  // "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit"): ebenfalls schon vor
+  // dem ersten Programm-Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei
+  // "3D Rasterfarbe" direkt oberhalb - direkt von computeApproxMillingTime() ausgewertet (siehe
+  // dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
+  feedScaleFactor = loadPersistedFeedScaleFactor() || 1;
   // "Werkzeuge" (Release 158): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "3D Rasterfarbe" direkt oberhalb - direkt
   // von drawTool()/drawToolHolder() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an
