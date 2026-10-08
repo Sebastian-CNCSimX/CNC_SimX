@@ -2211,8 +2211,20 @@
                und CNC-Programm-Zustand sind komplett unabhängig voneinander (siehe loadDxfText()/
                clearDxf() in app.js - weder lädt noch löscht das eine das andere).
                NACHTRAG (23.09.2026, Sebastian: "Datei -> 'DXF importieren' (statt Importieren groß
-               geschrieben)") - reine Schreibweisenkorrektur (kleines "i"), ID/Funktion unverändert. -->
-          <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
+               geschrieben)") - reine Schreibweisenkorrektur (kleines "i"), ID/Funktion unverändert.
+               Release 168 (Sebastian, Punkt 2): "'Datei -> DXF Importieren' umstrukturieren/
+               verschieben: 'Datei -> DXF -> DXF importieren'" - analog zum "CNC-Programm"-Untermenü
+               direkt oberhalb (61. Runde, siehe dessen Kommentar) in ein eigenes Untermenü-Flyout
+               "DXF" verpackt (dieselbe generische ".menu-submenu"-Technik). ID (#btnDxfImport) UND
+               die komplette dahinterliegende Logik in app.js bleiben dabei unverändert - reine
+               Verpackung/Position im Markup ändert sich, die Beschriftung "DXF importieren" selbst
+               (bereits seit 23.09.2026 kleines "i") bleibt unverändert. -->
+          <div class="menu-submenu" id="submenuFileDxf">
+            <button class="menu-item submenu-trigger" id="submenuFileDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="DXF">DXF <span class="submenu-arrow">▸</span></button>
+            <div class="submenu-dropdown" id="submenuFileDxfDropdown" hidden>
+              <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
+            </div>
+          </div>
           <!-- "Simulation speichern" (NEU, 23.09.2026, Sebastian: "Datei -> Simulation speichern ->
                Menüpunkt entfernen") - nur der Menüpunkt selbst UND seine Klick-Verdrahtung
                (el('btnSaveSimulation').addEventListener(...) weiter unten) wurden entfernt, wie
@@ -2461,8 +2473,18 @@
                Untermenü mehr nötig, da jetzt alleinstehend, analog zu "Spalten"/"Rotation"/"Raster"
                oben), über "Einstellungen importieren". ID (#btnEditOpNames) UND die komplette
                dahinterliegende Logik in app.js bleiben dabei unverändert - reine Verschiebung im
-               Markup. -->
-          <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+               Markup.
+               Release 168 (Sebastian, Punkt 1): "'Einstellungen -> Arbeitsgang-Namen bearbeiten'
+               umstrukturieren/verschieben: 'Einstellungen -> Arbeitsgang-Namen -> Arbeitsgang-Namen
+               bearbeiten'" - der bis dahin flache Eintrag ist seit dieser Runde in ein eigenes
+               Untermenü-Flyout "Arbeitsgang-Namen" verpackt (dieselbe generische ".menu-submenu"-
+               Technik wie bei "Maschinentypen" direkt oberhalb). ID/Logik bleiben unverändert. -->
+          <div class="menu-submenu" id="submenuOpNames">
+            <button class="menu-item submenu-trigger" id="submenuOpNamesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Processing step names">Arbeitsgang-Namen <span class="submenu-arrow">▸</span></button>
+            <div class="submenu-dropdown" id="submenuOpNamesDropdown" hidden>
+              <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+            </div>
+          </div>
           <!-- Trennstrich vor "Einstellungen importieren" (Release 167, Sebastian, Punkt 4: "Vor
                'Einstellungen importieren' einen Trennstrich machen") - per CSS (#btnLoadSettings,
                siehe Stylesheet weiter oben) nach demselben margin-top/padding-top/border-top-Muster
@@ -6658,8 +6680,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 167;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 11:30 Uhr';
+  const APP_RELEASE_NUMBER = 168;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 12:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
