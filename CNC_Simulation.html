@@ -6799,8 +6799,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 174;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 12:33 Uhr';
+  const APP_RELEASE_NUMBER = 175;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:04 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7010,6 +7010,40 @@
   // ist diese Regel trotz des auf den ersten Blick selbstbezüglich wirkenden Musters
   // ("C=1"->";C=1", enthält "C=1" also auch im Ersetzungstext) gefahrlos - keine Kaskaden-/
   // Endlosschleifen-Möglichkeit.
+  // Release 175 (Sebastian, zu einem eingefügten Beispielprogramm mit "G91 ...": "Kannst du kurz
+  // checken, warum die Ecken hier eckig sind?", danach "Einbauen bitte nur, wenn nichts anderes
+  // kaputt geht, was bisher funktioniert bei den Bögen"): Beim Einbau von echter G90/G91-
+  // Unterstützung (siehe state.incremental/scanIncremental() weiter unten in extractMotion())
+  // wurde genau EINE bestehende Kollision gefunden und hier behoben - die SCM-Regel "O ->G91"
+  // (ursprünglich schon vor Release 83 vorhanden, siehe Kommentar dort). Reale SCM/WinPPZ-Dateien
+  // (von Sebastian hochgeladene Beispiele) schreiben diesen Marker NIE allein auf einer eigenen
+  // Zeile, sondern immer unmittelbar gefolgt von den eigentlichen Achswerten auf DERSELBEN Zeile,
+  // z. B. "O X=0.000 Y=0.000 Z=0.000" (Rücksetzen auf den Referenzpunkt nach einem
+  // Werkzeugwechsel). Bislang war das harmlos: "G91" wurde von keiner anderen Stelle im Parser
+  // ausgewertet, die Zeile wirkte exakt wie "X=0.000 Y=0.000 Z=0.000" - eine ganz normale
+  // ABSOLUTE Punktzuweisung. Mit echtem G91 hätte dieselbe Zeile ab jetzt zweierlei bewirkt: zum
+  // einen (durch das jetzt erkannte "G91") den modalen Zustand dauerhaft auf "inkrementell"
+  // umgeschaltet - für den gesamten REST des Programms, da in den geprüften SCM-Beispieldateien
+  // nirgends ein passendes "G90" folgt -, zum anderen wäre "X=0.000 Y=0.000 Z=0.000" plötzlich
+  // als Verschiebung UM NULL (keine Wirkung) statt als Rücksetzung AUF NULL gelesen worden - eine
+  // schwere Regression für jedes bestehende SCM-Programm mit diesem (laut Sebastians eigenen
+  // Beispieldateien sehr gebräuchlichen) Muster, exakt das, was laut Sebastians Bedingung
+  // verhindert werden musste. Fix: "O ->G91" wird zu "O ->/" (siehe parseSwapRules() oben -
+  // nach "->" nur "/" bedeutet "gegen NICHTS tauschen") - das Token "O " verschwindet jetzt
+  // einfach ersatzlos, exakt wie die bereits bestehende Nachbarregel "N X->/" direkt darüber.
+  // "O X=0.000 Y=0.000 Z=0.000" wird dadurch zu " X=0.000 Y=0.000 Z=0.000" - bit-für-bit
+  // dasselbe Ergebnis (reine absolute X/Y/Z-Zuweisung, kein G-Code, kein Moduswechsel) wie vor
+  // diesem Release. Alle neun übrigen Maschinentyp-Blöcke wurden per Volltextsuche nach "G90"/
+  // "G91" geprüft - keine weitere Kollision gefunden (die einzige andere Fundstelle, "O ->G92"
+  // im Biesse-Block, bleibt unverändert: G92 hatte schon vorher echte, gewünschte Wirkung als
+  // Nullpunktverschiebung, siehe TRANS/G92-Bugfix bei extractMotion() weiter unten, und ändert
+  // sich durch diesen Release nicht). Wichtiger Hinweis für Sebastian: Diese Korrektur betrifft
+  // nur den eingebauten WERKS-Standard (DEFAULT_MACHINETYPES_TEXT hier). Eine bereits im Browser
+  // gespeicherte, selbst angepasste Maschinentyp-Konfiguration (localStorage, siehe
+  // loadPersistedMachineTypesConfig() weiter unten) wird davon NICHT automatisch mit-aktualisiert
+  // - falls dort noch die alte SCM-Regel "O ->G91" steht, müsste sie händisch in "Maschinentypen
+  // bearbeiten" nachgezogen oder der SCM-Block über "Maschinentypen zurücksetzen" neu geladen
+  // werden.
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -7168,7 +7202,7 @@ XT G->M6 T
 V->F
 H->Z
 N X->/
-O ->G91
+O ->/
 Q->C
 R->A
 C=2->G41
@@ -8498,6 +8532,60 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return prevRapid;
   }
 
+  // G90/G91 - Absolut-/Inkrementalmaß (Release 175, Sebastian anhand eines Beispielprogramms mit
+  // "N101 G91 G01 Z-1.3 F80.0" / "N102 X25.5 F100.0" / "N103 G3 X9.0 Y9.0 I0 J9.0" usw.: "Kannst
+  // du kurz checken, warum die Ecken hier eckig sind?"): Bis zu diesem Release kannte
+  // extractMotion() NUR absolute Koordinaten - jedes gefundene X/Y/Z wurde unabhängig von einem
+  // etwaigen "G91" immer als neuer ABSOLUTER Zielwert in state.x/y/z übernommen (siehe
+  // AXIS_RE-Schleife weiter unten). Bei "G91" (Inkrementalmaß: jeder Achswert ist ein VERSATZ
+  // zur zuletzt angefahrenen Position, nicht die Position selbst) führte das zu falschen
+  // Zielpunkten - z. B. wurde aus dem Beispiel "N103 G3 X9.0 Y9.0 ..." (ausgehend von X25.5/Y0,
+  // real also ein Viertelkreis bis X34.5/Y9.0 mit Radius 9) stattdessen ein Bogen bis zum
+  // absoluten Punkt X9.0/Y9.0 berechnet - geometrisch mit dem aus I0/J9.0 gebildeten Mittelpunkt
+  // unvereinbar (siehe interpolateArc()/tessellateArc() weiter unten: die Tessellierung zwingt
+  // den LETZTEN Punkt unabhängig vom tatsächlichen Radius auf diesen falschen Zielpunkt, was
+  // sich als sichtbarer Knick/"eckige Ecke" statt eines glatten Bogens zeigte - exakt Sebastians
+  // beschriebenes Symptom). Analog zu scanRapid() oben: modaler Zustand (state.incremental,
+  // Default false = absolut/G90, siehe newModalState() weiter unten), der gilt, bis eine
+  // spätere Zeile ausdrücklich G90 oder G91 trägt - EIN einziges G91/G90 irgendwo im Programm
+  // wirkt also auf alle nachfolgenden Zeilen, bis zum nächsten Gegenteil, nicht nur auf die
+  // eine Zeile, in der es steht (reales G-Code-Verhalten). "Zuletzt gewinnt" bei mehreren
+  // G90/G91 auf derselben Zeile, exakt wie bei scanRapid/scanArcDirection; ein begleitendes
+  // G01/G02/G03/G40/... auf derselben Zeile (z. B. "G91 G01 Z-1.3") wird für DIESE Einstufung
+  // ignoriert (nur 90/91 zählen als `last`). Bewusst NUR für die linearen Achsen X/Y/Z
+  // (extractMotion() wendet state.incremental weiter unten nur auf diese drei an) - Rundachsen
+  // A/B/C bleiben, wie schon beim bestehenden TRANS/G92-Versatz (state.offsetX/Y/Z), unangetastet
+  // immer absolut, da kein einziges bisheriges Beispielprogramm inkrementelle Rundachswerte
+  // verwendet und Sebastians Anfrage sich ausdrücklich nur auf die "Bögen" (X/Y) bezog. I/J-
+  // Mittelpunktswerte sind von alldem unberührt - deren Interpretation (inkrementell zum
+  // Bogenstart oder absolut) hängt ausschließlich vom per Maschinentyp konfigurierten IJMODE ab
+  // (siehe Kommentar bei interpolateArc() weiter unten), nicht von G90/G91.
+  //
+  // Kollisionsprüfung vor dem Einbau (Sebastians ausdrückliche Bedingung: "nur, wenn nichts
+  // anderes kaputt geht, was bisher funktioniert bei den Bögen"): Volltextsuche nach "G90"/"G91"
+  // über die gesamte Datei ergab genau EINEN echten Treffer außerhalb dieses neuen Codes - die
+  // SCM-Regel "O ->G91" (siehe DEFAULT_MACHINETYPES_TEXT weiter oben, dort ausführlich
+  // dokumentiert und auf "O ->/" korrigiert, da reale SCM-Dateien "O X=0.000 Y=0.000 Z=0.000"
+  // schreiben und ein jetzt wirksames "G91" das Programm dauerhaft (für den Rest der Datei) in
+  // den falschen Modus geschaltet hätte). Alle übrigen acht Maschinentyp-Blöcke sowie jede
+  // bestehende Kernlogik (Bogeninterpolation, I/J-Modus, Werkzeug-Radiuskorrektur G40/41/42,
+  // Eckenverrundung P71:/BR=/E/G302/GFIL, Nullpunktverschiebung TRANS/G92) bleiben unverändert -
+  // keiner dieser Codepfade liest oder setzt state.incremental, und ein Programm, das niemals
+  // "G91" enthält, hält state.incremental für die gesamte Laufzeit auf dem Default `false` und
+  // verhält sich dadurch exakt wie vor diesem Release (mit Playwright regressionsgetestet, siehe
+  // CNC_Simulation.md für die Testprogramme).
+  function scanIncremental(line, prevIncremental) {
+    let m, last = null;
+    G_RE.lastIndex = 0;
+    while ((m = G_RE.exec(line))) {
+      const n = parseInt(m[1], 10);
+      if (n === 90 || n === 91) last = n;
+    }
+    if (last === 90) return false;
+    if (last === 91) return true;
+    return prevIncremental;
+  }
+
   // Bogenerkennung (34. Runde, Benutzer: "Kannst du im CNC Code Bögen fahren? ... Da kommt aktuell
   // eine gerade Strecke raus"): Liefert 'cw' (G02), 'ccw' (G03) oder null (kein Bogen), anhand des
   // LETZTEN G-Codes auf der Zeile (identisches "Zuletzt gewinnt"-Prinzip wie scanRapid oben, daher
@@ -8571,6 +8659,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const isOriginReset = ORIGIN_RESET_RE.test(line);
+      // G90/G91 (Release 175, siehe scanIncremental() weiter oben für die ausführliche
+      // Begründung): bewusst VOR der AXIS_RE-Schleife unten aktualisiert (anders als
+      // state.rapid/state.f, die erst NACH ihr aktualisiert werden) - ein "G91" wirkt laut
+      // Sebastians Beispiel ("N101 G91 G01 Z-1.3 F80.0") bereits auf die Achswerte DERSELBEN
+      // Zeile, nicht erst auf die nächste.
+      state.incremental = scanIncremental(line, state.incremental);
       // Position VOR dieser Zeile merken (für die Bogeninterpolation unten - der Startpunkt eines
       // etwaigen Bogens ist der zuletzt angefahrene Punkt, nicht das Ergebnis der AXIS_RE-Schleife
       // direkt darunter, die state.x/y/z gleich auf den ZIELPUNKT dieser Zeile überschreibt).
@@ -8599,6 +8693,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const val = parseFloat(m[2] !== undefined ? m[2] : m[4]);
         if (isOriginReset && (axis === 'x' || axis === 'y' || axis === 'z')) {
           state['offset' + axis.toUpperCase()] = val;
+        } else if (state.incremental && (axis === 'x' || axis === 'y' || axis === 'z')) {
+          // G91 (Release 175, siehe scanIncremental() weiter oben): nur für X/Y/Z - der
+          // programmierte Wert ist jetzt ein VERSATZ zur zuletzt gültigen Position, kein
+          // neuer absoluter Zielwert. Rundachsen A/B/C bleiben, wie schon beim bestehenden
+          // TRANS/G92-Versatz (offsetX/Y/Z) direkt oben, immer absolut.
+          state[axis] = state[axis] + val;
         } else {
           state[axis] = val;
         }
@@ -8739,7 +8839,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // den übrigen modalen Feldern hier wird der Zustand JE extractMotion()-Aufruf frisch begonnen
     // (siehe setScope() in app.js, newModalState() wird dort pro Arbeitsgang neu aufgerufen), ein
     // Vorschub aus einem vorherigen Arbeitsgang wird also bewusst NICHT automatisch übernommen.
-    return { x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, rapid: true, offsetX: 0, offsetY: 0, offsetZ: 0, comp: 'none', f: null };
+    // "incremental" (Release 175, G90/G91, siehe scanIncremental() weiter oben): Default `false`
+    // = G90/Absolutmaß - exakt das bisherige, einzig unterstützte Verhalten dieser Anwendung vor
+    // Release 175. Ein Programm ohne jedes "G91" ändert state.incremental dadurch nie und bleibt
+    // bit-für-bit beim bisherigen Verhalten (Regressionsschutz gemäß Sebastians Bedingung). Wie
+    // bei state.rapid/state.f wird auch dieses Feld JE extractMotion()-Aufruf (= je Arbeitsgang)
+    // frisch mit dem Default begonnen, nicht über Arbeitsgänge hinweg fortgeführt.
+    return { x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, rapid: true, offsetX: 0, offsetY: 0, offsetZ: 0, comp: 'none', f: null, incremental: false };
   }
 
   // splitAtOriginResets/ORIGIN_RESET_RE/parseArcParams/interpolateArc leben in parser.js (reine
