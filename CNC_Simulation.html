@@ -2523,32 +2523,29 @@
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
         </div>
       </div>
-      <!-- "Infos" -> "Vorschubskalierung"/"Ungefähre Fräszeit" (Release 161, Sebastian, "Konzept
-           'Ungefähre Fräszeit'", Punkt 1: "Neuer Menüpunkt im Menüband oben 'Infos' (rechts von
-           'Einstellungen')") - neues Menü, direkt rechts von "Einstellungen". WICHTIG zur
-           Namensgebung: Es gab bereits EINMAL ein Menü mit dem sichtbaren Namen "Infos" an exakt
-           dieser Stelle (Release 105), das in Release 106 in "Hilfe" umbenannt wurde, dabei aber
-           bewusst seine ursprünglichen IDs (menuInfos/menuInfosTrigger/menuInfosDropdown, direkt
-           im Anschluss unten) behielt - siehe deren eigener Kommentar dort. Um genau diese Art von
-           Verwechslung diesmal von vornherein zu vermeiden, bekommt dieses NEUE "Infos"-Menü
-           eigene, inhaltlich benannte IDs (menuMillTime/...), die NICHT wieder "menuInfos" lauten -
-           auch wenn eine künftige Umbenennung dieses Menüs denselben Namenskonflikt erneut
-           herstellen könnte, bliebe die ID hier diesmal von Anfang an eindeutig unterscheidbar.
-           Enthält zwei Einträge: "Vorschubskalierung" (Punkt 3: ein Faktor, mit dem der im Programm
-           gefundene Vorschub multipliziert wird, da F "manchmal in mm und manchmal in m (Meter)
-           ausgegeben" wird) und "Ungefähre Fräszeit" (Punkt 2: aktiv ausgelöste, nicht gecachete
-           Berechnung der "Nettofräszeit" aus der bereits maschinentyp-übersetzten, im CNC-
-           Programmcode angezeigten Fassung des Programms) - siehe #feedScalingPanel/#millTimePanel
-           weiter unten im Markup sowie deren Verdrahtung in app.js. -->
+      <!-- "Infos" -> "Fräszeitberechnung" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'",
+           Punkt 1: "Neuer Menüpunkt im Menüband oben 'Infos' (rechts von 'Einstellungen')") -
+           neues Menü, direkt rechts von "Einstellungen". WICHTIG zur Namensgebung: Es gab bereits
+           EINMAL ein Menü mit dem sichtbaren Namen "Infos" an exakt dieser Stelle (Release 105),
+           das in Release 106 in "Hilfe" umbenannt wurde, dabei aber bewusst seine ursprünglichen
+           IDs (menuInfos/menuInfosTrigger/menuInfosDropdown, direkt im Anschluss unten) behielt -
+           siehe deren eigener Kommentar dort. Um genau diese Art von Verwechslung diesmal von
+           vornherein zu vermeiden, bekommt dieses NEUE "Infos"-Menü eigene, inhaltlich benannte
+           IDs (menuMillTime/...), die NICHT wieder "menuInfos" lauten - auch wenn eine künftige
+           Umbenennung dieses Menüs denselben Namenskonflikt erneut herstellen könnte, bliebe die
+           ID hier diesmal von Anfang an eindeutig unterscheidbar.
+           Release 176 (Sebastian, Punkt 1: "'Vorschubskalierung'/'Feed scaling' aus 'Infos ->
+           Vorschubskalierung' direkt in das 'Fräszeitberechnung' Menü verschieben"): Der bis dahin
+           EIGENSTÄNDIGE zweite Menüpunkt "Vorschubskalierung" (eigener Button + eigener Dialog
+           #feedScalingPanel, siehe dessen Entfernungs-Kommentar bei #millTimePanel weiter unten)
+           entfällt hier ersatzlos - dieses Dropdown enthält seither nur noch den einen Eintrag
+           "Fräszeitberechnung", die Vorschubskalierung selbst ist jetzt ein Eingabefeld DIREKT
+           innerhalb des Fräszeitberechnung-Dialogs (#millTimePanel), direkt unter dem bereits
+           bestehenden "G0-Vorschub"-Feld - siehe dortiger Kommentar für die volle Begründung. -->
       <div class="menu" id="menuMillTime">
         <button class="menu-trigger" id="menuMillTimeTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Info">Infos</button>
         <div class="menu-dropdown" id="menuMillTimeDropdown" hidden>
-          <!-- Reihenfolge (Release 167, Sebastian, Punkt 3): "Ungefähre Fräszeit" (seit Release
-               174 "Fräszeitberechnung", siehe direkt unten) vor "Vorschubskalierung" (bis zu
-               dieser Runde umgekehrt) - IDs/Funktion unverändert, reine Umsortierung. Die vier
-               Programminformations-Zeilen darunter (Release 163) bleiben unverändert am Ende des
-               Dropdowns stehen.
-               Release 174 (Sebastian, Punkt 1, nach der Erläuterung zur "Ungefähre
+          <!-- Release 174 (Sebastian, Punkt 1, nach der Erläuterung zur "Ungefähre
                Fräszeit"-Berechnung für ATABPLATTE.mpf): reine Beschriftungsänderung - "Ungefähre
                Fräszeit"/"Approximate milling time" wird zu "Fräszeitberechnung"/"Approximated
                milling time", ID (btnMillTime) und Funktion bewusst unverändert, exakt nach
@@ -2556,9 +2553,10 @@
                #menuInfos weiter unten). Grund für die Umbenennung: seit Release 174 berechnet
                dieser Menüpunkt/der dahinter liegende Dialog nicht mehr nur die "Nettofräszeit",
                sondern zusätzlich die "Fräszeit mit G0" (siehe #millTimePanel weiter unten) - der
-               neue Name deckt beide Ergebnisse ab, ohne eines davon im Namen vorwegzunehmen. -->
+               neue Name deckt beide Ergebnisse ab, ohne eines davon im Namen vorwegzunehmen.
+               Release 176: der vormals direkt danach folgende zweite Menüpunkt "Vorschubskalierung"
+               (#btnFeedScaling) ist entfernt, siehe Kommentar direkt oberhalb bei #menuMillTime. -->
           <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die Fräszeitberechnung (Nettofräszeit sowie Fräszeit inkl. G0-Eilgang) anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximated milling time" data-i18n-en-title="Calculates the milling time calculation (net milling time as well as milling time incl. G0 rapid) now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Fräszeitberechnung</button>
-          <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
           <!-- Programminformationen (Release 163, Sebastian, nach Richtigstellung: "Die Infos
                sollten nicht ins Menü 'Ungefähre Fräszeit', sondern im Menüpunkt 'Infos' unter dem
                Menüpunkt 'Ungefähre Fräszeit' als Text in der Hauptansicht ... Der Trennstrich
@@ -3693,39 +3691,6 @@
   </div>
 </div>
 
-<!-- "Vorschubskalierung" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'", Punkt 3: "Es muss
-     einen Menüpunkt 'Vorschubskalierung' (EN 'Feed scaling') unter 'Infos' geben. Dort wird ein
-     Faktor eingegeben und multipliziert. Der Vorschub (F) wird manchmal in mm und manchmal in m
-     (Meter) ausgegeben") - strukturell das einfachste Panel im ganzen Programm (ein einzelnes
-     Zahlenfeld + Übernehmen/Abbrechen), nach demselben Grundmuster wie #gridColorPanel direkt
-     oberhalb, nur ohne dessen Häkchen+Farbwähler (hier gibt es keine "automatisch"-Option - der
-     Faktor ist immer ein konkreter Wert, Standardwert 1 = keine Umrechnung). Eingabe als Text
-     (nicht type="number") mit "inputmode=decimal", exakt dieselbe Konvention wie
-     #toolRadiusInput/#toolLengthInput (siehe normalizeToolValue() in app.js) - erlaubt auch das in
-     Deutschland übliche Komma als Dezimaltrennzeichen, wird beim Übernehmen normalisiert. -->
-<div class="paste-panel" id="feedScalingPanel">
-  <div class="paste-card">
-    <h3 data-i18n-en="Feed scaling">Vorschubskalierung</h3>
-    <!-- Release 174: Querverweis-Text aktualisiert ("Ungefähre Fräszeit" -> "Fräszeitberechnung",
-         siehe Umbenennung bei #btnMillTime weiter oben) - reine Nachführung des umbenannten
-         Menüpunkts, Faktor/Funktion selbst unverändert. -->
-    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time (see 'Approximated milling time') is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit (siehe „Fräszeitberechnung") mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
-    <label class="color-field-row font-color-row">
-      <span class="font-color-row-label">
-        <span data-i18n-en="Factor">Faktor</span>
-      </span>
-      <span class="color-field-inputs">
-        <input type="text" id="feedScalingFactorInput" class="filename-input" inputmode="decimal" spellcheck="false">
-      </span>
-    </label>
-    <p class="panel-hint" id="feedScalingFactorWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
-    <div class="paste-actions">
-      <button class="btn ghost" id="btnFeedScalingCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
-      <button class="btn primary" id="btnFeedScalingApply" type="button" data-i18n-en="Apply">Übernehmen</button>
-    </div>
-  </div>
-</div>
-
 <!-- "Ungefähre Fräszeit" / "Nettofräszeit" (Release 161, Sebastian, "Konzept 'Ungefähre Fräszeit'",
      Punkte 1+2+4+5) - anders als alle anderen .paste-panel-Dialoge in diesem Programm (die
      ausnahmslos EINGABE-Formulare sind, siehe Kommentar bei der entsprechenden Recherche) zeigt
@@ -3765,9 +3730,10 @@
         G0-Eilgang-Streckenlänge (computeApproxMillingTime().rapidLengthMm, siehe dort) - da G0
         im Programm selbst nie einen eigenen Vorschubwert trägt, dafür mit dem direkt darunter neu
         eingebbaren "G0-Vorschub" (#millTimeG0FeedInput, Standard 40.000 mm/min, Punkt 3).
-     3. "G0-Vorschub"-Eingabefeld (#millTimeG0FeedInput, Punkt 3+5) - exakt nach demselben Muster
-        wie #feedScalingFactorInput (freier Zahlenwert, deutsches Komma erlaubt, > 0 validiert,
-        sonst #millTimeG0FeedWarning). WICHTIG (Punkt 5, wörtlich: "Wenn der Vorschub über die
+     3. "G0-Vorschub"-Eingabefeld (#millTimeG0FeedInput, Punkt 3+5) - zum Zeitpunkt von Release 174
+        noch nach demselben Muster wie das (seit Release 176 entfernte, siehe unten)
+        #feedScalingFactorInput (freier Zahlenwert, deutsches Komma erlaubt, > 0 validiert, sonst
+        #millTimeG0FeedWarning). WICHTIG (Punkt 5, wörtlich: "Wenn der Vorschub über die
         Skalierung skaliert wird, wird der Vorschub auch im Eingabefenster vorskaliert ... Der
         Vorschub wird im CNC Programm mal [Skalierungsfaktor] berechnet, aber in dem G0 Fenster
         soll er dann durch [Skalierungsfaktor] geteilt werden, damit das wieder passt"): dieses
@@ -3777,16 +3743,42 @@
         "Neu berechnen" wird der eingegebene (vorskalierte) Wert umgekehrt wieder MIT
         feedScaleFactor multipliziert, bevor er als g0FeedRate übernommen/persistiert und für die
         Zeitberechnung verwendet wird - siehe runApproxMillingTime() in app.js für die Umsetzung.
-     4. Bewusst KEIN eigener "Übernehmen"-Knopf für das G0-Vorschub-Feld: anders als beim separaten
-        "Vorschubskalierung"-Panel (#feedScalingPanel) gibt es hier keinen zweiten Dialog - das
-        Feld sitzt direkt in DIESEM Panel, "Neu berechnen" (#btnMillTimeRecalc, unverändert) liest
-        und übernimmt es zusammen mit der restlichen Neuberechnung in einem Schritt.
+     4. Bewusst KEIN eigener "Übernehmen"-Knopf für das G0-Vorschub-Feld: zum Zeitpunkt von Release
+        174 anders als beim damals noch separaten "Vorschubskalierung"-Panel (#feedScalingPanel,
+        seit Release 176 entfernt) - das Feld sitzt direkt in DIESEM Panel, "Neu berechnen"
+        (#btnMillTimeRecalc, unverändert) liest und übernimmt es zusammen mit der restlichen
+        Neuberechnung in einem Schritt.
      5. Persistenz (g0FeedRate/LS_KEY_G0_FEED, siehe app.js) exakt nach demselben
         "self-persisting Setter"-Muster wie feedScaleFactor/LS_KEY_FEED_SCALE - bewusst NICHT in
         KNOWN_EXPORTED_LS_KEYS eingetragen (siehe dortigen Kommentar/5.9): der generische
         "otherSettings"-Sicherheitsnetz-Mechanismus (collectOtherCncsimSettings()) deckt den
         Einstellungsexport/-import dafür bereits automatisch ab, ohne dass diese neue Einstellung
-        dort zusätzlich verdrahtet werden müsste. -->
+        dort zusätzlich verdrahtet werden müsste.
+
+     Release 176 (Sebastian, 4 durchnummerierte Punkte): (1) "'Vorschubskalierung'/'Feed scaling'
+     aus 'Infos -> Vorschubskalierung' direkt in das 'Fräszeitberechnung' Menü verschieben." (2)
+     "Anordnung unter 'G0-Vorschub' Eingabe." (3) "Hilfetexte für DE/EN verschieben, [...] wird
+     direkt darunter als ersten Absatz gepackt, dann kommt der restliche Text [...]." (4) auf
+     Rückfrage bestätigt: der in Punkt 3 verschobene Hinweistext enthielt einen Klammerzusatz
+     "(siehe 'Fräszeitberechnung')"/"(see 'Approximated milling time')", der als Querverweis auf
+     GENAU dieses Panel diente, solange "Vorschubskalierung" noch ein eigener, separater Dialog
+     war (siehe Release 174-Kommentar bei #feedScalingPanel, jetzt entfernt) - da der Text jetzt
+     direkt INNERHALB dieses Panels steht, wäre der Klammerzusatz selbstreferenzierend ("siehe
+     diese Seite hier") und entfällt ersatzlos.
+     Umsetzung: Das vormals eigenständige Panel #feedScalingPanel (eigener Dialog mit eigenem
+     Abbrechen/Übernehmen, siehe Git-Historie/Release 161) ist komplett entfernt. Die
+     "Vorschubskalierung" ist jetzt ein drittes Eingabefeld direkt in diesem Panel
+     (#millTimeFeedScaleInput), nach exakt demselben Muster wie #millTimeG0FeedInput direkt
+     darüber, UND direkt darunter positioniert (Punkt 2) - es gibt dadurch KEINEN eigenen
+     "Übernehmen"-Knopf mehr dafür, "Neu berechnen" übernimmt wie beim G0-Vorschub beides in einem
+     Schritt (siehe runApproxMillingTime() in app.js). Die vormalige, rein lesbare Anzeigezeile
+     "Angewendete Vorschubskalierung" (#millTimeFactorValue) entfällt dabei ersatzlos - sie zeigte
+     denselben Wert, der jetzt direkt im neuen, editierbaren Feld steht, eine zusätzliche reine
+     Anzeige wäre redundant. Der verschobene Hinweistext (Punkt 3, Klammerzusatz entfernt gemäß
+     Punkt 4) steht jetzt als ERSTER der drei Hinweistexte dieses Panels, vor den beiden bereits
+     bestehenden ("Nettofräszeit"- bzw. "Fräszeit mit G0"-Einordnung, Release 161/174) - exakt wie
+     von Sebastian vorgegeben ("...wird direkt darunter als ersten Absatz gepackt, dann kommt der
+     restliche Text"). -->
 <div class="paste-panel" id="millTimePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
@@ -3804,14 +3796,7 @@
         <span class="menu-info-label" data-i18n-en="Milling time with G0">Fräszeit mit G0</span>
         <span class="menu-info-value" id="millTimeWithG0Value">–</span>
       </div>
-      <div class="menu-info-row">
-        <span class="menu-info-label" data-i18n-en="Feed scaling factor applied">Angewendete Vorschubskalierung</span>
-        <span class="menu-info-value" id="millTimeFactorValue">–</span>
-      </div>
-      <!-- "G0-Vorschub" (Release 174, Punkt 3+5) - exakt dasselbe Zahlenfeld-Muster wie
-           #feedScalingFactorInput direkt oberhalb im Markup (label.color-field-row statt
-           .menu-info-row, da hier - anders als bei den reinen Anzeigezeilen oben - eine Eingabe
-           statt eines berechneten Werts steht). Wert wird von app.js beim Öffnen des Panels
+      <!-- "G0-Vorschub" (Release 174, Punkt 3+5) - Wert wird von app.js beim Öffnen des Panels
            (btnMillTime-Klick) auf g0FeedRate/feedScaleFactor vorbefüllt, siehe dortiger
            Kommentar. -->
       <label class="color-field-row font-color-row">
@@ -3823,13 +3808,32 @@
         </span>
       </label>
       <p class="panel-hint" id="millTimeG0FeedWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 40000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 40000).</p>
+      <!-- "Vorschubskalierung" (Release 176, Punkt 1+2, hierher verschoben aus dem entfernten
+           eigenständigen #feedScalingPanel, siehe ausführlichen Kommentar weiter oben) - exakt
+           dasselbe Zahlenfeld-Muster wie #millTimeG0FeedInput direkt oberhalb, bewusst DIREKT
+           darunter positioniert (Punkt 2). Wert wird von app.js beim Öffnen des Panels
+           (btnMillTime-Klick) auf den aktuellen feedScaleFactor vorbefüllt, exakt wie zuvor beim
+           Öffnen des separaten Dialogs. -->
+      <label class="color-field-row font-color-row">
+        <span class="font-color-row-label">
+          <span data-i18n-en="Feed scaling">Vorschubskalierung</span>
+        </span>
+        <span class="color-field-inputs">
+          <input type="text" id="millTimeFeedScaleInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </span>
+      </label>
+      <p class="panel-hint" id="millTimeFeedScaleWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
       <p class="panel-hint" id="millTimeNoFeedWarning" data-i18n-en="" hidden></p>
     </div>
+    <!-- Hinweistext zur "Vorschubskalierung" (Release 176, Punkt 3, hierher verschoben aus dem
+         entfernten #feedScalingPanel, als ERSTER der drei Hinweistexte dieses Panels - siehe
+         ausführlichen Kommentar weiter oben zum entfernten Klammerzusatz, Punkt 4). -->
+    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
     <!-- Hinweistext (Punkt 5 des ursprünglichen Fräszeit-Konzepts) - wörtlich wie vorgegeben,
          IMMER sichtbar, wenn das Panel offen ist (nicht nur beim allerersten Auslösen), da er für
          die Einordnung der "Nettofräszeit"-Zeile gilt. -->
     <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
-    <!-- Zweiter Hinweistext (NEU Release 174) - analog zum obigen, aber für die neue "Fräszeit
+    <!-- Dritter Hinweistext (NEU Release 174) - analog zum obigen, aber für die neue "Fräszeit
          mit G0"-Zeile: ordnet ein, dass der G0-Anteil nur eine Schätzung mit einem frei
          eingegebenen (nicht programmierten) Vorschub ist. -->
     <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
@@ -6799,8 +6803,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 175;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:04 Uhr';
+  const APP_RELEASE_NUMBER = 176;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:46 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7628,14 +7632,18 @@ CORNERRADIUS=GFIL r=
     return gridColorOverride;
   }
 
-  // "Vorschubskalierung" ("Infos" -> "Vorschubskalierung", Release 161, siehe #feedScalingPanel in
-  // template_top.html sowie "Konzept 'Ungefähre Fräszeit'", Punkt 3) - ein einzelner Multiplikator
-  // (Standard 1 = keine Umrechnung), mit dem computeApproxMillingTime() weiter unten jeden im
-  // Programm gefundenen F-Wert vor der Zeitberechnung multipliziert. Dieselbe "self-persisting
-  // Setter"-Technik wie applyGridColor() direkt oberhalb, nur OHNE bakeParams/requestRender() - die
-  // Fräszeit wird nicht laufend neu gezeichnet, sondern ausschließlich aktiv per Klick auf
-  // "Ungefähre Fräszeit"/"Neu berechnen" neu ermittelt (Punkt 2: "Die Berechnung muss aktiv
-  // angestoßen werden, es wird nichts vorher gecachet dafür").
+  // "Vorschubskalierung" ("Infos" -> "Fräszeitberechnung" -> Eingabefeld "Vorschubskalierung",
+  // Release 161, Punkt 3) - ein einzelner Multiplikator (Standard 1 = keine Umrechnung), mit dem
+  // computeApproxMillingTime() weiter unten jeden im Programm gefundenen F-Wert vor der
+  // Zeitberechnung multipliziert. Dieselbe "self-persisting Setter"-Technik wie applyGridColor()
+  // direkt oberhalb, nur OHNE bakeParams/requestRender() - die Fräszeit wird nicht laufend neu
+  // gezeichnet, sondern ausschließlich aktiv per Klick auf "Fräszeitberechnung"/"Neu berechnen"
+  // neu ermittelt (Punkt 2: "Die Berechnung muss aktiv angestoßen werden, es wird nichts vorher
+  // gecachet dafür"). Release 176 (Sebastian, Punkt 1): das Eingabefeld selbst (ursprünglich im
+  // eigenständigen #feedScalingPanel) sitzt seither direkt im #millTimePanel
+  // (#millTimeFeedScaleInput, siehe dort) - diese Funktion/der persistierte Wert selbst bleiben
+  // davon unberührt, es ändert sich nur, WO und WANN der Wert eingegeben/übernommen wird (jetzt
+  // zusammen mit "Neu berechnen" statt über einen eigenen "Übernehmen"-Knopf).
   const LS_KEY_FEED_SCALE = 'cncsim.feedScaleFactor';
   function loadPersistedFeedScaleFactor() {
     try {
@@ -15586,9 +15594,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // aktive Faktor unangetastet - dieselbe Regel wie bei "3D Rasterfarbe"/"Raster"/"Rotation"
       // oben. normalizeFeedScaleFactor() fängt dabei einen ungültigen Wert (<=0, NaN) einzeln ab
       // und fällt auf den zuvor aktiven Faktor zurück, statt den ganzen Import abzubrechen.
+      // Release 176: Eingabefeld-Referenz auf #millTimeFeedScaleInput umgestellt (liegt seither im
+      // #millTimePanel statt im entfernten #feedScalingPanel, siehe dortiger Kommentar) - rein
+      // technische Nachführung, Logik/Fallback-Verhalten unverändert.
       if (data.feedScaleFactor !== undefined) {
         feedScaleFactor = applyFeedScaleFactor(normalizeFeedScaleFactor(data.feedScaleFactor, feedScaleFactor));
-        if (feedScalingFactorInput) feedScalingFactorInput.value = String(feedScaleFactor);
+        if (millTimeFeedScaleInput) millTimeFeedScaleInput.value = String(feedScaleFactor);
       }
       // "Werkzeuge" (Release 158, Sebastian, Punkt 4): fehlt eines der drei Felder (ältere Datei),
       // bleibt die jeweils aktuell aktive Einstellung unangetastet - dieselbe Regel wie bei den
@@ -15938,43 +15949,28 @@ Sebastian Bäcker (Anschrift wie oben)`,
     gridColorPanel.classList.remove('open');
   });
 
-  // "Infos" -> "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit", Punkt 3,
-  // sowie #feedScalingPanel in template_top.html und applyFeedScaleFactor()/LS_KEY_FEED_SCALE
-  // weiter oben). EIN Zahlenfeld + Übernehmen/Abbrechen, nach demselben Grundmuster wie die
-  // übrigen Panels hier (z.B. #gridColorPanel direkt oberhalb), nur ohne Häkchen/Farbwähler, da es
-  // hier nur einen einzigen Faktor statt einer Farbe gibt.
-  const feedScalingPanel = el('feedScalingPanel');
-  const feedScalingFactorInput = el('feedScalingFactorInput');
-  const feedScalingFactorWarning = el('feedScalingFactorWarning');
-  el('btnFeedScaling').addEventListener('click', () => {
-    feedScalingFactorInput.value = String(feedScaleFactor);
-    feedScalingFactorWarning.hidden = true;
-    feedScalingPanel.classList.add('open');
-  });
-  el('btnFeedScalingCancel').addEventListener('click', () => feedScalingPanel.classList.remove('open'));
-  el('btnFeedScalingApply').addEventListener('click', () => {
-    const n = normalizeFeedScaleFactor(feedScalingFactorInput.value, null);
-    if (n === null) {
-      feedScalingFactorWarning.hidden = false;
-      return;
-    }
-    feedScaleFactor = applyFeedScaleFactor(n);
-    feedScalingPanel.classList.remove('open');
-  });
-
-  // "Infos" -> "Ungefähre Fräszeit" (Release 161, siehe Konzept "Ungefähre Fräszeit" sowie
+  // "Infos" -> "Fräszeitberechnung" (Release 161, siehe Konzept "Ungefähre Fräszeit" sowie
   // #millTimePanel in template_top.html und computeApproxMillingTime() weiter oben). Die
   // Berechnung wird bewusst NICHT gecachet (Punkt 2: "Das ist eine aktiv ausgelöste Berechnung") -
-  // jeder Klick auf "Ungefähre Fräszeit" bzw. "Neu berechnen" ruft computeApproxMillingTime()
+  // jeder Klick auf "Fräszeitberechnung" bzw. "Neu berechnen" ruft computeApproxMillingTime()
   // frisch auf und wertet dabei stets das AKTUELL geladene, maschinentyp-übersetzte Programm aus
   // (unabhängig vom gerade in der 3D-Ansicht gewählten Arbeitsgang/Scope, siehe dort).
+  // Release 176 (Sebastian, Punkt 1+2): der vormals eigenständige "Vorschubskalierung"-Dialog
+  // (#feedScalingPanel, eigener Button #btnFeedScaling, eigenes Übernehmen/Abbrechen) ist
+  // komplett entfernt - das Zahlenfeld lebt seither direkt hier (#millTimeFeedScaleInput, siehe
+  // unten), "Neu berechnen" übernimmt es zusammen mit dem G0-Vorschub in einem Schritt (siehe
+  // runApproxMillingTime() weiter unten).
   const millTimePanel = el('millTimePanel');
   const millTimeEmptyState = el('millTimeEmptyState');
   const millTimeResultState = el('millTimeResultState');
   const millTimeLengthValue = el('millTimeLengthValue');
   const millTimeMinutesValue = el('millTimeMinutesValue');
-  const millTimeFactorValue = el('millTimeFactorValue');
   const millTimeNoFeedWarning = el('millTimeNoFeedWarning');
+  // "Vorschubskalierung" (Release 176, Punkt 1+2, hierher verschoben aus dem entfernten
+  // #feedScalingPanel) - exakt dasselbe Zahlenfeld-Muster wie #millTimeG0FeedInput direkt
+  // darunter (siehe dort), nur eben für feedScaleFactor statt g0FeedRate.
+  const millTimeFeedScaleInput = el('millTimeFeedScaleInput');
+  const millTimeFeedScaleWarning = el('millTimeFeedScaleWarning');
   // "Fräszeit mit G0" (Release 174, siehe ausführliche Dokumentation bei #millTimePanel in
   // template_top.html) - neue Ergebniszeile sowie das zugehörige Eingabefeld/Warnhinweis für den
   // "G0-Vorschub".
@@ -16049,13 +16045,31 @@ Sebastian Bäcker (Anschrift wie oben)`,
       : `${hours} Std. ${minutesPart} Min ${secondsPart} Sek.`;
   }
   function runApproxMillingTime() {
+    // "Vorschubskalierung" (Release 176, Punkt 1+2, hierher verschoben aus dem entfernten
+    // #feedScalingPanel/dessen eigenem "Übernehmen"-Knopf - siehe #millTimePanel in
+    // template_top.html für die volle Begründung): lesen/validieren (exakt dieselbe Prüfung ">0,
+    // deutsches Komma" wie zuvor im eigenen Dialog, siehe normalizeFeedScaleFactor()) - bei
+    // ungültiger Eingabe bleibt der zuletzt gültige feedScaleFactor unangetastet und das Feld wird
+    // auf dessen Textdarstellung zurückgesetzt. WICHTIG: wird ABSICHTLICH VOR dem G0-Vorschub-Feld
+    // direkt darunter ausgewertet/übernommen - der dortige Wert ist ja weiterhin "vorskaliert"
+    // (g0FeedRate/feedScaleFactor, Punkt 5) und muss deshalb mit dem ggf. in DIESEM selben Klick
+    // neu gesetzten feedScaleFactor zurückgerechnet werden, nicht mit dem alten.
+    const enteredFeedScale = normalizeFeedScaleFactor(millTimeFeedScaleInput.value, null);
+    if (enteredFeedScale === null) {
+      millTimeFeedScaleWarning.hidden = false;
+      millTimeFeedScaleInput.value = String(feedScaleFactor);
+    } else {
+      millTimeFeedScaleWarning.hidden = true;
+      feedScaleFactor = applyFeedScaleFactor(enteredFeedScale);
+    }
     // "G0-Vorschub" (Release 174, Punkt 3+5): den im Eingabefeld stehenden, VORSKALIERTEN Wert
     // lesen/validieren (dieselbe Prüfung ">0, deutsches Komma" wie bei der Vorschubskalierung
     // selbst, siehe normalizeFeedScaleFactor()) - bei ungültiger Eingabe bleibt der zuletzt
     // gültige g0FeedRate unangetastet und das Feld wird auf dessen vorskalierten Anzeigewert
     // zurückgesetzt, exakt wie bei den übrigen validierten Zahlenfeldern in diesem Programm.
     // Gültige Eingabe: Rückumrechnung auf den "echten" mm/min-Wert (×feedScaleFactor, Punkt 5:
-    // "damit das wieder passt"), DANACH erst wird g0FeedRate aktualisiert/persistiert.
+    // "damit das wieder passt") MIT DEM GERADE OBEN AKTUALISIERTEN feedScaleFactor, DANACH erst
+    // wird g0FeedRate aktualisiert/persistiert.
     const enteredG0Display = normalizeFeedScaleFactor(millTimeG0FeedInput.value, null);
     if (enteredG0Display === null) {
       millTimeG0FeedWarning.hidden = false;
@@ -16086,7 +16100,6 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const g0TimeSeconds = result.rapidLengthMm / g0FeedRate * 60;
     const roundedWithG0Seconds = Math.round((result.timeSeconds + g0TimeSeconds) / 5) * 5;
     millTimeWithG0Value.textContent = formatMillDuration(roundedWithG0Seconds, currentLang);
-    millTimeFactorValue.textContent = `× ${fmt(result.feedScaleFactor)}`;
     if (result.segmentsWithoutFeed > 0) {
       millTimeNoFeedWarning.hidden = false;
       millTimeNoFeedWarning.textContent = T(
@@ -16098,9 +16111,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
   }
   el('btnMillTime').addEventListener('click', () => {
-    // Eingabefeld beim Öffnen frisch auf den aktuellen, vorskalierten g0FeedRate vorbefüllen -
-    // exakt dasselbe Muster wie feedScalingFactorInput.value im btnFeedScaling-Klick-Handler oben
-    // (Release 174).
+    // Eingabefelder beim Öffnen frisch vorbefüllen: "Vorschubskalierung" (Release 176, hierher
+    // verschoben aus dem entfernten #feedScalingPanel - exakt dasselbe Muster wie dort zuvor im
+    // btnFeedScaling-Klick-Handler) auf den aktuellen feedScaleFactor, "G0-Vorschub" (Release 174)
+    // wie bisher auf den aktuellen, vorskalierten g0FeedRate.
+    millTimeFeedScaleInput.value = String(feedScaleFactor);
+    millTimeFeedScaleWarning.hidden = true;
     millTimeG0FeedInput.value = formatG0FeedInputValue();
     millTimeG0FeedWarning.hidden = true;
     runApproxMillingTime();
