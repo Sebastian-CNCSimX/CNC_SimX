@@ -478,6 +478,11 @@
      die Akzentfarbe/Fettschrift, da dieser Trennstrich nur zwei Menü-Gruppen optisch trennt und
      keinen einzelnen Aktions-Knopf hervorheben soll. */
   #btnShowPrivacy { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  /* "Infos" -> Programminformationen (Release 162/163, siehe #menuMillTimeDropdown in
+     template_top.html für die ausführliche Herleitung) - derselbe Trennlinien-Mechanismus wie bei
+     #btnCheckForUpdate/#btnShowPrivacy oben, hier nur auf eine .menu-info-row statt einen
+     .menu-item angewendet (das neue Zeilen-Quartett selbst bleibt reine Anzeige, kein Knopf). */
+  #millTimeFileInfoSep { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
 
@@ -2433,6 +2438,36 @@
         <div class="menu-dropdown" id="menuMillTimeDropdown" hidden>
           <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
           <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die ungefähre Nettofräszeit anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximate milling time" data-i18n-en-title="Calculates the approximate net milling time now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Ungefähre Fräszeit</button>
+          <!-- Programminformationen (Release 163, Sebastian, nach Richtigstellung: "Die Infos
+               sollten nicht ins Menü 'Ungefähre Fräszeit', sondern im Menüpunkt 'Infos' unter dem
+               Menüpunkt 'Ungefähre Fräszeit' als Text in der Hauptansicht ... Der Trennstrich
+               sollte aber zum Rest des Systems passen") - vier reine Anzeige-Zeilen (.menu-info-row,
+               kein Dialog/Panel) DIREKT in diesem Dropdown, exakt nach dem Vorbild von
+               Version/Letzte Releasezeit im "?"-Menü (#menuInfoDropdown weiter unten) - dort stehen
+               die beiden Info-Zeilen ja auch direkt im Ausklapp-Menü statt in einem eigenen Dialog.
+               Der Trennstrich (#millTimeFileInfoSep) nutzt bewusst dasselbe margin-top/padding-top/
+               border-top-Muster wie #btnCheckForUpdate/#btnShowPrivacy dort (= "passt zum Rest des
+               Systems"), nicht irgendeine neu erfundene Linie. Werte werden NICHT beim Laden der
+               Seite befüllt (anders als Version/Letzte Releasezeit, die konstant sind), sondern bei
+               JEDEM Öffnen dieses Dropdowns frisch aus dem aktuell geladenen Programm gelesen (siehe
+               updateMillTimeInfoRows()/openMenu() in app.js) - ohne geladenes Programm zeigen alle
+               vier Felder "–" statt eines veralteten oder erfundenen Werts. -->
+          <div class="menu-info-row" id="millTimeFileInfoSep">
+            <span class="menu-info-label" data-i18n-en="Filename">Dateiname</span>
+            <span class="menu-info-value" id="millTimeFileNameValue">–</span>
+          </div>
+          <div class="menu-info-row">
+            <span class="menu-info-label" data-i18n-en="Filesize">Dateigröße</span>
+            <span class="menu-info-value" id="millTimeFileSizeValue">–</span>
+          </div>
+          <div class="menu-info-row">
+            <span class="menu-info-label" data-i18n-en="Date/Time of creation">Datum/Uhrzeit der Datei</span>
+            <span class="menu-info-value" id="millTimeFileDateValue">–</span>
+          </div>
+          <div class="menu-info-row">
+            <span class="menu-info-label" data-i18n-en="Number of code lines (original)">Anzahl Zeilen Programmcode (unverändert)</span>
+            <span class="menu-info-value" id="millTimeFileLinesValue">–</span>
+          </div>
         </div>
       </div>
       <!-- "Infos" -> "Knowledge Base" (Release 105, Sebastian: "Ein neuer Menüpunkt 'Infos'
@@ -3554,7 +3589,16 @@
      zwischengespeicherten Wert. Aufbau der Ergebniszeilen nach dem Vorbild von .menu-info-row (siehe
      #menuInfo/"?"-Menü weiter unten sowie das zugehörige Stylesheet) - statischer, übersetzter
      Zeilen-Titel + separater, rein numerischer <span>, den app.js bei jeder Berechnung per
-     .textContent neu befüllt. -->
+     .textContent neu befüllt.
+     Release 163 (Korrektur zu Release 162): die "Programminformationen" (Dateiname/-größe/-datum,
+     Zeilenzahl) wurden hier zunächst versehentlich als Teil DIESES Panels eingebaut, vom Sebastian aber
+     richtiggestellt ("Die Infos sollten nicht ins Menü 'Ungefähre Fräszeit', sondern im Menüpunkt
+     'Infos' unter dem Menüpunkt 'Ungefähre Fräszeit' als Text in der Hauptansicht") - gemeint war
+     das #menuMillTimeDropdown selbst (direkt im Ausklapp-Menü sichtbar, ohne erst diesen
+     Berechnungsdialog öffnen zu müssen), nach exakt demselben Vorbild wie Version/Letzte
+     Releasezeit im "?"-Menü (#menuInfoDropdown weiter unten), die ebenfalls direkt im Dropdown und
+     nicht in einem eigenen Dialog stehen. Die vier Zeilen samt Trennstrich sitzen seither dort,
+     siehe #menuMillTimeDropdown weiter oben im Markup. -->
 <div class="paste-panel" id="millTimePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Net milling time">Nettofräszeit</h3>
@@ -6544,8 +6588,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 161;
-  const APP_RELEASE_TIMESTAMP = '07.10.2026, 14:15 Uhr';
+  const APP_RELEASE_NUMBER = 163;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 08:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -9289,10 +9333,20 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // ============================================================
   let rawProgramText = null;
   let rawProgramFilename = null;
+  // "Dateigröße"/"Datum/Uhrzeit der Datei" (Release 162, siehe #millTimePanel in
+  // template_top.html) - echte Datei-Metadaten (Bytes/letzte Änderung), NICHT aus rawProgramText
+  // selbst abgeleitet (das wäre bei "CNC-Code einfügen" irreführend, da dort gar keine echte
+  // Datei existiert). Nur gesetzt, wenn loadText() tatsächlich ein "fileMeta"-Objekt bekommt
+  // (siehe dort) - bei "CNC-Code einfügen" sowie beim Host-Hook (kein Datum verfügbar) bleibt das
+  // jeweils betroffene Feld null, die Anzeige zeigt dafür "–" statt eines erfundenen Werts.
+  let rawProgramFileSize = null;     // Bytes (Zahl) | null
+  let rawProgramFileDate = null;     // Date-Objekt | null
 
-  function loadText(text, filename) {
+  function loadText(text, filename, fileMeta) {
     rawProgramText = text;
     rawProgramFilename = filename;
+    rawProgramFileSize = fileMeta && typeof fileMeta.size === 'number' ? fileMeta.size : null;
+    rawProgramFileDate = fileMeta && typeof fileMeta.lastModified === 'number' ? new Date(fileMeta.lastModified) : null;
     // "Priorität beim Laden hat immer das CNC Programm" (78. Runde) - ein neu geladenes Programm
     // schaltet die Programmcode-Spalte IMMER auf "CNC-Programmcode" um, selbst wenn zuvor (bei
     // gleichzeitig geladenem DXF) gerade der "DXF-Layer"-Reiter aktiv war. updateSidebarHeader()
@@ -9461,7 +9515,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
       const addedEntries = [];
       results.forEach(r => {
         if (r.text == null) { alert('Datei konnte nicht gelesen werden: ' + r.file.name); return; }
-        const entry = { id: 'p' + (++programListIdCounter), filename: r.file.name, text: r.text };
+        // "Dateigröße"/"Datum/Uhrzeit der Datei" (Release 162): auch bei einem Eintrag der
+        // Programmliste direkt vom ursprünglichen File-Objekt mit aufgenommen, damit sie beim
+        // späteren Aktivieren (activateProgramFromList() weiter unten) an loadText()
+        // durchgereicht werden können - dieselben Felder wie beim klassischen Einzel-Ladepfad.
+        const entry = { id: 'p' + (++programListIdCounter), filename: r.file.name, text: r.text, size: r.file.size, lastModified: r.file.lastModified };
         programList.push(entry);
         addedEntries.push(entry);
       });
@@ -9482,8 +9540,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // nicht mehr angezeigten Eintrag fälschlich hervorhebt. Die Programmliste selbst (programList)
   // bleibt dabei komplett unangetastet im Hintergrund bestehen - nur activeProgramId wird
   // zurückgesetzt.
-  function loadTextClassic(text, filename) {
-    loadText(text, filename);
+  function loadTextClassic(text, filename, fileMeta) {
+    loadText(text, filename, fileMeta);
     activeProgramId = null;
     renderProgramListUI();
   }
@@ -9510,7 +9568,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     const entry = programList.find(p => p.id === id);
     if (!entry) return;
     activeProgramId = id;
-    loadText(entry.text, entry.filename);
+    loadText(entry.text, entry.filename, { size: entry.size, lastModified: entry.lastModified });
     renderProgramListUI();
   }
 
@@ -9686,7 +9744,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // weiter oben): läuft wieder über den klassischen Einzel-Ladepfad loadTextClassic() statt über
     // die Programmliste - Mehrfachauswahl ist seit Release 117 ausschließlich über "Neue
     // CNC-Programmliste" erreichbar.
-    loadTextClassic(text, filename);
+    // "Dateigröße" (Release 162): die tatsächliche Bytegröße ist hier trotz fehlendem echten
+    // File-Objekt bekannt (Länge der dekodierten Rohbytes, vor der Zeichenkodierungs-Erkennung) -
+    // "Datum/Uhrzeit der Datei" liefert der aktuelle Host-Hook dagegen nicht mit, bleibt also null
+    // (Anzeige "–", siehe #millTimePanel).
+    loadTextClassic(text, filename, { size: bytes.length, lastModified: null });
   };
 
   // "CNC-Programm löschen" (Benutzer, 17. Runde): entfernt nur das geladene CNC-Programm wieder,
@@ -9700,6 +9762,8 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (rawProgramText == null) return;
     rawProgramText = null;
     rawProgramFilename = null;
+    rawProgramFileSize = null;
+    rawProgramFileDate = null;
     current = null;
     blankLineIdx = new Set();
     hiddenOpIndexes = new Set();
@@ -14102,7 +14166,7 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     if (intent === 'add') {
       addFilesToProgramList(files);
     } else {
-      readFileAsText(files[0], (text) => loadTextClassic(text, files[0].name));
+      readFileAsText(files[0], (text) => loadTextClassic(text, files[0].name, { size: files[0].size, lastModified: files[0].lastModified }));
     }
   });
 
@@ -15268,6 +15332,34 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const millTimeMinutesValue = el('millTimeMinutesValue');
   const millTimeFactorValue = el('millTimeFactorValue');
   const millTimeNoFeedWarning = el('millTimeNoFeedWarning');
+  const millTimeFileNameValue = el('millTimeFileNameValue');
+  const millTimeFileSizeValue = el('millTimeFileSizeValue');
+  const millTimeFileDateValue = el('millTimeFileDateValue');
+  const millTimeFileLinesValue = el('millTimeFileLinesValue');
+  // Programminformationen (Release 162) - drei kleine, nur hier gebrauchte Format-Helfer, direkt
+  // neben ihrer einzigen Verwendungsstelle (runApproxMillingTime() unten), nach demselben Muster
+  // wie z.B. normalizeFeedScaleFactor() direkt neben applyFeedScaleFactor() weiter oben.
+  // formatFileSize(): liefert "–" für null (keine echte Datei, siehe rawProgramFileSize), sonst
+  // Bytes/KB/MB mit deutschem Komma-Dezimaltrennzeichen (dieselbe ","-Konvention wie überall sonst
+  // in der Oberfläche, z.B. normalizeToolValue()).
+  function formatFileSize(bytes) {
+    if (bytes == null) return '–';
+    if (bytes < 1024) return `${bytes} Bytes`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace('.', ',')} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(2).replace('.', ',')} MB`;
+  }
+  // formatFileDateTime(): liefert "–" für null (keine echte Datei bzw. Host-Hook ohne Datumsangabe,
+  // siehe rawProgramFileDate), sonst exakt dasselbe "TT.MM.JJJJ, HH:MM Uhr"-Format wie
+  // APP_RELEASE_TIMESTAMP weiter oben (#infoReleaseTimeValue im "?"-Menü).
+  function formatFileDateTime(date) {
+    if (!date) return '–';
+    const p = n => String(n).padStart(2, '0');
+    return `${p(date.getDate())}.${p(date.getMonth() + 1)}.${date.getFullYear()}, ${p(date.getHours())}:${p(date.getMinutes())} Uhr`;
+  }
+  // formatIntDe(): Tausendertrennpunkt (deutsche Konvention) für die Zeilenzahl größerer Programme.
+  function formatIntDe(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
   function runApproxMillingTime() {
     const result = computeApproxMillingTime();
     if (!result.ok) {
@@ -15300,6 +15392,34 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
   el('btnMillTimeRecalc').addEventListener('click', runApproxMillingTime);
   el('btnMillTimeClose').addEventListener('click', () => millTimePanel.classList.remove('open'));
+
+  // Programminformationen (Release 163, nach Sebastians Richtigstellung: nicht Teil des
+  // "Ungefähre Fräszeit"-Berechnungsdialogs, sondern vier reine Anzeige-Zeilen DIREKT im
+  // "Infos"-Dropdown, siehe #menuMillTimeDropdown in template_top.html). Anders als Version/
+  // Letzte Releasezeit im "?"-Menü (die konstant sind und einmalig beim Programmstart befüllt
+  // werden, siehe APP_RELEASE_TIMESTAMP weiter oben) hängen diese vier Werte vom jeweils
+  // geladenen Programm ab und müssen deshalb bei JEDEM Öffnen dieses Dropdowns neu gelesen
+  // werden - daher ein eigener, zusätzlicher Klick-Listener auf dem Dropdown-Auslöser selbst
+  // (läuft nach dem generischen openMenu()-Listener weiter oben, der das Dropdown zuvor
+  // sichtbar macht/umschaltet, siehe dort), statt die allgemeine Menü-Umschaltlogik dafür
+  // anzufassen.
+  // "Anzahl Zeilen Programmcode (unverändert)" (Release 163, Sebastian, Korrektur: "Dazu wirklich die
+  // Originalanzahl der unveränderten Datei ausgeben, also so wie sie vor dem Austausch war") -
+  // bewusst NICHT current.lines.length (das sind die ggf. bereits maschinentyp-GETAUSCHTEN
+  // Zeilen, siehe displayCurrentProgram()/applySwapRules() weiter oben), sondern direkt aus
+  // rawProgramText gezählt - dem unangetasteten Original-Text genau wie beim Laden übergeben
+  // (siehe loadText()), vor jeder Austauschregel/Achsberechnung. Dieselbe \r\n-Normalisierung
+  // wie überall sonst beim Zeilen-Splitten von rawProgramText (siehe z.B. die Werkzeugdaten-
+  // Zuordnung in displayCurrentProgram() oben).
+  function updateMillTimeInfoRows() {
+    millTimeFileNameValue.textContent = rawProgramFilename || '–';
+    millTimeFileSizeValue.textContent = formatFileSize(rawProgramFileSize);
+    millTimeFileDateValue.textContent = formatFileDateTime(rawProgramFileDate);
+    millTimeFileLinesValue.textContent = rawProgramText != null
+      ? formatIntDe(rawProgramText.replace(/\r\n/g, '\n').split('\n').length)
+      : '–';
+  }
+  menuMillTimeTrigger.addEventListener('click', updateMillTimeInfoRows);
 
   // "Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge" (Release 158, siehe applyToolAppearance()/
   // TOOL_APPEARANCE_LS_KEYS weiter oben sowie #toolAppearanceSawPanel/#toolAppearanceColletPanel/
@@ -16178,7 +16298,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (/\.dxf$/i.test(f.name)) {
       readFileAsText(f, (text) => loadDxfText(text, f.name), () => alert('DXF-Datei konnte nicht gelesen werden: ' + f.name));
     } else {
-      readFileAsText(f, (text) => loadTextClassic(text, f.name), () => alert('Datei konnte nicht gelesen werden: ' + f.name));
+      readFileAsText(f, (text) => loadTextClassic(text, f.name, { size: f.size, lastModified: f.lastModified }), () => alert('Datei konnte nicht gelesen werden: ' + f.name));
     }
   }, false);
 
