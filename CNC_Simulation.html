@@ -256,7 +256,7 @@
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
   }
-  .brand { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+  .brand { display: flex; align-items: center; gap: 8px; margin-left: 8px; cursor: pointer; }
   .brand-icon { display: block; border-radius: 4px; }
   .brand-mark {
     font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
@@ -265,6 +265,10 @@
     letter-spacing: 0.02em;
   }
   .brand-mark .dim { color: var(--ink-faint); font-weight: 500; }
+  /* Klickbarkeit des Markennamens (170. Runde, siehe Kommentar bei ".brand" im Markup oben) -
+     dieselbe "auf Hover Akzentfarbe"-Optik wie z. B. .ops-showall-btn:hover weiter unten, statt
+     einer Hintergrundfläche, um das feste Layout ganz rechts im Menüband nicht zu stören. */
+  .brand:hover .brand-mark, .brand:hover .brand-mark .dim { color: var(--accent); }
 
   .topbar-spacer { flex: 1 1 auto; }
 
@@ -2724,7 +2728,22 @@
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
     <input type="file" id="settingsFileInput" hidden accept="application/json,.json">
     <div class="topbar-spacer"></div>
-    <div class="brand">
+    <!-- "CNC SimX rXXX" oben rechts klickbar machen (170. Runde, Sebastian: "Darunter soll bei
+         einem Klick drauf dieselbe Funktion benutzt werden wie bei '?' -> 'Versionsupdate
+         prüfen'. Also man klickt drauf, es kommt der Check und dieselben Meldung/Fragen zum
+         aktualisieren wenn möglich.") - der gesamte Markenname-Block (Icon + "CNC SimX" + der
+         "rXXX"-Zusatz, bislang rein dekorativ) ruft bei Klick dieselbe, unveränderte
+         checkForUpdate()-Funktion auf wie der bestehende Menüpunkt "Versionsupdate prüfen"
+         (#btnCheckForUpdate im "?"-Menü, siehe 10.3) - ein zweiter, gleichwertiger Auslöser nach
+         demselben Zwillings-Muster wie z. B. "DXF löschen". checkForUpdate() selbst bleibt dabei
+         komplett unverändert: die eigene Guard-Abfrage "if (btnCheckForUpdate.disabled) return;"
+         verhindert dadurch automatisch auch einen doppelten/überlappenden Aufruf, falls jemand
+         während einer laufenden Prüfung zusätzlich hierauf klickt. Bewusst OHNE eigenes
+         "Prüfe…"-Zwischentext auf dem Markennamen selbst (dieser Zwischenzustand bleibt wie
+         bisher ausschließlich im "?"-Menü sichtbar) - der Markenname zeigt immer "CNC SimX rXXX",
+         unabhängig vom Prüfungszustand, um dessen feste Breite/Position ganz rechts im Menüband
+         nicht durch wechselnde Textlänge zu stören. -->
+    <div class="brand" id="brandCheckUpdateTrigger" title="Nach einer neueren Version suchen" data-i18n-en-title="Check for a newer version">
       <!-- Icon (70. Runde, Sebastian, Punkt 7: "soll ... neben 'CNC SimX' oben rechts im Browser
            stehen" - ANNAHME: "oben rechts im Browser" bezieht sich, wie der Rest von Punkt 7
            ("bzw. im Tab angezeigt werden"), auf den Browser-Tab/das Fenster als Ganzes, nicht auf
@@ -6705,8 +6724,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 169;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:00 Uhr';
+  const APP_RELEASE_NUMBER = 170;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -14728,6 +14747,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Neuladen der Seite verloren - das war schon immer so und ist unabhängig von dieser Funktion
   // (siehe Einschränkung 13 der Doku).
   const btnCheckForUpdate = el('btnCheckForUpdate');
+  // Zweiter, gleichwertiger Auslöser für checkForUpdate() (170. Runde) - der komplette
+  // Markenname-Block oben rechts ("CNC SimX rXXX"), siehe Kommentar beim Markup weiter oben.
+  const brandCheckUpdateTrigger = el('brandCheckUpdateTrigger');
 
   // Zuverlässige, von Microsoft selbst empfohlene Erkennung "läuft gerade innerhalb einer
   // WebView2-Hülle" - window.chrome.webview existiert automatisch auf JEDER von WebView2
@@ -14811,6 +14833,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       });
   }
   btnCheckForUpdate.addEventListener('click', checkForUpdate);
+  // Markenname oben rechts (170. Runde) - ruft dieselbe, unveränderte checkForUpdate()-Funktion
+  // auf wie der gleichwertige Menüpunkt #btnCheckForUpdate direkt oberhalb.
+  brandCheckUpdateTrigger.addEventListener('click', checkForUpdate);
 
   // ============================================================
   // "Token kaufen" (23.09.2026) TEMPORÄR AUSGEBAUT (30.09.2026, Sebastian: "Token kaufen entfernen"
