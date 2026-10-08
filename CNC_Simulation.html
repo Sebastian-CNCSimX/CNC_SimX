@@ -485,6 +485,11 @@
   #millTimeFileInfoSep { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
+  /* Trennstrich vor "Standardwerte wiederherstellen" (Release 167, Sebastian, Punkt 5: "Trennstrich
+     einfügen bei 'Einstellungen -> Erscheinungsbild' unter 'Werkzeuge' vor 'Standardwerte
+     wiederherstellen'") sowie vor "Einstellungen importieren" (Release 167, Punkt 4) - beide nach
+     demselben Trennlinien-Muster wie #btnCheckForUpdate/#btnShowPrivacy/#millTimeFileInfoSep oben. */
+  #btnResetDisplayDefaults, #btnLoadSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
   .machine-badge {
     display: flex; align-items: center; gap: 7px;
@@ -2233,7 +2238,14 @@
            Kommentar dort. Das "Bearbeiten"-Menü besteht seitdem nur noch aus den Untermenüs "CNC",
            "DXF" und "Arbeitsgänge". Alle betroffenen IDs UND ihre komplette dahinterliegende Logik
            in app.js bleiben dabei unverändert - reine Verschiebung im Markup, keine
-           Funktionsänderung. -->
+           Funktionsänderung.
+           Release 167 (Sebastian, Punkt 4): "'Arbeitsgang-Namen bearbeiten' von 'Bearbeiten' ins
+           Menü 'Einstellungen' verschieben" - das Untermenü "Arbeitsgänge" (#submenuOps, enthielt
+           ausschließlich diesen einen Eintrag #btnEditOpNames) ist dadurch leer geworden und wurde
+           komplett entfernt; #btnEditOpNames selbst (samt kompletter app.js-Logik, unverändert)
+           sitzt seitdem unter "Einstellungen" direkt unter "Maschinentypen", siehe Kommentar dort.
+           Das "Bearbeiten"-Menü besteht seit dieser Runde nur noch aus den beiden Untermenüs "CNC"
+           und "DXF". -->
       <div class="menu" id="menuEdit">
         <button class="menu-trigger" id="menuEditTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Edit">Bearbeiten</button>
         <div class="menu-dropdown" id="menuEditDropdown" hidden>
@@ -2241,8 +2253,14 @@
             <button class="menu-item submenu-trigger" id="submenuCncTrigger" type="button" aria-haspopup="true" aria-expanded="false">CNC <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuCncDropdown" hidden>
               <button class="menu-item" id="btnPaste" type="button" data-i18n-en="Paste CNC-Code">CNC-Code einfügen</button>
-              <button class="menu-item" id="btnEditProgram" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten" data-i18n-en="Edit CNC-Program" data-i18n-en-title="Opens the loaded program text for direct editing">CNC-Programm bearbeiten</button>
-              <button class="menu-item" id="btnClearProgram" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)" data-i18n-en="Delete CNC-Program" data-i18n-en-title="Removes the loaded CNC program again (machine type configuration is kept)">CNC-Programm löschen</button>
+              <!-- Umbenennung (Release 167, Sebastian, Punkt 1): "CNC-Programm bearbeiten"/
+                   "CNC-Programm löschen" -> "CNC-Code bearbeiten"/"CNC-Code löschen", zur
+                   einheitlichen "CNC-Code"-Wortwahl passend zu "CNC-Code einfügen" direkt darüber
+                   (und EN entsprechend auf "CNC-Code" statt "CNC-Program" umgestellt) - IDs
+                   (#btnEditProgram/#btnClearProgram) UND ihre komplette dahinterliegende Logik in
+                   app.js bleiben dabei unverändert, reine Beschriftungsänderung. -->
+              <button class="menu-item" id="btnEditProgram" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten" data-i18n-en="Edit CNC-Code" data-i18n-en-title="Opens the loaded program text for direct editing">CNC-Code bearbeiten</button>
+              <button class="menu-item" id="btnClearProgram" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)" data-i18n-en="Delete CNC-Code" data-i18n-en-title="Removes the loaded CNC program again (machine type configuration is kept)">CNC-Code löschen</button>
               <!-- "CNC-Programmliste löschen" (Release 113, Sebastian, Punkt 6: "Neuer Button mit Icon
                    für 'CNC Programmliste löschen' in der Zeile mit den CNC Programmen, Menüeintrag
                    unter 'Bearbeiten' -> 'CNC' -> 'CNC-Programmliste löschen'") - im Unterschied zu
@@ -2255,17 +2273,31 @@
               <button class="menu-item" id="btnClearProgramList" type="button" disabled title="Entfernt ALLE im Hintergrund geladenen CNC-Programme aus der Programmliste (inklusive eines evtl. gerade aktiven Programms) - die Maschinentyp-Konfiguration bleibt erhalten" data-i18n-en="Delete CNC-Program list" data-i18n-en-title="Removes ALL CNC programs loaded in the background from the program list (including any currently active program) - the machine type configuration is kept">CNC-Programmliste löschen</button>
             </div>
           </div>
+          <!-- "DXF spiegeln X-Achse"/"DXF spiegeln Y-Achse"/"DXF drehen"/"DXF Bauteilhöhe"/
+               "DXF ein-/ausblenden" (Release 167, Sebastian, Punkte 6+7): fünf weitere Menüpunkte,
+               die es als Symbolleisten-Icons bereits gibt (⬍ DXF/⬌ DXF/↻ DXF/🧱 DXF/👁 DXF, siehe
+               #btnDxfMirrorX/#btnDxfMirrorY/#btnDxfRotate/#btnDxfThickness/#btnToggleDxf oben in
+               #toolbarRow2) - genau nach demselben, bereits etablierten Muster wie "DXF verschieben"/
+               "DXF löschen" (zwei gleichwertige Auslöser für dieselbe Funktion/denselben Zustand,
+               siehe deren Klick-Verdrahtung in app.js). "DXF Bauteilhöhe" ruft bewusst dieselbe,
+               unveränderte openDxfThicknessPanel()-Funktion/denselben Dialog ("Bauteilstärke") wie
+               "🧱 DXF" auf - nur die Menü-Beschriftung selbst lautet laut Sebastians Vorgabe
+               "Bauteilhöhe" statt "Bauteilstärke". "DXF ein-/ausblenden" ist der einzige Eintrag mit
+               einer bei jedem Zustandswechsel neu gesetzten Beschriftung ("DXF ausblenden"/
+               "DXF einblenden", siehe updateDxfUI() in app.js) statt eines festen Textes - bewusst
+               OHNE statisches data-i18n-en (würde sonst mit der dynamischen Textzuweisung
+               kollidieren), die EN-Fassung wird stattdessen laufend per T() nachgeführt, siehe dort.
+               Reihenfolge innerhalb des Untermenüs exakt wie von Sebastian in Punkt 7 aufgelistet. -->
           <div class="menu-submenu" id="submenuDxf">
             <button class="menu-item submenu-trigger" id="submenuDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuDxfDropdown" hidden>
               <button class="menu-item" id="btnDxfMoveMenu" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Move DXF" data-i18n-en-title="Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported">DXF verschieben</button>
+              <button class="menu-item" id="btnDxfMirrorXMenu" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (X axis)" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">DXF spiegeln X-Achse</button>
+              <button class="menu-item" id="btnDxfMirrorYMenu" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (Y axis)" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">DXF spiegeln Y-Achse</button>
+              <button class="menu-item" id="btnDxfRotateMenu" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Rotate DXF" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">DXF drehen</button>
+              <button class="menu-item" id="btnDxfThicknessMenu" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, nach oben versetzte Kontur samt Verbindungslinien dargestellt; negative Werte versetzen stattdessen nach unten) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="DXF part height" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second contour offset upward, including connecting lines; negative values offset downward instead) - only available once a DXF has been imported">DXF Bauteilhöhe</button>
+              <button class="menu-item" id="btnDxfToggleMenu" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden - erst verfügbar, sobald ein DXF importiert wurde">DXF ausblenden</button>
               <button class="menu-item" id="btnDxfDeleteMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Delete DXF" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported">DXF löschen</button>
-            </div>
-          </div>
-          <div class="menu-submenu" id="submenuOps">
-            <button class="menu-item submenu-trigger" id="submenuOpsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Processing steps">Arbeitsgänge <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuOpsDropdown" hidden>
-              <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
             </div>
           </div>
         </div>
@@ -2331,23 +2363,29 @@
                   <button class="menu-item" id="btnGridColor" type="button" title="Farbe des Bodenrasters im 3D-Bereich festlegen (ansonsten automatisch passend zum Hintergrund)" data-i18n-en="3D grid color" data-i18n-en-title="Set the color of the floor grid in the 3D area (otherwise automatic, matching the background)">3D Rasterfarbe</button>
                 </div>
               </div>
-              <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
-                   'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
-                   siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
-              <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
-              <!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen ->
-                   Erscheinungsbild gibt es einen neuen Menüpunkt: 'Rotation'. Dort kann die
-                   Kipprichtung invertiert werden.") - direkt flach nach "Spalten" (kein eigenes
-                   Untermenü, analog zu "Spalten" selbst), siehe #rotationSettingsPanel weiter
-                   unten sowie invertTiltPreference/LS_KEY_INVERT_TILT in app.js. -->
-              <button class="menu-item" id="btnRotationSettings" type="button" title="Kipprichtung der 3D-Ansicht (vertikale Mausbewegung) umkehren" data-i18n-en="Rotation" data-i18n-en-title="Invert the tilt direction of the 3D view (vertical mouse movement)">Rotation</button>
+              <!-- Reihenfolge innerhalb "Erscheinungsbild" (Release 167, Sebastian, Punkt 2):
+                   "Farben"/"Raster"/"Rotation"/"Spalten"/"Werkzeuge"/"Standardwerte
+                   wiederherstellen" - bis zu dieser Runde stand "Spalten" vor "Rotation" vor
+                   "Raster"; jetzt "Raster" und "Rotation" nach vorne, "Spalten" dahinter. Alle
+                   IDs UND ihre komplette dahinterliegende Logik in app.js bleiben dabei
+                   unverändert - reine Umsortierung im Markup. -->
               <!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt
                    es einen Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus'
-                   einbauen.") - direkt flach nach "Rotation" (kein eigenes Untermenü, analog zu
+                   einbauen.") - direkt flach nach "Farben" (kein eigenes Untermenü, analog zu
                    "Spalten"/"Rotation" selbst), siehe #gridSettingsPanel weiter unten sowie
                    gridVisible/LS_KEY_GRID_VISIBLE in app.js. Derselbe Zustand ist zusätzlich über
                    das Rechtsklick-Kontextmenü im 3D-Bereich erreichbar, siehe dort. -->
               <button class="menu-item" id="btnGridSettings" type="button" title="Bodenraster im 3D-Bereich ein-/ausblenden" data-i18n-en="Grid" data-i18n-en-title="Show/hide the floor grid in the 3D area">Raster</button>
+              <!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen ->
+                   Erscheinungsbild gibt es einen neuen Menüpunkt: 'Rotation'. Dort kann die
+                   Kipprichtung invertiert werden.") - direkt flach nach "Raster" (kein eigenes
+                   Untermenü, analog zu "Spalten"/"Raster" selbst), siehe #rotationSettingsPanel
+                   weiter unten sowie invertTiltPreference/LS_KEY_INVERT_TILT in app.js. -->
+              <button class="menu-item" id="btnRotationSettings" type="button" title="Kipprichtung der 3D-Ansicht (vertikale Mausbewegung) umkehren" data-i18n-en="Rotation" data-i18n-en-title="Invert the tilt direction of the 3D view (vertical mouse movement)">Rotation</button>
+              <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
+                   'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
+                   siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
+              <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
               <!-- "Werkzeuge" (Release 158, Sebastian: "Werkzeug bzw. Spannfutter-Darstellung: Bitte
                    neue Einstellungen unter Einstellungen -> Erscheinungsbild -> 'Werkzeuge' (EN:
                    Tools). Das ist unter 'Raster' angeordnet! Verschiedene Optionen im Menü einbauen
@@ -2373,14 +2411,19 @@
               <!-- "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button bei den
                    Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
                    Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt.") - direkt flach
-                   nach "Spalten" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
+                   nach "Werkzeuge" (kein eigenes Untermenü, analog zu "Spalten" selbst), setzt in einem
                    Schritt Buttonfarbe, Hintergrundfarbe, die neue Schriftfarbe UND die
                    Spaltenskalierung zurück - siehe resetAllDisplaySettingsToDefaults() in app.js.
                    Bewusst OHNE "Werkzeuge" (Release 158, siehe oben): genau wie bei
                    "Rotation"/"Raster" (siehe deren Kommentare oben) zählt auch "Werkzeuge" laut
                    eigener Beschriftung/historischem Funktionsumfang dieses Knopfs nicht zum
                    abgedeckten Umfang - er deckt ausschließlich die "Farben"-Unterpunkte sowie
-                   "Spalten" ab. -->
+                   "Spalten" ab.
+                   Release 167 (Sebastian, Punkt 5): "Trennstrich einfügen ... unter 'Werkzeuge' vor
+                   'Standardwerte wiederherstellen'" - neuer Trennstrich direkt vor diesem Knopf,
+                   per CSS (#btnResetDisplayDefaults, siehe Stylesheet weiter oben) nach demselben
+                   margin-top/padding-top/border-top-Muster wie #btnCheckForUpdate/#millTimeFileInfoSep
+                   (siehe deren Kommentare). -->
               <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
@@ -2412,6 +2455,19 @@
               <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
             </div>
           </div>
+          <!-- "Arbeitsgang-Namen bearbeiten" (Release 167, Sebastian, Punkt 4): von "Bearbeiten"
+               (vormals eigenes Untermenü "Arbeitsgänge", siehe dessen Entfernungs-Kommentar bei
+               #menuEdit) hierher verschoben - direkt flach unter "Maschinentypen" (kein eigenes
+               Untermenü mehr nötig, da jetzt alleinstehend, analog zu "Spalten"/"Rotation"/"Raster"
+               oben), über "Einstellungen importieren". ID (#btnEditOpNames) UND die komplette
+               dahinterliegende Logik in app.js bleiben dabei unverändert - reine Verschiebung im
+               Markup. -->
+          <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+          <!-- Trennstrich vor "Einstellungen importieren" (Release 167, Sebastian, Punkt 4: "Vor
+               'Einstellungen importieren' einen Trennstrich machen") - per CSS (#btnLoadSettings,
+               siehe Stylesheet weiter oben) nach demselben margin-top/padding-top/border-top-Muster
+               wie #btnCheckForUpdate/#millTimeFileInfoSep/#btnResetDisplayDefaults (siehe deren
+               Kommentare). -->
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings">Einstellungen importieren</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
         </div>
@@ -2436,8 +2492,12 @@
       <div class="menu" id="menuMillTime">
         <button class="menu-trigger" id="menuMillTimeTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Info">Infos</button>
         <div class="menu-dropdown" id="menuMillTimeDropdown" hidden>
-          <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
+          <!-- Reihenfolge (Release 167, Sebastian, Punkt 3): "Ungefähre Fräszeit" vor
+               "Vorschubskalierung" (bis zu dieser Runde umgekehrt) - IDs/Funktion unverändert,
+               reine Umsortierung. Die vier Programminformations-Zeilen darunter (Release 163)
+               bleiben unverändert am Ende des Dropdowns stehen. -->
           <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die ungefähre Nettofräszeit anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximate milling time" data-i18n-en-title="Calculates the approximate net milling time now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Ungefähre Fräszeit</button>
+          <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
           <!-- Programminformationen (Release 163, Sebastian, nach Richtigstellung: "Die Infos
                sollten nicht ins Menü 'Ungefähre Fräszeit', sondern im Menüpunkt 'Infos' unter dem
                Menüpunkt 'Ungefähre Fräszeit' als Text in der Hauptansicht ... Der Trennstrich
@@ -6598,8 +6658,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 166;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 10:15 Uhr';
+  const APP_RELEASE_NUMBER = 167;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 11:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8570,6 +8630,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // updateDxfFilenameSep() weiter unten sowie der Markup-Kommentar in template_top.html.
   const dxfFilenameSep = el('dxfFilenameSep');
   const btnToggleDxf = el('btnToggleDxf');
+  // "DXF ein-/ausblenden" im "Bearbeiten"->"DXF"-Menü (Release 167, Sebastian, Punkt 6) - zweiter,
+  // gleichwertiger Auslöser für denselben dxfVisible-Zustand wie #btnToggleDxf oben, siehe
+  // toggleDxfVisibility()/updateDxfUI() weiter unten. Einziger Unterschied zu den übrigen
+  // Menü-/Icon-Zwillingspaaren: seine BESCHRIFTUNG selbst wechselt je nach Zustand ("DXF
+  // ausblenden"/"DXF einblenden"), nicht nur sein title-Tooltip.
+  const btnDxfToggleMenu = el('btnDxfToggleMenu');
   // "DXF Verschieben" (49. Runde, Sebastian: "Funktion 'DXF verschieben' in das Menü 'Bearbeiten'
   // verschieben, dazu neben der DXF-Ausblendenfunktion ein Verschieben-Icon für DXF einbauen") -
   // zwei gleichwertige Auslöser statt vormals eines einzelnen Knopfs in der Status-Gruppe (siehe
@@ -8590,6 +8656,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const btnDxfMirrorY = el('btnDxfMirrorY');
   const btnDxfRotate = el('btnDxfRotate');
   const btnDxfThickness = el('btnDxfThickness');
+  // "DXF spiegeln X-Achse"/"DXF spiegeln Y-Achse"/"DXF drehen"/"DXF Bauteilhöhe" im
+  // "Bearbeiten"->"DXF"-Menü (Release 167, Sebastian, Punkt 6) - weitere gleichwertige Auslöser
+  // für dieselben Funktionen/Zustände wie die vier Symbolleisten-Icons direkt oberhalb, nach
+  // demselben Muster wie #btnDxfMoveMenu/#btnDxfDeleteMenu.
+  const btnDxfMirrorXMenu = el('btnDxfMirrorXMenu');
+  const btnDxfMirrorYMenu = el('btnDxfMirrorYMenu');
+  const btnDxfRotateMenu = el('btnDxfRotateMenu');
+  const btnDxfThicknessMenu = el('btnDxfThicknessMenu');
   const dxfRotatePanel = el('dxfRotatePanel');
   const dxfRotateInput = el('dxfRotateInput');
   const dxfThicknessPanel = el('dxfThicknessPanel');
@@ -10006,6 +10080,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     recomputeDxfAnchorCorrection();
     dxfStatusGroup.hidden = !dxfGeometry;
     btnToggleDxf.disabled = !dxfGeometry;
+    // "DXF ein-/ausblenden" im "Bearbeiten"->"DXF"-Menü (Release 167) - derselbe
+    // disabled-Zustand wie #btnToggleDxf, der gleichwertige Toolbar-Auslöser.
+    btnDxfToggleMenu.disabled = !dxfGeometry;
     btnDxfMoveMenu.disabled = !dxfGeometry;
     btnDxfMoveIcon.disabled = !dxfGeometry;
     btnDxfDeleteMenu.disabled = !dxfGeometry;
@@ -10019,6 +10096,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnDxfMirrorY.disabled = !dxfGeometry;
     btnDxfRotate.disabled = !dxfGeometry;
     btnDxfThickness.disabled = !dxfGeometry;
+    // "DXF spiegeln X-Achse"/"DXF spiegeln Y-Achse"/"DXF drehen"/"DXF Bauteilhöhe" im
+    // "Bearbeiten"->"DXF"-Menü (Release 167) - dieselbe disabled-Logik wie ihre vier
+    // gleichwertigen Toolbar-Icons direkt oberhalb.
+    btnDxfMirrorXMenu.disabled = !dxfGeometry;
+    btnDxfMirrorYMenu.disabled = !dxfGeometry;
+    btnDxfRotateMenu.disabled = !dxfGeometry;
+    btnDxfThicknessMenu.disabled = !dxfGeometry;
     // "DXF skalieren" (Release 84) - dieselbe disabled-Logik wie die übrigen DXF-Knöpfe.
     btnDxfScale.disabled = !dxfGeometry;
     // Hinweistext im Skalieren-Dialog (Release 85) immer synchron halten, auch wenn dxfScale
@@ -10027,6 +10111,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     updateDxfScaleHint();
     btnDxfMirrorX.classList.toggle('active', dxfMirrorX);
     btnDxfMirrorY.classList.toggle('active', dxfMirrorY);
+    // "DXF ein-/ausblenden" (Release 167, Sebastian, Punkt 6: "wenn DXF eingeblendet -> 'DXF
+    // ausblenden' anzeigen und umgekehrt") - im Unterschied zu allen übrigen Menü-/Icon-
+    // Zwillingspaaren wechselt hier die sichtbare BESCHRIFTUNG selbst mit dem Zustand, nicht nur
+    // der title-Tooltip; bewusst kein statisches data-i18n-en im Markup (siehe Kommentar dort),
+    // die EN-Fassung läuft stattdessen hier über T() mit, unabhängig davon, ob ein DXF geladen
+    // ist (dxfVisible ist auch ohne geladenes DXF wohldefiniert, siehe dessen Deklaration oben).
+    btnDxfToggleMenu.textContent = dxfVisible ? T('DXF ausblenden', 'Hide DXF') : T('DXF einblenden', 'Show DXF');
     if (dxfGeometry) {
       dxfFilenameLabel.textContent = dxfFilename || 'DXF';
       const parts = [
@@ -10039,7 +10130,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
       const title = (dxfFilename || 'DXF') + ' — ' + parts.join(' · ');
       dxfFilenameLabel.title = title;
-      btnToggleDxf.title = (dxfVisible ? T('Importiertes DXF ausblenden', 'Hide imported DXF') : T('Importiertes DXF einblenden', 'Show imported DXF')) + ' — ' + title;
+      const toggleTitle = (dxfVisible ? T('Importiertes DXF ausblenden', 'Hide imported DXF') : T('Importiertes DXF einblenden', 'Show imported DXF')) + ' — ' + title;
+      btnToggleDxf.title = toggleTitle;
+      btnDxfToggleMenu.title = toggleTitle;
       const moveTitle = T('Verschiebung (X/Y/Z) des importierten DXF eingeben', 'Enter the offset (X/Y/Z) of the imported DXF') + ' — ' + title;
       btnDxfMoveMenu.title = moveTitle;
       btnDxfMoveIcon.title = moveTitle;
@@ -10049,7 +10142,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     } else {
       dxfFilenameLabel.textContent = '';
       dxfFilenameLabel.title = '';
+      const toggleTitle = T('Importiertes DXF in der 3D-Ansicht ein-/ausblenden - erst verfügbar, sobald ein DXF importiert wurde', 'Show/hide the imported DXF in the 3D view - only available once a DXF has been imported');
       btnToggleDxf.title = T('Importiertes DXF in der 3D-Ansicht ein-/ausblenden', 'Show/hide the imported DXF in the 3D view');
+      btnDxfToggleMenu.title = toggleTitle;
       const moveTitle = T('Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde', 'Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported');
       btnDxfMoveMenu.title = moveTitle;
       btnDxfMoveIcon.title = moveTitle;
@@ -17207,12 +17302,22 @@ Sebastian Bäcker (Anschrift wie oben)`,
   btnDxfDeleteIcon.addEventListener('click', clearDxf);
 
   // "DXF soll auch ausgeblendet werden können" - dieselbe Auge-Technik wie btnToggleTool.
-  btnToggleDxf.addEventListener('click', () => {
-    if (btnToggleDxf.disabled) return;
+  // Release 167 (Sebastian, Punkt 6): gemeinsame Funktion statt verdoppelter Logik, damit der
+  // neue Menüpunkt "DXF ein-/ausblenden" (#btnDxfToggleMenu) exakt denselben Zustandswechsel
+  // auslöst wie das bestehende Toolbar-Icon #btnToggleDxf - beide rufen dieselbe Funktion auf.
+  function toggleDxfVisibility() {
     dxfVisible = !dxfVisible;
     btnToggleDxf.classList.toggle('is-hidden', !dxfVisible);
     updateDxfUI();
     requestRender();
+  }
+  btnToggleDxf.addEventListener('click', () => {
+    if (btnToggleDxf.disabled) return;
+    toggleDxfVisibility();
+  });
+  btnDxfToggleMenu.addEventListener('click', () => {
+    if (btnDxfToggleMenu.disabled) return;
+    toggleDxfVisibility();
   });
 
   // "DXF Verschieben": öffnet den X/Y/Z-Dialog, vorbelegt mit der aktuellen Verschiebung -
@@ -17269,17 +17374,35 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // (zum damaligen Zeitpunkt identisch, siehe deren Umbenennung dort) - "Home" selbst zeigt seit
   // dieser Runde eine schräge Diagonalansicht, die eine 2D-DXF-Spiegelung/-Drehung visuell
   // schwerer beurteilbar machen würde als die hier weiterhin gewünschte reine Ansicht von oben.
-  btnDxfMirrorX.addEventListener('click', () => {
-    if (btnDxfMirrorX.disabled) return;
+  // Release 167 (Sebastian, Punkt 6): "DXF spiegeln X-Achse"/"DXF spiegeln Y-Achse" im
+  // "Bearbeiten"->"DXF"-Menü (#btnDxfMirrorXMenu/#btnDxfMirrorYMenu) - zwei weitere, gleichwertige
+  // Auslöser für denselben Zustandswechsel wie die Toolbar-Icons direkt darüber, nach demselben
+  // Muster wie bei "DXF ein-/ausblenden" oben.
+  function toggleDxfMirrorX() {
     dxfMirrorX = !dxfMirrorX;
     updateDxfUI();
     goTopView();
-  });
-  btnDxfMirrorY.addEventListener('click', () => {
-    if (btnDxfMirrorY.disabled) return;
+  }
+  function toggleDxfMirrorY() {
     dxfMirrorY = !dxfMirrorY;
     updateDxfUI();
     goTopView();
+  }
+  btnDxfMirrorX.addEventListener('click', () => {
+    if (btnDxfMirrorX.disabled) return;
+    toggleDxfMirrorX();
+  });
+  btnDxfMirrorXMenu.addEventListener('click', () => {
+    if (btnDxfMirrorXMenu.disabled) return;
+    toggleDxfMirrorX();
+  });
+  btnDxfMirrorY.addEventListener('click', () => {
+    if (btnDxfMirrorY.disabled) return;
+    toggleDxfMirrorY();
+  });
+  btnDxfMirrorYMenu.addEventListener('click', () => {
+    if (btnDxfMirrorYMenu.disabled) return;
+    toggleDxfMirrorY();
   });
 
   // "DXF drehen" (67. Runde) - derselbe Dialog-Ablauf wie "DXF verschieben" oben (öffnen mit
@@ -17292,6 +17415,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfRotateInput.select();
   }
   btnDxfRotate.addEventListener('click', openDxfRotatePanel);
+  // "DXF drehen" im "Bearbeiten"->"DXF"-Menü (Release 167, Sebastian, Punkt 6, #btnDxfRotateMenu) -
+  // gleichwertiger Auslöser, ruft dieselbe openDxfRotatePanel()-Funktion auf wie "↻ DXF" oben.
+  btnDxfRotateMenu.addEventListener('click', openDxfRotatePanel);
   el('btnDxfRotateCancel').addEventListener('click', () => dxfRotatePanel.classList.remove('open'));
   function confirmDxfRotate() {
     if (!dxfGeometry) { dxfRotatePanel.classList.remove('open'); return; }
@@ -17321,6 +17447,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfThicknessInput.select();
   }
   btnDxfThickness.addEventListener('click', openDxfThicknessPanel);
+  // "DXF Bauteilhöhe" im "Bearbeiten"->"DXF"-Menü (Release 167, Sebastian, Punkt 6,
+  // #btnDxfThicknessMenu) - gleichwertiger Auslöser, ruft dieselbe openDxfThicknessPanel()-
+  // Funktion/denselben "Bauteilstärke"-Dialog auf wie "🧱 DXF" oben (nur die Menü-Beschriftung
+  // selbst lautet laut Sebastians Vorgabe "Bauteilhöhe").
+  btnDxfThicknessMenu.addEventListener('click', openDxfThicknessPanel);
   el('btnDxfThicknessCancel').addEventListener('click', () => dxfThicknessPanel.classList.remove('open'));
   function confirmDxfThickness() {
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
