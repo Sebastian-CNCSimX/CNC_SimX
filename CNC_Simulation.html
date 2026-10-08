@@ -2199,7 +2199,7 @@
                CNC-Programmliste" -> "CNC-Programmliste neu" - reine Beschriftungsänderungen, IDs
                UND die komplette dahinterliegende Logik in app.js bleiben unverändert. -->
           <div class="menu-submenu" id="submenuFileCncProgram">
-            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="CNC-Program">CNC-Programm <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="CNC-Program &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">CNC-Programm <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
               <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load CNC-Program">CNC-Programm laden</button>
               <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Programm laden wird wieder nur
@@ -2242,7 +2242,7 @@
                Verpackung/Position im Markup ändert sich, die Beschriftung "DXF importieren" selbst
                (bereits seit 23.09.2026 kleines "i") bleibt unverändert. -->
           <div class="menu-submenu" id="submenuFileDxf">
-            <button class="menu-item submenu-trigger" id="submenuFileDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="DXF">DXF <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuFileDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileDxfDropdown" hidden>
               <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
               <!-- "DXF löschen" (Release 169, Sebastian, Punkt 4: NEU) - dritter, gleichwertiger
@@ -2374,10 +2374,10 @@
                #btnFontColor/#btnColumnScale/#btnResetDisplayDefaults) UND ihre Funktion bleiben
                dabei vollständig unverändert - nur ihre Gruppierung ändert sich. -->
           <div class="menu-submenu" id="submenuAppearance">
-            <button class="menu-item submenu-trigger" id="submenuAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Appearance">Erscheinungsbild <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Appearance &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Erscheinungsbild <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuAppearanceDropdown" hidden>
               <div class="menu-submenu" id="submenuColors">
-                <button class="menu-item submenu-trigger" id="submenuColorsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Colors">Farben <span class="submenu-arrow">▸</span></button>
+                <button class="menu-item submenu-trigger" id="submenuColorsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Colors &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Farben <span class="submenu-arrow">▸</span></button>
                 <div class="submenu-dropdown" id="submenuColorsDropdown" hidden>
                   <!-- "Buttonfarbe einstellen" (53. Runde, siehe #menuColorPanel weiter unten sowie
                        applyMenuHighlightColor() in app.js). -->
@@ -2442,7 +2442,7 @@
                    #toolAppearanceCutterPanel weiter unten sowie applyToolAppearance()/
                    TOOL_APPEARANCE_KINDS in app.js. -->
               <div class="menu-submenu" id="submenuTools">
-                <button class="menu-item submenu-trigger" id="submenuToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Tools">Werkzeuge <span class="submenu-arrow">▸</span></button>
+                <button class="menu-item submenu-trigger" id="submenuToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
                 <div class="submenu-dropdown" id="submenuToolsDropdown" hidden>
                   <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
                   <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
@@ -2491,7 +2491,7 @@
                gleichwertig über "Einstellungen importieren" (#btnLoadSettings, JSON-Import) zur
                Verfügung. Das Untermenü besteht seitdem nur noch aus "Maschinentypen bearbeiten". -->
           <div class="menu-submenu" id="submenuMachineTypes">
-            <button class="menu-item submenu-trigger" id="submenuMachineTypesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Machine types">Maschinentypen <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuMachineTypesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Machine types &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Maschinentypen <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuMachineTypesDropdown" hidden>
               <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
             </div>
@@ -2509,7 +2509,7 @@
                Untermenü-Flyout "Arbeitsgang-Namen" verpackt (dieselbe generische ".menu-submenu"-
                Technik wie bei "Maschinentypen" direkt oberhalb). ID/Logik bleiben unverändert. -->
           <div class="menu-submenu" id="submenuOpNames">
-            <button class="menu-item submenu-trigger" id="submenuOpNamesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Processing step names">Arbeitsgang-Namen <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuOpNamesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Processing step names &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Arbeitsgang-Namen <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuOpNamesDropdown" hidden>
               <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
             </div>
@@ -2519,8 +2519,8 @@
                siehe Stylesheet weiter oben) nach demselben margin-top/padding-top/border-top-Muster
                wie #btnCheckForUpdate/#millTimeFileInfoSep/#btnResetDisplayDefaults (siehe deren
                Kommentare). -->
-          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings">Einstellungen importieren</button>
-          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings">Einstellungen exportieren</button>
+          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings" data-i18n-en-title="Loads a settings file previously downloaded via 'Export Settings' and replaces all settings contained in it">Einstellungen importieren</button>
+          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
         </div>
       </div>
       <!-- "Infos" -> "Vorschubskalierung"/"Ungefähre Fräszeit" (Release 161, Sebastian, "Konzept
@@ -2598,7 +2598,7 @@
       <div class="menu" id="menuInfos">
         <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Help">Hilfe</button>
         <div class="menu-dropdown" id="menuInfosDropdown" hidden>
-          <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert">Knowledge Base</button>
+          <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert" data-i18n-en-title="Open the editable knowledge base (e.g. cutter lengths/radii, error causes and solutions) - entries are automatically sorted alphabetically when applied">Knowledge Base</button>
         </div>
       </div>
       <!-- "Info" -> "?" (55. Runde, Sebastian: "Bitte einen neuen Menüpunkt: 'Info' neben bearbeiten.
@@ -2684,7 +2684,7 @@
       <label class="reichenbacher-switch" id="reichenbacherSwitchWrap" hidden title="Kardanische Winkelkorrektur für den Reichenbacher-Aggregatkopf (siehe Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - steuert, ob das Werkzeug in der 3D-Ansicht mit der verifizierten Korrekturformel oder mit der ursprünglichen, unkorrigierten Berechnung ausgerichtet wird" data-i18n-en-title="Gimbal angle correction for the Reichenbacher aggregate head (see Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - controls whether the tool in the 3D view is aligned using the verified correction formula or the original, uncorrected calculation">
         <input type="checkbox" id="chkReichenbacherCorrection" checked>
         <span class="reichenbacher-switch-track"><span class="reichenbacher-switch-thumb"></span></span>
-        <span class="reichenbacher-switch-text">Kardan-Winkelkorrektur</span>
+        <span class="reichenbacher-switch-text" data-i18n-en="Gimbal angle correction">Kardan-Winkelkorrektur</span>
       </label>
       <!-- DXF-Status-Gruppe (Sebastian, siehe Kommentar bei #btnDxfImport oben) - Sichtbarkeit
            unabhängig vom Reichenbacher-Schalter, siehe updateDxfUI() in app.js. Enthielt
@@ -2876,7 +2876,7 @@
            'Spannfutter' (mit Ein/Ausblendensymbol)") - bis zur 73. Runde stand hier zuerst
            "Werkzeug" (btnToggleTool), dann "+Werkzeuge (T)" (btnInsertToolData); ab dieser Runde
            genau umgekehrt, plus der neue dritte Knopf "Spannfutter" dahinter. -->
-      <button class="toolbar-btn" id="btnInsertToolData" type="button" disabled title="Werkzeugdaten (Radius/Länge/T-Länge/Werkzeugtyp) als Kommentar unter dem Arbeitsgangkommentar einfügen - nur verfügbar, wenn ein einzelner Arbeitsgang als 3D-Ansicht ausgewählt ist" data-i18n-en="+Tools (T)">+Werkzeuge (T)</button>
+      <button class="toolbar-btn" id="btnInsertToolData" type="button" disabled title="Werkzeugdaten (Radius/Länge/T-Länge/Werkzeugtyp) als Kommentar unter dem Arbeitsgangkommentar einfügen - nur verfügbar, wenn ein einzelner Arbeitsgang als 3D-Ansicht ausgewählt ist" data-i18n-en="+Tools (T)" data-i18n-en-title="Insert tool data (radius/length/tool length/tool type) as a comment below the processing step comment - only available when a single processing step is selected as the 3D view">+Werkzeuge (T)</button>
       <button class="toolbar-btn tool-toggle-btn" id="btnToggleTool" type="button" title="Werkzeug (Zylinder aus Radius/Länge des Programms) in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the tool (cylinder from the program's radius/length) in the 3D view"><span class="eye-glyph">👁</span> <span data-i18n-en="Tools">Werkzeug</span></button>
       <!-- "Spannfutter" (74. Runde, NEU) - blendet den HSK63-Werkzeughalter (samt Sägeblatt-
            Adapterstück, siehe 9.7b) unabhängig vom Werkzeug selbst ein/aus, dieselbe
@@ -2917,20 +2917,20 @@
       </div>
       <span class="transport-idx" id="transportIdx">0 / 0</span>
       <label class="layer-toggle" title="Eilgang-Bewegungen (G0, gestrichelt) im 3D-Bereich ein-/ausblenden" data-i18n-en-title="Show/hide rapid-traverse movements (G0, dashed) in the 3D area">
-        <input type="checkbox" id="chkShowRapid" checked> G0 (Eilgang)
+        <input type="checkbox" id="chkShowRapid" checked> <span data-i18n-en="G0 (rapid)">G0 (Eilgang)</span>
       </label>
     </div>
     <div class="transport-row transport-row2">
       <div class="speed-group" id="speedGroup">
-        <span class="speed-caption">Geschwindigkeit</span>
+        <span class="speed-caption" data-i18n-en="Speed">Geschwindigkeit</span>
         <button class="speed-btn active" data-speed="1" type="button">1x</button>
         <button class="speed-btn" data-speed="5" type="button">5x</button>
         <button class="speed-btn" data-speed="10" type="button">10x</button>
         <button class="speed-btn" data-speed="20" type="button">20x</button>
       </div>
       <div class="jump-group">
-        <label for="jumpLineInput">Sprung in Zeile:</label>
-        <input type="number" id="jumpLineInput" min="1" step="1" placeholder="Zeile">
+        <label for="jumpLineInput" data-i18n-en="Jump to line:">Sprung in Zeile:</label>
+        <input type="number" id="jumpLineInput" min="1" step="1" placeholder="Zeile" data-i18n-en-placeholder="Line">
         <button class="transport-btn small" id="btnJumpLine" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">→</button>
         <!-- "Codesprung" (Release 101, Sebastian, Punkt 1: "Der Sprung in die Zeile beim Klick
              soll hinter einen Button gesetzt werden und nicht dauerhaft aktiv sein." + Punkt 2:
@@ -2943,7 +2943,7 @@
              syncMeasureButtons() in app.js. ".toolbar-btn"-Optik (samt vorhandener ".active"-
              Hervorhebung) statt ".transport-btn.small" wie der direkt benachbarte Pfeil-Knopf, da
              "Codesprung" ein eigenes, längeres Textlabel trägt statt eines einzelnen Glyphen. -->
-        <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge)." data-i18n-en-title="Code jump: toggle on/off. When active, clicking a line in the 3D area jumps to the corresponding program line and marks the start/end point with &quot;[]&quot; - when off, clicking/dragging in the 3D area behaves as usual (rotate/pan camera, measurement tools).">Codesprung</button>
+        <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge)." data-i18n-en-title="Jump in code: toggle on/off. When active, clicking a line in the 3D area jumps to the corresponding program line and marks the start/end point with &quot;[]&quot; - when off, clicking/dragging in the 3D area behaves as usual (rotate/pan camera, measurement tools)." data-i18n-en="Jump in code">Codesprung</button>
       </div>
     </div>
   </div>
@@ -2965,8 +2965,8 @@
              vollständige Umschalt-/Prioritätslogik sowie #dxfLayerPanel weiter unten für den
              zugehörigen zweiten Inhalt neben #tree. -->
         <div class="sidebar-tabs" id="sidebarTabs">
-          <button class="sidebar-tab active" id="sidebarTabCode" type="button" role="tab" aria-selected="true" disabled data-i18n-en="CNC-Programcode">CNC-Programmcode</button>
-          <button class="sidebar-tab" id="sidebarTabDxf" type="button" role="tab" aria-selected="false" hidden disabled>DXF-Layer</button>
+          <button class="sidebar-tab active" id="sidebarTabCode" type="button" role="tab" aria-selected="true" disabled data-i18n-en="CNC program code">CNC-Programmcode</button>
+          <button class="sidebar-tab" id="sidebarTabDxf" type="button" role="tab" aria-selected="false" hidden disabled data-i18n-en="DXF layers">DXF-Layer</button>
         </div>
         <!-- Edit-Icon rechts neben der Überschrift (62. Runde, Sebastian: "Rechts von
              'CNC-Programmcode' ein Edit-Icon einbauen, um den Code zu editieren. Selbes Verhalten
@@ -3136,27 +3136,27 @@
 
 <div class="paste-panel" id="pastePanel">
   <div class="paste-card">
-    <h3>NC-Code einfügen</h3>
+    <h3 data-i18n-en="Paste CNC-Code">CNC-Code einfügen</h3>
     <div class="editor-jump">
-      <label for="pasteJumpInput">Zeile:</label>
+      <label for="pasteJumpInput" data-i18n-en="Row:">Zeile:</label>
       <input type="number" id="pasteJumpInput" min="1" step="1">
       <button class="btn ghost small" id="btnPasteJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">Ok</button>
     </div>
     <div class="editor-wrap">
       <div class="editor-gutter" id="pasteAreaGutter" aria-hidden="true">1</div>
-      <textarea id="pasteArea" placeholder="ISO-Code hier einfügen…" spellcheck="false" wrap="off"></textarea>
+      <textarea id="pasteArea" placeholder="CNC-Code hier einfügen…" data-i18n-en-placeholder="Paste CNC-Code here…" spellcheck="false" wrap="off"></textarea>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnPasteCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnPasteApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnPasteCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnPasteApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
 
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
-    <h3>Maschinentypen bearbeiten</h3>
-    <p class="panel-hint">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span> zum Multiplizieren, z.&nbsp;B. <span class="k">Y*-1</span>, ODER <span class="k">Achse+Zahl</span>/<span class="k">Achse-Zahl</span> zum Addieren/Subtrahieren, z.&nbsp;B. <span class="k">C+90</span> – gilt für jeden Achsbuchstaben, also auch für die Dreh-/Kippwinkel A/B/C, und mehrere Zeilen je Achse werden nacheinander angewendet), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
+    <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
+    <p class="panel-hint" data-i18n-en-html="One block per machine type: &lt;span class=&quot;k&quot;&gt;[MACHINETYPE Name=&quot;…&quot;]&lt;/span&gt;, containing &lt;span class=&quot;k&quot;&gt;[SWITCHCASEMACHINE]&lt;/span&gt; (replacement rules as in the former exchange file: &lt;span class=&quot;k&quot;&gt;search text-&gt;replacement text&lt;/span&gt; per line) and &lt;span class=&quot;k&quot;&gt;[CALCMACHINE]&lt;/span&gt; (axis calculation, per line &lt;span class=&quot;k&quot;&gt;axis*factor&lt;/span&gt; to multiply, e.g. &lt;span class=&quot;k&quot;&gt;Y*-1&lt;/span&gt;, OR &lt;span class=&quot;k&quot;&gt;axis+number&lt;/span&gt;/&lt;span class=&quot;k&quot;&gt;axis-number&lt;/span&gt; to add/subtract, e.g. &lt;span class=&quot;k&quot;&gt;C+90&lt;/span&gt; – applies to every axis letter, including the rotation/tilt angles A/B/C, and multiple lines per axis are applied one after another), closed with &lt;span class=&quot;k&quot;&gt;[/MACHINETYPE Name=&quot;…&quot;]&lt;/span&gt;. Is only applied to a loaded program after selecting it in the dropdown and clicking “Ok”.">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span> zum Multiplizieren, z.&nbsp;B. <span class="k">Y*-1</span>, ODER <span class="k">Achse+Zahl</span>/<span class="k">Achse-Zahl</span> zum Addieren/Subtrahieren, z.&nbsp;B. <span class="k">C+90</span> – gilt für jeden Achsbuchstaben, also auch für die Dreh-/Kippwinkel A/B/C, und mehrere Zeilen je Achse werden nacheinander angewendet), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
     <textarea id="machineTypeEditArea" placeholder='[MACHINETYPE Name="Biesse"]&#10;[SWITCHCASEMACHINE]&#10;CR=->R&#10;[/SWITCHCASEMACHINE]&#10;[CALCMACHINE]&#10;Y*-1&#10;Z*-1&#10;[/CALCMACHINE]&#10;[/MACHINETYPE Name="Biesse"]' spellcheck="false"></textarea>
     <p class="panel-hint" id="machineTypeDupWarning" hidden></p>
     <!-- "Maschinentypen zurücksetzen" (Release 134, Sebastian: "Einen Reset-Knopf nur für
@@ -3175,20 +3175,20 @@
          anstelle von Abbrechen/Übernehmen auslösen. -->
     <div class="paste-actions">
       <button class="btn ghost" id="btnMachineTypeResetDefaults" type="button" style="margin-right:auto" title="Setzt ALLE Maschinentypen sowie den aktiven Maschinentyp auf die eingebauten Standardwerte zurück (löscht die gespeicherte Maschinentyp-Konfiguration). Betrifft NICHT die Arbeitsgang-Namensliste, die Knowledge Base oder Anzeigeeinstellungen." data-i18n-en="Reset to defaults" data-i18n-en-title="Resets ALL machine types and the active machine type to the built-in defaults (deletes the saved machine type configuration). Does NOT affect the operation name list, the knowledge base, or display settings.">Maschinentypen zurücksetzen</button>
-      <button class="btn ghost" id="btnMachineTypeEditCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnMachineTypeEditApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnMachineTypeEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnMachineTypeEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
 
 <div class="paste-panel" id="opNamesEditPanel">
   <div class="paste-card">
-    <h3>Arbeitsgang-Namen bearbeiten</h3>
-    <p class="panel-hint">Eine Bezeichnung je Zeile. Wird ohne Trennzeilen davor/dahinter erkannt (Groß-/Kleinschreibung wird ignoriert, optionale Kommentarzeichen <span class="k">;</span> <span class="k">#</span> <span class="k">//</span> davor werden ignoriert).</p>
+    <h3 data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</h3>
+    <p class="panel-hint" data-i18n-en-html="One label per line. Recognized without any separating lines before or after it (case is ignored; optional comment characters &lt;span class=&quot;k&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;//&lt;/span&gt; at the beginning are ignored).">Eine Bezeichnung je Zeile. Wird ohne Trennzeilen davor/dahinter erkannt (Groß-/Kleinschreibung wird ignoriert, optionale Kommentarzeichen <span class="k">;</span> <span class="k">#</span> <span class="k">//</span> davor werden ignoriert).</p>
     <textarea id="opNamesEditArea" placeholder="Arbeitsgang-Name, eine Bezeichnung je Zeile…" spellcheck="false"></textarea>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnOpNamesEditCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnOpNamesEditApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnOpNamesEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnOpNamesEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3208,32 +3208,32 @@
      localStorage-Persistenz). -->
 <div class="paste-panel" id="knowledgeBasePanel">
   <div class="paste-card wide resizable">
-    <h3>Knowledge Base</h3>
-    <p class="panel-hint">Ein Eintrag je Block: beginnt mit <span class="k">[</span>, endet mit <span class="k">]</span>, erste Zeile darin ist der Titel (z.B. <span class="k">Fräserlängen:</span>). Beim Übernehmen werden alle Einträge automatisch alphabetisch nach ihrem Titel sortiert. Ein Klick auf einen Buchstaben oben springt zum ersten Eintrag ab diesem Buchstaben, "Nach oben" scrollt wieder ganz an den Anfang. Die Karte lässt sich am unteren rechten Eck sowohl in der Breite als auch in der Höhe vergrößern. Fehlt bei einem Block <span class="k">[</span> oder <span class="k">]</span>, erscheint beim Übernehmen eine Warnung statt den Eintrag stillschweigend zu verwerfen.</p>
+    <h3 data-i18n-en="Knowledge Base">Knowledge Base</h3>
+    <p class="panel-hint" data-i18n-en-html="One entry per block: starts with &lt;span class=&quot;k&quot;&gt;[&lt;/span&gt;, ends with &lt;span class=&quot;k&quot;&gt;]&lt;/span&gt;, its first line is the title (e.g. &lt;span class=&quot;k&quot;&gt;Cutter lengths:&lt;/span&gt;). When applied, all entries are automatically sorted alphabetically by their title. Clicking a letter above jumps to the first entry from that letter onward, “Scroll to top” scrolls back to the very beginning. The card can be resized at the bottom right corner, both in width and height. If a block is missing &lt;span class=&quot;k&quot;&gt;[&lt;/span&gt; or &lt;span class=&quot;k&quot;&gt;]&lt;/span&gt;, a warning appears when applying instead of silently discarding the entry.">Ein Eintrag je Block: beginnt mit <span class="k">[</span>, endet mit <span class="k">]</span>, erste Zeile darin ist der Titel (z.B. <span class="k">Fräserlängen:</span>). Beim Übernehmen werden alle Einträge automatisch alphabetisch nach ihrem Titel sortiert. Ein Klick auf einen Buchstaben oben springt zum ersten Eintrag ab diesem Buchstaben, "Nach oben" scrollt wieder ganz an den Anfang. Die Karte lässt sich am unteren rechten Eck sowohl in der Breite als auch in der Höhe vergrößern. Fehlt bei einem Block <span class="k">[</span> oder <span class="k">]</span>, erscheint beim Übernehmen eine Warnung statt den Eintrag stillschweigend zu verwerfen.</p>
     <div class="kb-az-bar" id="knowledgeBaseAzBar"></div>
     <div class="kb-toolbar">
-      <button class="btn ghost" id="btnKnowledgeBaseScrollTop" type="button">Nach oben</button>
+      <button class="btn ghost" id="btnKnowledgeBaseScrollTop" type="button" data-i18n-en="Scroll to top">Nach oben</button>
     </div>
     <textarea id="knowledgeBaseEditArea" placeholder='[Fräserlängen:&#10;1. Zu tief gefräst = Fräser zu kurz -&gt; Fräserlänge einmessen und länger auf Maschine eingeben]' spellcheck="false"></textarea>
     <p class="panel-hint" id="knowledgeBaseWarning" hidden></p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnKnowledgeBaseCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnKnowledgeBaseApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnKnowledgeBaseCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnKnowledgeBaseApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
 
 <div class="paste-panel" id="programEditPanel">
   <div class="paste-card wide">
-    <h3>Programm bearbeiten</h3>
-    <p class="panel-hint">Ändert den geladenen CNC-Programmtext direkt. „Übernehmen" wendet die Änderung sofort auf Anzeige und Simulation an — eine aktive Austauschdatei wird danach wie gewohnt erneut darauf angewendet.</p>
+    <h3 data-i18n-en="Edit program code">Programm bearbeiten</h3>
+    <p class="panel-hint" data-i18n-en="Edits the loaded CNC program text directly. Clicking &#8220;Apply&#8221; immediately applies the change to the display and simulation—an active exchange file is then reapplied as usual.">Ändert den geladenen CNC-Programmtext direkt. „Übernehmen" wendet die Änderung sofort auf Anzeige und Simulation an — eine aktive Austauschdatei wird danach wie gewohnt erneut darauf angewendet.</p>
     <div class="editor-jump">
-      <label for="programJumpInput">Zeile:</label>
+      <label for="programJumpInput" data-i18n-en="Row:">Zeile:</label>
       <input type="number" id="programJumpInput" min="1" step="1">
       <button class="btn ghost small" id="btnProgramJump" type="button" title="Zur eingegebenen Zeile springen (oder Enter)" data-i18n-en-title="Jump to the entered line (or Enter)">Ok</button>
       <span class="editor-jump-sep" id="programJumpOpSep" aria-hidden="true" hidden></span>
       <span class="editor-jump-ops" id="programJumpOpGroup" hidden>
-        <label for="programJumpOpSelect">Arbeitsgang:</label>
+        <label for="programJumpOpSelect" data-i18n-en="Processing step:">Arbeitsgang:</label>
         <select id="programJumpOpSelect" title="Zur Startzeile eines erkannten Arbeitsgangs springen" data-i18n-en-title="Jump to the start line of a recognized processing step">
           <option value="" selected disabled>Springen zu…</option>
         </select>
@@ -3244,20 +3244,20 @@
       <textarea id="programEditArea" spellcheck="false" wrap="off"></textarea>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnProgramEditCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnProgramEditApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnProgramEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnProgramEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
 
 <div class="paste-panel" id="saveAsPanel">
   <div class="paste-card">
-    <h3>Programm speichern als…</h3>
-    <p class="panel-hint">Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext unter diesem Dateinamen herunter.</p>
+    <h3 data-i18n-en="Save CNC-Program as…">Programm speichern als…</h3>
+    <p class="panel-hint" data-i18n-en="Downloads the currently loaded (possibly edited) program text under this file name.">Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext unter diesem Dateinamen herunter.</p>
     <input type="text" id="saveAsFilenameInput" class="filename-input" spellcheck="false">
     <div class="paste-actions">
-      <button class="btn ghost" id="btnSaveAsCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnSaveAsConfirm" type="button">Speichern</button>
+      <button class="btn ghost" id="btnSaveAsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnSaveAsConfirm" type="button" data-i18n-en="Save">Speichern</button>
     </div>
   </div>
 </div>
@@ -3279,18 +3279,18 @@
      Radius/Länge selbst. -->
 <div class="paste-panel" id="toolDataPanel">
   <div class="paste-card">
-    <h3>Werkzeugdaten einfügen</h3>
-    <p class="panel-hint">Fügt <span class="k">; RADIUS ..</span>, <span class="k">; LENGTH ..</span>, <span class="k">; TOOLMODE ..</span> und <span class="k">; TOOLTYPE ..</span> als Kommentarzeilen direkt unter dem Arbeitsgangkommentar des aktuell aktiven Arbeitsgangs in den Programmtext ein (Komma wird bei Radius/Länge als Dezimaltrennzeichen akzeptiert). Steht dort bereits ein per diesem Knopf eingefügter Werkzeugdaten-Kommentar, wird er mit den neuen Werten aktualisiert statt dupliziert.</p>
+    <h3 data-i18n-en="Insert tool data">Werkzeugdaten einfügen</h3>
+    <p class="panel-hint" data-i18n-en-html="Inserts &lt;span class=&quot;k&quot;&gt;; RADIUS ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; LENGTH ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; TOOLMODE ..&lt;/span&gt; and &lt;span class=&quot;k&quot;&gt;; TOOLTYPE ..&lt;/span&gt; as comment lines directly below the processing-step comment of the currently active processing step into the program text (comma is accepted as the decimal separator for radius/length). If a tool data comment inserted by this button already exists there, it is updated with the new values instead of being duplicated.">Fügt <span class="k">; RADIUS ..</span>, <span class="k">; LENGTH ..</span>, <span class="k">; TOOLMODE ..</span> und <span class="k">; TOOLTYPE ..</span> als Kommentarzeilen direkt unter dem Arbeitsgangkommentar des aktuell aktiven Arbeitsgangs in den Programmtext ein (Komma wird bei Radius/Länge als Dezimaltrennzeichen akzeptiert). Steht dort bereits ein per diesem Knopf eingefügter Werkzeugdaten-Kommentar, wird er mit den neuen Werten aktualisiert statt dupliziert.</p>
     <!-- Werkzeugtyp jetzt DIREKT unter der Überschrift (61. Runde, Sebastian: "Die Auswahl für den
          Werkzeugtypen soll unter 'Werkzeugdate einfügen' stehen") - vorher stand er weiter unten,
          zusammen mit T-Längen, in der zweiten Zeile. Zusätzlich (Punkt 3): ein "change"-Listener
          auf #toolTypeSelect aktualisiert #toolLengthLabelText jetzt LIVE (siehe app.js,
          applyToolTypeUI()), nicht mehr nur einmalig beim Öffnen des Dialogs. -->
     <div class="tool-data-row">
-      <label class="tool-data-field">Werkzeugtyp:
+      <label class="tool-data-field"><span data-i18n-en="Tool type:">Werkzeugtyp:</span>
         <select id="toolTypeSelect" class="filename-input" title="'Säge' berücksichtigt die Sägeblattstärke und stellt das Werkzeug wie bei Übergabe per '; BLADE' dar (inkl. verlängerter HSK63-Aufnahme)" data-i18n-en-title="'Saw' takes the blade thickness into account and displays the tool as when passed via '; BLADE' (incl. extended HSK63 holder)">
-          <option value="fraeser">Fräser</option>
-          <option value="saege">Säge</option>
+          <option value="fraeser" data-i18n-en="Cutter">Fräser</option>
+          <option value="saege" data-i18n-en="Saw">Säge</option>
         </select>
       </label>
     </div>
@@ -3319,15 +3319,15 @@
            btnToggleToolHolder-Klick-Handler weiter unten), und das Bestätigen dieses Dropdowns
            per "Ok" setzt umgekehrt auch den globalen Zustand (siehe confirmInsertToolData()
            weiter unten) - siehe dort jeweils für die genaue Herleitung. -->
-      <label class="tool-data-field">T-Längen:
+      <label class="tool-data-field"><span data-i18n-en="Tool lengths:">T-Längen:</span>
         <select id="toolModeSelect" class="filename-input" title="Bestimmt, ob der HSK63-Halter für dieses Werkzeug angezeigt wird - dieselbe Einstellung wie 'Spannzange ausblenden/einblenden' in der Werkzeugleiste" data-i18n-en-title="Determines whether the HSK63 holder is shown for this tool - the same setting as 'Hide/show collet' in the toolbar">
-          <option value="eingespannt">Eingespannte Länge</option>
-          <option value="ohnehsk63">Ohne HSK63-Sample</option>
+          <option value="eingespannt" data-i18n-en="Clamped length">Eingespannte Länge</option>
+          <option value="ohnehsk63" data-i18n-en="Without HSK63 sample">Ohne HSK63-Sample</option>
         </select>
       </label>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnToolDataCancel" type="button">Abbrechen</button>
+      <button class="btn ghost" id="btnToolDataCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnToolDataConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -3339,8 +3339,8 @@
      Radius/Länge) - siehe dxfOffset/confirmDxfMove() in app.js. -->
 <div class="paste-panel" id="dxfMovePanel">
   <div class="paste-card">
-    <h3>DXF verschieben</h3>
-    <p class="panel-hint">Verschiebt die importierte DXF-Geometrie um die angegebenen Werte in X, Y und Z (Komma wird als Dezimaltrennzeichen akzeptiert). Die Kameraansicht bleibt dabei unverändert, damit sich die Verschiebung gut gegen die vorhandene Kontur beurteilen lässt.</p>
+    <h3 data-i18n-en="Move DXF">DXF verschieben</h3>
+    <p class="panel-hint" data-i18n-en="Moves the imported DXF geometry by the specified values in X, Y and Z (comma is accepted as the decimal separator). The camera view stays unchanged, so the move can be judged well against the existing contour.">Verschiebt die importierte DXF-Geometrie um die angegebenen Werte in X, Y und Z (Komma wird als Dezimaltrennzeichen akzeptiert). Die Kameraansicht bleibt dabei unverändert, damit sich die Verschiebung gut gegen die vorhandene Kontur beurteilen lässt.</p>
     <div class="tool-data-row">
       <label class="tool-data-field">X
         <input type="text" id="dxfOffsetXInput" class="filename-input" inputmode="decimal" spellcheck="false">
@@ -3353,7 +3353,7 @@
       </label>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnDxfMoveCancel" type="button">Abbrechen</button>
+      <button class="btn ghost" id="btnDxfMoveCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfMoveConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -3365,15 +3365,15 @@
      app.js. -->
 <div class="paste-panel" id="dxfRotatePanel">
   <div class="paste-card">
-    <h3>DXF drehen</h3>
-    <p class="panel-hint">Dreht die importierte DXF-Geometrie um den angegebenen Winkel (Grad, mathematisch positiv = gegen den Uhrzeigersinn) um ihren eigenen Koordinatenursprung. Die Kameraansicht bleibt dabei unverändert.</p>
+    <h3 data-i18n-en="Rotate DXF">DXF drehen</h3>
+    <p class="panel-hint" data-i18n-en="Rotates the imported DXF geometry by the specified angle (degrees, mathematically positive = counterclockwise) around its own coordinate origin. The camera view stays unchanged.">Dreht die importierte DXF-Geometrie um den angegebenen Winkel (Grad, mathematisch positiv = gegen den Uhrzeigersinn) um ihren eigenen Koordinatenursprung. Die Kameraansicht bleibt dabei unverändert.</p>
     <div class="tool-data-row">
-      <label class="tool-data-field">Winkel (°)
+      <label class="tool-data-field"><span data-i18n-en="Angle (°)">Winkel (°)</span>
         <input type="text" id="dxfRotateInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnDxfRotateCancel" type="button">Abbrechen</button>
+      <button class="btn ghost" id="btnDxfRotateCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfRotateConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -3384,15 +3384,15 @@
      drawDxf()/openDxfThicknessPanel() in app.js. -->
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
-    <h3>Bauteilstärke</h3>
-    <p class="panel-hint">Stärke (mm) des durch das DXF dargestellten Bauteils. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur samt Verbindungslinien gezeichnet - eine reine Drahtgitter-Darstellung der Bauteilstärke, keine gefüllte Fläche. Positive Werte versetzen nach oben, negative Werte nach unten.</p>
+    <h3 data-i18n-en="Part thickness">Bauteilstärke</h3>
+    <p class="panel-hint" data-i18n-en="Thickness (mm) of the part represented by the DXF. For a value other than 0, a second contour offset by the thickness, plus connecting lines, is drawn in addition to the existing contour - a pure wireframe representation of the part thickness, not a filled surface. Positive values offset upward, negative values downward.">Stärke (mm) des durch das DXF dargestellten Bauteils. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur samt Verbindungslinien gezeichnet - eine reine Drahtgitter-Darstellung der Bauteilstärke, keine gefüllte Fläche. Positive Werte versetzen nach oben, negative Werte nach unten.</p>
     <div class="tool-data-row">
-      <label class="tool-data-field">Stärke (mm)
+      <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnDxfThicknessCancel" type="button">Abbrechen</button>
+      <button class="btn ghost" id="btnDxfThicknessCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfThicknessConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -3407,22 +3407,22 @@
      wieder auf 0/0 zurückgeschoben (dieselbe Anker-Korrektur wie beim Spiegeln/Drehen). -->
 <div class="paste-panel" id="dxfScalePanel">
   <div class="paste-card">
-    <h3>DXF skalieren</h3>
+    <h3 data-i18n-en="Scale DXF">DXF skalieren</h3>
     <!-- Release 85 (Bugfix, Sebastian: "Kann es sein, dass die Skalierung nicht vom aktuellen
          Zustand ausgeht, sondern immer vom Originalzustand?") - der Multiplikator wirkt jetzt auf
          die AKTUELL sichtbare Größe (relativ, mehrfach anwendbar/verkettbar), nicht mehr absolut
          auf die Originalgröße beim Import. Siehe app.js, Kommentar bei "let dxfScale = 1;" sowie
          openDxfScalePanel()/confirmDxfScale(). -->
-    <p class="panel-hint">Multipliziert die AKTUELL sichtbare Größe der importierten DXF-Geometrie mit dem angegebenen Faktor (z. B. 10 bei einem versehentlich in cm statt mm exportierten DXF, 0,1 für den umgekehrten Fall - mehrfach angewendet, verketten sich die Faktoren: 0,1 gefolgt von 10 ergibt wieder die Originalgröße). Die untere linke Ecke liegt danach weiterhin bei X0/Y0. Die Kameraansicht bleibt dabei unverändert.</p>
+    <p class="panel-hint" data-i18n-en="Multiplies the CURRENTLY visible size of the imported DXF geometry by the specified factor (e.g. 10 for a DXF accidentally exported in cm instead of mm, 0.1 for the reverse case - applied repeatedly, the factors chain together: 0.1 followed by 10 results in the original size again). The bottom left corner remains at X0/Y0 afterward. The camera view stays unchanged.">Multipliziert die AKTUELL sichtbare Größe der importierten DXF-Geometrie mit dem angegebenen Faktor (z. B. 10 bei einem versehentlich in cm statt mm exportierten DXF, 0,1 für den umgekehrten Fall - mehrfach angewendet, verketten sich die Faktoren: 0,1 gefolgt von 10 ergibt wieder die Originalgröße). Die untere linke Ecke liegt danach weiterhin bei X0/Y0. Die Kameraansicht bleibt dabei unverändert.</p>
     <div class="tool-data-row">
-      <label class="tool-data-field">Multiplikator (bezogen auf aktuelle Größe)
+      <label class="tool-data-field"><span data-i18n-en="Multiplier (relative to current size)">Multiplikator (bezogen auf aktuelle Größe)</span>
         <input type="text" id="dxfScaleInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
     <p class="panel-hint" id="dxfScaleCurrentHint">Aktuelle Gesamtskalierung seit Import: ×1</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnDxfScaleReset" type="button" title="Setzt die Skalierung direkt auf die Originalgröße beim Import zurück (×1), ohne den Kehrwert der bisherigen Faktoren ausrechnen zu müssen" data-i18n-en-title="Resets the scale directly to the original import size (×1), without having to calculate the inverse of the previous factors">Originalgröße</button>
-      <button class="btn ghost" id="btnDxfScaleCancel" type="button">Abbrechen</button>
+      <button class="btn ghost" id="btnDxfScaleReset" type="button" title="Setzt die Skalierung direkt auf die Originalgröße beim Import zurück (×1), ohne den Kehrwert der bisherigen Faktoren ausrechnen zu müssen" data-i18n-en-title="Resets the scale directly to the original import size (×1), without having to calculate the inverse of the previous factors" data-i18n-en="Original size">Originalgröße</button>
+      <button class="btn ghost" id="btnDxfScaleCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfScaleConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -3434,12 +3434,13 @@
      und 3D-Simulation. Siehe applyColorProfile()/buildColorProfileExportText() in app.js. -->
 <div class="paste-panel" id="colorProfilePanel">
   <div class="paste-card">
-    <h3>Farben einstellen</h3>
-    <p class="panel-hint"><span class="k">Standard</span> und <span class="k">Dark Mode</span> erzwingen die jeweils eingebaute feste Farbpalette, unabhängig von der Hell/Dunkel-Einstellung des Browsers. Bei <span class="k">Benutzerfarben</span> werden ausschließlich die drei unten genannten Hintergründe per Hexcode festgelegt - passende, gut lesbare Schriftfarben werden automatisch dazu berechnet, damit z. B. keine weiße Schrift auf weißem Hintergrund entsteht.</p>
+    <h3 data-i18n-en="Background color">Farben einstellen</h3>
+    <p class="panel-hint" data-i18n-en-html="&lt;span class=&quot;k&quot;&gt;Default&lt;/span&gt; and &lt;span class=&quot;k&quot;&gt;Dark Mode&lt;/span&gt; each force their built-in fixed color palette, regardless of the browser's light/dark setting. With &lt;span class=&quot;k&quot;&gt;Custom colors&lt;/span&gt;, only the three backgrounds named below are set by hex code - matching, well readable font colors are calculated automatically, so that e.g. no white text on a white background occurs.">
+      <span class="k">Standard</span> und <span class="k">Dark Mode</span> erzwingen die jeweils eingebaute feste Farbpalette, unabhängig von der Hell/Dunkel-Einstellung des Browsers. Bei <span class="k">Benutzerfarben</span> werden ausschließlich die drei unten genannten Hintergründe per Hexcode festgelegt - passende, gut lesbare Schriftfarben werden automatisch dazu berechnet, damit z. B. keine weiße Schrift auf weißem Hintergrund entsteht.</p>
     <div class="color-profile-choice" id="colorProfileChoice">
       <label class="color-profile-option">
         <input type="radio" name="colorProfileMode" id="colorProfileStandard" value="standard">
-        Standard
+        <span data-i18n-en="Default">Standard</span>
       </label>
       <label class="color-profile-option">
         <input type="radio" name="colorProfileMode" id="colorProfileDark" value="dark">
@@ -3447,36 +3448,36 @@
       </label>
       <label class="color-profile-option">
         <input type="radio" name="colorProfileMode" id="colorProfileCustom" value="custom">
-        Benutzerfarben
+        <span data-i18n-en="Custom colors">Benutzerfarben</span>
       </label>
     </div>
     <div class="color-profile-custom-fields" id="colorProfileCustomFields" hidden>
       <label class="color-field-row">
-        <span>Hintergrund CNC-Programmcode</span>
+        <span data-i18n-en="Background: CNC program code">Hintergrund CNC-Programmcode</span>
         <span class="color-field-inputs">
           <input type="color" id="colorCodeBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorCodeBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ffffff">
         </span>
       </label>
       <label class="color-field-row">
-        <span>Hintergrund Arbeitsgänge</span>
+        <span data-i18n-en="Background: processing steps">Hintergrund Arbeitsgänge</span>
         <span class="color-field-inputs">
           <input type="color" id="colorOpsBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorOpsBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#eef4f6">
         </span>
       </label>
       <label class="color-field-row">
-        <span>Hintergrund 3D Simulation</span>
+        <span data-i18n-en="Background: 3D simulation">Hintergrund 3D Simulation</span>
         <span class="color-field-inputs">
           <input type="color" id="colorViewerBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
           <input type="text" id="colorViewerBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#eef4f6">
         </span>
       </label>
-      <p class="panel-hint" id="colorProfileHexWarning" hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+      <p class="panel-hint" id="colorProfileHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnColorProfileCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnColorProfileApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnColorProfileCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnColorProfileApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3489,12 +3490,12 @@
      zum jeweils aktiven Hintergrund passende Farbe zurückfallen. -->
 <div class="paste-panel" id="fontColorPanel">
   <div class="paste-card">
-    <h3>Schriftfarbe einstellen</h3>
-    <p class="panel-hint">Schriftfarbe einzeln festlegen für die unten genannten Bereiche. Ein aktiviertes Häkchen legt für diesen Bereich die daneben gewählte Farbe fest; bleibt es deaktiviert, verwendet dieser Bereich weiterhin automatisch die zum aktiven Hintergrund passende Farbe (siehe <span class="k">Hintergrundfarbe</span>).</p>
+    <h3 data-i18n-en="Font color">Schriftfarbe einstellen</h3>
+    <p class="panel-hint" data-i18n-en-html="Set the font color individually for the areas named below. A checked box sets the color chosen next to it for that area; left unchecked, that area continues to automatically use the color matching the active background (see &lt;span class=&quot;k&quot;&gt;Background color&lt;/span&gt;).">Schriftfarbe einzeln festlegen für die unten genannten Bereiche. Ein aktiviertes Häkchen legt für diesen Bereich die daneben gewählte Farbe fest; bleibt es deaktiviert, verwendet dieser Bereich weiterhin automatisch die zum aktiven Hintergrund passende Farbe (siehe <span class="k">Hintergrundfarbe</span>).</p>
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <input type="checkbox" id="fontColorLinenumCustom">
-        CNC-Programmcode Zeilennummerierung
+        <span data-i18n-en="CNC program code line numbering">CNC-Programmcode Zeilennummerierung</span>
       </span>
       <span class="color-field-inputs">
         <input type="color" id="fontColorLinenumPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
@@ -3504,7 +3505,7 @@
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <input type="checkbox" id="fontColorCodeCustom">
-        CNC-Programmcode Code
+        <span data-i18n-en="CNC program code">CNC-Programmcode Code</span>
       </span>
       <span class="color-field-inputs">
         <input type="color" id="fontColorCodePicker" title="Farbe wählen" data-i18n-en-title="Choose color">
@@ -3514,7 +3515,7 @@
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <input type="checkbox" id="fontColorOpsCustom">
-        Arbeitsgänge
+        <span data-i18n-en="Processing steps">Arbeitsgänge</span>
       </span>
       <span class="color-field-inputs">
         <input type="color" id="fontColorOpsPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
@@ -3524,7 +3525,7 @@
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <input type="checkbox" id="fontColorSpeedCustom">
-        Geschwindigkeit
+        <span data-i18n-en="Speed">Geschwindigkeit</span>
       </span>
       <span class="color-field-inputs">
         <input type="color" id="fontColorSpeedPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
@@ -3534,17 +3535,17 @@
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <input type="checkbox" id="fontColorJumpCustom">
-        Sprung in Zeile
+        <span data-i18n-en="Jump to line">Sprung in Zeile</span>
       </span>
       <span class="color-field-inputs">
         <input type="color" id="fontColorJumpPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="fontColorJumpHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#58707e">
       </span>
     </label>
-    <p class="panel-hint" id="fontColorHexWarning" hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <p class="panel-hint" id="fontColorHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnFontColorCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnFontColorApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnFontColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnFontColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3570,45 +3571,45 @@
      Standardpalette selbst besteht aus zehn tatsächlich unterschiedlichen Farben. -->
 <div class="paste-panel" id="opColorPanel">
   <div class="paste-card">
-    <h3>Arbeitsgangfarbe einstellen</h3>
-    <p class="panel-hint">Legt fest, welche Farbe der 1. Arbeitsgang bekommt, welche der 2., usw. - bei mehr als zehn Arbeitsgängen beginnt die Zuordnung wieder von vorn (unverändert wie bisher, erst ab dem 11. Arbeitsgang). Gilt gleichermaßen für die Bahnfarbe im 3D-Bereich, die Zeilenfarbe im Programmcode sowie den Farbpunkt in der Arbeitsgänge-Spalte.</p>
+    <h3 data-i18n-en="Processing step color">Arbeitsgangfarbe einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Sets which color the 1st processing step gets, which the 2nd, etc. - with more than ten processing steps, the assignment starts over from the beginning (unchanged as before, only from the 11th processing step onward). Applies equally to the path color in the 3D area, the line color in the program code, and the color dot in the processing steps column.">Legt fest, welche Farbe der 1. Arbeitsgang bekommt, welche der 2., usw. - bei mehr als zehn Arbeitsgängen beginnt die Zuordnung wieder von vorn (unverändert wie bisher, erst ab dem 11. Arbeitsgang). Gilt gleichermaßen für die Bahnfarbe im 3D-Bereich, die Zeilenfarbe im Programmcode sowie den Farbpunkt in der Arbeitsgänge-Spalte.</p>
     <label class="color-field-row">
-      <span>1. Arbeitsgang</span>
+      <span data-i18n-en="1st processing step">1. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor1Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor1Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ad1f2d">
       </span>
     </label>
     <label class="color-field-row">
-      <span>2. Arbeitsgang</span>
+      <span data-i18n-en="2nd processing step">2. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor2Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor2Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#2b6674">
       </span>
     </label>
     <label class="color-field-row">
-      <span>3. Arbeitsgang</span>
+      <span data-i18n-en="3rd processing step">3. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor3Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor3Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f8a52">
       </span>
     </label>
     <label class="color-field-row">
-      <span>4. Arbeitsgang</span>
+      <span data-i18n-en="4th processing step">4. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor4Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor4Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#8a4bb0">
       </span>
     </label>
     <label class="color-field-row">
-      <span>5. Arbeitsgang</span>
+      <span data-i18n-en="5th processing step">5. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor5Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor5Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9922a">
       </span>
     </label>
     <label class="color-field-row">
-      <span>6. Arbeitsgang</span>
+      <span data-i18n-en="6th processing step">6. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor6Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor6Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f9e9e">
@@ -3618,37 +3619,37 @@
          Zeilenstruktur wie 1.-6. Arbeitsgang oben, nur mit den vier neuen --path-7…--path-10
          Standard-Hexcodes als Platzhalter (siehe :root im <style> ganz oben). -->
     <label class="color-field-row">
-      <span>7. Arbeitsgang</span>
+      <span data-i18n-en="7th processing step">7. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor7Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor7Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#b5507a">
       </span>
     </label>
     <label class="color-field-row">
-      <span>8. Arbeitsgang</span>
+      <span data-i18n-en="8th processing step">8. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor8Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor8Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#5c6bc0">
       </span>
     </label>
     <label class="color-field-row">
-      <span>9. Arbeitsgang</span>
+      <span data-i18n-en="9th processing step">9. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor9Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor9Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#7a8a3d">
       </span>
     </label>
     <label class="color-field-row">
-      <span>10. Arbeitsgang</span>
+      <span data-i18n-en="10th processing step">10. Arbeitsgang</span>
       <span class="color-field-inputs">
         <input type="color" id="opColor10Picker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="opColor10Hex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#a15c2e">
       </span>
     </label>
-    <p class="panel-hint" id="opColorHexWarning" hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <p class="panel-hint" id="opColorHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnOpColorCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnOpColorApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnOpColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnOpColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3676,8 +3677,8 @@
     </label>
     <p class="panel-hint" id="gridColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnGridColorCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnGridColorApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnGridColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnGridColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3706,8 +3707,8 @@
     </label>
     <p class="panel-hint" id="feedScalingFactorWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnFeedScalingCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnFeedScalingApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnFeedScalingCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnFeedScalingApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3759,7 +3760,7 @@
          gilt. -->
     <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnMillTimeClose" type="button">Schließen</button>
+      <button class="btn ghost" id="btnMillTimeClose" type="button" data-i18n-en="Close">Schließen</button>
       <button class="btn primary" id="btnMillTimeRecalc" type="button" data-i18n-en="Recalculate">Neu berechnen</button>
     </div>
   </div>
@@ -3816,8 +3817,8 @@
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnToolAppearanceSawCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnToolAppearanceSawApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnToolAppearanceSawCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceSawApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3850,8 +3851,8 @@
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnToolAppearanceColletCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnToolAppearanceColletApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnToolAppearanceColletCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceColletApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3884,8 +3885,8 @@
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnToolAppearanceCutterCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnToolAppearanceCutterApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnToolAppearanceCutterCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnToolAppearanceCutterApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3899,8 +3900,8 @@
      "0%"/komplett eingeklappt, aber nur für die aktuelle Sitzung, siehe dort). -->
 <div class="paste-panel" id="columnScalePanel">
   <div class="paste-card">
-    <h3>Spalteneinstellungen</h3>
-    <p class="panel-hint">Bevorzugte Breite von <span class="k">CNC-Programmcode</span> als Anteil ihrer automatisch ermittelten vollen Breite, sowie Ein-/Ausklapp-Vorgabe für <span class="k">Arbeitsgänge</span> (immer entweder eingeklappt oder exakt an den längsten Arbeitsgang angepasst, keine Zwischenbreite mehr wählbar) - wird bei jedem (Neu-)Laden eines Programms angewendet. Die Pfeil-Knöpfe über der Programmcode-Spalte bzw. der Ein-/Ausklappen-Knopf über der Arbeitsgänge-Spalte erlauben zusätzlich jederzeit eine feinere, nur für die aktuelle Sitzung geltende Anpassung.</p>
+    <h3 data-i18n-en="Columns">Spalteneinstellungen</h3>
+    <p class="panel-hint" data-i18n-en-html="Preferred width of &lt;span class=&quot;k&quot;&gt;CNC program code&lt;/span&gt; as a proportion of its automatically determined full width, plus the collapse/expand default for &lt;span class=&quot;k&quot;&gt;processing steps&lt;/span&gt; (always either collapsed or exactly fitted to the longest processing step, no in-between width selectable anymore) - applied every time a program is (re-)loaded. The arrow buttons above the program code column and the collapse/expand button above the processing steps column also always allow a finer adjustment that applies only to the current session.">Bevorzugte Breite von <span class="k">CNC-Programmcode</span> als Anteil ihrer automatisch ermittelten vollen Breite, sowie Ein-/Ausklapp-Vorgabe für <span class="k">Arbeitsgänge</span> (immer entweder eingeklappt oder exakt an den längsten Arbeitsgang angepasst, keine Zwischenbreite mehr wählbar) - wird bei jedem (Neu-)Laden eines Programms angewendet. Die Pfeil-Knöpfe über der Programmcode-Spalte bzw. der Ein-/Ausklappen-Knopf über der Arbeitsgänge-Spalte erlauben zusätzlich jederzeit eine feinere, nur für die aktuelle Sitzung geltende Anpassung.</p>
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="CNC-Programcode">CNC-Programmcode</div>
       <div class="scale-choice" id="columnScaleCodeChoice">
@@ -3917,15 +3918,15 @@
          bisherigen vier 25/50/75/100%-Optionen ab, siehe normalizeColumnScale()/
          applyOpsScaleToCurrent() in app.js; Radiogruppen-Name (columnScaleOps) unverändert. -->
     <div class="scale-group">
-      <div class="scale-group-title">Arbeitsgänge</div>
+      <div class="scale-group-title" data-i18n-en="Processing steps">Arbeitsgänge</div>
       <div class="scale-choice" id="columnScaleOpsChoice">
-        <label class="scale-option"><input type="radio" name="columnScaleOps" value="1"> Ausgeklappt</label>
-        <label class="scale-option"><input type="radio" name="columnScaleOps" value="0"> Eingeklappt</label>
+        <label class="scale-option"><input type="radio" name="columnScaleOps" value="1"> <span data-i18n-en="Expanded">Ausgeklappt</span></label>
+        <label class="scale-option"><input type="radio" name="columnScaleOps" value="0"> <span data-i18n-en="Collapsed">Eingeklappt</span></label>
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnColumnScaleCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnColumnScaleApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnColumnScaleCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnColumnScaleApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3956,8 +3957,8 @@
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnRotationSettingsCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnRotationSettingsApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnRotationSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnRotationSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3970,7 +3971,7 @@
      Klick-Verdrahtung in app.js. -->
 <div class="paste-panel" id="gridSettingsPanel">
   <div class="paste-card">
-    <h3>Raster</h3>
+    <h3 data-i18n-en="Grid">Raster</h3>
     <p class="panel-hint" data-i18n-en="Shows or hides the floor grid (square boxes) under the part in the 3D area.">Blendet das Bodenraster (quadratische Kästchen) unter dem Bauteil im 3D-Bereich ein oder aus.</p>
     <div class="scale-group">
       <div class="scale-choice" id="gridVisibleChoice">
@@ -3979,8 +3980,8 @@
       </div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnGridSettingsCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnGridSettingsApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnGridSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnGridSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3993,26 +3994,26 @@
      (siehe .menu.open .menu-trigger weiter oben im Stylesheet). -->
 <div class="paste-panel" id="menuColorPanel">
   <div class="paste-card">
-    <h3>Buttonfarbe einstellen</h3>
-    <p class="panel-hint">Hervorhebungsfarbe der Menüpunkte <span class="k">Datei</span>, <span class="k">Bearbeiten</span> und <span class="k">Einstellungen</span>, solange deren Menü geöffnet ist - eine gewählte Farbe gilt einheitlich für alle drei. Standardmäßig Rot.</p>
+    <h3 data-i18n-en="Button color">Buttonfarbe einstellen</h3>
+    <p class="panel-hint" data-i18n-en-html="Highlight color of the menu items &lt;span class=&quot;k&quot;&gt;File&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;Edit&lt;/span&gt; and &lt;span class=&quot;k&quot;&gt;Settings&lt;/span&gt;, while their menu is open - a chosen color applies uniformly to all three. Red by default.">Hervorhebungsfarbe der Menüpunkte <span class="k">Datei</span>, <span class="k">Bearbeiten</span> und <span class="k">Einstellungen</span>, solange deren Menü geöffnet ist - eine gewählte Farbe gilt einheitlich für alle drei. Standardmäßig Rot.</p>
     <label class="color-field-row">
-      <span>Hintergrundfarbe</span>
+      <span data-i18n-en="Background color">Hintergrundfarbe</span>
       <span class="color-field-inputs">
         <input type="color" id="menuColorBgPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="menuColorBgHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ad1f2d">
       </span>
     </label>
     <label class="color-field-row">
-      <span>Schriftfarbe</span>
+      <span data-i18n-en="Font color">Schriftfarbe</span>
       <span class="color-field-inputs">
         <input type="color" id="menuColorInkPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
         <input type="text" id="menuColorInkHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#ffffff">
       </span>
     </label>
-    <p class="panel-hint" id="menuColorWarning" hidden>Schrift- und Hintergrundfarbe dürfen nicht identisch sein.</p>
+    <p class="panel-hint" id="menuColorWarning" hidden data-i18n-en="Font color and background color must not be identical.">Schrift- und Hintergrundfarbe dürfen nicht identisch sein.</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnMenuColorCancel" type="button">Abbrechen</button>
-      <button class="btn primary" id="btnMenuColorApply" type="button">Übernehmen</button>
+      <button class="btn ghost" id="btnMenuColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnMenuColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -4053,7 +4054,7 @@
   <button class="menu-item" id="ctxMeasureLength" type="button" data-i18n-en="Length measurement">Längenmessung</button>
   <button class="menu-item" id="ctxMeasureAngle" type="button" data-i18n-en="Angle measurement">Winkelmessung</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxCodeJump" type="button" data-i18n-en="Code jump">Codesprung</button>
+  <button class="menu-item" id="ctxCodeJump" type="button" data-i18n-en="Jump in code">Codesprung</button>
   <button class="menu-item" id="ctxWholeProgram" type="button" data-i18n-en="Complete Programcode">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
   <button class="menu-item" id="ctxLoadProgram" type="button" data-i18n-en="Load program">Programm laden</button>
@@ -6724,8 +6725,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 170;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:40 Uhr';
+  const APP_RELEASE_NUMBER = 173;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 16:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -9539,7 +9540,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const dupes = CNCSwap.findDuplicateMachineTypeNames(machineTypes);
     if (dupes.length) {
       machineTypeDupWarning.hidden = false;
-      machineTypeDupWarning.textContent = `Achtung: Maschinentyp-Name${dupes.length === 1 ? '' : 'n'} mehrfach vergeben (nicht eindeutig): ${dupes.join(', ')}`;
+      machineTypeDupWarning.textContent = currentLang === 'en'
+        ? `Warning: machine type name${dupes.length === 1 ? '' : 's'} used more than once (not unique): ${dupes.join(', ')}`
+        : `Achtung: Maschinentyp-Name${dupes.length === 1 ? '' : 'n'} mehrfach vergeben (nicht eindeutig): ${dupes.join(', ')}`;
     } else {
       machineTypeDupWarning.hidden = true;
       machineTypeDupWarning.textContent = '';
@@ -10373,10 +10376,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnShowAllDxfLayers.classList.toggle('some-hidden', allHidden);
     btnShowAllDxfLayers.setAttribute('aria-pressed', String(allHidden));
     if (allHidden) {
-      btnShowAllDxfLayersLabel.textContent = 'Alle Layer anzeigen';
+      btnShowAllDxfLayersLabel.textContent = T('Alle Layer anzeigen', 'Show all layers');
       btnShowAllDxfLayers.title = T('Alle Layer wieder in der 3D-Ansicht zeigen', 'Show all layers in the 3D view again');
     } else {
-      btnShowAllDxfLayersLabel.textContent = 'Alle Layer ausblenden';
+      btnShowAllDxfLayersLabel.textContent = T('Alle Layer ausblenden', 'Hide all layers');
       btnShowAllDxfLayers.title = T('Alle Layer in der 3D-Ansicht ausblenden', 'Hide all layers in the 3D view');
     }
   }
@@ -10976,7 +10979,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // 70. Runde, Punkt 18: Anzahl der Arbeitsgänge steht jetzt hier in Klammern hinter dem
     // Spaltentitel ("Arbeitsgänge (7)") statt wie bisher separat in der CNC-Programmcode-
     // Überschrift (siehe #opCount/renderTree() oben).
-    opsColTitleEl.textContent = 'Arbeitsgänge (' + ops.length + ')';
+    opsColTitleEl.textContent = T('Arbeitsgänge', 'Processing steps') + ' (' + ops.length + ')';
     ops.forEach(sec => {
       const item = document.createElement('button');
       item.type = 'button';
@@ -11124,10 +11127,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnShowAllOps.classList.toggle('some-hidden', allHidden);
     btnShowAllOps.setAttribute('aria-pressed', String(allHidden));
     if (allHidden) {
-      btnShowAllOpsLabel.textContent = 'Alle AG anzeigen';
+      btnShowAllOpsLabel.textContent = T('Alle AG anzeigen', 'Show all processings');
       btnShowAllOps.title = T('Alle Arbeitsgänge wieder in der 3D-Ansicht zeigen', 'Show all processing steps in the 3D view again');
     } else {
-      btnShowAllOpsLabel.textContent = 'Alle AG ausblenden';
+      btnShowAllOpsLabel.textContent = T('Alle AG ausblenden', 'Hide all processings');
       btnShowAllOps.title = T('Alle Arbeitsgänge in der 3D-Ansicht ausblenden', 'Hide all processing steps in the 3D view');
     }
   }
@@ -12594,8 +12597,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return `<div class="readout-row"><span class="k">${p}ΔX</span><span class="v">${fmt(Math.abs(dx))} mm</span></div>` +
       `<div class="readout-row"><span class="k">${p}ΔY</span><span class="v">${fmt(Math.abs(dy))} mm</span></div>` +
       `<div class="readout-row"><span class="k">${p}ΔZ</span><span class="v">${fmt(Math.abs(dz))} mm</span></div>` +
-      (labelPrefix ? '' : `<div class="readout-row"><span class="k">Ebene (XY)</span><span class="v">${fmt(planar)} mm</span></div>`) +
-      `<div class="readout-row"><span class="k">${p}Direkt (3D)</span><span class="v">${fmt(direct)} mm</span></div>`;
+      (labelPrefix ? '' : `<div class="readout-row"><span class="k">${T('Ebene (XY)', 'Plane (XY)')}</span><span class="v">${fmt(planar)} mm</span></div>`) +
+      `<div class="readout-row"><span class="k">${p}${T('Direkt (3D)', 'Direct (3D)')}</span><span class="v">${fmt(direct)} mm</span></div>`;
   }
 
   // Sichtbarkeit des gemeinsamen Info-Fensters (#infoPanel, umschließt #readout UND #measurePanel
@@ -12648,11 +12651,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         const counterAngle = 360 - angleDeg;
         measurePanel.innerHTML =
-          measureLegRows(vertex, p1, 'Schenkel 1') +
+          measureLegRows(vertex, p1, T('Schenkel 1', 'Leg 1')) +
           `<div class="readout-sep"></div>` +
-          measureLegRows(vertex, p3, 'Schenkel 2') +
+          measureLegRows(vertex, p3, T('Schenkel 2', 'Leg 2')) +
           `<div class="readout-sep"></div>` +
-          `<div class="readout-row"><span class="k">Winkel</span><span class="v">${fmt(angleDeg)}°</span></div>` +
+          `<div class="readout-row"><span class="k">${T('Winkel', 'Angle')}</span><span class="v">${fmt(angleDeg)}°</span></div>` +
           // Hinweiszeile "Erneut klicken für eine neue Winkelmessung." entfernt (70. Runde,
           // Sebastian, Punkt 1: "'Erneut klicken für eine neue Winkelmessung.' entfernen") - das
           // Ergebnis (Winkel/Gegenwinkel/Schenkel) bleibt unverändert stehen, bis tatsächlich neu
@@ -12660,7 +12663,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           // handleAngleMeasureClick weiter unten), nur der erklärende Text darunter entfällt -
           // exakt analog bereits bewusst NICHT für die Längenmessung direkt darunter (dortiger
           // Hinweis "Erneut klicken für eine neue Messung." war nicht Teil des Wunsches).
-          `<div class="readout-row"><span class="k">Gegenwinkel</span><span class="v">${fmt(counterAngle)}°</span></div>`;
+          `<div class="readout-row"><span class="k">${T('Gegenwinkel', 'Counter-angle')}</span><span class="v">${fmt(counterAngle)}°</span></div>`;
       }
       return;
     }
@@ -13986,16 +13989,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // ============================================================
   const fmt = n => (Math.round(n * 100) / 100).toFixed(2);
   const AXIS_META = {
-    A: { label: 'Kipp A', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
-    B: { label: 'Kipp B', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
-    C: { label: 'Dreh C', hint: 'Drehwinkel (typisch, maschinenabhängig)', hintEn: 'Rotation angle (typical, machine-dependent)' }
+    A: { label: 'Kipp A', labelEn: 'Tilt A', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
+    B: { label: 'Kipp B', labelEn: 'Tilt B', hint: 'Kippwinkel (typisch, maschinenabhängig)', hintEn: 'Tilt angle (typical, machine-dependent)' },
+    C: { label: 'Dreh C', labelEn: 'Rotate C', hint: 'Drehwinkel (typisch, maschinenabhängig)', hintEn: 'Rotation angle (typical, machine-dependent)' }
   };
 
   function updateReadout() {
     const p = points[scrubIdx];
     transportIdxEl.textContent = points.length ? `${scrubIdx + 1} / ${points.length}` : '0 / 0';
     if (!p) { readoutEl.innerHTML = ''; return; }
-    let rows = `<div class="readout-row"><span class="k">Zeile</span><span class="v">${p.lineIdx + 1}</span></div>`;
+    let rows = `<div class="readout-row"><span class="k">${T('Zeile', 'Row')}</span><span class="v">${p.lineIdx + 1}</span></div>`;
     rows += '<div class="readout-sep"></div>';
     rows += `<div class="readout-row"><span class="k">X</span><span class="v">${fmt(p.x)} mm</span></div>`;
     rows += `<div class="readout-row"><span class="k">Y</span><span class="v">${fmt(p.y)} mm</span></div>`;
@@ -14006,7 +14009,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       rows += '<div class="readout-sep"></div>';
       present.forEach(a => {
         const meta = AXIS_META[a];
-        rows += `<div class="readout-row rot" title="${T(meta.hint, meta.hintEn)}"><span class="k">${meta.label}</span><span class="v">${fmt(p[a.toLowerCase()])}°</span></div>`;
+        rows += `<div class="readout-row rot" title="${T(meta.hint, meta.hintEn)}"><span class="k">${T(meta.label, meta.labelEn)}</span><span class="v">${fmt(p[a.toLowerCase()])}°</span></div>`;
       });
     }
     // Werkzeugdaten (Benutzer: "Simulation liest Werkzeugdaten ... Ausgabe Werkzeug Radius*2 für
@@ -14015,14 +14018,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // direkt den Radius, nur diese Anzeige rechnet für die Ausgabe auf Durchmesser um.
     if (p.toolRadius != null && p.toolLength != null) {
       rows += '<div class="readout-sep"></div>';
-      rows += `<div class="readout-row" title="${T('Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)', 'Tool data read from the program (see the tool eye icon in the toolbar)')}"><span class="k">Werkzeug ⌀</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
+      rows += `<div class="readout-row" title="${T('Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)', 'Tool data read from the program (see the tool eye icon in the toolbar)')}"><span class="k">${T('Werkzeug ⌀', 'Tool ⌀')}</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
       // "BLADE" (41. Runde): stammt der Längenwert von einer "; BLADE .."-Zeile (Sägeblattstärke
       // statt Werkzeuglänge, siehe extractToolData() in parser.js), wird das auch hier statt
       // "Länge" als "Sägeblattstärke" beschriftet - der Zahlenwert selbst (p.toolLength) und die
       // Zylinder-Geometrie (drawTool()) bleiben unverändert, nur die Bezeichnung ändert sich.
-      rows += `<div class="readout-row"><span class="k">${p.toolIsBlade ? 'Sägeblattstärke' : 'Länge'}</span><span class="v">${fmt(p.toolLength)} mm</span></div>`;
+      rows += `<div class="readout-row"><span class="k">${p.toolIsBlade ? T('Sägeblattstärke', 'Blade thickness') : T('Länge', 'Length')}</span><span class="v">${fmt(p.toolLength)} mm</span></div>`;
     }
-    rows += `<span class="move-tag ${p.rapid ? '' : 'feed'}">${p.rapid ? 'Eilgang · G0' : 'Vorschub'}</span>`;
+    rows += `<span class="move-tag ${p.rapid ? '' : 'feed'}">${p.rapid ? T('Eilgang · G0', 'Rapid · G0') : T('Vorschub', 'Feed')}</span>`;
     readoutEl.innerHTML = rows;
   }
 
@@ -14159,7 +14162,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const sel = el('programJumpOpSelect');
     const group = el('programJumpOpGroup');
     const sep = el('programJumpOpSep');
-    sel.innerHTML = '<option value="" selected disabled>Springen zu…</option>';
+    sel.innerHTML = `<option value="" selected disabled>${T('Springen zu…', 'Jump to…')}</option>`;
     const ops = current ? current.sections.filter(s => s.type === 'arbeitsgang') : [];
     if (!ops.length) {
       group.hidden = true;
@@ -15060,6 +15063,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       }
       elem.innerHTML = lang === 'en' ? elem.getAttribute('data-i18n-en-html') : elem.dataset.i18nDeHtml;
     });
+    // [data-i18n-en-placeholder] (Release 173, Punkt 7/9): dieselbe Technik wie bei
+    // [data-i18n-en-title] oben, nur für das placeholder-Attribut von Eingabefeldern/Textareas
+    // statt für title.
+    document.querySelectorAll('[data-i18n-en-placeholder]').forEach(elem => {
+      if (elem.dataset.i18nDePlaceholder === undefined) {
+        elem.dataset.i18nDePlaceholder = elem.getAttribute('placeholder') || '';
+      }
+      elem.setAttribute('placeholder', lang === 'en' ? elem.getAttribute('data-i18n-en-placeholder') : elem.dataset.i18nDePlaceholder);
+    });
     document.documentElement.lang = lang === 'en' ? 'en' : 'de';
     // "Letzte Releasezeit" im "?"-Menü (Release 165) - anders als die übrigen [data-i18n-en]-
     // Elemente oben kein fester Alternativtext, sondern ein bei jedem Sprachwechsel neu berechneter
@@ -15756,6 +15768,38 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function formatIntDe(n) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
+  // "Länge" (Release 171, Sebastian, Punkt 1+2: "Die Länge der errechneten Fräsbahn in mm ausgeben
+  // und mit einem '/' trennen und dahinter dann direkt die Länge in m (Meter)." + "Wenn auf EN
+  // umgestellt ist zusätzlich noch in inch ... dahinter, jeweils mit '/' getrennt. Im Deutschen
+  // arbeitet niemand mit inch/Zoll, daher dort nur mm und m.") - mm und m immer, zusätzlich nur auf
+  // Englisch.
+  // Release 172 (Korrektur + Erweiterung): Sebastian: "Da Zoll und Inch dasselbe sind (richtig
+  // dumm von mir...) bitte 'Zoll' entfernen und gegen den 'ft' (feet) Wert austauschen." +
+  // "Erweiterung um Ausgabe von Yard-Wert (abgekürzt 'yd')." - die zuvor doppelt ausgegebene
+  // Zoll-Schreibweise (derselbe Zahlenwert wie "in", nur mit dem " -Zeichen) entfällt ersatzlos,
+  // stattdessen zwei neue, tatsächlich eigenständige Einheiten: 1 ft = 304,8 mm (12 in), 1 yd =
+  // 914,4 mm (3 ft/36 in) - feste, exakte Umrechnungsfaktoren, keine Rundung vor der Division.
+  // Finale Reihenfolge auf Englisch (Sebastians Beispiel): mm / m / in / ft / yd.
+  function formatMillLength(lengthMm, lang) {
+    const parts = [`${fmt(lengthMm)} mm`, `${fmt(lengthMm / 1000)} m`];
+    if (lang === 'en') {
+      parts.push(`${fmt(lengthMm / 25.4)} in`, `${fmt(lengthMm / 304.8)} ft`, `${fmt(lengthMm / 914.4)} yd`);
+    }
+    return parts.join(' / ');
+  }
+  // "Nettofräszeit" (Release 171, Sebastian, Punkt 3: "Bei der 'Nettofräszeit' Minuten und Std.
+  // darstellen. Stundendarstellung so z.B.: 0 Std. 15 Min 13 Sek. Im Englischen dann '0 hrs 15 min
+  // 13 sec', ms sind nicht nötig.") - löst die bisherige "X min (Y s)"-Anzeige ab. Millisekunden
+  // fallen ohnehin nie an, da der Aufrufer (siehe unten) weiterhin zuerst auf die nächsten 5
+  // Sekunden rundet (Punkt 4 aus Release 161, unverändert).
+  function formatMillDuration(totalSeconds, lang) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutesPart = Math.floor((totalSeconds % 3600) / 60);
+    const secondsPart = totalSeconds % 60;
+    return lang === 'en'
+      ? `${hours} hrs ${minutesPart} min ${secondsPart} sec`
+      : `${hours} Std. ${minutesPart} Min ${secondsPart} Sek.`;
+  }
   function runApproxMillingTime() {
     const result = computeApproxMillingTime();
     if (!result.ok) {
@@ -15765,12 +15809,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     millTimeEmptyState.hidden = true;
     millTimeResultState.hidden = false;
-    millTimeLengthValue.textContent = `${fmt(result.lengthMm)} mm`;
-    // "Genauigkeit bis auf 5 Sekunden reicht" (Punkt 4): Gesamtsekunden vor der Umrechnung in
-    // Minuten auf die nächsten 5 Sekunden runden.
+    millTimeLengthValue.textContent = formatMillLength(result.lengthMm, currentLang);
+    // "Genauigkeit bis auf 5 Sekunden reicht" (Punkt 4 aus Release 161): Gesamtsekunden vor der
+    // Umrechnung in Std./Min./Sek. auf die nächsten 5 Sekunden runden.
     const roundedSeconds = Math.round(result.timeSeconds / 5) * 5;
-    const minutes = roundedSeconds / 60;
-    millTimeMinutesValue.textContent = `${fmt(minutes)} min (${roundedSeconds} s)`;
+    millTimeMinutesValue.textContent = formatMillDuration(roundedSeconds, currentLang);
     millTimeFactorValue.textContent = `× ${fmt(result.feedScaleFactor)}`;
     if (result.segmentsWithoutFeed > 0) {
       millTimeNoFeedWarning.hidden = false;
@@ -16167,7 +16210,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const malformed = findMalformedKnowledgeBaseBlocks(knowledgeBaseEditArea.value);
     if (malformed.length) {
       knowledgeBaseWarning.hidden = false;
-      knowledgeBaseWarning.textContent = 'Achtung: ' + (malformed.length === 1 ? 'folgender Eintrag beginnt nicht mit "[" bzw. endet nicht mit "]" und würde sonst verworfen' : 'folgende Einträge beginnen nicht mit "[" bzw. enden nicht mit "]" und würden sonst verworfen') + ': ' + malformed.join(' / ');
+      knowledgeBaseWarning.textContent = currentLang === 'en'
+        ? 'Warning: ' + (malformed.length === 1 ? 'the following entry does not start with "[" or does not end with "]" and would otherwise be discarded' : 'the following entries do not start with "[" or do not end with "]" and would otherwise be discarded') + ': ' + malformed.join(' / ')
+        : 'Achtung: ' + (malformed.length === 1 ? 'folgender Eintrag beginnt nicht mit "[" bzw. endet nicht mit "]" und würde sonst verworfen' : 'folgende Einträge beginnen nicht mit "[" bzw. enden nicht mit "]" und würden sonst verworfen') + ': ' + malformed.join(' / ');
       return;
     }
     knowledgeBaseWarning.hidden = true;
@@ -16559,7 +16604,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // geöffneten Dialogs.
   function applyToolTypeUI() {
     const isSaege = toolTypeSelect.value === 'saege';
-    toolLengthLabelText.textContent = isSaege ? 'Sägeblattstärke' : 'Länge (L)';
+    toolLengthLabelText.textContent = isSaege ? T('Sägeblattstärke', 'Blade thickness') : T('Länge (L)', 'Length (L)');
     if (!toolDataActiveSec) return;
     const sec = toolDataActiveSec;
     const hasRealDataForSelectedType = sec.toolRadius != null && sec.toolLength != null && !!sec.toolIsBlade === isSaege;
@@ -17576,7 +17621,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Anzeige des seit dem Import angesammelten Gesamtfaktors aktuell.
   function updateDxfScaleHint() {
     if (dxfScaleCurrentHint) {
-      dxfScaleCurrentHint.textContent = 'Aktuelle Gesamtskalierung seit Import: ×' + String(dxfScale);
+      dxfScaleCurrentHint.textContent = T('Aktuelle Gesamtskalierung seit Import: ×', 'Current total scale since import: ×') + String(dxfScale);
     }
   }
   function openDxfScalePanel() {
