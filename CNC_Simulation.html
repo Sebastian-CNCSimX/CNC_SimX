@@ -2545,9 +2545,19 @@
                abgesetzt, siehe #btnShowPrivacy im Stylesheet oben) - öffnen ein natives,
                NICHT editierbares Textfenster innerhalb der exe (LegalTextDialog.cs, aufgerufen
                aus MainForm.WebView_WebMessageReceived()), kein Browser-Tab/keine externe Seite.
-               Verdrahtung: showLegalText() weiter unten in diesem Script. -->
-          <button class="menu-item" id="btnShowPrivacy" type="button" data-i18n-en="Privacy policy">Datenschutzerklärung</button>
-          <button class="menu-item" id="btnShowImprint" type="button" data-i18n-en="Imprint">Impressum</button>
+               Verdrahtung: showLegalText() weiter unten in diesem Script.
+               Release 166 (Sebastian: "Bitte die 'Datenschutzerklärung' und 'Impressum'
+               verstecken. Die Daten bzw. Texte dafür selbst sind noch in der HTML enthalten,
+               damit das später wieder reaktiviert werden kann bei Bedarf.") - beide Knöpfe seither
+               per [hidden] ausgeblendet (globale Regel "[hidden] { display: none !important; }"
+               im Stylesheet oben greift zuverlässig, unabhängig von .menu-item-Anzeige-Regeln).
+               BEWUSST NUR die beiden Knöpfe, NICHT LEGAL_TEXTS/showLegalText()/
+               btnShowPrivacy/btnShowImprint-Verdrahtung selbst - die bleiben unverändert
+               bestehen (genau wie von Sebastian verlangt: "Texte dafür ... noch in der HTML
+               enthalten"), sind nur ohne sichtbaren Menüpunkt nicht mehr erreichbar. Reaktivieren
+               später: einfach das hidden-Attribut an diesen beiden Knöpfen wieder entfernen. -->
+          <button class="menu-item" id="btnShowPrivacy" type="button" data-i18n-en="Privacy policy" hidden>Datenschutzerklärung</button>
+          <button class="menu-item" id="btnShowImprint" type="button" data-i18n-en="Imprint" hidden>Impressum</button>
         </div>
       </div>
     </div>
@@ -6588,8 +6598,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 164;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 09:00 Uhr';
+  const APP_RELEASE_NUMBER = 166;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 10:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -14571,7 +14581,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Nachrichtenformat mit dem C#-Host abgestimmt (siehe Bauanleitung_EXE_C-Sharp_WebView2.md):
       // { type: 'cncsim-install-update', html: '<komplette neue HTML als Text>' }.
       window.chrome.webview.postMessage({ type: 'cncsim-install-update', html: htmlText });
-      alert('Update wird installiert. Die Simulation lädt sich in Kürze automatisch neu.');
+      alert(T('Update wird installiert. Die Simulation lädt sich in Kürze automatisch neu.',
+        'Update is being installed. The simulation will reload automatically shortly.'));
       return;
     }
     const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
@@ -14583,14 +14594,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    alert('Release ' + latestRelease + ' wurde heruntergeladen.\n\nBitte die heruntergeladene Datei „CNC_Simulation.html" jetzt manuell an derselben Stelle wie bisher ablegen (vorhandene Datei ersetzen) - Ihre Einstellungen (Maschinentypen, Farben, Arbeitsgang-Namen usw.) bleiben dabei automatisch erhalten.');
+    alert(T(
+      'Release ' + latestRelease + ' wurde heruntergeladen.\n\nBitte die heruntergeladene Datei „CNC_Simulation.html" jetzt manuell an derselben Stelle wie bisher ablegen (vorhandene Datei ersetzen) - Ihre Einstellungen (Maschinentypen, Farben, Arbeitsgang-Namen usw.) bleiben dabei automatisch erhalten.',
+      'Release ' + latestRelease + ' has been downloaded.\n\nPlease place the downloaded file "CNC_Simulation.html" manually in the same location as before (replacing the existing file) - your settings (machine types, colors, processing step names, etc.) will be kept automatically.'
+    ));
   }
 
+  // Versionsprüfungs-Meldungen (Release 165, Sebastian: "Wenn ich in der EN Version nach einer
+  // neueren Version prüfe, kommt die Meldung auf deutsch ... Die Meldung ist doch auch möglich auf
+  // EN zu machen, oder?" + konkrete DE/EN-Formulierungen, inkl. des gewünschten
+  // englischsprachigen Zeitstempel-Formats) - alle alert()/confirm()-Texte dieser Funktion sowie
+  // die beiden throw new Error(...)-Meldungen (die über den catch-Block unten ebenfalls als alert()
+  // landen) laufen seither durch T(de, en), der eingebettete Zeitstempel aus dem Update-Manifest
+  // durch formatAppTimestampForLang() (siehe oben) - exakt dieselbe Umstellung wie bei
+  // installUpdate() oben.
   function checkForUpdate() {
     if (btnCheckForUpdate.disabled) return;
     const originalLabel = btnCheckForUpdate.textContent;
     btnCheckForUpdate.disabled = true;
-    btnCheckForUpdate.textContent = 'Prüfe…';
+    btnCheckForUpdate.textContent = T('Prüfe…', 'Checking…');
     fetch(UPDATE_MANIFEST_URL, { cache: 'no-store' })
       .then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -14598,14 +14620,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       })
       .then(manifest => {
         const latestRelease = Number(manifest && manifest.release);
-        if (!Number.isFinite(latestRelease)) throw new Error('Ungültige Versionsangabe im Update-Manifest.');
+        if (!Number.isFinite(latestRelease)) throw new Error(T('Ungültige Versionsangabe im Update-Manifest.', 'Invalid version number in the update manifest.'));
         if (latestRelease <= APP_RELEASE_NUMBER) {
-          alert('Sie verwenden bereits die aktuellste Version (Release ' + APP_RELEASE_NUMBER + ').');
+          alert(T('Sie verwenden bereits die aktuellste Version (Release ' + APP_RELEASE_NUMBER + ').',
+            'You are already using the latest version (Release ' + APP_RELEASE_NUMBER + ').'));
           return;
         }
-        if (!manifest.htmlUrl) throw new Error('Keine Download-Adresse im Update-Manifest.');
-        const timestampInfo = manifest.timestamp ? (' (' + manifest.timestamp + ')') : '';
-        const wantsUpdate = confirm('Eine neuere Version ist verfügbar: Release ' + latestRelease + timestampInfo + '.\n\nJetzt aktualisieren?');
+        if (!manifest.htmlUrl) throw new Error(T('Keine Download-Adresse im Update-Manifest.', 'No download address in the update manifest.'));
+        const timestampInfo = manifest.timestamp ? (' (' + formatAppTimestampForLang(manifest.timestamp, currentLang) + ')') : '';
+        const wantsUpdate = confirm(T(
+          'Eine neuere Version ist verfügbar: Release ' + latestRelease + timestampInfo + '.\n\nJetzt aktualisieren?',
+          'A newer version is available: Release ' + latestRelease + timestampInfo + '.\n\nUpdate now?'
+        ));
         if (!wantsUpdate) return;
         return fetch(manifest.htmlUrl, { cache: 'no-store' })
           .then(res => {
@@ -14615,7 +14641,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           .then(htmlText => installUpdate(htmlText, latestRelease));
       })
       .catch(err => {
-        alert('Versionsprüfung nicht möglich (keine Internetverbindung oder das Update-Verzeichnis ist gerade nicht erreichbar).\n\n' + err.message);
+        alert(T('Versionsprüfung nicht möglich (keine Internetverbindung oder das Update-Verzeichnis ist gerade nicht erreichbar).\n\n',
+          'Version check not possible (no internet connection, or the update directory is currently unreachable).\n\n') + err.message);
       })
       .finally(() => {
         btnCheckForUpdate.disabled = false;
@@ -14801,6 +14828,30 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // da ein reiner textContent-Tausch das <br> beim ersten Wechsel unwiderruflich zerstören würde
   // (exakt derselbe Fehler, der beim Bau von kaufseite/datenschutz.html schon einmal passiert ist
   // und dort auf innerHTML umgestellt wurde - hier von Anfang an richtig gemacht).
+  // Zeitstempel-Lokalisierung (Release 165, Sebastian: "Das müsste auch beim '?' rein unter 'Last
+  // Release'. Da auch das englischsprachige Format bitte" + konkretes Beispiel "08.10.2026, 07:45
+  // Uhr" -> "October 8, 2026, 7:45 a.m.") - formatiert einen im bestehenden
+  // "TT.MM.JJJJ, HH:MM Uhr"-Format geschriebenen Zeitstempel (APP_RELEASE_TIMESTAMP weiter oben
+  // sowie das "timestamp"-Feld im Update-Manifest latest.json, siehe checkForUpdate() weiter
+  // unten) für Englisch in Sebastians vorgegebenes ausgeschriebenes Format um: Monatsname
+  // ausgeschrieben, Tag ohne führende Null, 12-Stunden-Anzeige, kleingeschriebenes "a.m."/"p.m."
+  // mit Punkten - bewusst NICHT über Intl.DateTimeFormat erzeugt, dessen "AM"/"PM"-Schreibweise
+  // von der Vorgabe abweicht. Bei unbekanntem/fremdem Format (z.B. ein künftig anders aufgebautes
+  // Manifest) wird der Text unverändert zurückgegeben statt mit einem Fehler abzubrechen -
+  // derselbe defensive Rückfall wie bei formatFileDateTime() (siehe "Ungefähre Fräszeit") bei
+  // fehlendem Datum. Für Deutsch (lang !== 'en') unverändert, da dort bereits das Zielformat ist.
+  const EN_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function formatAppTimestampForLang(text, lang) {
+    if (lang !== 'en' || !text) return text;
+    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4}),\s*(\d{1,2}):(\d{2})\s*Uhr\s*$/.exec(String(text).trim());
+    if (!m) return text;
+    const day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = m[3], hour24 = parseInt(m[4], 10), minute = m[5];
+    if (month < 1 || month > 12) return text;
+    const suffix = hour24 < 12 ? 'a.m.' : 'p.m.';
+    let hour12 = hour24 % 12;
+    if (hour12 === 0) hour12 = 12;
+    return EN_MONTH_NAMES[month - 1] + ' ' + day + ', ' + year + ', ' + hour12 + ':' + minute + ' ' + suffix;
+  }
   let currentLang = 'de';
   function T(de, en) { return currentLang === 'en' ? en : de; }
   function applyLanguage(lang) {
@@ -14824,6 +14875,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
       elem.innerHTML = lang === 'en' ? elem.getAttribute('data-i18n-en-html') : elem.dataset.i18nDeHtml;
     });
     document.documentElement.lang = lang === 'en' ? 'en' : 'de';
+    // "Letzte Releasezeit" im "?"-Menü (Release 165) - anders als die übrigen [data-i18n-en]-
+    // Elemente oben kein fester Alternativtext, sondern ein bei jedem Sprachwechsel neu berechneter
+    // Zeitstempel (siehe formatAppTimestampForLang() oben) - deshalb hier explizit statt über das
+    // generische [data-i18n-en]-Muster.
+    el('infoReleaseTimeValue').textContent = formatAppTimestampForLang(APP_RELEASE_TIMESTAMP, currentLang);
     langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
     try { localStorage.setItem('cncsimx_lang', lang); } catch (e) { /* rein defensiv, siehe 5.8 der Doku */ }
     // WICHTIG, ehrlich benannt: Zahlreiche Tooltips/Hinweiszeilen werden nicht statisch im Markup
