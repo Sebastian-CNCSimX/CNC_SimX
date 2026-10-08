@@ -2189,11 +2189,15 @@
                als...'") - selbe generische ".menu-submenu"-Technik wie bei "Bearbeiten" (60. Runde,
                siehe #submenuCnc weiter unten). IDs #btnLoadFile/#btnSaveAsProgram UND ihre gesamte
                dahinterliegende Funktion bleiben unverändert - nur Label (gekürzt) und Position
-               (jetzt im Untermenü) ändern sich. -->
+               (jetzt im Untermenü) ändern sich.
+               Release 169 (Sebastian, Punkte 1+2+5): "Programm laden" -> "CNC-Programm laden",
+               "Programm speichern als..." -> "CNC-Programm speichern als...", "Neue
+               CNC-Programmliste" -> "CNC-Programmliste neu" - reine Beschriftungsänderungen, IDs
+               UND die komplette dahinterliegende Logik in app.js bleiben unverändert. -->
           <div class="menu-submenu" id="submenuFileCncProgram">
             <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="CNC-Program">CNC-Programm <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
-              <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load program">Programm laden</button>
+              <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load CNC-Program">CNC-Programm laden</button>
               <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Programm laden wird wieder nur
                    auf 1 limitiert (wie zuvor), an allen Stellen wo man ein CNC Programm laden kann.
                    Dafür neuer Menüpunkt unter 'Datei' -> Neue CNC-Programmliste. Dort können dann
@@ -2201,9 +2205,23 @@
                    funktional das Gegenstück dazu: öffnet den eigenen Mehrfachauswahl-Dialog
                    #fileInputList (siehe dort sowie startNewProgramList() in app.js) und ersetzt
                    eine evtl. bestehende Programmliste komplett durch eine frische, aus der
-                   getroffenen Auswahl aufgebaute Liste. -->
-              <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl" data-i18n-en="New CNC-Program list" data-i18n-en-title="Opens a file dialog with multi-selection (up to 10 programs) and replaces the current CNC program list with the selection made">Neue CNC-Programmliste</button>
-              <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter" data-i18n-en="Save program as…" data-i18n-en-title="Downloads the currently loaded (possibly edited) program text as a file">Programm speichern als…</button>
+                   getroffenen Auswahl aufgebaute Liste. Release 169, Punkt 5: Beschriftung zu
+                   "CNC-Programmliste neu" geändert (EN-Fassung "New CNC-Program list" bewusst
+                   unverändert als natürlicher englischer Ausdruck belassen, keine wortwörtliche
+                   Übersetzung der neuen deutschen Wortstellung). -->
+              <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl" data-i18n-en="New CNC-Program list" data-i18n-en-title="Opens a file dialog with multi-selection (up to 10 programs) and replaces the current CNC program list with the selection made">CNC-Programmliste neu</button>
+              <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter" data-i18n-en="Save CNC-Program as…" data-i18n-en-title="Downloads the currently loaded (possibly edited) program text as a file">CNC-Programm speichern als…</button>
+              <!-- "CNC-Programm löschen" (Release 169, Sebastian, Punkt 3: NEU) - dritter,
+                   gleichwertiger Auslöser für dieselbe, unveränderte clearProgram()-Funktion wie
+                   der Menüpunkt "CNC-Code löschen" im "Bearbeiten"->"CNC"-Menü (#btnClearProgram)
+                   und das Symbolleisten-Icon "✕ CNC" (#btnClearProgramIcon) - nach demselben
+                   Zwillings-Muster wie z. B. "DXF verschieben" (mehrere gleichwertige Auslöser für
+                   dieselbe Funktion). Bewusst mit der Beschriftung "CNC-Programm löschen" (nicht
+                   "CNC-Code löschen" wie beim Bearbeiten-Menü-Pendant) - exakt wie von Sebastian
+                   vorgegeben. Deaktiviert ohne geladenes Programm, disabled-/title-Zustand wird
+                   zusammen mit #btnClearProgram/#btnClearProgramIcon gepflegt, siehe clearProgram()/
+                   displayCurrentProgram() in app.js. -->
+              <button class="menu-item" id="btnClearProgramFileMenu" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)" data-i18n-en="Delete CNC-Program" data-i18n-en-title="Removes the loaded CNC program again (machine type configuration is kept)">CNC-Programm löschen</button>
             </div>
           </div>
           <!-- DXF-Import (Sebastian: "Das DXF soll separat über Datei -> 'DXF Import' eingefügt
@@ -2223,6 +2241,13 @@
             <button class="menu-item submenu-trigger" id="submenuFileDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="DXF">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileDxfDropdown" hidden>
               <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
+              <!-- "DXF löschen" (Release 169, Sebastian, Punkt 4: NEU) - dritter, gleichwertiger
+                   Auslöser für dieselbe, unveränderte clearDxf()-Funktion wie der Menüpunkt
+                   "DXF löschen" im "Bearbeiten"->"DXF"-Menü (#btnDxfDeleteMenu) und das
+                   Symbolleisten-Icon "✕ DXF" (#btnDxfDeleteIcon) - nach demselben Zwillings-Muster.
+                   Deaktiviert ohne importiertes DXF, disabled-/title-Zustand wird zusammen mit den
+                   beiden anderen in updateDxfUI() gepflegt. -->
+              <button class="menu-item" id="btnDxfDeleteFileMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Delete DXF" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported">DXF löschen</button>
             </div>
           </div>
           <!-- "Simulation speichern" (NEU, 23.09.2026, Sebastian: "Datei -> Simulation speichern ->
@@ -6680,8 +6705,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 168;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 12:15 Uhr';
+  const APP_RELEASE_NUMBER = 169;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8668,6 +8693,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // zu "DXF Verschieben" direkt darüber, ruft weiterhin dieselbe, unveränderte clearDxf()-Funktion
   // weiter unten auf; saß zuvor als eigener Knopf (früher btnDxfDelete) in der Status-Gruppe.
   const btnDxfDeleteMenu = el('btnDxfDeleteMenu');
+  // "DXF löschen" im "Datei"->"DXF"-Menü (Release 169, Sebastian, Punkt 4, #btnDxfDeleteFileMenu) -
+  // dritter, gleichwertiger Auslöser für dieselbe clearDxf()-Funktion wie #btnDxfDeleteMenu/
+  // #btnDxfDeleteIcon.
+  const btnDxfDeleteFileMenu = el('btnDxfDeleteFileMenu');
   const dxfMovePanel = el('dxfMovePanel');
   const dxfOffsetXInput = el('dxfOffsetXInput');
   const dxfOffsetYInput = el('dxfOffsetYInput');
@@ -8739,6 +8768,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const btnTopView = el('btnTopView');
   const btnClearProgram = el('btnClearProgram');
   const btnClearProgramIcon = el('btnClearProgramIcon'); // 70. Runde, Punkt 9, siehe template_top.html
+  // "CNC-Programm löschen" im "Datei"->"CNC-Programm"-Menü (Release 169, Sebastian, Punkt 3,
+  // #btnClearProgramFileMenu) - dritter, gleichwertiger Auslöser für dieselbe clearProgram()-
+  // Funktion wie #btnClearProgram/#btnClearProgramIcon.
+  const btnClearProgramFileMenu = el('btnClearProgramFileMenu');
   // "Mehrere Programme in Programmliste laden" (Release 113) - siehe Kommentar bei
   // #programListBar/#btnClearProgramList in template_top.html sowie programList/
   // renderProgramListUI() weiter unten im Abschnitt "Datei laden" für den vollen Hintergrund.
@@ -9625,6 +9658,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     hiddenOpsVersion++;
     btnClearProgram.disabled = false;
     btnClearProgramIcon.disabled = false;
+    btnClearProgramFileMenu.disabled = false;
     // Vorläufig beide aktivieren - applyProgCollapseStage() (über renderTree() ->
     // autoFitColumnWidths() am Ende von displayCurrentProgram() unten) verfeinert das gleich
     // darauf anhand der tatsächlichen Stufe (0 nach jedem Laden: Aufklappen dann wieder
@@ -10023,6 +10057,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     machineBadge.classList.remove('known');
     btnClearProgram.disabled = true;
     btnClearProgramIcon.disabled = true;
+    btnClearProgramFileMenu.disabled = true;
     btnProgExpand.disabled = true;
     btnProgCollapse.disabled = true;
     btnEditProgram.disabled = true;
@@ -10111,6 +10146,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // "DXF löschen"-Icon (60. Runde) - folgt exakt derselben disabled-/title-Logik wie
     // #btnDxfDeleteMenu (der gleichwertige Menüpunkt), siehe dort.
     btnDxfDeleteIcon.disabled = !dxfGeometry;
+    // "DXF löschen" im "Datei"->"DXF"-Menü (Release 169, Punkt 4) - derselbe dritte,
+    // gleichwertige Auslöser, folgt derselben disabled-/title-Logik.
+    btnDxfDeleteFileMenu.disabled = !dxfGeometry;
     // Spiegeln/Drehen/Bauteilstärke (67. Runde) - dieselbe disabled-Logik wie die übrigen
     // DXF-Knöpfe; die beiden Spiegeln-Umschalter zeigen ihren aktuellen Zustand zusätzlich per
     // ".active" (dieselbe Klasse/Optik wie z. B. die aktive Geschwindigkeitsstufe).
@@ -10161,6 +10199,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const deleteTitle = T('Importiertes DXF wieder entfernen', 'Remove the imported DXF again') + ' — ' + title;
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
+      btnDxfDeleteFileMenu.title = deleteTitle;
     } else {
       dxfFilenameLabel.textContent = '';
       dxfFilenameLabel.title = '';
@@ -10173,6 +10212,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const deleteTitle = T('Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde', 'Removes the imported DXF again - only available once a DXF has been imported');
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
+      btnDxfDeleteFileMenu.title = deleteTitle;
     }
     updateDxfFilenameSep();
     updateSidebarHeader();
@@ -14459,6 +14499,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // wie der bestehende Menüpunkt "CNC-Programm löschen" (#btnClearProgram), nach demselben
   // Muster wie z. B. "DXF löschen" (#btnDxfDeleteIcon) neben dem gleichnamigen Menüpunkt.
   btnClearProgramIcon.addEventListener('click', clearProgram);
+  // "CNC-Programm löschen" im Menü "Datei -> CNC" (169. Runde, Sebastian, Punkt 3) - dritter
+  // gleichwertiger Trigger für dieselbe, unveränderte clearProgram()-Funktion wie #btnClearProgram
+  // (Bearbeiten -> CNC, dort "CNC-Code löschen") und #btnClearProgramIcon (Symbolleiste).
+  btnClearProgramFileMenu.addEventListener('click', clearProgram);
 
   // Maschinentyp-Dropdown-Verdrahtung (31. Runde, ersetzt "Austauschdatei laden/bearbeiten/
   // entfernen" komplett - siehe populateMachineTypeSelect/checkMachineTypeDuplicates/
@@ -17322,6 +17366,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // "DXF löschen"-Icon (60. Runde) - ruft dieselbe, unveränderte clearDxf()-Funktion auf wie der
   // gleichwertige Menüpunkt #btnDxfDeleteMenu direkt oberhalb.
   btnDxfDeleteIcon.addEventListener('click', clearDxf);
+  // "DXF löschen" im Menü "Datei -> DXF" (169. Runde, Sebastian, Punkt 4) - dritter gleichwertiger
+  // Trigger für dieselbe, unveränderte clearDxf()-Funktion wie #btnDxfDeleteMenu (Bearbeiten -> DXF)
+  // und #btnDxfDeleteIcon (Symbolleiste).
+  btnDxfDeleteFileMenu.addEventListener('click', clearDxf);
 
   // "DXF soll auch ausgeblendet werden können" - dieselbe Auge-Technik wie btnToggleTool.
   // Release 167 (Sebastian, Punkt 6): gemeinsame Funktion statt verdoppelter Logik, damit der
