@@ -2543,11 +2543,21 @@
       <div class="menu" id="menuMillTime">
         <button class="menu-trigger" id="menuMillTimeTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Info">Infos</button>
         <div class="menu-dropdown" id="menuMillTimeDropdown" hidden>
-          <!-- Reihenfolge (Release 167, Sebastian, Punkt 3): "Ungefähre Fräszeit" vor
-               "Vorschubskalierung" (bis zu dieser Runde umgekehrt) - IDs/Funktion unverändert,
-               reine Umsortierung. Die vier Programminformations-Zeilen darunter (Release 163)
-               bleiben unverändert am Ende des Dropdowns stehen. -->
-          <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die ungefähre Nettofräszeit anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximate milling time" data-i18n-en-title="Calculates the approximate net milling time now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Ungefähre Fräszeit</button>
+          <!-- Reihenfolge (Release 167, Sebastian, Punkt 3): "Ungefähre Fräszeit" (seit Release
+               174 "Fräszeitberechnung", siehe direkt unten) vor "Vorschubskalierung" (bis zu
+               dieser Runde umgekehrt) - IDs/Funktion unverändert, reine Umsortierung. Die vier
+               Programminformations-Zeilen darunter (Release 163) bleiben unverändert am Ende des
+               Dropdowns stehen.
+               Release 174 (Sebastian, Punkt 1, nach der Erläuterung zur "Ungefähre
+               Fräszeit"-Berechnung für ATABPLATTE.mpf): reine Beschriftungsänderung - "Ungefähre
+               Fräszeit"/"Approximate milling time" wird zu "Fräszeitberechnung"/"Approximated
+               milling time", ID (btnMillTime) und Funktion bewusst unverändert, exakt nach
+               demselben Muster wie die "Infos"->"Hilfe"-Umbenennung in Release 106 (siehe
+               #menuInfos weiter unten). Grund für die Umbenennung: seit Release 174 berechnet
+               dieser Menüpunkt/der dahinter liegende Dialog nicht mehr nur die "Nettofräszeit",
+               sondern zusätzlich die "Fräszeit mit G0" (siehe #millTimePanel weiter unten) - der
+               neue Name deckt beide Ergebnisse ab, ohne eines davon im Namen vorwegzunehmen. -->
+          <button class="menu-item" id="btnMillTime" type="button" title="Berechnet jetzt die Fräszeitberechnung (Nettofräszeit sowie Fräszeit inkl. G0-Eilgang) anhand des aktuell geladenen, maschinentyp-übersetzten Programms - wird bei jedem Klick neu berechnet, nichts wird zwischengespeichert" data-i18n-en="Approximated milling time" data-i18n-en-title="Calculates the milling time calculation (net milling time as well as milling time incl. G0 rapid) now, from the currently loaded, machine-type-translated program - recalculated fresh on every click, nothing is cached">Fräszeitberechnung</button>
           <button class="menu-item" id="btnFeedScaling" type="button" title="Faktor festlegen, mit dem der im CNC-Programm gefundene Vorschub (F) vor der Fräszeit-Berechnung multipliziert wird (z.B. zur Korrektur, wenn F in m/min statt mm/min ausgegeben wird)" data-i18n-en="Feed scaling" data-i18n-en-title="Set a factor that the feed rate (F) found in the CNC program is multiplied by before the milling time is calculated (e.g. to correct for F being output in m/min instead of mm/min)">Vorschubskalierung</button>
           <!-- Programminformationen (Release 163, Sebastian, nach Richtigstellung: "Die Infos
                sollten nicht ins Menü 'Ungefähre Fräszeit', sondern im Menüpunkt 'Infos' unter dem
@@ -3696,7 +3706,10 @@
 <div class="paste-panel" id="feedScalingPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Feed scaling">Vorschubskalierung</h3>
-    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the approximate milling time (see 'Approximate milling time') is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der ungefähren Fräszeit (siehe „Ungefähre Fräszeit") mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
+    <!-- Release 174: Querverweis-Text aktualisiert ("Ungefähre Fräszeit" -> "Fräszeitberechnung",
+         siehe Umbenennung bei #btnMillTime weiter oben) - reine Nachführung des umbenannten
+         Menüpunkts, Faktor/Funktion selbst unverändert. -->
+    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time (see 'Approximated milling time') is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit (siehe „Fräszeitberechnung") mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
     <label class="color-field-row font-color-row">
       <span class="font-color-row-label">
         <span data-i18n-en="Factor">Faktor</span>
@@ -3735,10 +3748,48 @@
      Berechnungsdialog öffnen zu müssen), nach exakt demselben Vorbild wie Version/Letzte
      Releasezeit im "?"-Menü (#menuInfoDropdown weiter unten), die ebenfalls direkt im Dropdown und
      nicht in einem eigenen Dialog stehen. Die vier Zeilen samt Trennstrich sitzen seither dort,
-     siehe #menuMillTimeDropdown weiter oben im Markup. -->
+     siehe #menuMillTimeDropdown weiter oben im Markup.
+
+     Release 174 (Sebastian, eigene Idee direkt im Anschluss an die Erläuterung zur "Ungefähre
+     Fräszeit"-Berechnung für ein konkretes, hochgeladenes Programm "ATABPLATTE.mpf" - dort hatte
+     sich u.a. gezeigt, dass G0-Eilgang in diesem einen Programm ca. ein Drittel der gesamten
+     Verfahrstrecke ausmacht, aber bewusst nicht mitgezählt wird, siehe Punkt 5 unten):
+     1. Panel-Titel "Nettofräszeit"/"Net milling time" -> "Fräszeitberechnung"/"Approximated
+        milling time" (wie der Menüpunkt selbst, siehe #btnMillTime weiter oben) - reine
+        Beschriftungsänderung des Panel-Titels, die einzelne Ergebniszeile "Nettofräszeit"
+        weiter unten BLEIBT bewusst unverändert benannt (Sebastian, Punkt 3: "Es gibt einmal (die
+        bisherige Berechnung) die 'Nettofräszeit'"), da sie weiterhin exakt dieselbe,
+        unveränderte Berechnung wie bisher bezeichnet.
+     2. Neue Ergebniszeile "Fräszeit mit G0"/"Milling time with G0" direkt darunter (#millTimeWithG0Value):
+        dieselbe "Nettofräszeit"-Zeitberechnung PLUS eine zusätzliche Zeitschätzung für die
+        G0-Eilgang-Streckenlänge (computeApproxMillingTime().rapidLengthMm, siehe dort) - da G0
+        im Programm selbst nie einen eigenen Vorschubwert trägt, dafür mit dem direkt darunter neu
+        eingebbaren "G0-Vorschub" (#millTimeG0FeedInput, Standard 40.000 mm/min, Punkt 3).
+     3. "G0-Vorschub"-Eingabefeld (#millTimeG0FeedInput, Punkt 3+5) - exakt nach demselben Muster
+        wie #feedScalingFactorInput (freier Zahlenwert, deutsches Komma erlaubt, > 0 validiert,
+        sonst #millTimeG0FeedWarning). WICHTIG (Punkt 5, wörtlich: "Wenn der Vorschub über die
+        Skalierung skaliert wird, wird der Vorschub auch im Eingabefenster vorskaliert ... Der
+        Vorschub wird im CNC Programm mal [Skalierungsfaktor] berechnet, aber in dem G0 Fenster
+        soll er dann durch [Skalierungsfaktor] geteilt werden, damit das wieder passt"): dieses
+        Feld zeigt NICHT den intern als "echten", skalierungsunabhängigen mm/min-Wert gespeicherten
+        g0FeedRate direkt an, sondern g0FeedRate/feedScaleFactor - dieselbe Größenordnung, in der
+        auch die programmierten F-Werte im (noch unskalierten) CNC-Code selbst erscheinen. Beim
+        "Neu berechnen" wird der eingegebene (vorskalierte) Wert umgekehrt wieder MIT
+        feedScaleFactor multipliziert, bevor er als g0FeedRate übernommen/persistiert und für die
+        Zeitberechnung verwendet wird - siehe runApproxMillingTime() in app.js für die Umsetzung.
+     4. Bewusst KEIN eigener "Übernehmen"-Knopf für das G0-Vorschub-Feld: anders als beim separaten
+        "Vorschubskalierung"-Panel (#feedScalingPanel) gibt es hier keinen zweiten Dialog - das
+        Feld sitzt direkt in DIESEM Panel, "Neu berechnen" (#btnMillTimeRecalc, unverändert) liest
+        und übernimmt es zusammen mit der restlichen Neuberechnung in einem Schritt.
+     5. Persistenz (g0FeedRate/LS_KEY_G0_FEED, siehe app.js) exakt nach demselben
+        "self-persisting Setter"-Muster wie feedScaleFactor/LS_KEY_FEED_SCALE - bewusst NICHT in
+        KNOWN_EXPORTED_LS_KEYS eingetragen (siehe dortigen Kommentar/5.9): der generische
+        "otherSettings"-Sicherheitsnetz-Mechanismus (collectOtherCncsimSettings()) deckt den
+        Einstellungsexport/-import dafür bereits automatisch ab, ohne dass diese neue Einstellung
+        dort zusätzlich verdrahtet werden müsste. -->
 <div class="paste-panel" id="millTimePanel">
   <div class="paste-card">
-    <h3 data-i18n-en="Net milling time">Nettofräszeit</h3>
+    <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
     <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
     <div id="millTimeResultState">
       <div class="menu-info-row">
@@ -3750,15 +3801,38 @@
         <span class="menu-info-value" id="millTimeMinutesValue">–</span>
       </div>
       <div class="menu-info-row">
+        <span class="menu-info-label" data-i18n-en="Milling time with G0">Fräszeit mit G0</span>
+        <span class="menu-info-value" id="millTimeWithG0Value">–</span>
+      </div>
+      <div class="menu-info-row">
         <span class="menu-info-label" data-i18n-en="Feed scaling factor applied">Angewendete Vorschubskalierung</span>
         <span class="menu-info-value" id="millTimeFactorValue">–</span>
       </div>
+      <!-- "G0-Vorschub" (Release 174, Punkt 3+5) - exakt dasselbe Zahlenfeld-Muster wie
+           #feedScalingFactorInput direkt oberhalb im Markup (label.color-field-row statt
+           .menu-info-row, da hier - anders als bei den reinen Anzeigezeilen oben - eine Eingabe
+           statt eines berechneten Werts steht). Wert wird von app.js beim Öffnen des Panels
+           (btnMillTime-Klick) auf g0FeedRate/feedScaleFactor vorbefüllt, siehe dortiger
+           Kommentar. -->
+      <label class="color-field-row font-color-row">
+        <span class="font-color-row-label">
+          <span data-i18n-en="G0 feed rate">G0-Vorschub</span>
+        </span>
+        <span class="color-field-inputs">
+          <input type="text" id="millTimeG0FeedInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </span>
+      </label>
+      <p class="panel-hint" id="millTimeG0FeedWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 40000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 40000).</p>
       <p class="panel-hint" id="millTimeNoFeedWarning" data-i18n-en="" hidden></p>
     </div>
-    <!-- Hinweistext (Punkt 5) - wörtlich wie vorgegeben, IMMER sichtbar, wenn das Panel offen ist
-         (nicht nur beim allerersten Auslösen), da er für die Einordnung JEDES berechneten Werts
-         gilt. -->
+    <!-- Hinweistext (Punkt 5 des ursprünglichen Fräszeit-Konzepts) - wörtlich wie vorgegeben,
+         IMMER sichtbar, wenn das Panel offen ist (nicht nur beim allerersten Auslösen), da er für
+         die Einordnung der "Nettofräszeit"-Zeile gilt. -->
     <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
+    <!-- Zweiter Hinweistext (NEU Release 174) - analog zum obigen, aber für die neue "Fräszeit
+         mit G0"-Zeile: ordnet ein, dass der G0-Anteil nur eine Schätzung mit einem frei
+         eingegebenen (nicht programmierten) Vorschub ist. -->
+    <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnMillTimeClose" type="button" data-i18n-en="Close">Schließen</button>
       <button class="btn primary" id="btnMillTimeRecalc" type="button" data-i18n-en="Recalculate">Neu berechnen</button>
@@ -6725,8 +6799,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 173;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 16:10 Uhr';
+  const APP_RELEASE_NUMBER = 174;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 12:33 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7554,6 +7628,47 @@ CORNERRADIUS=GFIL r=
     feedScaleFactor = normalizeFeedScaleFactor(n, 1);
     persistFeedScaleFactor(feedScaleFactor);
     return feedScaleFactor;
+  }
+
+  // "G0-Vorschub" ("Infos" -> "Fräszeitberechnung" -> Eingabefeld "G0-Vorschub", Release 174,
+  // Sebastian, eigene Idee nach der Erläuterung zur "Ungefähre Fräszeit"-Berechnung für
+  // ATABPLATTE.mpf, Punkt 3+5) - genau wie feedScaleFactor direkt oberhalb ein einzelner,
+  // persistierter Wert (Standard 40.000 mm/min), diesmal für den Vorschub, mit dem
+  // runApproxMillingTime() (siehe dort) die bislang komplett ausgeschlossene G0-Eilgang-Strecke
+  // (computeApproxMillingTime().rapidLengthMm) zur neuen "Fräszeit mit G0"-Zeile hinzurechnet, da
+  // G0 im Programm selbst nie einen eigenen Vorschubwert trägt. g0FeedRate speichert dabei IMMER
+  // den "echten", von der Vorschubskalierung UNABHÄNGIGEN mm/min-Wert (dieselbe Größenordnung wie
+  // ein bereits mit feedScaleFactor multiplizierter, programmierter F-Wert) - das Eingabefeld
+  // selbst zeigt und liest dagegen den damit noch zu multiplizierenden, "vorskalierten" Wert
+  // (g0FeedRate/feedScaleFactor, Punkt 5: "damit das wieder passt"), siehe runApproxMillingTime().
+  // Bewusst NICHT in KNOWN_EXPORTED_LS_KEYS eingetragen (siehe dortiger Kommentar/5.9) - das
+  // generische "otherSettings"-Sicherheitsnetz (collectOtherCncsimSettings()) deckt Export/Import
+  // dieses neuen Schlüssels bereits automatisch ab.
+  const LS_KEY_G0_FEED = 'cncsim.g0FeedRate';
+  const DEFAULT_G0_FEED_RATE = 40000;
+  function loadPersistedG0FeedRate() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_G0_FEED);
+      const n = raw !== null ? parseFloat(raw) : NaN;
+      return isFinite(n) && n > 0 ? n : null;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistG0FeedRate(n) {
+    try { window.localStorage.setItem(LS_KEY_G0_FEED, String(n)); } catch (e) { /* s.o. */ }
+  }
+  let g0FeedRate = DEFAULT_G0_FEED_RATE;
+  // Übernimmt einen bereits mit feedScaleFactor multiplizierten ("echten") mm/min-Wert - der
+  // Aufrufer (runApproxMillingTime()) ist dafür verantwortlich, den vorskalierten Eingabefeld-Wert
+  // vorher selbst mit feedScaleFactor zu multiplizieren (Punkt 5, s.o.). Validierung
+  // (> 0, deutsches Komma) bewusst über dieselbe, bereits bestehende normalizeFeedScaleFactor()
+  // wie bei der Vorschubskalierung selbst - beide Felder sind strukturell identisch ("ein
+  // einzelner, positiver Vorschub-/Faktorwert"), eine zweite, inhaltlich identische
+  // Normalisierungsfunktion wäre hier nur unnötige Code-Verdopplung.
+  function applyG0FeedRate(n) {
+    g0FeedRate = normalizeFeedScaleFactor(n, DEFAULT_G0_FEED_RATE);
+    persistG0FeedRate(g0FeedRate);
+    return g0FeedRate;
   }
 
   // "Werkzeuge" ("Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge", Release 158, Sebastian:
@@ -11578,6 +11693,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let lengthMm = 0;
     let timeSeconds = 0;
     let segmentsWithoutFeed = 0;
+    // "Fräszeit mit G0" (Release 174, Sebastian, eigene Idee nach der Erläuterung zur
+    // "Ungefähre Fräszeit"-Berechnung für ATABPLATTE.mpf): die bislang (Punkt 5 des
+    // ursprünglichen Konzepts) komplett verworfene G0-Eilgang-Streckenlänge wird hier zusätzlich
+    // mitgezählt - weiterhin NICHT in `lengthMm`/`timeSeconds` selbst (die bleiben exakt die
+    // bisherige "Nettofräszeit", unverändert), sondern in einem eigenen, separaten Feld
+    // `rapidLengthMm`. runApproxMillingTime() (siehe dort) verwendet dieses Feld, um daraus mit
+    // dem frei eingebbaren "G0-Vorschub" (#millTimeG0FeedInput, da G0 im Programm selbst nie
+    // einen eigenen Vorschubwert trägt) eine zusätzliche "Fräszeit mit G0"-Zeit zu schätzen.
+    let rapidLengthMm = 0;
     ptsPerChunk.forEach(pts => {
       if (!pts.length) return;
       // Chunk-Startpunkt (Bugfix, beim Testen dieser Funktion anhand von Sebastians eigenen
@@ -11593,8 +11717,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const extended = [{ x: 0, y: 0, z: 0 }, ...pts];
       for (let i = 1; i < extended.length; i++) {
         const a = extended[i - 1], b = extended[i];
-        if (b.rapid) continue; // G0-Eilgang (Punkt 5) - zählt weder zur Länge noch zur Zeit
         const len = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+        if (b.rapid) {
+          // G0-Eilgang (Punkt 5) - zählt weiterhin weder zur "Nettofräszeit"-Länge noch -Zeit,
+          // seit Release 174 aber separat in rapidLengthMm für "Fräszeit mit G0" (s.o.).
+          rapidLengthMm += len;
+          continue;
+        }
         lengthMm += len;
         if (b.f) {
           timeSeconds += len / (b.f * feedScaleFactor) * 60;
@@ -11603,7 +11732,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
       }
     });
-    return { ok: true, lengthMm, timeSeconds, segmentsWithoutFeed, feedScaleFactor };
+    return { ok: true, lengthMm, timeSeconds, segmentsWithoutFeed, feedScaleFactor, rapidLengthMm };
   }
 
   function boundsOf(pts) {
@@ -15740,6 +15869,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const millTimeMinutesValue = el('millTimeMinutesValue');
   const millTimeFactorValue = el('millTimeFactorValue');
   const millTimeNoFeedWarning = el('millTimeNoFeedWarning');
+  // "Fräszeit mit G0" (Release 174, siehe ausführliche Dokumentation bei #millTimePanel in
+  // template_top.html) - neue Ergebniszeile sowie das zugehörige Eingabefeld/Warnhinweis für den
+  // "G0-Vorschub".
+  const millTimeWithG0Value = el('millTimeWithG0Value');
+  const millTimeG0FeedInput = el('millTimeG0FeedInput');
+  const millTimeG0FeedWarning = el('millTimeG0FeedWarning');
+  // Liefert den aktuell im Eingabefeld anzuzeigenden, VORSKALIERTEN G0-Vorschub (g0FeedRate
+  // geteilt durch die aktuelle Vorschubskalierung, Punkt 5) als Text - Math.round(...*1e6)/1e6 ist
+  // reine kosmetische Säuberung gegen Fließkomma-Rauschen (z.B. 40000/3), ändert nichts an der
+  // eigentlichen, in g0FeedRate gespeicherten Berechnungsgrundlage.
+  function formatG0FeedInputValue() {
+    return String(Math.round((g0FeedRate / feedScaleFactor) * 1e6) / 1e6);
+  }
   const millTimeFileNameValue = el('millTimeFileNameValue');
   const millTimeFileSizeValue = el('millTimeFileSizeValue');
   const millTimeFileDateValue = el('millTimeFileDateValue');
@@ -15801,6 +15943,21 @@ Sebastian Bäcker (Anschrift wie oben)`,
       : `${hours} Std. ${minutesPart} Min ${secondsPart} Sek.`;
   }
   function runApproxMillingTime() {
+    // "G0-Vorschub" (Release 174, Punkt 3+5): den im Eingabefeld stehenden, VORSKALIERTEN Wert
+    // lesen/validieren (dieselbe Prüfung ">0, deutsches Komma" wie bei der Vorschubskalierung
+    // selbst, siehe normalizeFeedScaleFactor()) - bei ungültiger Eingabe bleibt der zuletzt
+    // gültige g0FeedRate unangetastet und das Feld wird auf dessen vorskalierten Anzeigewert
+    // zurückgesetzt, exakt wie bei den übrigen validierten Zahlenfeldern in diesem Programm.
+    // Gültige Eingabe: Rückumrechnung auf den "echten" mm/min-Wert (×feedScaleFactor, Punkt 5:
+    // "damit das wieder passt"), DANACH erst wird g0FeedRate aktualisiert/persistiert.
+    const enteredG0Display = normalizeFeedScaleFactor(millTimeG0FeedInput.value, null);
+    if (enteredG0Display === null) {
+      millTimeG0FeedWarning.hidden = false;
+      millTimeG0FeedInput.value = formatG0FeedInputValue();
+    } else {
+      millTimeG0FeedWarning.hidden = true;
+      applyG0FeedRate(enteredG0Display * feedScaleFactor);
+    }
     const result = computeApproxMillingTime();
     if (!result.ok) {
       millTimeEmptyState.hidden = false;
@@ -15814,6 +15971,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Umrechnung in Std./Min./Sek. auf die nächsten 5 Sekunden runden.
     const roundedSeconds = Math.round(result.timeSeconds / 5) * 5;
     millTimeMinutesValue.textContent = formatMillDuration(roundedSeconds, currentLang);
+    // "Fräszeit mit G0" (NEU Release 174, Punkt 3): Nettofräszeit PLUS eine zusätzliche
+    // Zeitschätzung für die bislang komplett ausgeschlossene G0-Eilgang-Strecke
+    // (result.rapidLengthMm, siehe computeApproxMillingTime()), mit dem oben übernommenen
+    // g0FeedRate statt eines programmierten Vorschubs. g0FeedRate ist bereits der "echte",
+    // skalierungsunabhängige mm/min-Wert (s.o.) - hier deshalb KEINE zusätzliche Multiplikation
+    // mit feedScaleFactor mehr (anders als bei b.f*feedScaleFactor in computeApproxMillingTime()).
+    const g0TimeSeconds = result.rapidLengthMm / g0FeedRate * 60;
+    const roundedWithG0Seconds = Math.round((result.timeSeconds + g0TimeSeconds) / 5) * 5;
+    millTimeWithG0Value.textContent = formatMillDuration(roundedWithG0Seconds, currentLang);
     millTimeFactorValue.textContent = `× ${fmt(result.feedScaleFactor)}`;
     if (result.segmentsWithoutFeed > 0) {
       millTimeNoFeedWarning.hidden = false;
@@ -15826,6 +15992,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
   }
   el('btnMillTime').addEventListener('click', () => {
+    // Eingabefeld beim Öffnen frisch auf den aktuellen, vorskalierten g0FeedRate vorbefüllen -
+    // exakt dasselbe Muster wie feedScalingFactorInput.value im btnFeedScaling-Klick-Handler oben
+    // (Release 174).
+    millTimeG0FeedInput.value = formatG0FeedInputValue();
+    millTimeG0FeedWarning.hidden = true;
     runApproxMillingTime();
     millTimePanel.classList.add('open');
   });
@@ -17701,6 +17872,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // "3D Rasterfarbe" direkt oberhalb - direkt von computeApproxMillingTime() ausgewertet (siehe
   // dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
   feedScaleFactor = loadPersistedFeedScaleFactor() || 1;
+  // "G0-Vorschub" (Release 174): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
+  // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Vorschubskalierung" direkt oberhalb -
+  // direkt von runApproxMillingTime() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt
+  // an dieser Stelle nötig.
+  g0FeedRate = loadPersistedG0FeedRate() || DEFAULT_G0_FEED_RATE;
   // "Werkzeuge" (Release 158): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "3D Rasterfarbe" direkt oberhalb - direkt
   // von drawTool()/drawToolHolder() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an
