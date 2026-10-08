@@ -6588,8 +6588,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 163;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 08:15 Uhr';
+  const APP_RELEASE_NUMBER = 164;
+  const APP_RELEASE_TIMESTAMP = '08.10.2026, 09:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7862,8 +7862,35 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   // Beispieleinträge durch die von Sebastian als Datei gelieferten elf Einträge (DXF/
   // Fräserlängen/Fräserradien/Messen/Reichenbacher/Shortcuts/Simulation/Werkzeug/Werkzeug2/
   // Werkzeug3/Werkzeug4) - wörtlich übernommen, bereits alphabetisch einsortiert.
-  const DEFAULT_KNOWLEDGE_BASE_TEXT = `[DXF:
+  // Release 164 (Knowledge_DE.txt, Sebastian): kompletter Ersatz durch die von Sebastian als Datei
+  // "Knowledge_DE.txt" gelieferten 21 Einträge (zehn neue: Haussymbol/Top/?/Bearbeiten/Datei/
+  // Einstellungen/Farben/Hilfe/Infos/Werkzeugdarstellung, dazu die bisherigen elf wörtlich
+  // unverändert übernommen) - wörtlich wie geliefert, die Reihenfolge im Quelltext hier spielt
+  // keine Rolle, da sortKnowledgeBaseEntries() beim Laden (siehe "let knowledgeBaseText ="
+  // weiter unten) ohnehin automatisch alphabetisch sortiert.
+  const DEFAULT_KNOWLEDGE_BASE_TEXT = `[Haussymbol:
+4 ISO Ansichten durchwechseln.]
+
+[Top:
+Ansicht von oben.]
+
+[?:
+Version automatisch aktualisieren lassen.]
+
+[Bearbeiten:
+CNC-Programme bearbeiten, löschen usw.]
+
+[Datei:
+Dort können Programme/DXF geladen werden.]
+
+[DXF:
 3D DXF können auch importiert werden.]
+
+[Einstellungen:
+Für Farben, Darstellung der Spalten, Werkzeuge, Maschinentypen und z.B. Einstellungsexport.]
+
+[Farben:
+Farben sind unter Einstellungen möglich für das Raster, die Schriften, die Hintergründe uvm.]
 
 [Fräserlängen:
 1. Zu tief gefräst = Fräser zu kurz -> Fräserlänge einmessen und länger auf Maschine eingeben
@@ -7872,6 +7899,12 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
 [Fräserradien:
 1. Zu viel weggefräst = Fräserradius zu klein -> Fräserradius messen und vergrößern
 2. Zu wenig weggefräst = Fräserradius zu groß -> Fräserradius messen und verkleinern]
+
+[Hilfe:
+Knowledge Base, eigenständig editierbar.]
+
+[Infos:
+Informationen über geschätzte Fräszeit, Datei und Einstellung der Vorschubskalierung.]
 
 [Messen:
 Messen kann in der DXF erfolgen, im CNC-Programm und zwischen beidem! Shift + W für Winkel, Shift + L für Länge, mit Esc abbrechen]
@@ -7902,8 +7935,94 @@ Mit "Spannfutter" kann Spannfutter ausgeblendet werden.]
 
 [Werkzeug4:
 Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemessen worden ist, also die aus- oder eingespannte Länge.]
+
+[Werkzeugdarstellung:
+Können "semi"-transparent (Füllfarbe muss dann ausgewählt sein) dargestellt werden oder komplett durchsichtig.]
 `;
   // SIM_SAVE:KNOWLEDGEBASE_DEFAULT:END
+
+  // SIM_SAVE:KNOWLEDGEBASE_EN_DEFAULT:BEGIN (siehe buildSavedSimulationHtml() weiter unten;
+  // dieselbe Marker-Konvention wie beim deutschen Pendant direkt oberhalb - exakte textuelle
+  // Anker, NICHT verschieben/umbenennen/entfernen, ohne buildSavedSimulationHtml() anzupassen)
+  // Release 164 (Knowledge_EN.txt, Sebastian: "Bitte die Knowledge Base für die EN Version
+  // (Knowledge_EN.txt) einbauen und die DE aktualisieren") - erste eigenständige englische
+  // Knowledge Base, wörtlich wie von Sebastian als Datei geliefert (inhaltlich die englische
+  // Übersetzung derselben 21 Einträge wie DEFAULT_KNOWLEDGE_BASE_TEXT oben, aber bewusst NICHT
+  // automatisch aus dem Deutschen übersetzt, sondern als eigener, unabhängig gepflegter Text -
+  // siehe knowledgeBaseTextEn/applyKnowledgeBaseTextEn() weiter unten für die vollständige
+  // Sprach-Trennung).
+  const DEFAULT_KNOWLEDGE_BASE_TEXT_EN = `[Home Icon:
+Cycle through 4 ISO views.]
+
+[Top:
+Top view.]
+
+[?:
+Automatically update the version.]
+
+[Edit:
+Edit, delete, etc., CNC programs.]
+
+[File:
+Programs and DXF files can be loaded here.]
+
+[DXF:
+3D DXF files can also be imported.]
+
+[Settings:
+For colors, column display, tools, machine types, and, for example, exporting settings.]
+
+[Colors:
+Colors can be customized in Settings for the grid, fonts, backgrounds, and much more.]
+
+[Cutter lengths:
+1. Milled too deep = cutter too short -> Measure the cutter length and enter a longer length into the machine
+2. Milling not deep enough = cutter too long -> Measure the cutter length and enter a shorter length into the machine]
+
+[Cutter radii:
+1. Too much material removed = cutter radius too small -> Measure the cutter radius and increase it
+2. Not enough material removed = cutter radius too large -> Measure the cutter radius and decrease it]
+
+[Help:
+Knowledge Base, editable by the user.]
+
+[Info:
+Information about estimated milling time, files, and feed scale settings.]
+
+[Measurement:
+Measurements can be taken in the DXF file, in the CNC program, and between the two! Shift + W for angle, Shift + L for length; press Esc to cancel]
+
+[Reichenbacher:
+The spindle rotates to the “normal” angle after the program is loaded and “OK” is clicked.]
+
+[Shortcuts:
+Shift + L = Measure length, Shift + W = Measure angle; press Esc to exit. Space starts/pauses the simulation.]
+
+[Simulation:
+Space starts/pauses the simulation.]
+
+[Tool:
+Input via:
+; RADIUS
+; LENGTH
+or
+; BLADE
+BLADE (for blade thickness) overrides LENGTH
+BLADE is a fixed entry from Select/UP]
+
+[Tool 2:
+Show/hide using the eye icon.]
+
+[Tool 3:
+The “Chuck” option can be used to hide chucks.]
+
+[Tool 4:
+When inserting a tool via “+Tool,” you can select how the tool was measured—that is, the length with or without the chuck.]
+
+[Tool Display:
+Tools can be displayed as “semi”-transparent (a fill color must be selected in this case) or completely transparent.]
+`;
+  // SIM_SAVE:KNOWLEDGEBASE_EN_DEFAULT:END
 
   // Zerlegt den rohen Knowledge-Base-Text in einzelne Eintrags-Inhalte (jeweils OHNE die
   // umschließenden [ ] selbst, aber mit ihren internen Zeilenumbrüchen) - ein nicht-gieriges
@@ -7984,6 +8103,24 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   }
   function persistKnowledgeBaseText(text) {
     try { window.localStorage.setItem(LS_KEY_KNOWLEDGE_BASE, text); } catch (e) { /* siehe Kommentar bei loadPersistedMachineTypesConfig weiter oben */ }
+  }
+  // Englische Knowledge Base (Release 164, siehe DEFAULT_KNOWLEDGE_BASE_TEXT_EN oben) - eigener,
+  // vollständig von der deutschen Fassung unabhängiger localStorage-Schlüssel/Satz Funktionen,
+  // exakt nach demselben Muster wie das deutsche Paar direkt oberhalb. Bewusst zwei getrennte
+  // Werte statt eines gemeinsamen, sprachparametrisierten Satzes Funktionen - so bleibt der
+  // bestehende deutsche Code-Pfad (inkl. Einstellungsexport-Feldname "knowledgeBaseText" für
+  // Abwärtskompatibilität zu älteren Exportdateien) unangetastet.
+  const LS_KEY_KNOWLEDGE_BASE_EN = 'cncsim.knowledgeBaseTextEn';
+  function loadPersistedKnowledgeBaseTextEn() {
+    try {
+      const saved = window.localStorage.getItem(LS_KEY_KNOWLEDGE_BASE_EN);
+      return saved != null ? saved : DEFAULT_KNOWLEDGE_BASE_TEXT_EN;
+    } catch (e) {
+      return DEFAULT_KNOWLEDGE_BASE_TEXT_EN;
+    }
+  }
+  function persistKnowledgeBaseTextEn(text) {
+    try { window.localStorage.setItem(LS_KEY_KNOWLEDGE_BASE_EN, text); } catch (e) { /* siehe Kommentar bei loadPersistedMachineTypesConfig weiter oben */ }
   }
 
   // ============================================================
@@ -8646,6 +8783,11 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
   // localStorage-Wert garantiert alphabetisch beginnt, siehe loadPersistedKnowledgeBaseText()
   // weiter oben.
   let knowledgeBaseText = sortKnowledgeBaseEntries(loadPersistedKnowledgeBaseText());
+  // Englische Fassung (Release 164) - dasselbe Prinzip, eigener Rohtext/eigene Sortierung, siehe
+  // loadPersistedKnowledgeBaseTextEn() oben. Welche der beiden Variablen im Panel angezeigt/
+  // übernommen wird, entscheidet currentLang zur Laufzeit beim Öffnen bzw. "Übernehmen" (siehe
+  // btnOpenKnowledgeBase/btnKnowledgeBaseApply weiter unten) - nicht fest hier beim Laden.
+  let knowledgeBaseTextEn = sortKnowledgeBaseEntries(loadPersistedKnowledgeBaseTextEn());
   // Zeilenindizes (0-basiert) aller Leerzeilen (nach Trimmen), die in der Programm-Ansicht
   // ausgeblendet werden (20. Runde, seit der 26. Runde erweitert - siehe
   // displayCurrentProgram/renderTree).
@@ -14372,6 +14514,10 @@ Beim Einfügen über "+Werkzeug" kann ausgewählt werden wie Werkzeug eingemesse
     // Knowledge Base als neuen Standard mitnimmt.
     html = replaceBetweenMarkers(html, 'SIM_SAVE:KNOWLEDGEBASE_DEFAULT:BEGIN', 'SIM_SAVE:KNOWLEDGEBASE_DEFAULT:END',
       'const DEFAULT_KNOWLEDGE_BASE_TEXT = ' + JSON.stringify(knowledgeBaseText) + ';');
+    // Englische Knowledge Base (Release 164) - dasselbe Prinzip wie beim deutschen Feld direkt
+    // oberhalb, eigener Marker-Block (siehe DEFAULT_KNOWLEDGE_BASE_TEXT_EN weiter oben).
+    html = replaceBetweenMarkers(html, 'SIM_SAVE:KNOWLEDGEBASE_EN_DEFAULT:BEGIN', 'SIM_SAVE:KNOWLEDGEBASE_EN_DEFAULT:END',
+      'const DEFAULT_KNOWLEDGE_BASE_TEXT_EN = ' + JSON.stringify(knowledgeBaseTextEn) + ';');
     return html;
   }
   // "Simulation speichern"-Button (#btnSaveSimulation) wurde am 23.09.2026 auf Sebastians Wunsch
@@ -14749,7 +14895,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Release 158, siehe eigene "toolAppearanceSaw"/"toolAppearanceCollet"/"toolAppearanceCutter"-
     // Felder weiter unten.
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
-    LS_KEY_FEED_SCALE // Release 161, siehe eigenes "feedScaleFactor"-Feld weiter unten
+    LS_KEY_FEED_SCALE, // Release 161, siehe eigenes "feedScaleFactor"-Feld weiter unten
+    LS_KEY_KNOWLEDGE_BASE_EN // Release 164, siehe eigenes "knowledgeBaseTextEn"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -14773,6 +14920,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Textfeld, fehlt es beim Import (ältere Datei), bleibt der aktuelle Stand unangetastet
       // (siehe Import weiter unten).
       knowledgeBaseText,
+      // Englische Knowledge Base (Release 164) - eigenes, ebenso einfaches Textfeld, dieselbe
+      // "fehlt = unangetastet"-Regel beim Import wie beim deutschen Feld oben.
+      knowledgeBaseTextEn,
       // Farbprofil (39. Runde, Benutzer: "Die Einstellungen fließen auch in die JSON-Datei bei
       // 'CNC Sim Speichern' und werden auch bei 'CNC Sim geladen'") - als Text in der vom
       // Benutzer vorgegebenen Klammer-Syntax, nicht als separates JSON-Unterobjekt, damit sie
@@ -14867,6 +15017,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // aktuell aktive Stand unangetastet, dieselbe Regel wie bei den übrigen Einstellungsteilen.
       if (typeof data.knowledgeBaseText === 'string') {
         applyKnowledgeBaseText(data.knowledgeBaseText);
+      }
+      // Englische Knowledge Base (Release 164) - dieselbe "fehlt = unangetastet"-Regel.
+      if (typeof data.knowledgeBaseTextEn === 'string') {
+        applyKnowledgeBaseTextEn(data.knowledgeBaseTextEn);
       }
       if (typeof data.machineTypesConfigText === 'string') {
         // Dieselbe alphabetische Umsortierung wie früher bei "Maschinentypen laden" (34. Runde;
@@ -15735,12 +15889,29 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // dieselbe Öffnen/Abbrechen/Übernehmen-Mechanik wie "Arbeitsgang-Namen bearbeiten" direkt
   // darüber, "Übernehmen" sortiert zusätzlich immer neu alphabetisch (Punkt 3: "Die Punkte
   // sortieren sich nach dem Eintragen automatisch alphabetisch").
+  // applyKnowledgeBaseText() bleibt bewusst FEST an die deutsche Fassung gebunden (unabhängig von
+  // currentLang) - sie wird auch vom Einstellungsimport aufgerufen (siehe data.knowledgeBaseText
+  // weiter unten), dessen JSON-Feldname historisch "knowledgeBaseText" = Deutsch bedeutet; ein vom
+  // currentLang abhängiges Verhalten hier würde eine im EN-Modus importierte Einstellungsdatei
+  // fälschlich die englische statt der deutschen Knowledge Base überschreiben lassen. Für Englisch
+  // gibt es daher das eigene Gegenstück applyKnowledgeBaseTextEn() direkt darunter (Release 164).
   function applyKnowledgeBaseText(text) {
     knowledgeBaseText = sortKnowledgeBaseEntries(text);
     persistKnowledgeBaseText(knowledgeBaseText);
   }
+  function applyKnowledgeBaseTextEn(text) {
+    knowledgeBaseTextEn = sortKnowledgeBaseEntries(text);
+    persistKnowledgeBaseTextEn(knowledgeBaseTextEn);
+  }
+  // Öffnen/Übernehmen lesen bzw. schreiben seit Release 164 die zu currentLang PASSENDE Fassung
+  // (ausgewertet erst in diesem Moment, nicht fest verdrahtet) - dieselbe editierbare Liste/
+  // A-Z-Leiste/Warnmeldung bedient je nach aktueller Oberflächensprache die deutsche oder die
+  // englische Knowledge Base, komplett unabhängig voneinander (zwei eigene Texte, zwei eigene
+  // localStorage-Werte, siehe oben). Ein Sprachwechsel bei bereits GEÖFFNETEM Panel aktualisiert
+  // den Textarea-Inhalt bewusst nicht rückwirkend - dieselbe, an anderer Stelle bereits begründete
+  // Einschränkung wie bei applyLanguage() im Allgemeinen (siehe dort).
   btnOpenKnowledgeBase.addEventListener('click', () => {
-    knowledgeBaseEditArea.value = knowledgeBaseText;
+    knowledgeBaseEditArea.value = currentLang === 'en' ? knowledgeBaseTextEn : knowledgeBaseText;
     knowledgeBaseWarning.hidden = true;
     knowledgeBasePanel.classList.add('open');
     knowledgeBaseEditArea.focus();
@@ -15758,7 +15929,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
       return;
     }
     knowledgeBaseWarning.hidden = true;
-    applyKnowledgeBaseText(knowledgeBaseEditArea.value);
+    if (currentLang === 'en') {
+      applyKnowledgeBaseTextEn(knowledgeBaseEditArea.value);
+    } else {
+      applyKnowledgeBaseText(knowledgeBaseEditArea.value);
+    }
     knowledgeBasePanel.classList.remove('open');
   });
 
