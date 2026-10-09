@@ -4023,21 +4023,65 @@
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
     <!-- Release 178 (Sebastian, Punkt 9: "Bei der 'Fräszeitberechnung' bitte den Hilfetext nach
          oben verschieben, so wie bei den anderen Texten auch immer, dass das oben steht.") - die
-         drei statischen, immer sichtbaren Hinweistexte standen bis Release 177 ganz unten im
-         Panel, nach #millTimeResultState, anders als in jedem anderen .paste-panel dieser
-         Anwendung (siehe z.B. #gridColorPanel/#opColorPanel: dort steht der erklärende
-         <p class="panel-hint"> IMMER direkt nach dem <h3>, vor den eigentlichen Eingabe-/
-         Ergebniszeilen). Die drei Texte selbst (Inhalt, Reihenfolge untereinander, IDs) bleiben
-         dabei unverändert - reine Verschiebung an den Anfang des Panels, direkt hinter den Titel
-         und noch vor den Leerzustand-Hinweis. -->
-    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
-    <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
-    <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
-    <!-- "Fräszeit mit Werkzeugwechsel" (Release 180, siehe ausführlichen Kommentar weiter oben bei
-         #millTimePanel) - vierter Hinweistext, nach demselben "neue Hinweistexte kommen ans Ende der
-         bereits bestehenden, oben stehenden Liste" -Muster wie die "Fräszeit mit G0"-Erläuterung bei
-         Release 174. -->
-    <p class="panel-hint" data-i18n-en="&#8220;Milling time with tool changes&#8221; additionally adds the time for tool changes (number of tool changes × time per tool change, both entered below) on top of &#8220;Milling time with G0&#8221;.">„Fräszeit mit Werkzeugwechsel" addiert zusätzlich die Zeit für die Werkzeugwechsel (Anzahl Werkzeugwechsel × Dauer Werkzeugwechsel, beide unten eingegeben) auf die „Fräszeit mit G0" drauf.</p>
+         statischen, immer sichtbaren Hinweistexte stehen seither direkt hinter dem <h3>, vor den
+         eigentlichen Eingabe-/Ergebniszeilen, exakt wie in jedem anderen .paste-panel dieser
+         Anwendung (siehe z.B. #gridColorPanel/#opColorPanel).
+
+         Release 181 (Sebastian: "Die Texte bei der Fräszeitberechnung bitte austauschen und aus
+         der Texte.txt nehmen. Dort gibt es einmal die Texte für DE = Deutsch und EN = Englisch
+         untereinander. Diese bitte einbauen für die jeweilige Sprachversion.") - Sebastian
+         übergab sieben DE/EN-Textpaare (je ein Feld-/Zeilenname + ein Erläuterungstext), in
+         GENAU der Reihenfolge, in der die zugehörigen Zeilen/Eingabefelder weiter unten im Panel
+         stehen (Nettofräszeit, Fräszeit mit G0, Fräszeit mit Werkzeugwechsel, G0-Vorschub,
+         Vorschubskalierung, Anzahl Werkzeugwechsel, Dauer Werkzeugwechsel - nur "Länge" hat kein
+         eigenes Textpaar). Abgleich ergab: vier der sieben Erläuterungstexte (Nettofräszeit/
+         Fräszeit mit G0/Fräszeit mit Werkzeugwechsel/Vorschubskalierung) waren bereits Zeichen für
+         Zeichen identisch mit den hier zuvor stehenden Hinweistexten - unverändert übernommen. Für
+         die restlichen drei (G0-Vorschub/Anzahl Werkzeugwechsel/Dauer Werkzeugwechsel) gab es
+         bislang GAR KEINEN Hinweistext (nur die jeweiligen Validierungs-Warnhinweise bei
+         ungültiger Eingabe, z.B. #millTimeG0FeedWarning - das sind andere, eigenständige Texte und
+         bleiben unverändert) - hier neu ergänzt. Die sieben Hinweistexte stehen jetzt (wie von
+         Sebastian in dieser Reihenfolge übergeben) EXAKT in der Reihenfolge der zugehörigen
+         Zeilen/Felder darunter - dieselbe "Hinweistext folgt der Reihenfolge der Zeilen"-Konvention
+         wie bei den bisherigen Ergänzungen (Release 174/176/180). Wie bei den vier bereits
+         bestehenden Texten enthält auch keiner der drei neuen Texte den Feld-/Zeilennamen selbst
+         als Überschrift/Präfix - der Name diente in Sebastians Liste nur der Zuordnung, nicht als
+         Teil des anzuzeigenden Texts.
+
+         Nebenbei fiel auf (ohne Rückfrage übernommen, da die übrigen sechs EN-Feldnamen Zeichen
+         für Zeichen mit dem jeweils bereits implementierten Feldnamen übereinstimmen): die
+         englische Bezeichnung zu "Dauer Werkzeugwechsel" lautet in Sebastians Liste "Tool change
+         time" statt des bisherigen "Time for tool change" (Release 180) - als bewusste Korrektur
+         gelesen und entsprechend umbenannt, siehe #millTimeToolChangeDurationInput weiter unten.
+
+         Release 182 (Sebastian: "Bitte wirklich diesen Text für die DE Version 1:1 einbauen. Die
+         Zeile mit der Raute (#) soll fett dargestellt werden. Die # nicht.") - dieselben sieben
+         Textpaare wie in Release 181, jetzt aber mit dem Feld-/Zeilennamen ALS SICHTBARE, FETT
+         dargestellte erste Zeile direkt über dem jeweiligen Erläuterungstext (zuvor diente der
+         Name nur der Zuordnung in Sebastians Liste, tauchte im Panel selbst nicht auf - siehe
+         Release-181-Kommentar oben). Technisch über das bereits bestehende, generische
+         [data-i18n-en-html]-Mechanismus in applyLanguage() umgesetzt (siehe dort) - genau dasselbe
+         Muster, das schon für die Untermenü-Pfeile verwendet wird (z.B. #submenuFileCncProgramTrigger),
+         für Elemente mit eingebetteten Tags statt reinem Text: jedes der sieben <p class="panel-hint">
+         enthält jetzt direkt `<strong>Name</strong><br>Erläuterungstext` als HTML-Inhalt (vorher
+         reiner Text über das einfachere [data-i18n-en]), die EN-Fassung steckt entsprechend HTML-
+         kodiert im neuen `data-i18n-en-html`-Attribut statt im bisherigen `data-i18n-en`. "1:1"
+         (Sebastians Vorgabe) wurde dabei wörtlich genommen: die Erläuterungstexte selbst sind
+         identisch mit Release 181 übernommen, inklusive des bewusst beibehaltenen geraden
+         Anführungszeichens "\"" als schließendes Zeichen bei „Fräszeit mit G0"/„Fräszeit mit
+         Werkzeugwechsel" (exakt wie zuvor, keine nachträgliche "Korrektur" auf ein typografisches
+         Zeichen). Die Überschrift "G0 Vorschub" steht dabei bewusst OHNE Bindestrich (exakt wie
+         von Sebastian übergeben), auch wenn das zugehörige Eingabefeld selbst weiterhin
+         "G0-Vorschub" (mit Bindestrich) heißt (siehe #millTimeG0FeedInput weiter unten,
+         unverändert) - das ist eine rein optische Überschrift innerhalb des Hinweistexts, keine
+         Umbenennung des Feldes. Reihenfolge der sieben Absätze unverändert zu Release 181. -->
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Net milling time&lt;/strong&gt;&lt;br&gt;This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine&#x27;s actual cycle time will be longer!"><strong>Nettofräszeit</strong><br>Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with G0&lt;/strong&gt;&lt;br&gt;“Milling time with G0” additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ."><strong>Fräszeit mit G0</strong><br>„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with tool changes&lt;/strong&gt;&lt;br&gt;“Milling time with tool changes” additionally adds the time for tool changes (number of tool changes × time per tool change, both entered below) on top of “Milling time with G0”."><strong>Fräszeit mit Werkzeugwechsel</strong><br>„Fräszeit mit Werkzeugwechsel" addiert zusätzlich die Zeit für die Werkzeugwechsel (Anzahl Werkzeugwechsel × Dauer Werkzeugwechsel, beide unten eingegeben) auf die „Fräszeit mit G0" drauf.</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;G0 feed rate&lt;/strong&gt;&lt;br&gt;Feed rate of G0 movements."><strong>G0 Vorschub</strong><br>Vorschub im G0.</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Feed scaling&lt;/strong&gt;&lt;br&gt;Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion)."><strong>Vorschubskalierung</strong><br>Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Number of tool changes&lt;/strong&gt;&lt;br&gt;The number of tool changes in the CNC program. Default value if no processing steps are detected = 0. If processing steps are detected = number of processing steps."><strong>Anzahl Werkzeugwechsel</strong><br>Anzahl der Werkzeugwechsel im CNC-Programm. Standardwert, wenn kein Arbeitsgang erkannt wird = 0. Wenn Arbeitsgänge erkannt werden = Anzahl der Arbeitsgänge.</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Tool change time&lt;/strong&gt;&lt;br&gt;Estimated time required for each tool change."><strong>Dauer Werkzeugwechsel</strong><br>Richtwert, die jeder Werkzeugwechsel benötigt.</p>
     <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
     <div id="millTimeResultState">
       <div class="menu-info-row">
@@ -4110,10 +4154,12 @@
            2: "Eingabe ist mindestens 1"), anders als "Anzahl Werkzeugwechsel" direkt oberhalb über
            ein vollständiges Seiten-Neuladen hinweg persistiert (toolChangeDuration/
            LS_KEY_TOOL_CHANGE_DURATION in app.js, Standard 10 Sekunden) - siehe ausführliche
-           Begründung weiter oben bei #millTimePanel. -->
+           Begründung weiter oben bei #millTimePanel. Release 181: EN-Beschriftung von "Time for
+           tool change" auf "Tool change time" korrigiert, siehe Kommentar bei den Hinweistexten
+           weiter oben. -->
       <label class="color-field-row font-color-row">
         <span class="font-color-row-label">
-          <span data-i18n-en="Time for tool change">Dauer Werkzeugwechsel</span>
+          <span data-i18n-en="Tool change time">Dauer Werkzeugwechsel</span>
         </span>
         <span class="color-field-inputs">
           <input type="text" id="millTimeToolChangeDurationInput" class="filename-input" inputmode="decimal" spellcheck="false">
@@ -7123,8 +7169,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 180;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 10:30 Uhr';
+  const APP_RELEASE_NUMBER = 182;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
