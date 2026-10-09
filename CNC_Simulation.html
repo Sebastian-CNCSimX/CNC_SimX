@@ -496,6 +496,15 @@
   /* #btnGridColor (Release 178, "Achsenfarbe"/Punkt 1) hierher ergänzt - derselbe Trennstrich,
      siehe Kommentar bei #btnAxisColor im Markup. */
   #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  /* "Fräszeitberechnung" -> zwei neue Trennstriche (Release 180, Punkt 3, siehe ausführlichen
+     Kommentar bei #millTimePanel in template_top.html) - dasselbe margin-top/padding-top/
+     border-top-Muster wie oben, hier erstmals auf zwei .color-field-row-Zeilen INNERHALB eines
+     .paste-panel angewendet statt auf .menu-item/.menu-info-row in einem Dropdown-Menü:
+     #millTimeG0FeedRow trennt den Ergebnis-Block (Länge/Nettofräszeit/Fräszeit mit G0/Fräszeit mit
+     Werkzeugwechsel) vom Eingabe-Bereich darunter, #millTimeToolChangeCountRow trennt die beiden
+     bestehenden Eingaben (G0-Vorschub/Vorschubskalierung) von den beiden neuen
+     Werkzeugwechsel-Eingaben als eigenem, drittem Bereich. */
+  #millTimeG0FeedRow, #millTimeToolChangeCountRow { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
   .machine-badge {
     display: flex; align-items: center; gap: 7px;
@@ -3934,7 +3943,81 @@
      Punkt 4) steht jetzt als ERSTER der drei Hinweistexte dieses Panels, vor den beiden bereits
      bestehenden ("Nettofräszeit"- bzw. "Fräszeit mit G0"-Einordnung, Release 161/174) - exakt wie
      von Sebastian vorgegeben ("...wird direkt darunter als ersten Absatz gepackt, dann kommt der
-     restliche Text"). -->
+     restliche Text").
+
+     Release 180 (Sebastian, 3 durchnummerierte Punkte + Beschreibung der gewünschten Ausgabe):
+     1. "'Anzahl Werkzeugwechsel' (EN 'Number of tool changes'). Dort kann eine Zahl eingegeben
+        werden. Vorgeschlagen wird die Anzahl der Arbeitsgänge, die das System erkennt. Wenn keine
+        Arbeitsgänge erkannt werden = 0. 0 ist möglich und es wird mit 0 multipliziert = 0 = keine
+        zusätzliche Zeit."
+     2. "'Dauer Werkzeugwechsel' (EN 'Time for tool change'). Eingabe für die Dauer in Sekunden für
+        einen Werkzeugwechsel. Eingabe ist mindestens 1."
+     3. "Trennstrich einbauen vor 'G0-Vorschub' und unter 'Vorschubskalierung'. Die beiden neuen
+        Eingaben (Anzahl Werkzeugwechsel und Dauer Werkzeugwechsel) sind unter 'Vorschubskalierung'
+        anzuordnen, quasi ein neuer separater Bereich."
+     Zusätzlich gewünschte Ausgabe: "Fräszeit mit Werkzeugwechsel" (unter dem Block für "Fräszeit
+     mit G0" angeordnet) = "Fräszeit mit G0" + (Anzahl Werkzeugwechsel * Dauer Werkzeugwechsel).
+
+     Interpretation von Punkt 3 (ohne Rückfrage gelesen, da im Kontext eindeutig): EIN Trennstrich
+     direkt VOR dem Eingabefeld "G0-Vorschub" (trennt den reinen Ergebnis-Block oben - Länge/
+     Nettofräszeit/Fräszeit mit G0/Fräszeit mit Werkzeugwechsel - optisch vom Eingabe-Bereich
+     darunter) UND ein ZWEITER, eigener Trennstrich direkt NACH "Vorschubskalierung"/VOR "Anzahl
+     Werkzeugwechsel" (trennt die beiden bestehenden Eingabefelder G0-Vorschub/Vorschubskalierung
+     von den beiden neuen Werkzeugwechsel-Eingaben als eigenem, dritten Bereich - "quasi ein neuer
+     separater Bereich", Punkt 3). Technisch dieselbe margin-top/padding-top/border-top-Technik wie
+     überall sonst in dieser Anwendung (siehe #btnCheckForUpdate/#btnShowPrivacy/
+     #millTimeFileInfoSep/#btnResetDisplayDefaults im <style> weiter oben) - hier erstmals auf
+     ZWEI .color-field-row-Zeilen INNERHALB eines .paste-panel angewendet (#millTimeG0FeedRow für
+     den ersten, #millTimeToolChangeCountRow für den zweiten Trennstrich), statt wie bisher
+     ausschließlich auf .menu-item/.menu-info-row-Zeilen in Dropdown-Menüs.
+
+     Umsetzung:
+     1.+2. Zwei neue, validierte Eingabefelder nach exakt demselben Muster wie #millTimeG0FeedInput/
+        #millTimeFeedScaleInput (deutsches Komma erlaubt, ungültige Eingabe fällt auf den zuletzt
+        gültigen Wert zurück, Warnhinweis erscheint): "Anzahl Werkzeugwechsel"/"Number of tool
+        changes" (#millTimeToolChangeCountInput, Punkt 1, Wertebereich &ge;0 statt &gt;0 wie bei
+        den übrigen Feldern - 0 ist ausdrücklich erlaubt) und "Dauer Werkzeugwechsel"/"Time for
+        tool change" (#millTimeToolChangeDurationInput, Punkt 2, Wertebereich &ge;1 Sekunde, da
+        "Eingabe ist mindestens 1").
+        Vorgeschlagener Standardwert (Punkt 1, "Vorgeschlagen wird..."): beim Öffnen des Panels
+        (#btnMillTime-Klick) wird #millTimeToolChangeCountInput FRISCH auf die Anzahl der aktuell
+        vom System erkannten Arbeitsgänge vorbefüllt (countDetectedOps() in app.js, dieselbe
+        current.sections.filter(s => s.type === 'arbeitsgang')-Logik wie in
+        computeApproxMillingTime(), dorthin ausgelagert, damit beide Stellen nie auseinanderlaufen
+        können) - 0, wenn kein Arbeitsgang-Schema erkannt wird (Punkt 1, "Wenn keine Arbeitsgänge
+        erkannt werden = 0"), unabhängig davon, ob für die eigentliche Fräszeitberechnung in diesem
+        Fall ersatzweise die O/G92-Aufteilung greift (siehe computeApproxMillingTime()) - das gilt
+        bewusst NICHT als "erkannter Arbeitsgang" im Sinne dieses Vorschlags. Anders als
+        g0FeedRate/feedScaleFactor wird dieser vorgeschlagene Wert dabei NICHT persistiert
+        (toolChangeCount lebt nur als einfache, nicht in localStorage gespeicherte Zustandsvariable
+        in app.js) - "vorgeschlagen" wurde hier als "bei jedem Öffnen frisch aus dem aktuell
+        geladenen Programm ermittelter Vorschlag" gelesen, nicht als "einmal gesetzter, über
+        Programme/Sitzungen hinweg gemerkter eigener Wert" wie bei den beiden bestehenden Feldern.
+        "Dauer Werkzeugwechsel" dagegen IST persistiert (toolChangeDuration/LS_KEY_TOOL_CHANGE_DURATION,
+        Standard 10 Sekunden - von Sebastian nicht vorgegeben, als plausibler Platzhalter gewählt und
+        jederzeit änderbar), exakt nach demselben "self-persisting Setter"-Muster wie g0FeedRate -
+        eine Werkzeugwechsel-Dauer ist eine Maschineneigenschaft, die sinnvollerweise über mehrere
+        Programme/Sitzungen hinweg erhalten bleibt, anders als die pro Programm unterschiedliche
+        Anzahl der Arbeitsgänge. Beide neuen Felder werden - wie G0-Vorschub/Vorschubskalierung -
+        erst bei "Neu berechnen" gelesen/validiert/übernommen (siehe runApproxMillingTime()), nicht
+        über einen eigenen "Übernehmen"-Knopf.
+        Persistenz/Export (Punkt 5 aus Release 178 gilt sinngemäß weiter, auch ohne dass Sebastian es
+        dieses Mal erneut erwähnt hat): LS_KEY_TOOL_CHANGE_DURATION ('cncsim.toolChangeDuration')
+        ist bewusst NICHT in KNOWN_EXPORTED_LS_KEYS eingetragen - das bereits bestehende, generische
+        "otherSettings"-Sicherheitsnetz (collectOtherCncsimSettings(), siehe dort/5.9) deckt Export/
+        Import automatisch mit ab, exakt wie bei g0FeedRate seit Release 174. toolChangeCount selbst
+        wird gar nicht erst persistiert und taucht deshalb auch im Export nicht auf - das ist so
+        gewollt, siehe oben.
+     3. Siehe Interpretation oben - zwei neue CSS-Regeln (#millTimeG0FeedRow, #millTimeToolChangeCountRow
+        im <style> weiter oben) auf die jeweils ERSTE Zeile der beiden neuen Bereiche angewendet.
+     Ausgabe: neue Ergebniszeile "Fräszeit mit Werkzeugwechsel"/"Milling time with tool changes"
+     (#millTimeWithToolChangesValue) direkt UNTER "Fräszeit mit G0" (wie gewünscht) und noch VOR dem
+     ersten neuen Trennstrich - sie gehört damit zum Ergebnis-Block, nicht zum Eingabe-Bereich.
+     Berechnung (siehe runApproxMillingTime()): exakt wie bei "Fräszeit mit G0" werden die
+     UNGERUNDETEN Sekundenwerte aufsummiert (Nettofräszeit-Sekunden + G0-Sekunden +
+     toolChangeCount*toolChangeDuration) und erst DANACH einmalig auf die nächsten 5 Sekunden
+     gerundet (Punkt 4 aus Release 161, unverändert) - "Fräszeit mit Werkzeugwechsel" baut damit
+     exakt auf "Fräszeit mit G0" auf, wie bereits "Fräszeit mit G0" auf "Nettofräszeit" aufbaute. -->
 <div class="paste-panel" id="millTimePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
@@ -3950,6 +4033,11 @@
     <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
     <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
     <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
+    <!-- "Fräszeit mit Werkzeugwechsel" (Release 180, siehe ausführlichen Kommentar weiter oben bei
+         #millTimePanel) - vierter Hinweistext, nach demselben "neue Hinweistexte kommen ans Ende der
+         bereits bestehenden, oben stehenden Liste" -Muster wie die "Fräszeit mit G0"-Erläuterung bei
+         Release 174. -->
+    <p class="panel-hint" data-i18n-en="&#8220;Milling time with tool changes&#8221; additionally adds the time for tool changes (number of tool changes × time per tool change, both entered below) on top of &#8220;Milling time with G0&#8221;.">„Fräszeit mit Werkzeugwechsel" addiert zusätzlich die Zeit für die Werkzeugwechsel (Anzahl Werkzeugwechsel × Dauer Werkzeugwechsel, beide unten eingegeben) auf die „Fräszeit mit G0" drauf.</p>
     <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
     <div id="millTimeResultState">
       <div class="menu-info-row">
@@ -3964,10 +4052,19 @@
         <span class="menu-info-label" data-i18n-en="Milling time with G0">Fräszeit mit G0</span>
         <span class="menu-info-value" id="millTimeWithG0Value">–</span>
       </div>
+      <!-- "Fräszeit mit Werkzeugwechsel" (Release 180, Ausgabezeile) - direkt UNTER dem Block für
+           "Fräszeit mit G0" angeordnet (wie gewünscht) und noch VOR dem neuen Trennstrich unten -
+           gehört damit zum Ergebnis-Block, nicht zum Eingabe-Bereich darunter. -->
+      <div class="menu-info-row">
+        <span class="menu-info-label" data-i18n-en="Milling time with tool changes">Fräszeit mit Werkzeugwechsel</span>
+        <span class="menu-info-value" id="millTimeWithToolChangesValue">–</span>
+      </div>
       <!-- "G0-Vorschub" (Release 174, Punkt 3+5) - Wert wird von app.js beim Öffnen des Panels
            (btnMillTime-Klick) auf g0FeedRate/feedScaleFactor vorbefüllt, siehe dortiger
-           Kommentar. -->
-      <label class="color-field-row font-color-row">
+           Kommentar. Release 180, Punkt 3: trägt jetzt zusätzlich die id "millTimeG0FeedRow" für den
+           neuen Trennstrich davor (#millTimeG0FeedRow im <style> weiter oben) - trennt den
+           Ergebnis-Block oben optisch vom Eingabe-Bereich darunter. -->
+      <label class="color-field-row font-color-row" id="millTimeG0FeedRow">
         <span class="font-color-row-label">
           <span data-i18n-en="G0 feed rate">G0-Vorschub</span>
         </span>
@@ -3991,6 +4088,38 @@
         </span>
       </label>
       <p class="panel-hint" id="millTimeFeedScaleWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
+      <!-- "Anzahl Werkzeugwechsel"/"Dauer Werkzeugwechsel" (Release 180, Punkt 1+2, siehe
+           ausführlichen Kommentar weiter oben bei #millTimePanel) - neuer, dritter Eingabebereich,
+           optisch per Trennstrich (id "millTimeToolChangeCountRow", siehe <style> weiter oben) von
+           G0-Vorschub/Vorschubskalierung oberhalb abgegrenzt (Punkt 3: "...unter 'Vorschubskalierung'
+           anzuordnen, quasi ein neuer separater Bereich"). "Anzahl Werkzeugwechsel" wird beim Öffnen
+           des Panels (btnMillTime-Klick) auf die Anzahl der aktuell erkannten Arbeitsgänge
+           vorgeschlagen (countDetectedOps() in app.js, Punkt 1) - 0 ist dabei ausdrücklich ein
+           gültiger Wert (Punkt 1: "0 ist möglich..."), anders als bei G0-Vorschub/Vorschubskalierung
+           ist hier deshalb auch 0 selbst eine gültige, nicht abgelehnte Eingabe. -->
+      <label class="color-field-row font-color-row" id="millTimeToolChangeCountRow">
+        <span class="font-color-row-label">
+          <span data-i18n-en="Number of tool changes">Anzahl Werkzeugwechsel</span>
+        </span>
+        <span class="color-field-inputs">
+          <input type="text" id="millTimeToolChangeCountInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </span>
+      </label>
+      <p class="panel-hint" id="millTimeToolChangeCountWarning" data-i18n-en="Please enter a number of 0 or more (e.g. 0 or 3)." hidden>Bitte eine Zahl ab 0 eingeben (z.&nbsp;B. 0 oder 3).</p>
+      <!-- "Dauer Werkzeugwechsel" (Release 180, Punkt 2) - Eingabe in Sekunden, mindestens 1 (Punkt
+           2: "Eingabe ist mindestens 1"), anders als "Anzahl Werkzeugwechsel" direkt oberhalb über
+           ein vollständiges Seiten-Neuladen hinweg persistiert (toolChangeDuration/
+           LS_KEY_TOOL_CHANGE_DURATION in app.js, Standard 10 Sekunden) - siehe ausführliche
+           Begründung weiter oben bei #millTimePanel. -->
+      <label class="color-field-row font-color-row">
+        <span class="font-color-row-label">
+          <span data-i18n-en="Time for tool change">Dauer Werkzeugwechsel</span>
+        </span>
+        <span class="color-field-inputs">
+          <input type="text" id="millTimeToolChangeDurationInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </span>
+      </label>
+      <p class="panel-hint" id="millTimeToolChangeDurationWarning" data-i18n-en="Please enter a number of 1 or more (e.g. 10)." hidden>Bitte eine Zahl ab 1 eingeben (z.&nbsp;B. 10).</p>
       <p class="panel-hint" id="millTimeNoFeedWarning" data-i18n-en="" hidden></p>
     </div>
     <div class="paste-actions">
@@ -6994,8 +7123,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 179;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 08:40 Uhr';
+  const APP_RELEASE_NUMBER = 180;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 10:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8029,6 +8158,61 @@ CORNERRADIUS=GFIL r=
     persistG0FeedRate(g0FeedRate);
     return g0FeedRate;
   }
+
+  // "Dauer Werkzeugwechsel" ("Infos" -> "Fräszeitberechnung" -> Eingabefeld "Dauer
+  // Werkzeugwechsel", Release 180, Punkt 2) - genau wie g0FeedRate direkt oberhalb ein einzelner,
+  // persistierter Wert (Standard 10 Sekunden - von Sebastian nicht vorgegeben, als plausibler
+  // Platzhalter gewählt), diesmal für die Dauer EINES Werkzeugwechsels in Sekunden.
+  // Validierung bewusst NICHT über normalizeFeedScaleFactor() (das verlangt > 0): Punkt 2 verlangt
+  // ausdrücklich "mindestens 1", deshalb eine eigene, strukturell identische Normalisierungsfunktion
+  // mit der Mindestgrenze 1 statt eines offenen ">0".
+  // Bewusst NICHT in KNOWN_EXPORTED_LS_KEYS eingetragen (siehe dortiger Kommentar/5.9) - das
+  // generische "otherSettings"-Sicherheitsnetz (collectOtherCncsimSettings()) deckt Export/Import
+  // dieses neuen Schlüssels bereits automatisch ab, exakt wie bei g0FeedRate seit Release 174.
+  const LS_KEY_TOOL_CHANGE_DURATION = 'cncsim.toolChangeDuration';
+  const DEFAULT_TOOL_CHANGE_DURATION = 10;
+  function loadPersistedToolChangeDuration() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_TOOL_CHANGE_DURATION);
+      const n = raw !== null ? parseFloat(raw) : NaN;
+      return isFinite(n) && n >= 1 ? n : null;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistToolChangeDuration(n) {
+    try { window.localStorage.setItem(LS_KEY_TOOL_CHANGE_DURATION, String(n)); } catch (e) { /* s.o. */ }
+  }
+  // Erlaubt - genau wie normalizeFeedScaleFactor() oben - das in Deutschland übliche Komma als
+  // Dezimaltrennzeichen, verlangt hier aber &ge;1 statt &gt;0 (Punkt 2: "Eingabe ist mindestens 1").
+  function normalizeToolChangeDuration(raw, fallback) {
+    const t = String(raw == null ? '' : raw).trim().replace(',', '.');
+    const n = parseFloat(t);
+    return isFinite(n) && n >= 1 ? n : fallback;
+  }
+  let toolChangeDuration = DEFAULT_TOOL_CHANGE_DURATION;
+  function applyToolChangeDuration(n) {
+    toolChangeDuration = normalizeToolChangeDuration(n, DEFAULT_TOOL_CHANGE_DURATION);
+    persistToolChangeDuration(toolChangeDuration);
+    return toolChangeDuration;
+  }
+
+  // "Anzahl Werkzeugwechsel" ("Infos" -> "Fräszeitberechnung" -> Eingabefeld "Anzahl
+  // Werkzeugwechsel", Release 180, Punkt 1) - ANDERS als feedScaleFactor/g0FeedRate/
+  // toolChangeDuration bewusst NICHT persistiert: der Wert wird bei jedem Öffnen des Panels frisch
+  // aus dem aktuell geladenen Programm vorgeschlagen (countDetectedOps() weiter oben, siehe
+  // btnMillTime-Klick-Handler weiter unten) - "vorgeschlagen" (Punkt 1) wurde als "jedes Mal neu
+  // ermittelter Vorschlag" gelesen, nicht als "einmal gesetzter, über Programme/Sitzungen hinweg
+  // gemerkter eigener Wert". toolChangeCount lebt deshalb nur als einfache Zustandsvariable, ohne
+  // eigenen LS_KEY/eigene Persistenz-Funktionen.
+  // Validierung bewusst mit &ge;0 statt &gt;0 (Punkt 1: "0 ist möglich und es wird mit 0
+  // multipliziert = 0 = keine zusätzliche Zeit") - einzige neue Normalisierungsfunktion in diesem
+  // Bereich, die 0 als gültige Eingabe akzeptiert.
+  function normalizeToolChangeCount(raw, fallback) {
+    const t = String(raw == null ? '' : raw).trim().replace(',', '.');
+    const n = parseFloat(t);
+    return isFinite(n) && n >= 0 ? n : fallback;
+  }
+  let toolChangeCount = 0;
 
   // "Werkzeuge" ("Einstellungen" -> "Erscheinungsbild" -> "Werkzeuge", Release 158, Sebastian:
   // "Werkzeug bzw. Spannfutter-Darstellung: Bitte neue Einstellungen unter Einstellungen ->
@@ -12100,12 +12284,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Segmente ohne jemals gesetzten Vorschub (p.f === null, z.B. ein Programm, das nie ein "F" trägt)
   // zählen zwar zur Länge, aber nicht zur Zeit - wird über segmentsWithoutFeed an den Aufrufer
   // gemeldet, der daraus einen Hinweis anzeigt (siehe #millTimeNoFeedWarning).
+  // "Anzahl Werkzeugwechsel" (Release 180, Punkt 1: "Vorgeschlagen wird die Anzahl der
+  // Arbeitsgänge, die das System erkennt. Wenn keine Arbeitsgänge erkannt werden = 0.") - liefert
+  // exakt dieselbe current.sections.filter(s => s.type === 'arbeitsgang')-Liste wie
+  // computeApproxMillingTime() weiter unten (dorthin ausgelagert, damit beide Stellen nie
+  // auseinanderlaufen können); eine leere Liste (kein Arbeitsgang-Schema erkannt, current fehlt
+  // oder ohne Sections) liefert bewusst [], NICHT die O/G92-Ersatzaufteilung aus dem else-Zweig von
+  // computeApproxMillingTime() - diese Ersatz-Chunks gelten nicht als "erkannte Arbeitsgänge" im
+  // Sinne dieses Vorschlags.
+  function getOpSections() {
+    return (current && current.sections.length) ? current.sections.filter(s => s.type === 'arbeitsgang') : [];
+  }
+  // Wird vom btnMillTime-Klick-Handler weiter unten verwendet, um #millTimeToolChangeCountInput
+  // beim Öffnen des Panels frisch vorzubelegen - siehe dort.
+  function countDetectedOps() {
+    return getOpSections().length;
+  }
   function computeApproxMillingTime() {
     if (!current || !current.sections.length) {
       return { ok: false };
     }
     const { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex } = resolveActiveMtGeometryParams();
-    const opSections = current.sections.filter(s => s.type === 'arbeitsgang');
+    const opSections = getOpSections();
     const ptsPerChunk = [];
     if (opSections.length) {
       opSections.forEach(sec => {
@@ -16490,6 +16690,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const millTimeWithG0Value = el('millTimeWithG0Value');
   const millTimeG0FeedInput = el('millTimeG0FeedInput');
   const millTimeG0FeedWarning = el('millTimeG0FeedWarning');
+  // "Fräszeit mit Werkzeugwechsel" (Release 180, siehe ausführliche Dokumentation bei
+  // #millTimePanel in template_top.html) - neue Ergebniszeile sowie die zugehörigen Eingabefelder/
+  // Warnhinweise für "Anzahl Werkzeugwechsel"/"Dauer Werkzeugwechsel".
+  const millTimeWithToolChangesValue = el('millTimeWithToolChangesValue');
+  const millTimeToolChangeCountInput = el('millTimeToolChangeCountInput');
+  const millTimeToolChangeCountWarning = el('millTimeToolChangeCountWarning');
+  const millTimeToolChangeDurationInput = el('millTimeToolChangeDurationInput');
+  const millTimeToolChangeDurationWarning = el('millTimeToolChangeDurationWarning');
   // Liefert den aktuell im Eingabefeld anzuzeigenden, VORSKALIERTEN G0-Vorschub (g0FeedRate
   // geteilt durch die aktuelle Vorschubskalierung, Punkt 5) als Text - Math.round(...*1e6)/1e6 ist
   // reine kosmetische Säuberung gegen Fließkomma-Rauschen (z.B. 40000/3), ändert nichts an der
@@ -16591,6 +16799,29 @@ Sebastian Bäcker (Anschrift wie oben)`,
       millTimeG0FeedWarning.hidden = true;
       applyG0FeedRate(enteredG0Display * feedScaleFactor);
     }
+    // "Anzahl Werkzeugwechsel" (Release 180, Punkt 1): lesen/validieren wie die übrigen Zahlenfelder
+    // in diesem Panel, hier aber mit &ge;0 statt &gt;0 (0 ist ausdrücklich erlaubt, Punkt 1). Bei
+    // ungültiger Eingabe bleibt der zuletzt gültige toolChangeCount unangetastet (NICHT persistiert,
+    // siehe Kommentar bei der Deklaration weiter oben) und das Feld wird darauf zurückgesetzt.
+    const enteredToolChangeCount = normalizeToolChangeCount(millTimeToolChangeCountInput.value, null);
+    if (enteredToolChangeCount === null) {
+      millTimeToolChangeCountWarning.hidden = false;
+      millTimeToolChangeCountInput.value = String(toolChangeCount);
+    } else {
+      millTimeToolChangeCountWarning.hidden = true;
+      toolChangeCount = enteredToolChangeCount;
+    }
+    // "Dauer Werkzeugwechsel" (Release 180, Punkt 2): lesen/validieren/übernehmen wie bei
+    // feedScaleFactor/g0FeedRate (dasselbe "self-persisting Setter"-Muster), hier mit der
+    // Mindestgrenze 1 statt 0 (Punkt 2: "Eingabe ist mindestens 1").
+    const enteredToolChangeDuration = normalizeToolChangeDuration(millTimeToolChangeDurationInput.value, null);
+    if (enteredToolChangeDuration === null) {
+      millTimeToolChangeDurationWarning.hidden = false;
+      millTimeToolChangeDurationInput.value = String(toolChangeDuration);
+    } else {
+      millTimeToolChangeDurationWarning.hidden = true;
+      applyToolChangeDuration(enteredToolChangeDuration);
+    }
     const result = computeApproxMillingTime();
     if (!result.ok) {
       millTimeEmptyState.hidden = false;
@@ -16613,6 +16844,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const g0TimeSeconds = result.rapidLengthMm / g0FeedRate * 60;
     const roundedWithG0Seconds = Math.round((result.timeSeconds + g0TimeSeconds) / 5) * 5;
     millTimeWithG0Value.textContent = formatMillDuration(roundedWithG0Seconds, currentLang);
+    // "Fräszeit mit Werkzeugwechsel" (NEU Release 180): "Fräszeit mit G0" PLUS Anzahl
+    // Werkzeugwechsel * Dauer Werkzeugwechsel - wie bei "Fräszeit mit G0" selbst werden die
+    // UNGERUNDETEN Sekundenwerte aufsummiert und erst danach einmalig auf die nächsten 5 Sekunden
+    // gerundet (Punkt 4 aus Release 161, unverändert). toolChangeCount===0 ergibt hier exakt 0
+    // zusätzliche Sekunden (Punkt 1: "0 ist möglich... = keine zusätzliche Zeit").
+    const toolChangeTimeSeconds = toolChangeCount * toolChangeDuration;
+    const roundedWithToolChangesSeconds = Math.round((result.timeSeconds + g0TimeSeconds + toolChangeTimeSeconds) / 5) * 5;
+    millTimeWithToolChangesValue.textContent = formatMillDuration(roundedWithToolChangesSeconds, currentLang);
     if (result.segmentsWithoutFeed > 0) {
       millTimeNoFeedWarning.hidden = false;
       millTimeNoFeedWarning.textContent = T(
@@ -16632,6 +16871,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     millTimeFeedScaleWarning.hidden = true;
     millTimeG0FeedInput.value = formatG0FeedInputValue();
     millTimeG0FeedWarning.hidden = true;
+    // "Anzahl Werkzeugwechsel" (Release 180, Punkt 1): bei JEDEM Öffnen frisch auf die Anzahl der
+    // aktuell erkannten Arbeitsgänge vorgeschlagen (countDetectedOps(), siehe dort) - 0, wenn kein
+    // Arbeitsgang-Schema erkannt wird, unabhängig von einem zuvor selbst eingegebenen Wert (siehe
+    // Begründung bei der Deklaration von toolChangeCount weiter oben: bewusst NICHT persistiert).
+    toolChangeCount = countDetectedOps();
+    millTimeToolChangeCountInput.value = String(toolChangeCount);
+    millTimeToolChangeCountWarning.hidden = true;
+    // "Dauer Werkzeugwechsel" (Release 180, Punkt 2): wie G0-Vorschub/Vorschubskalierung auf den
+    // aktuellen, persistierten Wert vorbefüllt.
+    millTimeToolChangeDurationInput.value = String(toolChangeDuration);
+    millTimeToolChangeDurationWarning.hidden = true;
     runApproxMillingTime();
     millTimePanel.classList.add('open');
   });
@@ -18613,6 +18863,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // direkt von runApproxMillingTime() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt
   // an dieser Stelle nötig.
   g0FeedRate = loadPersistedG0FeedRate() || DEFAULT_G0_FEED_RATE;
+  // "Dauer Werkzeugwechsel" (Release 180): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "G0-Vorschub" direkt oberhalb -
+  // direkt von runApproxMillingTime() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an
+  // dieser Stelle nötig. "Anzahl Werkzeugwechsel" (toolChangeCount) braucht hier KEINE eigene
+  // Zeile - bewusst nicht persistiert, siehe Kommentar bei der Deklaration.
+  toolChangeDuration = loadPersistedToolChangeDuration() || DEFAULT_TOOL_CHANGE_DURATION;
   // "Werkzeuge" (Release 158): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "3D Rasterfarbe" direkt oberhalb - direkt
   // von drawTool()/drawToolHolder() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an
