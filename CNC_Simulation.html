@@ -476,19 +476,17 @@
      app.js) bleibt über die bereits bestehende ".menu-item:disabled"-Regel (opacity: .4)
      zuverlässig sichtbar abgedimmt, unabhängig von dieser zusätzlichen Akzentfarbe. */
   #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--accent); font-weight: 600; }
-  /* Copyright-Zeile im "?"-Menü (Release 188, Sebastian, Punkt 3: "Unter '?' bitte ein '(c)
-     Sebastian Bäcker 2026' einbauen. Das steht unter dem Menüpunkt 'Letzte Releasezeit: ...' ->
-     dann ein Trennstrich -> '(c) Sebastian Bäcker 2026' -> danach, falls noch nicht vorhanden noch
-     ein Trennstrich vor 'Versionsupdate prüfen'") - reine Anzeige-Zeile direkt UNTERHALB der
-     beiden .menu-info-row-Zeilen (Version/Letzte Releasezeit) und OBERHALB von
-     #btnCheckForUpdate, mit eigenem oberen Trennstrich (erfüllt Sebastians ersten geforderten
-     Trennstrich). Der zweite geforderte Trennstrich "vor 'Versionsupdate prüfen'" existierte dabei
-     bereits VORHER (siehe #btnCheckForUpdate direkt oberhalb - "falls noch nicht vorhanden" trifft
-     hier also zu: nicht nochmal zusätzlich gesetzt, da sonst ein doppelter Strich entstünde). Reiner
-     Lesetext (kein .menu-item, nicht anklickbar, keine Hover-/Fokus-Optik) - angelehnt an die
-     Typografie des vormaligen ".footer-credit" (gleiche Schriftgröße/-farbe, siehe dessen jetzt
-     stehengelassener Kommentar oben), hier aber zentriert statt rechtsbündig, da das Menü selbst
-     schmal und linksbündig aufgebaut ist. */
+  /* Copyright-Zeile im "?"-Menü (ursprünglich Release 188, Sebastian, Punkt 3: "Unter '?' bitte ein
+     '(c) Sebastian Bäcker 2026' einbauen ..."). Ursprünglich direkt UNTERHALB der beiden
+     .menu-info-row-Zeilen (Version/Letzte Releasezeit) und OBERHALB von #btnCheckForUpdate platziert.
+     Release 190, Sebastian: "Das '(c) Sebastian Bäcker 2026' unter dem '?' Menü bitte nach ganz unten
+     in die Liste schieben. Das sieht besser aus" - seitdem LETZTER Eintrag im Menü, direkt im Markup
+     verschoben (siehe dort). Diese CSS-Regel selbst (inkl. des eigenen oberen Trennstrichs) bleibt
+     dabei unverändert - der Trennstrich trennt die Zeile jetzt von "Kontakt" darüber statt wie zuvor
+     von den Info-Zeilen. Reiner Lesetext (kein .menu-item, nicht anklickbar, keine Hover-/Fokus-Optik)
+     - angelehnt an die Typografie des vormaligen ".footer-credit" (gleiche Schriftgröße/-farbe, siehe
+     dessen jetzt stehengelassener Kommentar oben), hier aber zentriert statt rechtsbündig, da das Menü
+     selbst schmal und linksbündig aufgebaut ist. */
   #menuInfoCopyright { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--ink-faint); text-align: center; user-select: none; }
   /* Trennstrich oberhalb von "Datenschutzerklärung" (NEU, 30.09.2026, Sebastian: "Unter
      'Versionsupdate prüfen' kommt ein Trennstrich, darunter dann: Datenschutzerklärung /
@@ -2308,6 +2306,18 @@
                    zusammen mit #btnClearProgram/#btnClearProgramIcon gepflegt, siehe clearProgram()/
                    displayCurrentProgram() in app.js. -->
               <button class="menu-item" id="btnClearProgramFileMenu" type="button" disabled title="Entfernt das geladene CNC-Programm wieder (Maschinentyp-Konfiguration bleibt erhalten)" data-i18n-en="Delete CNC-Program" data-i18n-en-title="Removes the loaded CNC program again (machine type configuration is kept)">CNC-Programm löschen</button>
+              <!-- "CNC-Code einfügen" im "Datei"->"CNC"-Menü (Release 190, Sebastian: "Unter 'Datei
+                   -> CNC' neuen Menüpunkte einfügen 'CNC-Code einfügen'. Das ist im Menü ganz unten
+                   angeordnet") - bewusst als letzter Eintrag dieses Untermenüs, wie verlangt. Zweiter,
+                   gleichwertiger Auslöser für dasselbe, unveränderte Einfüge-Panel (#pastePanel) wie
+                   der bestehende Menüpunkt "CNC-Code einfügen" im "Bearbeiten"->"CNC"-Menü
+                   (#btnPaste) - nach demselben Zwillings-Muster wie z. B. "CNC-Programm löschen"
+                   direkt oberhalb. Dafür wurde die zuvor anonyme Klick-Funktion von #btnPaste in die
+                   benannte Funktion openPastePanel() ausgelagert und wird jetzt von beiden Knöpfen
+                   gemeinsam genutzt (siehe dort) - keine Logik-Duplizierung. Bewusst nicht deaktiviert
+                   (wie auch #btnPaste nie deaktiviert ist): Code einfügen ist jederzeit möglich,
+                   unabhängig davon, ob schon ein Programm geladen ist. -->
+              <button class="menu-item" id="btnPasteFileMenu" type="button" data-i18n-en="Paste CNC-Code">CNC-Code einfügen</button>
             </div>
           </div>
           <!-- DXF-Import (Sebastian: "Das DXF soll separat über Datei -> 'DXF Import' eingefügt
@@ -2769,11 +2779,6 @@
             <span class="menu-info-label" data-i18n-en="Last release:">Letzte Releasezeit:</span>
             <span class="menu-info-value" id="infoReleaseTimeValue"></span>
           </div>
-          <!-- Copyright-Zeile (Release 188, Sebastian, Punkt 3) - siehe ausführlichen Kommentar bei
-               "#menuInfoCopyright" im Stylesheet oben für die vollständige Herleitung der
-               Platzierung/Trennstriche. Reiner Text, kein data-i18n-en nötig (Name bleibt in
-               beiden Sprachen identisch). -->
-          <div class="menu-copyright" id="menuInfoCopyright">© Sebastian Bäcker 2026</div>
           <!-- "Versionsupdate prüfen" (Release 93, Sebastian: "der Benutzer klickt auf
                'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine
                aktuellere Version gibt") - echter, anklickbarer .menu-item direkt unterhalb der
@@ -2822,6 +2827,18 @@
                später: einfach das hidden-Attribut an diesen beiden Knöpfen wieder entfernen. -->
           <button class="menu-item" id="btnShowPrivacy" type="button" data-i18n-en="Privacy policy" hidden>Datenschutzerklärung</button>
           <button class="menu-item" id="btnShowImprint" type="button" data-i18n-en="Imprint" hidden>Impressum</button>
+          <!-- Copyright-Zeile (ursprünglich Release 188, Sebastian, Punkt 3) - Release 190, Sebastian:
+               "Das '(c) Sebastian Bäcker 2026' unter dem '?' Menü bitte nach ganz unten in die Liste
+               schieben. Das sieht besser aus" - ans Ende des "?"-Menüs verschoben (jetzt tatsächlich
+               letzter Eintrag im DOM, nach den beiden ausgeblendeten Datenschutz-/Impressum-Knöpfen,
+               nicht nur optisch letzter sichtbarer Eintrag). Reine Verschiebung im Markup: ID/CSS
+               (#menuInfoCopyright im Stylesheet oben, inkl. des eigenen oberen Trennstrichs) UND Text
+               bleiben unverändert - der Trennstrich trennt die Zeile jetzt von "Kontakt" darüber statt
+               wie zuvor von den beiden reinen Info-Zeilen oben. "Versionsupdate prüfen" (siehe dort)
+               behält dabei weiterhin unverändert seinen eigenen oberen Trennstrich zu den Info-Zeilen
+               darüber. Reiner Text, kein data-i18n-en nötig (Name bleibt in beiden Sprachen
+               identisch). -->
+          <div class="menu-copyright" id="menuInfoCopyright">© Sebastian Bäcker 2026</div>
         </div>
       </div>
     </div>
@@ -4417,6 +4434,23 @@
   <div class="paste-card">
     <h3 data-i18n-en="Set collet appearance">Spannfutter-Darstellung einstellen</h3>
     <p class="panel-hint" data-i18n-en="Shows the collet (HSK63 tool holder) in the 3D simulation as a wireframe (as before) or additionally filled in a selectable color/transparency.">Zeigt das Spannfutter (HSK63-Werkzeughalter) in der 3D-Simulation als Drahtgitter (wie bisher) oder zusätzlich gefüllt in einer wählbaren Farbe/Transparenz.</p>
+    <!-- Release 192 (Sebastian: "Beim Menü 'Spannfutter-Darstellung einstellen' einen Menüpunkt
+         einbauen 'Spannfutter einblenden' bzw. 'Spannfutter ausblenden'. Ist das ausgewählt wird es
+         dargestellt bzw. nicht. Standardwert dafür ist ausgeblendet. Das ist dann auch im
+         Menüband in der Simulation der Fall ... Wert wird auch bei den Einstellungen exportiert."):
+         eigene, zusätzliche Radiogruppe NUR hier im Spannfutter-Panel (Säge/Fräser haben kein
+         entsprechendes Ein-/Ausblenden, siehe TOOL_APPEARANCE_KINDS/applyToolAppearance() weiter
+         oben - die generische Dreifach-Verdrahtung bleibt deshalb unverändert, diese Radiogruppe
+         wird separat per eigenen addEventListener verdrahtet, siehe app.js). Steuert denselben
+         showToolHolder-Zustand wie der Werkzeugleisten-Knopf #btnToggleToolHolder und das
+         "+Werkzeuge (T)"-Dropdown (siehe setShowToolHolder() in app.js). -->
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Visibility">Sichtbarkeit</div>
+      <div class="scale-choice" id="toolAppearanceColletVisibleChoice">
+        <label class="scale-option"><input type="radio" name="toolAppearanceColletVisible" value="1"> <span data-i18n-en="Show collet">Spannfutter einblenden</span></label>
+        <label class="scale-option"><input type="radio" name="toolAppearanceColletVisible" value="0"> <span data-i18n-en="Hide collet">Spannfutter ausblenden</span></label>
+      </div>
+    </div>
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="Display">Darstellung</div>
       <div class="scale-choice" id="toolAppearanceColletFilledChoice">
@@ -7350,8 +7384,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 189;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 12:10 Uhr';
+  const APP_RELEASE_NUMBER = 192;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 15:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8460,6 +8494,39 @@ CORNERRADIUS=GFIL r=
   const LS_KEY_TOOL_APPEARANCE_CUTTER = 'cncsim.toolAppearance.cutter';
   const LS_KEY_TOOL_APPEARANCE_SAW = 'cncsim.toolAppearance.saw';
   const LS_KEY_TOOL_APPEARANCE_COLLET = 'cncsim.toolAppearance.collet';
+  // Spannfutter (HSK63-Werkzeughalter) sichtbar/ausgeblendet - Release 192 (Sebastian: "Beim Menü
+  // 'Spannfutter-Darstellung einstellen' einen Menüpunkt einbauen 'Spannfutter einblenden' bzw.
+  // 'Spannfutter ausblenden'. Ist das ausgewählt wird es dargestellt bzw. nicht. Standardwert dafür
+  // ist ausgeblendet. ... Wert wird auch bei den Einstellungen exportiert."). Exakt dasselbe Muster
+  // wie LS_KEY_GRID_VISIBLE/setGridVisible() weiter oben ("ein Name, ein Zustand" über alle
+  // Bedienwege), nur mit umgekehrtem Standard: VOR dieser Runde war showToolHolder (siehe weiter
+  // unten) immer fest sichtbar (true) - ab jetzt ist der Standard "ausgeblendet" (false).
+  const LS_KEY_SHOW_TOOL_HOLDER = 'cncsim.showToolHolder';
+  const DEFAULT_SHOW_TOOL_HOLDER = false;
+  function loadPersistedShowToolHolder() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_SHOW_TOOL_HOLDER);
+      if (raw === null) return DEFAULT_SHOW_TOOL_HOLDER;
+      return raw === '1' || raw === 'true';
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return DEFAULT_SHOW_TOOL_HOLDER;
+  }
+  function persistShowToolHolder(visible) {
+    try { window.localStorage.setItem(LS_KEY_SHOW_TOOL_HOLDER, visible ? '1' : '0'); } catch (e) { /* s.o. */ }
+  }
+  // Self-persistierender Setter, von ALLEN drei Bedienwegen gemeinsam verwendet (Werkzeugleisten-
+  // Knopf #btnToggleToolHolder, "+Werkzeuge (T)"-Dropdown confirmInsertToolData(), und die neue
+  // Radiogruppe im "Spannfutter-Darstellung einstellen"-Panel #toolAppearanceColletPanel) - setzt
+  // Zustand+Persistenz+Knopf-Klasse in einem Aufruf, damit alle drei garantiert exakt gleichwertig
+  // bleiben. Spannfutter wird LIVE pro Frame gezeichnet (siehe showTool/showToolHolder-Prüfung in
+  // drawTool() weiter unten), nicht gebacken - anders als gridVisible ist daher KEIN
+  // bakeParams=null-Rebake nötig, ein einfaches requestRender() reicht.
+  function setShowToolHolder(visible) {
+    showToolHolder = !!visible;
+    persistShowToolHolder(showToolHolder);
+    btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
+    requestRender();
+  }
   // Dieselbe helle Grau-Vorgabe wie im Sebastian vorab gezeigten Vorschaubild (Fräszylinder/Säge
   // "gefüllt" in hellem Grau) - reiner Startwert, über den Farbwähler frei änderbar.
   const DEFAULT_TOOL_FILL_COLOR = '#c9cacf';
@@ -9951,7 +10018,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let showTool = true;
   // Spannfutter/HSK63-Werkzeughalter unabhängig vom Werkzeug selbst aus-/einblenden (74. Runde,
   // Sebastian: "Es soll aber noch das Spannfutter (also das HSK63) ausgeblendet werden können.")
-  // - startet ebenfalls sichtbar (true), siehe btnToggleToolHolder weiter unten und drawTool().
+  // - startete ursprünglich sichtbar (true), siehe btnToggleToolHolder weiter unten und drawTool().
+  // Release 192 (Sebastian: "Beim Menü 'Spannfutter-Darstellung einstellen' einen Menüpunkt
+  // einbauen 'Spannfutter einblenden' bzw. 'Spannfutter ausblenden' ... Standardwert dafür ist
+  // ausgeblendet."): Der tatsächliche Startwert wird jetzt beim Seitenstart aus localStorage
+  // übernommen (siehe loadPersistedShowToolHolder()/setShowToolHolder() weiter unten sowie den
+  // Seitenstart-Block ganz unten) - der hier gesetzte Wert ist nur noch der Platzhalter, bis dahin
+  // (unmittelbar beim Start) überschrieben.
   let showToolHolder = true;
 
   // DXF-Import (Sebastian: "Ich möchte ein DXF importieren was am Ende quasi unter der gefrästen
@@ -12385,6 +12458,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const target = opSections[targetIdx];
     flashCodeLine(target.startIdx);
     setScope({ type: 'op', index: target.index });
+  }
+
+  // Release 190, Sebastian, drei zusammenhängende Wünsche rund um das automatische/manuelle
+  // Arbeitsgang-übergreifende Weiterspielen/-scrubben bei einem einzeln ausgewählten Arbeitsgang
+  // (scopeMode.type==='op'): (1) "Bitte einbauen, dass die Simulation ... direkt in den nächsten
+  // Arbeitsgang springt und dort weitersimuliert, wenn der eine Arbeitsgang fertig ist" (siehe
+  // stepPlayback() weiter unten), (2) "Wenn ich ... noch ganz am Anfang des jeweiligen ausgewählten
+  // Arbeitsgangs [bin] und ich eine Zeile ... zurückspringe, springt er einen Arbeitsgang zurück" -
+  // und symmetrisch dazu am Ende vorwärts (siehe den ArrowLeft/ArrowRight-keydown-Handler weiter
+  // unten), (3) "Wenn Arbeitsgänge ausgeblendet sind und nur ein Arbeitsgang aktiv ist, ist das so
+  // wie wenn das Programm beendet/am Anfang ist, man kann nicht vor/zurückspringen. Wenn aber etwas
+  // davor/danach kommt, springt die Simulation in den nächsten bzw. letzten eingeblendeten
+  // Arbeitsgang rein".
+  // Anders als gotoAdjacentOp() direkt oberhalb (Knöpfe "Zurück"/"Weiter" sowie Shift+Pfeiltaste,
+  // siehe 9.3b/Release 184+185 - dort bewusst UNVERÄNDERT, springt weiterhin auch zu ausgeblendeten
+  // Arbeitsgängen) überspringt diese neue Hilfsfunktion dabei gezielt ausgeblendete Arbeitsgänge
+  // (hiddenOpIndexes, "Auge"-Symbol in der Arbeitsgänge-Spalte, siehe toggleOpVisibility()) - genau
+  // wie von Sebastian in Punkt 3 beschrieben. curIndex ist der Index des aktuellen Arbeitsgangs
+  // (scopeMode.index), dir +1 (vorwärts) oder -1 (rückwärts). Liefert den nächsten SICHTBAREN
+  // Nachbar-Arbeitsgang in Programmreihenfolge, übergeht dabei beliebig viele dazwischenliegende
+  // ausgeblendete Arbeitsgänge, oder null, wenn keiner mehr folgt (= "wie Programmende/-anfang").
+  function findAdjacentVisibleOp(curIndex, dir) {
+    const opSections = getOpSections();
+    const curIdx = opSections.findIndex(sec => sec.index === curIndex);
+    if (curIdx === -1) return null;
+    let i = curIdx + dir;
+    while (i >= 0 && i < opSections.length) {
+      if (!hiddenOpIndexes.has(opSections[i].index)) return opSections[i];
+      i += dir;
+    }
+    return null;
   }
 
   // Kleine Markierungen auf der Wiedergabe-Leiste bei jedem neuen Arbeitsgang (Release 108,
@@ -15149,10 +15253,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         updateReadoutAndHighlight();
         requestRender();
       } else {
-        playing = false;
-        updatePlayIcon();
-        stepPlayback._last = null;
-        return;
+        // Ende des aktuell simulierten Bereichs erreicht. Release 190, Sebastian, Punkt 1: "Bitte
+        // einbauen, dass die Simulation dann direkt in den nächsten Arbeitsgang springt und dort
+        // weitersimuliert, wenn der eine Arbeitsgang fertig ist und der nächste beginnt ... Es geht
+        // in dem Fall nur um die Situation, dass man in einen Arbeitsgang direkt reingesprungen ist
+        // mit einem Klick." Betrifft deshalb ausschließlich den Scope "einzelner Arbeitsgang"
+        // (scopeMode.type==='op') - bei "Gesamtes Programm" (scopeMode.type==='all') liegen ohnehin
+        // bereits ALLE Arbeitsgänge hintereinander in einem einzigen "points"-Array (siehe
+        // setScope()), ein Scope-Wechsel ist dort weder nötig noch gewollt ("Das Verhalten bei
+        // 'Gesamtes Programm' bleibt gleich - es wird alles simuliert"). findAdjacentVisibleOp()
+        // (siehe dort, Punkt 3) überspringt dabei automatisch etwaige ausgeblendete Arbeitsgänge
+        // und liefert null, wenn kein sichtbarer Arbeitsgang mehr folgt (letzter Arbeitsgang bzw.
+        // alle nachfolgenden ausgeblendet) - dann wie bisher stoppen.
+        const nextOp = scopeMode.type === 'op' ? findAdjacentVisibleOp(scopeMode.index, 1) : null;
+        if (nextOp) {
+          flashCodeLine(nextOp.startIdx);
+          setScope({ type: 'op', index: nextOp.index });
+          // setScope() setzt scrubIdx/hasStarted/playing für eine "frisch ausgewählte"
+          // Sofort-Vollanzeige zurück (siehe dort) - für ein NAHTLOSES Weiterspielen hier bewusst
+          // sofort wieder auf "spielt gerade, wächst Punkt für Punkt" umgeschaltet, statt die
+          // Wiedergabe zu unterbrechen. scrubIdx bleibt dabei bei 0 (Anfang des neuen
+          // Arbeitsgangs, von setScope() bereits korrekt gesetzt).
+          playing = true;
+          hasStarted = true;
+          updatePlayIcon();
+          requestRender();
+        } else {
+          playing = false;
+          updatePlayIcon();
+          stepPlayback._last = null;
+          return;
+        }
       }
     }
     requestAnimationFrame(stepPlayback);
@@ -16269,7 +16400,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Release 178 (Sebastian, Punkt 5: "Alle neuen Einstellungen bitte auch sicher stellen, dass
     // das in den Einstellungsexport reinfließt."), siehe eigene "axisColors"/
     // "axisLabelFontSize"/"gridStep"-Felder weiter unten.
-    LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP
+    LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP,
+    LS_KEY_SHOW_TOOL_HOLDER // Release 192, siehe eigenes "showToolHolder"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -16359,6 +16491,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
       toolAppearanceSaw: Object.assign({}, sawAppearance),
       toolAppearanceCollet: Object.assign({}, colletAppearance),
       toolAppearanceCutter: Object.assign({}, cutterAppearance),
+      // "Spannfutter einblenden"/"ausblenden" (Release 192, Sebastian: "Wert wird auch bei den
+      // Einstellungen exportiert.") - einfacher Bool-Wert, exakt dieselbe Behandlung wie
+      // "gridVisible"/"invertTilt" oben.
+      showToolHolder,
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -16566,6 +16702,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.toolAppearanceCutter && typeof data.toolAppearanceCutter === 'object') {
         applyToolAppearance('cutter', data.toolAppearanceCutter);
         if (toolAppearanceSyncFns.cutter) toolAppearanceSyncFns.cutter();
+      }
+      // "Spannfutter einblenden"/"ausblenden" (Release 192): fehlt das Feld (ältere Datei), bleibt
+      // die aktuell aktive Vorgabe unangetastet - dieselbe Regel wie bei "Raster"/"Rotation" oben.
+      if (data.showToolHolder !== undefined) {
+        setShowToolHolder(data.showToolHolder === true || data.showToolHolder === '1' || data.showToolHolder === 1);
+        syncColletVisiblePanelFromActive();
       }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
@@ -17352,6 +17494,23 @@ Sebastian Bäcker (Anschrift wie oben)`,
     });
   });
 
+  // "Spannfutter einblenden"/"Spannfutter ausblenden" (Release 192, siehe Radiogruppe
+  // #toolAppearanceColletVisibleChoice in template_top.html sowie setShowToolHolder() weiter oben).
+  // BEWUSST NICHT in die generische TOOL_APPEARANCE_KINDS-Verdrahtung oben eingebaut (die deckt nur
+  // Darstellung/Farbe/Transparenz ab, identisch für Säge/Spannfutter/Fräser - Sichtbarkeit gibt es
+  // dagegen NUR beim Spannfutter), sondern per eigenen, zusätzlichen addEventListener-Aufrufen auf
+  // denselben Knopf-IDs (#btnToolAppearanceCollet/#btnToolAppearanceColletApply) - dieselbe Technik
+  // wie schon an mehreren Stellen zuvor (mehrere unabhängige Listener auf demselben Knopf).
+  function syncColletVisiblePanelFromActive() {
+    const radio = document.querySelector('input[name="toolAppearanceColletVisible"][value="' + (showToolHolder ? '1' : '0') + '"]');
+    if (radio) radio.checked = true;
+  }
+  el('btnToolAppearanceCollet').addEventListener('click', syncColletVisiblePanelFromActive);
+  el('btnToolAppearanceColletApply').addEventListener('click', () => {
+    const checked = document.querySelector('input[name="toolAppearanceColletVisible"]:checked');
+    if (checked) setShowToolHolder(checked.value === '1');
+  });
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -17975,9 +18134,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // direkt den aktuellen showToolHolder-Wert) sowie confirmInsertToolData() für die umgekehrte
   // Richtung (Dropdown-Auswahl -> showToolHolder).
   btnToggleToolHolder.addEventListener('click', () => {
-    showToolHolder = !showToolHolder;
-    btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
-    requestRender();
+    // Release 192: geht jetzt über den gemeinsamen Setter setShowToolHolder() (siehe dort), damit
+    // Persistenz + die neue Radiogruppe in #toolAppearanceColletPanel automatisch mitziehen.
+    setShowToolHolder(!showToolHolder);
   });
 
   // Reichenbacher-Winkelkorrektur-Schalter (44. Runde) - siehe reichenbacherCorrectionActive()/
@@ -18154,8 +18313,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // globalen showToolHolder-Zustand (denselben, den btnToggleToolHolder in der Werkzeugleiste
     // schaltet) - "Ohne HSK63-Sample" blendet den Halter global aus, "Eingespannte Länge" wieder
     // ein; der nachfolgende requestRender() (s.u.) übernimmt die Änderung sofort sichtbar.
-    showToolHolder = (toolMode !== 'ohnehsk63');
-    btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
+    // Release 192: geht jetzt über den gemeinsamen Setter setShowToolHolder() (siehe dort), damit
+    // Persistenz + die neue Radiogruppe in #toolAppearanceColletPanel automatisch mitziehen.
+    setShowToolHolder(toolMode !== 'ohnehsk63');
     const prevScope = scopeMode;
     // Kamera (Zoom/Blickpunkt) sichern (62. Runde, Sebastian: "Wenn Werkzeug editiert/eingefügt
     // wird, geht der Zoom wieder raus. Der Focus darf sich nicht ändern (Ansicht vom 3D bleibt
@@ -18193,12 +18353,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const pasteArea = el('pasteArea');
   const pasteAreaGutter = el('pasteAreaGutter');
   const renderPasteGutter = attachEditorGutter(pasteArea, pasteAreaGutter);
-  el('btnPaste').addEventListener('click', () => {
+  function openPastePanel() {
     pastePanel.classList.add('open');
     renderPasteGutter();
     el('pasteJumpInput').value = '';
     pasteArea.focus();
-  });
+  }
+  el('btnPaste').addEventListener('click', openPastePanel);
+  // "CNC-Code einfügen" im "Datei"->"CNC"-Menü (Release 190, #btnPasteFileMenu, siehe HTML-Kommentar
+  // dort) - zweiter, gleichwertiger Auslöser für dieselbe openPastePanel()-Funktion wie #btnPaste.
+  el('btnPasteFileMenu').addEventListener('click', openPastePanel);
   el('btnPasteCancel').addEventListener('click', () => pastePanel.classList.remove('open'));
   el('btnPasteApply').addEventListener('click', () => {
     const txt = pasteArea.value;
@@ -18313,6 +18477,49 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const activeTag = document.activeElement && document.activeElement.tagName;
     if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return;
     e.preventDefault();
+
+    // Release 190, Sebastian, Punkt 2: "Wenn ich in einem Arbeitsgang bin - und noch ganz am
+    // Anfang des jeweiligen ausgewählten Arbeitsgangs - und ich eine Zeile (Pfeil links z.B.)
+    // zurückspringe, springt er einen Arbeitsgang zurück. Wenn ich ganz am Anfang des
+    // CNC-Programms bin, geht das natürlich nicht ... Genauso wie ich am Ende nicht weiterkomme
+    // mit dem Pfeil rechts." Betrifft nur den Scope "einzelner Arbeitsgang" (scopeMode.type===
+    // 'op') und nur GENAU am jeweiligen Rand (scrubIdx bereits 0 bzw. bereits points.length-1,
+    // also exakt die Fälle, in denen der normale Einzelschritt unten ohnehin wirkungslos bliebe).
+    // findAdjacentVisibleOp() (siehe dort, Punkt 3) überspringt dabei ausgeblendete Arbeitsgänge
+    // und liefert null am tatsächlichen Programmanfang/-ende bzw. wenn nur noch ausgeblendete
+    // Arbeitsgänge folgen - dann fällt der Code unten einfach ins normale (wirkungslose)
+    // Rand-Klemmen durch, exakt wie von Sebastian verlangt ("das so wie wenn das Programm
+    // beendet/am Anfang ist"). Landet jeweils am GEGENÜBERLIEGENDEN Ende des Nachbar-Arbeitsgangs
+    // (Ende bei Rückwärtssprung, Anfang bei Vorwärtssprung), damit sich das zeilenweise Scrubben
+    // nahtlos fortsetzen lässt.
+    if (scopeMode.type === 'op') {
+      if (e.key === 'ArrowLeft' && scrubIdx === 0) {
+        const prevOp = findAdjacentVisibleOp(scopeMode.index, -1);
+        if (prevOp) {
+          setScope({ type: 'op', index: prevOp.index });
+          hasStarted = true;
+          scrubIdx = points.length - 1;
+          scrubEl.value = String(scrubIdx);
+          if (points[scrubIdx]) flashCodeLine(points[scrubIdx].lineIdx);
+          updateReadoutAndHighlight();
+          requestRender();
+          return;
+        }
+      } else if (e.key === 'ArrowRight' && scrubIdx === points.length - 1) {
+        const nextOp = findAdjacentVisibleOp(scopeMode.index, 1);
+        if (nextOp) {
+          flashCodeLine(nextOp.startIdx);
+          setScope({ type: 'op', index: nextOp.index });
+          hasStarted = true;
+          scrubIdx = 0;
+          scrubEl.value = String(scrubIdx);
+          updateReadoutAndHighlight();
+          requestRender();
+          return;
+        }
+      }
+    }
+
     hasStarted = true;
     scrubIdx = e.key === 'ArrowRight'
       ? Math.min(scrubIdx + 1, points.length - 1)
@@ -19274,6 +19481,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
   cutterAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_CUTTER);
   sawAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_SAW);
   colletAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_COLLET);
+  // "Spannfutter einblenden"/"ausblenden" (Release 192): ebenfalls schon vor dem ersten Programm-
+  // Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Werkzeuge" direkt
+  // oberhalb - reine Variablenzuweisung statt setShowToolHolder() (genau wie bei gridVisible weiter
+  // oben: kein erneutes Persistieren eines gerade erst geladenen Werts, kein requestRender() nötig,
+  // da an dieser Stelle noch kein Programm geladen ist), nur die Werkzeugleisten-Knopf-Klasse
+  // (#btnToggleToolHolder.is-hidden) muss hier zusätzlich händisch synchronisiert werden, da sie in
+  // der statischen Seite noch NICHT gesetzt ist (neuer Standard ist jetzt "ausgeblendet", siehe
+  // DEFAULT_SHOW_TOOL_HOLDER weiter oben).
+  showToolHolder = loadPersistedShowToolHolder();
+  btnToggleToolHolder.classList.toggle('is-hidden', !showToolHolder);
   activeMenuColor = applyMenuHighlightColor(loadPersistedMenuColor());
   // "Schriftfarbe" (66. Runde): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei den drei Einstellungen oben.
