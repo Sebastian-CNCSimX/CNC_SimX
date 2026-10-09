@@ -476,11 +476,35 @@
      app.js) bleibt über die bereits bestehende ".menu-item:disabled"-Regel (opacity: .4)
      zuverlässig sichtbar abgedimmt, unabhängig von dieser zusätzlichen Akzentfarbe. */
   #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--accent); font-weight: 600; }
+  /* Copyright-Zeile im "?"-Menü (Release 188, Sebastian, Punkt 3: "Unter '?' bitte ein '(c)
+     Sebastian Bäcker 2026' einbauen. Das steht unter dem Menüpunkt 'Letzte Releasezeit: ...' ->
+     dann ein Trennstrich -> '(c) Sebastian Bäcker 2026' -> danach, falls noch nicht vorhanden noch
+     ein Trennstrich vor 'Versionsupdate prüfen'") - reine Anzeige-Zeile direkt UNTERHALB der
+     beiden .menu-info-row-Zeilen (Version/Letzte Releasezeit) und OBERHALB von
+     #btnCheckForUpdate, mit eigenem oberen Trennstrich (erfüllt Sebastians ersten geforderten
+     Trennstrich). Der zweite geforderte Trennstrich "vor 'Versionsupdate prüfen'" existierte dabei
+     bereits VORHER (siehe #btnCheckForUpdate direkt oberhalb - "falls noch nicht vorhanden" trifft
+     hier also zu: nicht nochmal zusätzlich gesetzt, da sonst ein doppelter Strich entstünde). Reiner
+     Lesetext (kein .menu-item, nicht anklickbar, keine Hover-/Fokus-Optik) - angelehnt an die
+     Typografie des vormaligen ".footer-credit" (gleiche Schriftgröße/-farbe, siehe dessen jetzt
+     stehengelassener Kommentar oben), hier aber zentriert statt rechtsbündig, da das Menü selbst
+     schmal und linksbündig aufgebaut ist. */
+  #menuInfoCopyright { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--ink-faint); text-align: center; user-select: none; }
   /* Trennstrich oberhalb von "Datenschutzerklärung" (NEU, 30.09.2026, Sebastian: "Unter
      'Versionsupdate prüfen' kommt ein Trennstrich, darunter dann: Datenschutzerklärung /
      Impressum") - dasselbe Trennlinien-Muster wie bei #btnCheckForUpdate oben, hier aber ohne
      die Akzentfarbe/Fettschrift, da dieser Trennstrich nur zwei Menü-Gruppen optisch trennt und
-     keinen einzelnen Aktions-Knopf hervorheben soll. */
+     keinen einzelnen Aktions-Knopf hervorheben soll.
+     "Kontakt" (Release 188, Sebastian, Punkt 2: "Unter dem '?' bitte einen Punkt 'Kontakt'
+     einbauen ... Der Punkt ist unter einem (neuen) Trennstrich von 'Versionsupdate prüfen'") -
+     bekommt denselben Trennstrich wie #btnShowPrivacy hier direkt darunter, ist aber (anders als
+     Datenschutzerklärung/Impressum) kein <button>, sondern ein echtes <a href="mailto:...">,
+     damit ein Klick darauf das Standard-Mailprogramm öffnet statt eine JS-Funktion aufzurufen
+     (siehe Markup). ".menu-item" selbst setzt keine display/text-decoration-Eigenschaft (war bei
+     ausschließlich <button>-Elementen bislang nie nötig) - hier deshalb zusätzlich explizit
+     gesetzt, damit der Link optisch nicht von den Knöpfen abweicht (kein Unterstrich, keine
+     Linkfarbe, volle Zeilenbreite als Klickfläche wie bei den Knöpfen). */
+  #btnContact { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); display: block; color: var(--ink); text-decoration: none; }
   #btnShowPrivacy { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   /* "Infos" -> Programminformationen (Release 162/163, siehe #menuMillTimeDropdown in
      template_top.html für die ausführliche Herleitung) - derselbe Trennlinien-Mechanismus wie bei
@@ -2191,16 +2215,13 @@
   .editor-wrap textarea:focus { outline: none; }
   .paste-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
-  .footer-credit {
-    position: fixed;
-    right: 10px;
-    bottom: 6px;
-    font-size: 10.5px;
-    color: var(--ink-faint);
-    pointer-events: none;
-    z-index: 5;
-    user-select: none;
-  }
+  /* ".footer-credit" ("(c) SB 2026", seitenweit fest unten rechts über dem 3D-Bereich) in Release
+     188 ersatzlos entfernt (Sebastian, Punkt 1: "Das '(c) SB 2026' im 3D Sim Bereich entfernen") -
+     diese Regel wird dadurch nicht mehr verwendet, bewusst als dokumentierender Hinweis stehen
+     gelassen statt kommentarlos gelöscht, da mehrere andere, unverändert gültige Kommentare in
+     dieser Datei (u. a. bei ".info-panel" oben) sich noch namentlich darauf beziehen. Die
+     Urheberangabe selbst lebt seit demselben Release im "?"-Menü weiter (#menuInfoCopyright,
+     siehe Markup/Stylesheet dort), nicht mehr dauerhaft im 3D-Bereich eingeblendet. */
 
   .dropzone-active .viewer::after {
     content: "Datei hier ablegen";
@@ -2748,6 +2769,11 @@
             <span class="menu-info-label" data-i18n-en="Last release:">Letzte Releasezeit:</span>
             <span class="menu-info-value" id="infoReleaseTimeValue"></span>
           </div>
+          <!-- Copyright-Zeile (Release 188, Sebastian, Punkt 3) - siehe ausführlichen Kommentar bei
+               "#menuInfoCopyright" im Stylesheet oben für die vollständige Herleitung der
+               Platzierung/Trennstriche. Reiner Text, kein data-i18n-en nötig (Name bleibt in
+               beiden Sprachen identisch). -->
+          <div class="menu-copyright" id="menuInfoCopyright">© Sebastian Bäcker 2026</div>
           <!-- "Versionsupdate prüfen" (Release 93, Sebastian: "der Benutzer klickt auf
                'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine
                aktuellere Version gibt") - echter, anklickbarer .menu-item direkt unterhalb der
@@ -2756,6 +2782,19 @@
                nicht anklickbar ist (siehe Kommentar oben). Verdrahtung/Ablauf: checkForUpdate()
                in app.js. -->
           <button class="menu-item" id="btnCheckForUpdate" type="button" data-i18n-en="Check for updates">Versionsupdate prüfen</button>
+          <!-- "Kontakt" (Release 188, Sebastian, Punkt 2: "Unter dem '?' bitte einen Punkt 'Kontakt'
+               einbauen. Dort ist ein Link mit 'mailto: cncsimx@gmail.com'. Der Punkt ist unter
+               einem (neuen) Trennstrich von 'Versionsupdate prüfen'") - echtes <a href="mailto:...">
+               statt eines <button>, damit ein Klick direkt das Standard-Mailprogramm des Systems
+               öffnet (WebView2 UND gewöhnlicher Browser behandeln "mailto:"-Links gleichermaßen
+               automatisch über das vom Betriebssystem hinterlegte Standardprogramm, ganz ohne
+               eigenen C#-Code im Host) - keine eigene JS-Verdrahtung nötig. Optisch exakt wie ein
+               .menu-item (siehe #btnContact im Stylesheet oben für die dafür nötigen
+               Zusatz-Eigenschaften), inklusive eigenem oberen Trennstrich zu "Versionsupdate
+               prüfen" darüber. Damit ein Klick darauf das Menü wie bei jedem anderen Menüpunkt
+               automatisch schließt, wurde der generische Klick-Schließen-Handler (vormals nur auf
+               "button" geprüft, siehe dort) um "a" ergänzt. -->
+          <a class="menu-item" id="btnContact" href="mailto:cncsimx@gmail.com" data-i18n-en="Contact">Kontakt</a>
           <!-- "Token kaufen" (23.09.2026) TEMPORÄR AUSGEBAUT (30.09.2026, Sebastian: "Token kaufen
                entfernen" + "Beim Programmstart das Programm direkt starten ohne Anmeldung/
                Tokenprüfung") - das Bezahlsystem kommt zu einem späteren Zeitpunkt zurück, siehe
@@ -3287,7 +3326,12 @@
       </div>
     </div>
   </div>
-  <div class="footer-credit">© SB 2026</div>
+  <!-- "(c) SB 2026" (Release 188, Sebastian, Punkt 1: "Das '(c) SB 2026' im 3D Sim Bereich
+       entfernen") - die vormals hier stehende, seitenweit feste Copyright-Zeile ".footer-credit"
+       (unten rechts, siehe ihre eigene CSS-Regel/den ausführlichen Positionierungs-Kommentar bei
+       ".info-panel" oben) entfällt ersatzlos; die Urheberangabe steht stattdessen seit demselben
+       Release als eigene Zeile im "?"-Menü (#menuInfoCopyright, siehe dort) statt dauerhaft über
+       dem 3D-Bereich eingeblendet zu sein. -->
 </div>
 
 <div class="paste-panel" id="pastePanel">
@@ -7306,8 +7350,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 187;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:05 Uhr';
+  const APP_RELEASE_NUMBER = 188;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -15317,9 +15361,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Untermenü-AUSLÖSER (".submenu-trigger", 60. Runde) erreicht diesen Listener hier praktisch
     // nie (er stoppt seine Ausbreitung bereits selbst, siehe oben) - die Prüfung steht trotzdem
     // defensiv hier, falls das je anders verdrahtet würde.
+    // "a" ergänzt (Release 188, siehe #btnContact im Markup/Stylesheet) - "Kontakt" ist als echtes
+    // <a href="mailto:...">, nicht als <button>, umgesetzt (damit der Klick direkt das
+    // Standard-Mailprogramm öffnet statt eine eigene JS-Funktion aufzurufen); ohne diese Ergänzung
+    // hätte ein Klick darauf das Menü nicht mit geschlossen, obwohl optisch/funktional ein ganz
+    // normaler Menüpunkt.
     m.dropdown.addEventListener('click', (e) => {
       if (e.target.closest('.submenu-trigger')) return;
-      if (e.target.closest('button')) closeAllMenus();
+      if (e.target.closest('button, a')) closeAllMenus();
     });
   });
   document.addEventListener('click', (e) => {
