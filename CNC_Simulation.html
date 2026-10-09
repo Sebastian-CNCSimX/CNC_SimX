@@ -7169,8 +7169,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 182;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:40 Uhr';
+  const APP_RELEASE_NUMBER = 183;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 08:52 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11817,7 +11817,42 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       });
       item.appendChild(btn3d);
 
-      item.addEventListener('click', () => jumpToCodeLine(sec.startIdx));
+      // Release 183 (Sebastian: "Änderung der Darstellung von Arbeitsgängen" - Ist-Zustand: "Wenn
+      // man den Arbeitsgang anklickt, werden die Bearbeitungen/das Ergebnis des angewählten
+      // Arbeitsgangs in der 3D Sim nicht direkt dargestellt"; Soll-Zustand: "... werden die
+      // Bearbeitungen/das Ergebnis des angewählten Arbeitsgangs in der 3D Sim direkt dargestellt.
+      // Wenn dann auf Play geklickt wird, beginnt dieser Arbeitsgang dann von vorne.").
+      // Bisher rief ein Klick auf die Arbeitsgang-Zeile ausschließlich jumpToCodeLine() auf, das
+      // (über scrubToLineIdx()) die 3D-Wiedergabeposition (scrubIdx) auf den ERSTEN Punkt dieses
+      // Arbeitsgangs setzt UND dabei hasStarted auf "true" schaltet - laut segRevealCount() weiter
+      // unten wird eine "nicht gedimmte" (aktive) Bahn ab hasStarted=true aber nur bis scrubIdx
+      // GEWACHSEN gezeichnet (siehe dortigen Kommentar, "Wunsch: Ansicht wächst beim Abspielen
+      // nach") - direkt nach diesem Zeilensprung lag scrubIdx jedoch GENAU AM ANFANG des gerade
+      // angeklickten Arbeitsgangs, so dass von dessen Ergebnis noch praktisch nichts zu sehen war.
+      // Das ist exakt der beschriebene Ist-Zustand.
+      // Fix: Statt scrubToLineIdx() wird jetzt (wie beim separaten "3D"-Knopf oben, siehe dessen
+      // ausführliche Herleitung) direkt setScope({type:'op', index: sec.index}) aufgerufen -
+      // dadurch zusätzlich NICHT als Umschalter (anders als der "3D"-Knopf): ein Klick auf eine
+      // Arbeitsgang-Zeile soll immer deren Ergebnis zeigen, nie zur Standardansicht zurückspringen
+      // (dafür bleibt weiterhin ausschließlich der separate "Gesamtes Programm"-Knopf bzw. der
+      // "3D"-Knopf als echter Umschalter zuständig). setScope() setzt scrubIdx intern auf 0 UND
+      // hasStarted auf false zurück - laut segRevealCount() wird eine Bahn bei hasStarted=false
+      // SOFORT VOLLSTÄNDIG gezeichnet, unabhängig vom Scrubber - exakt das gewünschte "Ergebnis
+      // direkt dargestellt". Die vorherigen Arbeitsgänge (sec.index < mode.index) bleiben dabei wie
+      // schon bisher bei setScope(mode:'op') als gedimmter Kontext ("bereits gefertigtes Bauteil")
+      // sichtbar - das war schon vor Release 183 so und wird hier nicht verändert.
+      // "Play beginnt von vorne": da im Scope "einzelner Arbeitsgang" ausschließlich die Punkte
+      // DIESES Arbeitsgangs in "points" liegen (siehe setScope()) und scrubIdx direkt danach bei 0
+      // steht, startet ein anschließender Klick auf "Play" (siehe dessen Klick-Handler weiter
+      // unten) die Wiedergabe automatisch exakt am ersten Punkt dieses Arbeitsgangs - ganz ohne
+      // zusätzliche Sonderbehandlung dort.
+      // Das optische Flash-/Scroll-Feedback im CNC-Programmcode-Fenster (bisher Teil von
+      // jumpToCodeLine()) bleibt erhalten, nur eben über die neue, von der Wiedergabeposition
+      // unabhängige flashCodeLine() (siehe deren Herleitung oben).
+      item.addEventListener('click', () => {
+        flashCodeLine(sec.startIdx);
+        setScope({ type: 'op', index: sec.index });
+      });
       opsListEl.appendChild(item);
     });
     updateShowAllOpsButton();
@@ -11956,7 +11991,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     void treeEl.offsetHeight; // Reflow erzwingen, damit content-visibility:visible bereits vor dem Scroll wirkt
   }
 
-  function jumpToCodeLine(lineIdx) {
+  // Reines Scroll-/Blink-Feedback im CNC-Programmcode-Fenster (Zeile mittig einblenden + kurz
+  // aufblitzen lassen) - OHNE die 3D-Wiedergabeposition anzufassen. Release 183 (siehe die
+  // ausführliche Herleitung beim Arbeitsgang-Klick-Handler weiter unten, renderOpsColumn()):
+  // aus dem bisherigen jumpToCodeLine() HERAUSGEZOGEN, damit der Arbeitsgang-Klick weiterhin
+  // dasselbe optische Code-Feedback geben kann, ohne (wie jumpToCodeLine() über
+  // scrubToLineIdx()) die Wiedergabeposition auf den ANFANG der Zeile zu springen - das wird für
+  // den Arbeitsgang-Klick jetzt stattdessen über setScope() gelöst (zeigt das Ergebnis sofort
+  // vollständig, siehe dort). jumpToCodeLine() selbst (siehe gleich danach) bleibt für ihren
+  // einzigen anderen Aufrufer (Klick auf eine Code-Zeile/einen Bahnpunkt direkt, hitTestCncLine())
+  // unverändert bei der alten Kombination aus Flash + scrubToLineIdx().
+  function flashCodeLine(lineIdx) {
     const lineEl = lineEls[lineIdx];
     if (!lineEl) return;
     ensureRealLineLayout();
@@ -11964,6 +12009,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     lineEl.classList.remove('jump-flash');
     void lineEl.offsetWidth; // Reflow erzwingen, damit die Animation bei erneutem Klick neu startet
     lineEl.classList.add('jump-flash');
+  }
+
+  function jumpToCodeLine(lineIdx) {
+    if (!lineEls[lineIdx]) return;
+    flashCodeLine(lineIdx);
     scrubToLineIdx(lineIdx);
   }
 
