@@ -7350,8 +7350,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 188;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:40 Uhr';
+  const APP_RELEASE_NUMBER = 189;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 12:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -15508,7 +15508,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // bewusst NICHT einfach ".btn.ghost" verwendet, da z. B. der Skalieren-Dialog mit
   // "Originalgröße" einen ZWEITEN ghost-Knopf hat, der hier nicht gemeint ist). Ein einziger
   // globaler Listener deckt dadurch automatisch ALLE diese Dialoge ab, auch künftig neu
-  // hinzukommende, ohne pro Dialog eigens verdrahtet werden zu müssen. Ausnahmen:
+  // hinzukommende, ohne pro Dialog eigens verdrahtet werden zu müssen.
+  // Release 189 (Sebastian: "Die Dialoge 'Fräszeitberechnung' und 'Shortcuts' sollten auch mit
+  // 'Esc' verlassen werden können") - beide sind rein informative Panels OHNE "Abbrechen"/
+  // "Übernehmen"-Knopfpaar (siehe #millTimePanel/#shortcutsPanel), ihr einziger Knopf heißt
+  // deshalb bewusst "Schließen" statt "Abbrechen" (IDs #btnMillTimeClose/#btnShortcutsClose,
+  // enden entsprechend auf "Close" statt "Cancel") - fielen dadurch bislang nicht unter obige
+  // "endet auf 'Cancel'"-Selektorregel und reagierten gar nicht auf Escape. Selektor um
+  // "button[id$='Close']" ergänzt, damit exakt dieselbe generische Logik (inkl. aller künftig neu
+  // hinzukommenden gleichartigen Dialoge) auch Close- statt Cancel-Knöpfe automatisch per Escape
+  // auslöst - technisch ununterscheidbar von einem Cancel-Klick (beide schließen nur das Panel,
+  // ohne etwas zu übernehmen), daher dieselbe Behandlung ohne eigene Fallunterscheidung nötig.
+  // Ausnahmen:
   // - Innerhalb eines <textarea> (mehrzeilige Editoren wie "NC-Code einfügen", "Programm
   //   bearbeiten", "Maschinentypen bearbeiten", "AG-Namen bearbeiten") fügt Enter weiterhin ganz
   //   normal einen Zeilenumbruch ein, statt den Dialog zu bestätigen - Escape bricht den Dialog
@@ -15543,7 +15554,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (codeJumpActive) toggleCodeJump();
       const openPanel = document.querySelector('.paste-panel.open');
       if (openPanel) {
-        const cancelBtn = openPanel.querySelector(".paste-actions button[id$='Cancel']");
+        const cancelBtn = openPanel.querySelector(".paste-actions button[id$='Cancel'], .paste-actions button[id$='Close']");
         if (cancelBtn) cancelBtn.click();
       }
       return;
