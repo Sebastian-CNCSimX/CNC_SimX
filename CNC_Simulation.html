@@ -495,7 +495,11 @@
      demselben Trennlinien-Muster wie #btnCheckForUpdate/#btnShowPrivacy/#millTimeFileInfoSep oben. */
   /* #btnGridColor (Release 178, "Achsenfarbe"/Punkt 1) hierher ergänzt - derselbe Trennstrich,
      siehe Kommentar bei #btnAxisColor im Markup. */
-  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  /* #btnOpenKnowledgeBase (Release 187, Sebastian, Punkt 1: "Unter 'Shortcuts' vor 'Knowledge
+     Base' bitte einen waagerechten Trennstrich einbauen") - derselbe Trennstrich wie oben,
+     diesmal im "Hilfe"-Dropdown (#menuInfosDropdown) zwischen dem seit Release 186 neuen
+     "Shortcuts"-Menüpunkt und "Knowledge Base" darunter, siehe Markup bei #btnOpenKnowledgeBase. */
+  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   /* "Fräszeitberechnung" -> zwei neue Trennstriche (Release 180, Punkt 3, siehe ausführlichen
      Kommentar bei #millTimePanel in template_top.html) - dasselbe margin-top/padding-top/
      border-top-Muster wie oben, hier erstmals auf zwei .color-field-row-Zeilen INNERHALB eines
@@ -1571,17 +1575,47 @@
         dieselbe feste Quadratgröße wie #btnHomeView (dort über die gemeinsame ".view-btn"-Klasse,
         siehe dort; hier bewusst lokal auf .gizmo-top-btn dupliziert statt ".view-btn" zusätzlich zu
         vergeben, damit die für andere Knöpfe geltende, dort fest mit 16px-Symbol-Schriftgröße
-        verknüpfte ".view-btn"-Klasse unangetastet bleibt). Die Beschriftung "Top" (3 Zeichen) passt
+        verknüpfte ".view-btn"-Klasse unangetastet bleibt). Die Beschriftung "Top" (3 Zeichen) passte
         bei 30px Breite nicht mehr bei der ursprünglichen 12px-Schrift - auf 11px samt -0.3px
         Buchstabenabstand verkleinert, damit der Text nicht an den Rand stößt (per Screenshot
         nachgemessen: "Top" bei 11px/-0.3px ca. 19px breit, bleibt bei 30px Knopfbreite beidseitig
-        mit Luft). */
-  .gizmo-top-btn {
+        mit Luft).
+     Release 186 (Sebastian, Punkt 1: "'Top' Key kriegt das Haussymbol, Icongröße bleibt, Position
+        an derselben Stelle"): #btnTopView zeigt seither statt des Texts "Top" dasselbe ⌂-Zeichen,
+        das zuvor auf #btnHomeView saß (siehe dessen eigener Kommentar bei ".gizmo-home-btn" oben
+        für den Grund des Tauschs) - ID, Position (`top`/`right` unverändert) und KLICK-FUNKTION
+        (weiterhin goTopView(), reine Ansicht von oben, siehe dort) bleiben dabei exakt unverändert,
+        es ändert sich nur das Symbol selbst. Die auf die 3-Zeichen-Beschriftung "Top" zugeschnittene
+        11px/-0.3px-Schriftgröße passt nicht mehr zu einem einzelnen ⌂-Zeichen - zunächst auf
+        dieselbe 16px-Größe wie zuvor bei #btnHomeView (".view-btn", siehe dort) umgestellt, die
+        Buchstabenabstand-Verkleinerung (für die jetzt entfallene Mehrzeichen-Beschriftung ohnehin
+        nicht mehr nötig) entfernt.
+     Release 187 (Sebastian, Punkt 2: "Das Haussymbol beim 'Würfelkompass' im 3D Simbereich bitte
+        größer machen, min. 50% größer. Der Kasten drumherum bleibt auf jeden Fall gleich groß"):
+        die in Release 186 übernommene 16px-Schriftgröße war Sebastian zu klein - auf 25px erhöht
+        (+56 % gegenüber 16px, damit sicher über der geforderten Mindestgrenze von 50 %/24px statt
+        nur knapp daran). Das Knopf-Kästchen selbst (`width`/`height: 30px`) bleibt dabei bewusst
+        unverändert, exakt wie gefordert - bei `display:flex; align-items:center;
+        justify-content:center` bleibt das größere Zeichen dadurch automatisch mittig im
+        gleichgroßen Kästchen, per Screenshot nachgemessen ohne Beschneidung am Rand.
+        BUGFIX (ebenfalls Release 187, beim Nachmessen der Schriftgröße selbst entdeckt): Die
+        Release-186-Größenänderung auf 16px kam am Bildschirm NIE tatsächlich an - #btnTopView
+        trägt nur die Klassen "toolbar-btn gizmo-top-btn" (nicht zusätzlich "view-btn" wie
+        #btnHomeView), und ".toolbar-btn" (eigene font-size: 11,5px, siehe dort) steht im
+        Stylesheet TEXTUELL NACH ".gizmo-top-btn" - bei gleicher Spezifität (je ein einzelner
+        Klassenselektor) gewinnt bei einem CSS-Konflikt die später im Dokument stehende Regel,
+        unabhängig von der Lesereihenfolge der Kommentare hier. Das Haussymbol wurde dadurch
+        seit Release 186 tatsächlich nur mit 11,5px statt der beabsichtigten 16px dargestellt -
+        exakt der Grund, warum es Sebastian zu klein vorkam. Behoben durch einen auf BEIDE
+        tatsächlich vorhandenen Klassen zielenden Selektor (".toolbar-btn.gizmo-top-btn" statt
+        nur ".gizmo-top-btn") - zwei Klassen in einem Selektor schlagen einen Ein-Klassen-Selektor
+        unabhängig von der Position im Stylesheet, der Fehler kann dadurch auch bei künftigen
+        Stylesheet-Umsortierungen nicht wieder auftreten. */
+  .toolbar-btn.gizmo-top-btn {
     position: absolute; top: 125px; right: 151px;
     width: 30px; height: 30px;
     padding: 0;
-    font-size: 11px;
-    letter-spacing: -0.3px;
+    font-size: 25px;
     display: flex; align-items: center; justify-content: center;
     pointer-events: auto;
   }
@@ -1967,6 +2001,15 @@
   #knowledgeBaseEditArea { flex: 1 1 auto; height: 320px; resize: none; }
   .panel-hint { margin: -4px 0 0; font-size: 11.5px; color: var(--ink-muted); line-height: 1.5; }
   .panel-hint .k { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 1px 6px; border-radius: 4px; }
+  /* "Shortcuts"-Panel (Release 186, Punkt 4) - eine Zeile je Tastenkürzel, Tastenkombination links
+     als "Pille" (dasselbe optische Prinzip wie ".panel-hint .k" direkt oberhalb, hier aber eine
+     eigene Klasse statt Wiederverwendung, da ".panel-hint .k" für kurze Erwähnungen INNERHALB
+     eines Fließtexts gedacht ist, nicht für eine ganze, rechtsbündige Beschreibungs-Spalte
+     daneben) + Beschreibung rechts, siehe #shortcutsPanel in template_top.html. */
+  .shortcut-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 5px 0; }
+  .shortcut-row + .shortcut-row { border-top: 1px solid var(--border-soft); }
+  .shortcut-key { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; white-space: nowrap; }
+  .shortcut-desc { color: var(--ink-muted); font-size: 13px; text-align: right; }
   /* Warnung bei doppelt vergebenen Maschinentyp-Namen (DropdownMachinetype.txt Punkt 5) - nicht
      blockierend, daher als auffällige, aber nicht rote (keine echte Fehlermeldung) Warnfarbe. */
   #machineTypeDupWarning { color: var(--warn); font-weight: 600; }
@@ -2654,6 +2697,21 @@
       <div class="menu" id="menuInfos">
         <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Help">Hilfe</button>
         <div class="menu-dropdown" id="menuInfosDropdown" hidden>
+          <!-- "Shortcuts" (Release 186, Sebastian, Punkt 4: "Bitte unter 'Hilfe -> Shortcuts' einen
+               neuen Menüpunkt einbauen, der die Shortcuts anzeigt, angeordnet über 'Knowledge Base'
+               in der Höhe. Englische Schreibweise auch 'Shortcuts'") - als ERSTER Eintrag in diesem
+               Dropdown eingefügt, direkt oberhalb von "Knowledge Base" (bislang der einzige Eintrag
+               hier, siehe Kommentar oben bei #menuInfos) - "angeordnet ... über 'Knowledge Base' in
+               der Höhe" bedeutet innerhalb desselben "Hilfe"-Menüs einen Platz höher, nicht ein
+               eigenes neues Menü. Label bewusst identisch "Shortcuts" in DE wie EN (Sebastians
+               ausdrücklicher Wunsch), öffnet das rein informative #shortcutsPanel weiter unten im
+               Markup (siehe dort). -->
+          <button class="menu-item" id="btnOpenShortcuts" type="button" title="Liste aller Tastenkürzel dieser Anwendung anzeigen" data-i18n-en-title="Show the list of all keyboard shortcuts in this application" data-i18n-en="Shortcuts">Shortcuts</button>
+          <!-- Trennstrich über "Knowledge Base" (Release 187, Sebastian, Punkt 1: "Unter
+               'Shortcuts' vor 'Knowledge Base' bitte einen waagerechten Trennstrich einbauen") -
+               per CSS (#btnOpenKnowledgeBase, siehe Stylesheet weiter oben) nach demselben
+               margin-top/padding-top/border-top-Muster wie #btnLoadSettings/#btnGridColor/
+               #btnResetDisplayDefaults (siehe deren Kommentare). -->
           <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert" data-i18n-en-title="Open the editable knowledge base (e.g. cutter lengths/radii, error causes and solutions) - entries are automatically sorted alphabetically when applied">Knowledge Base</button>
         </div>
       </div>
@@ -2963,6 +3021,32 @@
     <div class="transport-row">
       <button class="transport-btn" id="btnPlay" type="button" title="Abspielen / Pause" data-i18n-en-title="Play / Pause">▶</button>
       <button class="transport-btn" id="btnStop" type="button" title="Stopp (Programm abbrechen und zurücksetzen)" data-i18n-en-title="Stop (cancel and reset the program)">■</button>
+      <!-- Release 184 (Sebastian: "Oben in der Play/Beenden-Leiste zum Abspielen des CNC-Programms
+           neue Button einbauen: Next-Button um in den nächsten Arbeitsgang zu springen, Back-Button
+           um in den vorherigen zu springen. Wenn es keinen vorherigen/nächsten gibt, wird der
+           jeweilige Button ausgegraut." - Anordnung ausdrücklich "Play/Pause -> Stop -> Back ->
+           Next", deshalb hier direkt nach #btnStop, noch vor dem Scrubber) - "Standardsymbole die
+           es gibt für Next und Back": ⏮/⏭ (U+23EE/U+23ED, "Skip to previous/next track"), dieselben
+           Glyphen, die auch in gängigen Mediaplayern (z. B. Browser-<audio>/<video>-Steuerleisten,
+           Betriebssystem-Medientasten) für "vorheriger/nächster Titel" verwendet werden - passend
+           zum bereits bestehenden, rein glyphenbasierten Stil dieser Leiste (▶/❚❚/■). Als normale
+           ".transport-btn" angelegt (identische Optik/Größe wie #btnPlay/#btnStop), das bereits
+           bestehende CSS ".transport-btn:disabled { opacity:.4; cursor:default }" deckt das
+           geforderte "ausgegraut" ohne jede neue CSS-Regel automatisch ab (Standard-`disabled`-
+           Attribut statt einer eigenen Hilfsklasse). "Vorheriger/nächster Arbeitsgang" bezieht sich
+           auf denselben, bereits bestehenden "aktueller Arbeitsgang"-Begriff wie die Hervorhebung
+           ".op-item.current" (siehe updateActiveOpHighlight()/lastActiveOpIndex in app.js, und 9.3)
+           - unabhängig vom gewählten Scope ("Gesamtes Programm" ODER "einzelner Arbeitsgang")
+           bestimmt bereits bestehender Code anhand von points[scrubIdx].opIndex, in welchem
+           Arbeitsgang die aktuelle Wiedergabeposition gerade liegt; Klick auf "Zurück"/"Weiter"
+           springt zum vorherigen/nächsten Arbeitsgang in genau dieser (durch current.sections
+           vorgegebenen) Reihenfolge und zeigt dessen Ergebnis sofort vollständig an - dieselbe
+           flashCodeLine()+setScope({type:'op',...})-Kombination wie beim Klick auf eine
+           Arbeitsgang-Zeile selbst (Release 183, siehe dort/9.3a) -, kein eigener neuer
+           Anzeige-Mechanismus nötig. Siehe updateOpNavButtons()/gotoAdjacentOp() in app.js für die
+           vollständige Herleitung von Aktivierung/Deaktivierung sowie der Sprunglogik. -->
+      <button class="transport-btn" id="btnOpPrev" type="button" title="Vorheriger Arbeitsgang" data-i18n-en-title="Previous processing step" disabled>⏮</button>
+      <button class="transport-btn" id="btnOpNext" type="button" title="Nächster Arbeitsgang" data-i18n-en-title="Next processing step" disabled>⏭</button>
       <!-- ".scrub-wrap"/"#scrubMarks" (Release 108, siehe CSS-Kommentar weiter oben sowie
            updateScrubMarks() in app.js) - reines Positionierungs-Overlay für die kleinen
            Arbeitsgang-Markierungen auf der Leiste, #scrub selbst (ID/Funktion/Event-Verdrahtung)
@@ -3157,8 +3241,20 @@
              "Bei Klick auf Home-Button ändert sich die Isometrische Perspektive/Ansicht" (vier
              Ansichten im Kreis, je 90° weitergedreht, siehe HOME_VIEW_ANGLE_SEQUENCE/goHomeView()
              in app.js) - Titel-Tooltip entsprechend angepasst, da "Home" nicht mehr IMMER auf
-             dieselbe feste Ansicht springt. -->
-        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Isometrische Ansicht - wechselt bei jedem Klick im Kreis zur nächsten von vier um 90° gedrehten Isometrie-Ansichten, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Isometric view - cycles to the next of four 90°-rotated isometric views on each click, zoomed out and centered on the currently displayed program">⌂</button>
+             dieselbe feste Ansicht springt.
+             Release 186 (Sebastian, Punkt 3, mit Beispielbild: "Das Haussymbol im 3D Simulation
+             gegen einen 'Iso Würfel' tauschen ... Kästchen bleibt genau so groß und an derselben
+             Stelle"): das bisherige ⌂-Zeichen (siehe oben) ist seither durch ein Inline-SVG eines
+             einfachen Drahtgitter-Würfels ersetzt (Außensechseck + die drei nach innen laufenden
+             Kanten, exakt wie auf dem von Sebastian mitgeschickten Referenzbild - scharfe Ecken statt
+             abgerundeter Linienenden, um dessen schlichten Strichzeichnungs-Stil zu treffen) - Knopf-
+             Größe (30x30px) und -Position (`top:18px; right:151px`, ".gizmo-home-btn" oben) sowie ID/
+             Klick-Funktion (weiterhin goHomeView(), 4er-Ansichtszyklus) bleiben dabei unverändert, es
+             ändert sich nur das Symbol selbst. `stroke="currentColor"` statt einer festen Farbe, damit
+             das Symbol automatisch dieselbe Einfärbung/Hover-Reaktion wie zuvor der ⌂-Zeichentext
+             erhält (siehe ".toolbar-btn"/".toolbar-btn:hover" im Stylesheet - beide setzen lediglich
+             "color", was für Text ebenso wie für `stroke="currentColor"` gleichermaßen greift). -->
+        <button class="toolbar-btn view-btn gizmo-home-btn" id="btnHomeView" type="button" title="Isometrische Ansicht - wechselt bei jedem Klick im Kreis zur nächsten von vier um 90° gedrehten Isometrie-Ansichten, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Isometric view - cycles to the next of four 90°-rotated isometric views on each click, zoomed out and centered on the currently displayed program"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 2 L21 7 L21 17 L12 22 L3 17 L3 7 Z"></path><path d="M3 7 L12 12 L21 7"></path><path d="M12 12 L12 22"></path></svg></button>
         <!-- "Top"-Knopf (Release 147 neu eingeführt, Release 148 unten links an den Kompass-Ring
              verschoben + gleich groß wie Home gemacht, Release 149 versuchsweise an den linken Rand
              des 3D-Bereichs verschoben, Release 150 unterhalb des Kompass-Rings mit mehr Abstand
@@ -3166,8 +3262,12 @@
              Home und Top in einer Flucht, Abstand Home-oben↔N-oben = Abstand Top-unten↔S-unten,
              rechnerisch aus den tatsächlichen Gizmo-Pixelkoordinaten hergeleitet und vor dem Bauen
              als Vorschau bestätigt) - siehe ausführlichen Kommentar bei ".gizmo-top-btn" im
-             Stylesheet oben sowie bei goTopView() in app.js. -->
-        <button class="toolbar-btn gizmo-top-btn" id="btnTopView" type="button" title="Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Top-down view, zoomed out and centered on the currently displayed program">Top</button>
+             Stylesheet oben sowie bei goTopView() in app.js.
+             Release 186 (Sebastian, Punkt 1: "'Top' Key kriegt das Haussymbol, Icongröße bleibt,
+             Position an derselben Stelle"): zeigt seither statt des Texts "Top" dasselbe ⌂-Zeichen,
+             das zuvor #btnHomeView trug (siehe dessen Kommentar oben für den Tausch-Grund) - Größe/
+             Position/ID/Klick-Funktion (weiterhin goTopView()) bleiben unverändert. -->
+        <button class="toolbar-btn gizmo-top-btn" id="btnTopView" type="button" title="Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Top-down view, zoomed out and centered on the currently displayed program">⌂</button>
         <!-- Verschiebbares Info-Fenster (70. Runde, Punkte 2/10/13) - siehe ausführlichen
              Kommentar bei ".info-panel" im Stylesheet oben. Startet hidden, genau wie #readout
              vorher (siehe readoutEl.hidden-Zuweisung in app.js, dort um infoPanelEl.hidden
@@ -3245,6 +3345,43 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnOpNamesEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnOpNamesEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Shortcuts" (Release 186, Sebastian, Punkt 4, siehe Menüpunkt-Kommentar bei #btnOpenShortcuts
+     oben in "Hilfe" (#menuInfosDropdown)) - rein informatives, read-only Panel, das alle
+     Tastenkürzel der Anwendung auflistet. Technisch nach dem einfachsten vorhandenen Vorbild
+     gebaut, das selbst KEINE Eingabe/kein "Übernehmen" kennt (#millTimePanel weiter unten, dort
+     nur ein einzelner "Schließen"-Knopf in ".paste-actions", siehe dessen Kommentar) statt nach
+     den Textarea-Bearbeiten-Dialogen hier in der Nähe (Maschinentypen/Arbeitsgang-Namen/Knowledge
+     Base) - es gibt nichts zu bearbeiten, nur anzuzeigen. Jede Zeile ein eigenes ".shortcut-row"
+     (Tastenkombination links, Beschreibung rechts, siehe ".shortcut-row"/".shortcut-key" im
+     Stylesheet oben - die Tastenkombination optisch als "Pille" wie das bereits bestehende
+     ".panel-hint .k" andernorts, bewusst eine EIGENE kleine Klasse statt diese direkt zu
+     verwenden, da ".panel-hint .k" für kurze INLINE-Erwähnungen innerhalb eines Fließtexts gedacht
+     ist, nicht für eine ganze Spalte rechtsbündiger Kurzbeschreibungen). Reihenfolge/Wortlaut exakt
+     wie von Sebastian in seiner Nachricht vorgegeben (DE- und EN-Fassung je Zeile per
+     data-i18n-en-*, da sich nicht nur die Tastenkombinations-Schreibweise selbst leicht
+     unterscheidet - z.B. "Pos1 (Home)" vs. "Home", "Strg + L" vs. "Ctrl + L", "Escape" vs. "Esc" -
+     sondern auch die Beschreibungstexte selbst unabhängig übersetzt sind, nicht Wort für Wort
+     deckungsgleich). Die Pos1/Home-Zeile lautet entsprechend Punkt 2 (Release 186) bereits
+     "3D-Ansicht Top" / "3D from top", nicht mehr die alte Iso-Ansichts-Beschreibung. -->
+<div class="paste-panel" id="shortcutsPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Shortcuts">Shortcuts</h3>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow left">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Home">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnShortcutsClose" type="button" data-i18n-en="Close">Schließen</button>
     </div>
   </div>
 </div>
@@ -7169,8 +7306,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 183;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 08:52 Uhr';
+  const APP_RELEASE_NUMBER = 187;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 11:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -9551,6 +9688,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const transportIdxEl = el('transportIdx');
   const btnPlay = el('btnPlay');
   const btnStop = el('btnStop');
+  const btnOpPrev = el('btnOpPrev'); // Release 184, siehe Herleitung bei den Buttons in template_top.html
+  const btnOpNext = el('btnOpNext');
   const speedButtons = Array.from(document.querySelectorAll('.speed-btn'));
   const jumpLineInput = el('jumpLineInput');
   const btnJumpLine = el('btnJumpLine');
@@ -9628,6 +9767,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Bearbeiten-Panel-Mechanik wie "Arbeitsgang-Namen bearbeiten" direkt oberhalb, ergänzt um die
   // A-Z-Leiste und den "Nach oben"-Knopf (Verdrahtung weiter unten im "Menüband öffnen/
   // schließen"-Abschnitt).
+  // "Shortcuts" (Release 186, Punkt 4) - siehe ausführlichen Kommentar beim Markup von
+  // #btnOpenShortcuts/#shortcutsPanel in template_top.html. Rein statisches Panel, deshalb genügt
+  // hier (anders als bei Knowledge Base) ein einzelner, parameterloser Klick-Handler weiter unten.
+  const btnOpenShortcuts = el('btnOpenShortcuts');
+  const shortcutsPanel = el('shortcutsPanel');
   const btnOpenKnowledgeBase = el('btnOpenKnowledgeBase');
   const knowledgeBasePanel = el('knowledgeBasePanel');
   const knowledgeBaseEditArea = el('knowledgeBaseEditArea');
@@ -12138,6 +12282,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function updateActiveOpHighlight() {
     const p = points[scrubIdx];
     const opIndex = p && p.opIndex != null ? String(p.opIndex) : null;
+    // Release 184: Aktivierung/Deaktivierung von "Zurück"/"Weiter" (#btnOpPrev/#btnOpNext) hängt an
+    // genau demselben "aktueller Arbeitsgang"-Wert wie die ".current"-Hervorhebung hier - deshalb
+    // VOR dem Perf-Fix-Frühausstieg direkt unterhalb aufgerufen (billige Array-Suche, siehe
+    // updateOpNavButtons(), kein Grund, dafür den teuren DOM-Teil weiter unten mit auszulösen).
+    updateOpNavButtons(opIndex);
     if (opIndex === lastActiveOpIndex) return;
     lastActiveOpIndex = opIndex;
     let matchEl = null;
@@ -12147,6 +12296,51 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (isCurrent) matchEl = item;
     });
     if (matchEl) matchEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Release 184 (Sebastian: "Next-Button um in den nächsten Arbeitsgang zu springen, Back-Button um
+  // in den vorherigen zu springen. Wenn es keinen vorherigen/nächsten gibt, wird der jeweilige
+  // Button ausgegraut.") - "vorheriger/nächster Arbeitsgang" bezieht sich auf die Position des
+  // AKTUELLEN Arbeitsgangs (derselbe Begriff wie bei der ".current"-Hervorhebung direkt oberhalb,
+  // d.h. der Arbeitsgang, der die aktuelle Wiedergabeposition points[scrubIdx] enthält) innerhalb
+  // der von getOpSections() gelieferten, nach Programmreihenfolge sortierten Liste - unabhängig vom
+  // gewählten Scope ("Gesamtes Programm" ODER "einzelner Arbeitsgang", siehe 9.3): in BEIDEN Fällen
+  // trägt points[scrubIdx].opIndex bereits zuverlässig den passenden Arbeitsgang-Index (siehe
+  // setScope() - sowohl im "all"- als auch im "op"-Zweig bekommt jeder Punkt in "points" sein
+  // opIndex vom erzeugenden Segment mit). Kein erkannter Arbeitsgang (fallback O-/G92-Aufteilung,
+  // p.opIndex bleibt null) oder noch keine Wiedergabeposition innerhalb irgendeines Arbeitsgangs ->
+  // opIndex === null -> curIdx bleibt -1 -> beide Knöpfe deaktiviert.
+  function updateOpNavButtons(opIndex) {
+    const opSections = getOpSections();
+    if (!opSections.length) {
+      btnOpPrev.disabled = true;
+      btnOpNext.disabled = true;
+      return;
+    }
+    const curIdx = opIndex !== null ? opSections.findIndex(sec => String(sec.index) === opIndex) : -1;
+    btnOpPrev.disabled = curIdx <= 0;
+    btnOpNext.disabled = curIdx === -1 || curIdx >= opSections.length - 1;
+  }
+
+  // Springt zum vorherigen (dir=-1) bzw. nächsten (dir=1) Arbeitsgang relativ zum aktuellen
+  // (siehe updateOpNavButtons() oben für die Definition von "aktuell") und zeigt dessen Ergebnis
+  // sofort vollständig an - exakt dieselbe flashCodeLine()+setScope({type:'op',...})-Kombination
+  // wie beim Klick auf eine Arbeitsgang-Zeile selbst (Release 183, siehe dort/9.3a), damit sich
+  // "Zurück"/"Weiter" ununterscheidbar von einem manuellen Zeilenklick auf den Nachbar-Arbeitsgang
+  // verhalten (inkl. kumulativ gedimmtem Kontext für alle vorherigen Arbeitsgänge). Die
+  // Grenzprüfung selbst (kein vorheriger/nächster vorhanden) ist bereits über das `disabled`-
+  // Attribut der Knöpfe abgedeckt (siehe updateOpNavButtons()) - diese Funktion wird nur aus deren
+  // Klick-Handlern heraus aufgerufen, ein deaktivierter Knopf löst gar kein "click" aus.
+  function gotoAdjacentOp(dir) {
+    const opSections = getOpSections();
+    if (!opSections.length) return;
+    const curIdx = lastActiveOpIndex !== null ? opSections.findIndex(sec => String(sec.index) === lastActiveOpIndex) : -1;
+    if (curIdx === -1) return;
+    const targetIdx = curIdx + dir;
+    if (targetIdx < 0 || targetIdx >= opSections.length) return;
+    const target = opSections[targetIdx];
+    flashCodeLine(target.startIdx);
+    setScope({ type: 'op', index: target.index });
   }
 
   // Kleine Markierungen auf der Wiedergabe-Leiste bei jedem neuen Arbeitsgang (Release 108,
@@ -17421,6 +17615,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // localStorage-Werte, siehe oben). Ein Sprachwechsel bei bereits GEÖFFNETEM Panel aktualisiert
   // den Textarea-Inhalt bewusst nicht rückwirkend - dieselbe, an anderer Stelle bereits begründete
   // Einschränkung wie bei applyLanguage() im Allgemeinen (siehe dort).
+  // "Shortcuts" (Release 186, Punkt 4) - rein informatives Panel ohne Eingabe/"Übernehmen", daher
+  // genau wie #btnMillTimeClose/#millTimePanel (siehe dort) nur ein Öffnen- und ein
+  // Schließen-Handler, kein eigener Inhalt wird beim Öffnen neu befüllt (die Zeilen sind statisch
+  // im Markup hinterlegt, Sprachwechsel läuft über das generische [data-i18n-en]-Muster, siehe
+  // applyLanguage()).
+  btnOpenShortcuts.addEventListener('click', () => shortcutsPanel.classList.add('open'));
+  el('btnShortcutsClose').addEventListener('click', () => shortcutsPanel.classList.remove('open'));
+
   btnOpenKnowledgeBase.addEventListener('click', () => {
     knowledgeBaseEditArea.value = currentLang === 'en' ? knowledgeBaseTextEn : knowledgeBaseText;
     knowledgeBaseWarning.hidden = true;
@@ -18018,6 +18220,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   btnStop.addEventListener('click', stopPlayback);
 
+  // Release 184: siehe gotoAdjacentOp()/updateOpNavButtons() weiter oben für die vollständige
+  // Herleitung. Ein deaktivierter Button (siehe `disabled`-Attribut, von updateOpNavButtons()
+  // gepflegt) löst kein "click"-Event aus - die Grenzprüfung selbst steckt bereits dort.
+  btnOpPrev.addEventListener('click', () => gotoAdjacentOp(-1));
+  btnOpNext.addEventListener('click', () => gotoAdjacentOp(1));
+
   speedButtons.forEach(b => {
     b.addEventListener('click', () => {
       playSpeed = parseInt(b.dataset.speed, 10) || 1;
@@ -18033,8 +18241,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Pfeiltasten links/rechts: nur im pausierten Zustand zeilenweise (Punkt für Punkt) vor-/
   // zurückspringen. Ist ein Eingabefeld fokussiert (Zeilensprung-Feld, Einfügen-Textarea, der
   // Scrubber selbst), übernehmen die Felder ihr eigenes Standardverhalten stattdessen.
+  // Release 185: bei gedrückter Umschalttaste (Shift+Pfeiltaste) übernimmt stattdessen der neue,
+  // weiter unten registrierte Arbeitsgang-Sprung-Handler (gotoAdjacentOp(), siehe dort) - deshalb
+  // hier zusätzlich `e.shiftKey` ausgenommen, damit beide "keydown"-Listener bei Shift+Pfeiltaste
+  // nicht GLEICHZEITIG reagieren (sonst würde zusätzlich zum Arbeitsgang-Sprung hier immer auch
+  // noch ein einzelner Punkt weitergescrubbt).
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.shiftKey) return;
     if (playing || !points.length) return;
     const activeTag = document.activeElement && document.activeElement.tagName;
     if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return;
@@ -18110,9 +18324,37 @@ Sebastian Bäcker (Anschrift wie oben)`,
       toggleMeasureAngle();
       return;
     }
+    // Release 185 (Sebastian: "Shift + Pfeiltaste rechts -> Nächster Arbeitsgang, Shift +
+    // Pfeiltaste links -> Letzter Arbeitsgang" [mit "letzter" ist hier derselbe "vorheriger
+    // Arbeitsgang" gemeint wie bei #btnOpPrev - exakt dieselbe Rechts=weiter/Links=zurück-Zuordnung
+    // wie bei #btnOpNext/#btnOpPrev selbst, siehe 9.3b/Release 184] - "Hat keine Funktion, wenn
+    // kein nächster oder letzter Arbeitsgang vorhanden"): ruft dieselbe, unveränderte
+    // gotoAdjacentOp()-Logik wie die Knöpfe #btnOpNext/#btnOpPrev auf (siehe dort) - deren eigene
+    // Grenzprüfung (kein Arbeitsgang erkannt, bereits am ersten/letzten) greift dadurch
+    // automatisch auch hier mit, ganz ohne eigene Deaktivierungs-Abfrage an dieser Stelle: liegt
+    // kein nächster/vorheriger Arbeitsgang vor, kehrt gotoAdjacentOp() einfach wirkungslos zurück
+    // (exakt das geforderte "hat keine Funktion"). e.code statt e.key geprüft, aus demselben Grund
+    // wie bei Shift+L/Shift+W oben (Feststelltaste/Tastaturlayout spielen keine Rolle).
+    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'ArrowRight') {
+      e.preventDefault();
+      gotoAdjacentOp(1);
+      return;
+    }
+    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'ArrowLeft') {
+      e.preventDefault();
+      gotoAdjacentOp(-1);
+      return;
+    }
+    // Release 186 (Sebastian, Punkt 2: "Wenn Pos1/Home gedrückt wird, bitte im 3D der Sim auf die
+    // Top View zurücksetzen, nicht auf die Iso."): ruft seither goTopView() statt goHomeView() auf -
+    // die Taste "Pos1 (Home)" springt dadurch konsistent auf dieselbe reine Oben-Ansicht wie ein
+    // Klick auf den (seit Release 186 das ⌂-Symbol tragenden, siehe dort) #btnTopView-Knopf, statt
+    // wie bisher die 4er-Isometrie-Ansichtszyklus-Funktion hinter #btnHomeView auszulösen. Die Taste
+    // bleibt weiterhin "Home" (e.key), nur die dahinter aufgerufene Funktion ändert sich - keine
+    // Umbenennung/Verschiebung der Tastaturbelegung selbst.
     if (e.key === 'Home') {
       e.preventDefault();
-      goHomeView();
+      goTopView();
     }
   });
 
