@@ -493,7 +493,9 @@
      einfügen bei 'Einstellungen -> Erscheinungsbild' unter 'Werkzeuge' vor 'Standardwerte
      wiederherstellen'") sowie vor "Einstellungen importieren" (Release 167, Punkt 4) - beide nach
      demselben Trennlinien-Muster wie #btnCheckForUpdate/#btnShowPrivacy/#millTimeFileInfoSep oben. */
-  #btnResetDisplayDefaults, #btnLoadSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  /* #btnGridColor (Release 178, "Achsenfarbe"/Punkt 1) hierher ergänzt - derselbe Trennstrich,
+     siehe Kommentar bei #btnAxisColor im Markup. */
+  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
   .machine-badge {
     display: flex; align-items: center; gap: 7px;
@@ -2197,9 +2199,16 @@
                Release 169 (Sebastian, Punkte 1+2+5): "Programm laden" -> "CNC-Programm laden",
                "Programm speichern als..." -> "CNC-Programm speichern als...", "Neue
                CNC-Programmliste" -> "CNC-Programmliste neu" - reine Beschriftungsänderungen, IDs
-               UND die komplette dahinterliegende Logik in app.js bleiben unverändert. -->
+               UND die komplette dahinterliegende Logik in app.js bleiben unverändert.
+               Release 177 (Sebastian: "'Datei -> CNC-Programm' in 'Datei -> CNC' umbenennen. Das
+               sieht einheitlicher aus.") - NUR die Beschriftung dieses Untermenü-Auslösers (DE "CNC-
+               Programm" -> "CNC", EN "CNC-Program" -> "CNC") geändert, damit sie zum gleichrangigen
+               "DXF"-Untermenü direkt darunter passt (#submenuFileDxfTrigger, siehe dort - trägt
+               schon seit Release 168 nur "DXF", nicht "DXF-Datei"). ID (#submenuFileCncProgramTrigger)
+               UND alle darunterliegenden Einträge (#btnLoadFile usw.) samt ihrer Beschriftungen
+               bleiben unverändert - reine Kürzung des einen Untermenü-Titels selbst. -->
           <div class="menu-submenu" id="submenuFileCncProgram">
-            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="CNC-Program &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">CNC-Programm <span class="submenu-arrow">▸</span></button>
+            <button class="menu-item submenu-trigger" id="submenuFileCncProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="CNC &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">CNC <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
               <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load CNC-Program">CNC-Programm laden</button>
               <!-- "Neue CNC-Programmliste" (Release 117, Sebastian: "Programm laden wird wieder nur
@@ -2396,12 +2405,35 @@
                        bekommt, welche der 3. usw.") - vierter Eintrag im "Farben"-Untermenü, siehe
                        #opColorPanel weiter unten sowie applyOpColors()/pathColor() in app.js. -->
                   <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)" data-i18n-en="Processing step color" data-i18n-en-title="Set the color of the six cyclically used processing step/path colors individually (1st processing step, 2nd processing step, etc.)">Arbeitsgangfarbe</button>
+                  <!-- Trennstrich (Release 178, siehe #btnGridColor-CSS-Regel weiter oben im
+                       <style> sowie den Kommentar bei #axisColorPanel weiter unten) - Sebastian,
+                       Punkt 1: "Das ganze unter einem Trennstrich anordnen, hinter
+                       'Arbeitsgangfarbe'." zusammen mit Punkt 1, zweiter Satz: "'Achsenfarbe'
+                       wird unter '3D Rasterfarbe' sortiert." Beide Vorgaben zusammengenommen so
+                       umgesetzt: der Trennstrich selbst sitzt direkt nach "Arbeitsgangfarbe", VOR
+                       "3D Rasterfarbe" - die neue "Achsenfarbe" steht dadurch, wie gefordert,
+                       sowohl hinter "Arbeitsgangfarbe" ALS AUCH (direkt) unter "3D Rasterfarbe",
+                       als letzter Eintrag dieser beiden durch den Trennstrich von den vier
+                       reinen Oberflächen-/Objektfarben oberhalb abgesetzten "3D-Darstellung"-
+                       Farben. Dieselbe margin-top/padding-top/border-top-Technik wie bei
+                       #btnResetDisplayDefaults/#btnLoadSettings/#millTimeFileInfoSep (siehe
+                       Stylesheet oben), hier auf #btnGridColor angewendet. -->
                   <!-- "3D Rasterfarbe" (Release 157, Sebastian: "Neue Einstellung -> Erscheinungsbild
                        -> Farben: '3D Rasterfarbe' (EN: 3D grid color): Ändert die Farbe des Rasters.
                        Wird auch mitexportiert beim Einstellungsexport.") - fünfter Eintrag im
                        "Farben"-Untermenü, siehe #gridColorPanel weiter unten sowie
                        applyGridColor()/LS_KEY_GRID_COLOR in app.js. -->
                   <button class="menu-item" id="btnGridColor" type="button" title="Farbe des Bodenrasters im 3D-Bereich festlegen (ansonsten automatisch passend zum Hintergrund)" data-i18n-en="3D grid color" data-i18n-en-title="Set the color of the floor grid in the 3D area (otherwise automatic, matching the background)">3D Rasterfarbe</button>
+                  <!-- "Achsenfarbe" (Release 178, Sebastian, Punkte 1-3): NEU, sechster und letzter
+                       Eintrag im "Farben"-Untermenü, siehe #axisColorPanel weiter unten sowie
+                       applyAxisColors()/applyAxisLabelFontSize()/LS_KEY_AXIS_COLORS/
+                       LS_KEY_AXIS_LABEL_SIZE in app.js. Öffnet EIN gemeinsames Panel für sowohl
+                       die drei Achsenlinienfarben (Punkt 2) als auch die Schriftgröße der
+                       Achsbuchstaben (Punkt 3, "kann auch eingestellt werden") - nach demselben
+                       Vorbild wie z.B. "Werkzeuge" (Säge/Spannfutter/Fräser-Darstellung UND
+                       Transparenz in einem Dialog) oder "Spalten" (mehrere Radiogruppen in einem
+                       Dialog). -->
+                  <button class="menu-item" id="btnAxisColor" type="button" title="Farbe der X-, Y- und Z-Achsenlinien im 3D-Bereich sowie die Schriftgröße ihrer Beschriftung festlegen" data-i18n-en="Axes color" data-i18n-en-title="Set the color of the X, Y and Z axis lines in the 3D area, and the font size of their labels">Achsenfarbe</button>
                 </div>
               </div>
               <!-- Reihenfolge innerhalb "Erscheinungsbild" (Release 167, Sebastian, Punkt 2):
@@ -2464,8 +2496,15 @@
                    'Standardwerte wiederherstellen'" - neuer Trennstrich direkt vor diesem Knopf,
                    per CSS (#btnResetDisplayDefaults, siehe Stylesheet weiter oben) nach demselben
                    margin-top/padding-top/border-top-Muster wie #btnCheckForUpdate/#millTimeFileInfoSep
-                   (siehe deren Kommentare). -->
-              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, and column widths to their default values">Standardwerte wiederherstellen</button>
+                   (siehe deren Kommentare).
+                   Release 178 ("Achsenfarbe", siehe #axisColorPanel): die Achsenlinienfarben
+                   selbst zählen als Teil des "Farben"-Untermenüs mit zum abgedeckten Umfang (siehe
+                   resetAllDisplaySettingsToDefaults()), die im selben Dialog sitzende Schriftgröße
+                   der Achsbeschriftung dagegen bewusst NICHT - exakt dieselbe Abgrenzung wie bei
+                   "Werkzeuge"/"Raster"/"Rotation" oben (reine Darstellungsgröße statt Farbe). Die
+                   neue "Rastergröße" (Teil von "Raster", nicht "Farben") bleibt aus demselben
+                   Grund wie "Raster an/aus" selbst außen vor. -->
+              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
           <!-- "Maschinentypen" + "Einstellungen exportieren"/"Einstellungen importieren" hierher
@@ -3436,6 +3475,48 @@
   </div>
 </div>
 
+<!-- Release 179 (Sebastian, fünf durchnummerierte Punkte):
+     1. "Bei allen Farbeinstellungen (Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe,
+        3D Rasterfarbe, Achsenfarbe) bitte noch einen neuen Menüpunkt einbauen: 'Standardwerte
+        wiederherstellen'. Dieser setzt nur in diesem Menü, in dem geklickt worden ist, die Farben
+        auf die Standardfarben zurück. Es kommt auch eine Nachfrage, ob man das machen möchte!"
+     2. "Der generelle Menüpunkt 'Standardwerte wiederherstellen' bleibt unangetastet und hat
+        dieselbe Funktion wie zuvor und setzt alles auf einen Schlag zurück!"
+     3. "Bei dem Fenster für die Einstellung im Raster (Raster an/aus, Rastergröße) auch einen
+        'Standardwerte wiederherstellen' Button einbauen."
+     4. "Bei den Spalteneinstellungen auch einen Button einbauen, um die 'Standardwerte
+        wiederherstellen' zu können."
+     5. "Name in der EN Version für 'Standardwerte wiederherstellen' -> 'Reset to default values'."
+     Umgesetzt: acht neue, jeweils rein lokal wirkende Reset-Knöpfe - einer in jedem der sechs
+     Farbdialoge (Punkt 1) sowie je einer im Raster-Panel (Punkt 3) und im
+     Spalteneinstellungen-Panel (Punkt 4), alle mit derselben Beschriftung/EN-Übersetzung "Reset to
+     default values" (Punkt 5, identisch zum bereits bestehenden generellen Knopf). Jeder neue
+     Knopf sitzt - nach exakt demselben, bereits bei "Maschinentypen zurücksetzen"
+     (#btnMachineTypeResetDefaults) etablierten Muster - als erstes Kind in der jeweiligen
+     .paste-actions-Zeile mit style="margin-right:auto" (schiebt ihn sichtbar von
+     Abbrechen/Übernehmen weg an den linken Rand, damit ein hastiger Klick nicht versehentlich den
+     folgenreicheren Reset statt Abbrechen/Übernehmen trifft), eigener, nicht auf "Cancel" endender
+     ID, ohne ".btn.primary"-Klasse (damit weder der globale Escape- noch der globale Enter-Handler
+     ihn versehentlich auslösen). Jeder Klick fragt zunächst per nativem window.confirm() nach
+     (Punkt 1, "Es kommt auch eine Nachfrage") - exakt dieselbe Technik wie beim bereits
+     bestehenden generellen Knopf/bei "Maschinentypen zurücksetzen", siehe dort für die
+     Begründung des nativen statt eines eigenen .paste-panel-Dialogs; bei "Abbrechen" (Nein)
+     passiert nichts. Jeder Knopf setzt dabei bewusst AUSSCHLIESSLICH den/die Wert(e) seines
+     eigenen Dialogs zurück (Punkt 1: "nur in diesem Menü, in dem geklickt worden ist") - siehe die
+     einzelnen Klick-Handler in app.js (resetColorProfileToDefault() usw.) für die jeweils exakt
+     gleiche "automatisch"/Standard-Zielwert-Logik wie beim generellen Knopf
+     (resetAllDisplaySettingsToDefaults()), dort unverändert weiterhin wirksam für ALLE Bereiche auf
+     einen Schlag (Punkt 2, "bleibt unangetastet"). Im "Achsenfarbe"-Dialog betrifft der neue
+     lokale Reset-Knopf bewusst NUR die drei Achsfarben, NICHT die im selben Dialog sitzende
+     Schriftgröße der Achsbeschriftung (axisLabelFontSize) - dieselbe Farbe-vs-Größe-Abgrenzung wie
+     beim generellen Knopf (siehe dort). Im "Raster"-Dialog setzt der neue lokale Reset-Knopf sowohl
+     die Rastersichtbarkeit (gridVisible, zurück auf "an") als auch die Rastergröße
+     (gridStepOverride, zurück auf "automatisch") zurück - dies ist seit dieser Runde der EINZIGE
+     Weg, die Rastergröße wieder auf "automatisch" zu bekommen (der generelle Knopf fasst
+     gridStepOverride bewusst nicht an, siehe 9.2e/resetAllDisplaySettingsToDefaults() weiter unten
+     in app.js; ein älterer Markup-Kommentar bei #gridSettingsPanel, der noch den generellen Knopf
+     dafür nannte, wurde entsprechend korrigiert). -->
+
 <!-- "Farben einstellen" (39. Runde, Benutzer: "Neuer Menüpunkt 'Ansicht' und darunter ein
      Untermenüpunkt: 'Farben einstellen'"): Farbprofil-Auswahl (Standard/Dark Mode/Benutzerfarben)
      + bei Benutzerfarben drei Hexcode-Felder für die Hintergründe von Programmcode, Arbeitsgängen
@@ -3484,6 +3565,7 @@
       <p class="panel-hint" id="colorProfileHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     </div>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnColorProfileResetDefaults" type="button" style="margin-right:auto" title="Setzt die Hintergrundfarbe auf „automatisch“ zurück (kein eigenes Farbprofil mehr aktiv)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the background color to automatic (no custom color profile active).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnColorProfileCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnColorProfileApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -3552,6 +3634,7 @@
     </label>
     <p class="panel-hint" id="fontColorHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnFontColorResetDefaults" type="button" style="margin-right:auto" title="Setzt alle fünf Schriftfarben-Zeilen auf „Standard“ zurück (keine eigene Übersteuerung mehr aktiv)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets all five font color rows to default (no custom override active).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnFontColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnFontColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -3656,6 +3739,7 @@
     </label>
     <p class="panel-hint" id="opColorHexWarning" hidden data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f).">Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnOpColorResetDefaults" type="button" style="margin-right:auto" title="Setzt die Arbeitsgangfarbe auf „automatisch“ zurück (keine eigene Übersteuerung mehr aktiv)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the processing step color to automatic (no custom override active).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnOpColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnOpColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -3685,8 +3769,80 @@
     </label>
     <p class="panel-hint" id="gridColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnGridColorResetDefaults" type="button" style="margin-right:auto" title="Setzt die 3D Rasterfarbe auf „automatisch“ zurück (keine eigene Übersteuerung mehr aktiv)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the 3D grid color to automatic (no custom override active).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnGridColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnGridColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Achsenfarbe" (Release 178, Sebastian, drei durchnummerierte Punkte):
+     1. "Neuer Menüpunkt: 'Einstellungen -> Erscheinungsbild -> Farben:' 'Achsenfarbe' / (EN:
+        'Axes color'). Das ganze unter einem Trennstrich anordnen, hinter 'Arbeitsgangfarbe'.
+        'Achsenfarbe' wird unter '3D Rasterfarbe' sortiert." - Menüplatzierung siehe #btnAxisColor
+        weiter oben; sechster und letzter Eintrag im "Farben"-Untermenü.
+     2. "Bei 'Achsenfarbe' kann die Farbe jeweils für die X Y und Z Achsenlinien eingestellt
+        werden im 3D der Simulation. Linienfarbe = Schriftfarbe." - drei einzelne Farbfelder nach
+        exakt demselben Muster wie "Arbeitsgangfarbe" (#opColorPanel, .color-field-row OHNE
+        Häkchen - anders als bei "3D Rasterfarbe" gibt es hier keinen "automatisch"-Zustand,
+        jede der drei Achsen hat immer eine konkrete, bis zum ersten Übernehmen auf den
+        bisherigen, fest im Stylesheet stehenden Standardfarben (--axis-x/--axis-y/--axis-z,
+        siehe :root im <style> ganz oben) vorbelegte Farbe). "Linienfarbe = Schriftfarbe" ist
+        bereits durch die BESTEHENDE Implementierung von drawAxisGizmo() erfüllt (siehe dort,
+        app.js): das X/Y/Z-Beschriftungs-Fillstyle wird dort seit jeher aus demselben "color"-Wert
+        gesetzt wie die Linie selbst - eine eigene Schriftfarben-Einstellung für die
+        Achsbeschriftung ist deshalb überflüssig und wurde bewusst NICHT zusätzlich eingebaut.
+     3. "Die Schriftgröße der Achsbuchstaben X Y und Z kann auch eingestellt werden: 'klein'
+        'mittel' und 'groß' (EN: small, medium, large). Das aktuelle ist 'mittel' und
+        voreingestellt. 25% größer wäre 'groß', 25% kleiner 'klein'" - eine Radiogruppe in
+        demselben Panel (#axisLabelFontSizeChoice, dieselbe .scale-group/.scale-choice/
+        .scale-option-Technik wie z.B. bei "Spalten"/#columnScaleCode), drei statt zwei Optionen.
+        Die bisherige, fest im Code stehende Schriftgröße der Achsbeschriftung (11px, siehe
+        drawAxisGizmo()) wird zu "mittel"/dem Standardwert, "klein"/"groß" sind exakt ±25% davon
+        (8,25px/13,75px) - siehe AXIS_LABEL_FONT_PX/applyAxisLabelFontSize() in app.js.
+     Persistenz (Punkt 5, "Alle neuen Einstellungen... in den Einstellungsexport") nach demselben
+     "self-persisting Setter"-Muster wie opColors/gridColor: LS_KEY_AXIS_COLORS
+     ("cncsim.axisColors", Punkt 2) UND LS_KEY_AXIS_LABEL_SIZE ("cncsim.axisLabelFontSize", Punkt
+     3) sind beide in KNOWN_EXPORTED_LS_KEYS eingetragen und eigene Felder in
+     buildSettingsExport()/dem Einstellungsimport, siehe dort. -->
+<div class="paste-panel" id="axisColorPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Set axes color">Achsenfarbe einstellen</h3>
+    <p class="panel-hint" data-i18n-en="Color of the X, Y and Z axis lines in the 3D area. The axis label (the letter X/Y/Z) always uses the same color as its line — there is no separate font color setting for it.">Farbe der X-, Y- und Z-Achsenlinien im 3D-Bereich. Die Achsbeschriftung (der Buchstabe X/Y/Z) verwendet dabei immer dieselbe Farbe wie ihre Linie – dafür gibt es keine eigene Schriftfarben-Einstellung.</p>
+    <label class="color-field-row">
+      <span data-i18n-en="X axis">X-Achse</span>
+      <span class="color-field-inputs">
+        <input type="color" id="axisColorXPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="axisColorXHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c73a3a">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span data-i18n-en="Y axis">Y-Achse</span>
+      <span class="color-field-inputs">
+        <input type="color" id="axisColorYPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="axisColorYHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f8a52">
+      </span>
+    </label>
+    <label class="color-field-row">
+      <span data-i18n-en="Z axis">Z-Achse</span>
+      <span class="color-field-inputs">
+        <input type="color" id="axisColorZPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="axisColorZHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#2b62c9">
+      </span>
+    </label>
+    <p class="panel-hint" id="axisColorHexWarning" data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f)." hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <p class="panel-hint" data-i18n-en="Font size of the X/Y/Z axis labels. &#8220;Medium&#8221; is the current size and the default; &#8220;Large&#8221; is 25% bigger, &#8220;Small&#8221; 25% smaller.">Schriftgröße der X-/Y-/Z-Achsbeschriftung. „Mittel" ist die bisherige Größe und der Standardwert; „Groß" ist 25% größer, „Klein" 25% kleiner.</p>
+    <div class="scale-group">
+      <div class="scale-choice" id="axisLabelFontSizeChoice">
+        <label class="scale-option"><input type="radio" name="axisLabelFontSize" value="small"> <span data-i18n-en="Small">Klein</span></label>
+        <label class="scale-option"><input type="radio" name="axisLabelFontSize" value="medium" checked> <span data-i18n-en="Medium">Mittel</span></label>
+        <label class="scale-option"><input type="radio" name="axisLabelFontSize" value="large"> <span data-i18n-en="Large">Groß</span></label>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnAxisColorResetDefaults" type="button" style="margin-right:auto" title="Setzt die Achsenfarbe auf die eingebauten Standardfarben zurück (keine eigene Übersteuerung mehr aktiv). Betrifft NICHT die Schriftgröße der Achsbeschriftung." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the axes color to the built-in default colors (no custom override active). Does NOT affect the axis label font size.">Standardwerte wiederherstellen</button>
+      <button class="btn ghost" id="btnAxisColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnAxisColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -3782,6 +3938,18 @@
 <div class="paste-panel" id="millTimePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
+    <!-- Release 178 (Sebastian, Punkt 9: "Bei der 'Fräszeitberechnung' bitte den Hilfetext nach
+         oben verschieben, so wie bei den anderen Texten auch immer, dass das oben steht.") - die
+         drei statischen, immer sichtbaren Hinweistexte standen bis Release 177 ganz unten im
+         Panel, nach #millTimeResultState, anders als in jedem anderen .paste-panel dieser
+         Anwendung (siehe z.B. #gridColorPanel/#opColorPanel: dort steht der erklärende
+         <p class="panel-hint"> IMMER direkt nach dem <h3>, vor den eigentlichen Eingabe-/
+         Ergebniszeilen). Die drei Texte selbst (Inhalt, Reihenfolge untereinander, IDs) bleiben
+         dabei unverändert - reine Verschiebung an den Anfang des Panels, direkt hinter den Titel
+         und noch vor den Leerzustand-Hinweis. -->
+    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
+    <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
+    <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
     <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
     <div id="millTimeResultState">
       <div class="menu-info-row">
@@ -3825,18 +3993,6 @@
       <p class="panel-hint" id="millTimeFeedScaleWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 1 or 1000)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 1 oder 1000).</p>
       <p class="panel-hint" id="millTimeNoFeedWarning" data-i18n-en="" hidden></p>
     </div>
-    <!-- Hinweistext zur "Vorschubskalierung" (Release 176, Punkt 3, hierher verschoben aus dem
-         entfernten #feedScalingPanel, als ERSTER der drei Hinweistexte dieses Panels - siehe
-         ausführlichen Kommentar weiter oben zum entfernten Klammerzusatz, Punkt 4). -->
-    <p class="panel-hint" data-i18n-en="Some machine controls output the feed rate (F) in meters per minute instead of millimeters per minute. This factor is multiplied with every F value found in the program before the milling time is calculated. Default: 1 (no conversion).">Manche Steuerungen geben den Vorschub (F) in Metern statt Millimetern pro Minute aus. Dieser Faktor wird vor der Berechnung der Fräszeit mit jedem im Programm gefundenen F-Wert multipliziert. Standard: 1 (keine Umrechnung).</p>
-    <!-- Hinweistext (Punkt 5 des ursprünglichen Fräszeit-Konzepts) - wörtlich wie vorgegeben,
-         IMMER sichtbar, wenn das Panel offen ist (nicht nur beim allerersten Auslösen), da er für
-         die Einordnung der "Nettofräszeit"-Zeile gilt. -->
-    <p class="panel-hint" data-i18n-en="This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine's actual cycle time will be longer!">Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
-    <!-- Dritter Hinweistext (NEU Release 174) - analog zum obigen, aber für die neue "Fräszeit
-         mit G0"-Zeile: ordnet ein, dass der G0-Anteil nur eine Schätzung mit einem frei
-         eingegebenen (nicht programmierten) Vorschub ist. -->
-    <p class="panel-hint" data-i18n-en="&#8220;Milling time with G0&#8221; additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ.">„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnMillTimeClose" type="button" data-i18n-en="Close">Schließen</button>
       <button class="btn primary" id="btnMillTimeRecalc" type="button" data-i18n-en="Recalculate">Neu berechnen</button>
@@ -4003,6 +4159,7 @@
       </div>
     </div>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnColumnScaleResetDefaults" type="button" style="margin-right:auto" title="Setzt die Spalteneinstellungen (CNC-Programmcode-Breite, Arbeitsgänge ein-/ausgeklappt) auf ihre Standardwerte zurück." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the column settings (CNC program code width, processing steps expanded/collapsed) to their default values.">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnColumnScaleCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnColumnScaleApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -4046,7 +4203,29 @@
      Radiogruppe, Aufbau 1:1 nach dem Muster von #rotationSettingsPanel oben, nur mit den
      Options-Beschriftungen "Raster an"/"Raster aus" selbst statt "Ja"/"Nein" (Sebastian nennt
      diese beiden Beschriftungen wörtlich), siehe gridVisible/LS_KEY_GRID_VISIBLE sowie die
-     Klick-Verdrahtung in app.js. -->
+     Klick-Verdrahtung in app.js.
+     Release 178 (Sebastian, Punkt 4: "Bei 'Einstellungen -> Erscheinungsbild -> Raster' kann beim
+     Raster auch die Rastergröße, der einzelnen Rasterkästchen eingestellt werden. Bitte als
+     Standardwert den aktuellen Wert vorausgewählt nehmen.") - neues Zahlenfeld
+     (#gridStepSizeInput) direkt unter der bestehenden Radiogruppe, nach demselben Muster wie
+     "G0-Vorschub"/"Vorschubskalierung" (normalizeFeedScaleFactor(), > 0 erforderlich, sonst
+     #gridStepSizeWarning). Bis zu dieser Runde berechnete drawGrid() die Kästchengröße
+     ("step") IMMER automatisch aus der jeweils sichtbaren Bahn-/DXF-Ausdehnung (verdoppelt sich
+     ausgehend von 10mm, bis maximal 12 Kästchen über die größere Spanne passen, siehe
+     computeAutoGridStep() in app.js, aus drawGrid() dafür extrahiert) - diese automatische
+     Berechnung bleibt UNVERÄNDERT der Standardfall, wird aber jetzt bei jedem Öffnen dieses
+     Panels als Vorbelegung des neuen Feldes angezeigt ("den aktuellen Wert vorausgewählt"),
+     damit der Benutzer sieht, was die Simulation gerade tatsächlich anzeigt, bevor er einen
+     eigenen, festen Wert eingibt. Nach dem ersten "Übernehmen" mit einem geänderten Wert ersetzt
+     dieser feste Wert (gridStepSizeOverride/LS_KEY_GRID_STEP, siehe applyGridStepSize() in
+     app.js) die automatische Berechnung vollständig, unabhängig von der Bahn-/DXF-Ausdehnung -
+     exakt dieselbe "einmal gesetzt, bleibt fest"-Konvention wie bei "3D Rasterfarbe"/
+     "Achsenfarbe" oben. Zurück auf "automatisch" kommt man NICHT über den generellen Knopf
+     "Standardwerte wiederherstellen" (#btnResetDisplayDefaults lässt gridStepOverride bewusst
+     unangetastet, siehe dort), sondern seit Release 179 über den eigenen, lokalen
+     "Standardwerte wiederherstellen"-Knopf direkt in diesem Panel (#btnGridSettingsResetDefaults,
+     siehe weiter unten sowie app.js) - dieser korrigiert damit zugleich eine zuvor hier
+     fälschlich dokumentierte Annahme, der generelle Knopf würde das bereits abdecken. -->
 <div class="paste-panel" id="gridSettingsPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Grid">Raster</h3>
@@ -4057,7 +4236,18 @@
         <label class="scale-option"><input type="radio" name="gridVisible" value="0"> <span data-i18n-en="Grid off">Raster aus</span></label>
       </div>
     </div>
+    <p class="panel-hint" data-i18n-en="Edge length of a single grid cell, in mm. Pre-filled with the size the simulation is currently using automatically.">Kantenlänge eines einzelnen Rasterkästchens, in mm. Vorbelegt mit der Größe, die die Simulation aktuell automatisch verwendet.</p>
+    <label class="color-field-row font-color-row">
+      <span class="font-color-row-label">
+        <span data-i18n-en="Grid cell size">Rastergröße</span>
+      </span>
+      <span class="color-field-inputs">
+        <input type="text" id="gridStepSizeInput" class="filename-input" inputmode="decimal" spellcheck="false">
+      </span>
+    </label>
+    <p class="panel-hint" id="gridStepSizeWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 10 or 20)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 10 oder 20).</p>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnGridSettingsResetDefaults" type="button" style="margin-right:auto" title="Setzt Raster-Sichtbarkeit und Rastergröße auf ihre Standardwerte zurück (Raster an, Rastergröße automatisch)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets grid visibility and grid cell size to their default values (grid on, cell size automatic).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnGridSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnGridSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -4090,6 +4280,7 @@
     </label>
     <p class="panel-hint" id="menuColorWarning" hidden data-i18n-en="Font color and background color must not be identical.">Schrift- und Hintergrundfarbe dürfen nicht identisch sein.</p>
     <div class="paste-actions">
+      <button class="btn ghost" id="btnMenuColorResetDefaults" type="button" style="margin-right:auto" title="Setzt die Buttonfarbe (Hintergrund + Schrift) auf die eingebaute Standardfarbe (Rot) zurück." data-i18n-en="Reset to default values" data-i18n-en-title="Resets the button color (background + font) to the built-in default color (red).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnMenuColorCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnMenuColorApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -6803,8 +6994,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 176;
-  const APP_RELEASE_TIMESTAMP = '08.10.2026, 13:46 Uhr';
+  const APP_RELEASE_NUMBER = 179;
+  const APP_RELEASE_TIMESTAMP = '09.10.2026, 08:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7591,6 +7782,53 @@ CORNERRADIUS=GFIL r=
     requestRender();
   }
 
+  // "Rastergröße" (Release 178, Sebastian, Punkt 4: "Bei 'Einstellungen -> Erscheinungsbild ->
+  // Raster' kann beim Raster auch die Rastergröße, der einzelnen Rasterkästchen eingestellt
+  // werden. Bitte als Standardwert den aktuellen Wert vorausgewählt nehmen.") - bis zu dieser
+  // Runde berechnete drawGrid() (weiter unten) die Kästchengröße ("step") bei JEDEM Rebake
+  // IMMER automatisch aus der jeweils sichtbaren Bahn-/DXF-Ausdehnung. Diese automatische
+  // Berechnung bleibt als computeAutoGridStep() unverändert erhalten (reine Extraktion aus
+  // drawGrid(), keine Verhaltensänderung) - null/kein Override bedeutet weiterhin "automatisch".
+  // Ein gesetzter Override ersetzt sie vollständig durch einen festen mm-Wert, exakt dieselbe
+  // self-persisting-Setter-Technik wie applyGridColor()/applyAxisColors() oben (bakeParams=null,
+  // da das Raster laut Kommentar bei setGridVisible() oben ausschließlich im gebackenen
+  // Hintergrund gezeichnet wird).
+  const LS_KEY_GRID_STEP = 'cncsim.gridStep';
+  function loadPersistedGridStep() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_GRID_STEP);
+      if (!raw) return null;
+      const n = parseFloat(raw.replace(',', '.'));
+      if (Number.isFinite(n) && n > 0) return n;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistGridStep(step) {
+    try {
+      if (step) window.localStorage.setItem(LS_KEY_GRID_STEP, String(step));
+      else window.localStorage.removeItem(LS_KEY_GRID_STEP);
+    } catch (e) { /* s.o. */ }
+  }
+  let gridStepOverride = null;
+  function applyGridStep(step) {
+    gridStepOverride = (typeof step === 'number' && step > 0) ? step : null;
+    persistGridStep(gridStepOverride);
+    bakeParams = null;
+    requestRender();
+    return gridStepOverride;
+  }
+  // Exakt dieselbe Berechnung, die drawGrid() bis Release 177 fest eingebaut hatte (siehe dort) -
+  // hierher ausgelagert, damit auch #gridSettingsPanel beim Öffnen "den aktuellen Wert" (Punkt 4,
+  // wörtlich) anzeigen kann, OHNE das Raster selbst zu zeichnen.
+  function computeAutoGridStep() {
+    const b = lastFramedBounds || { minx: -100, maxx: 100, miny: -100, maxy: 100 };
+    const spanX = Math.max(60, b.maxx - b.minx), spanY = Math.max(60, b.maxy - b.miny);
+    const span = Math.max(spanX, spanY);
+    let step = 10;
+    while (span / step > 12) step *= 2;
+    return step;
+  }
+
   // "3D Rasterfarbe" ("Einstellungen" -> "Erscheinungsbild" -> "Farben" -> "3D Rasterfarbe",
   // Release 157, Sebastian: "Neue Einstellung -> Erscheinungsbild -> Farben: '3D Rasterfarbe' (EN:
   // 3D grid color): Ändert die Farbe des Rasters. Wird auch mitexportiert beim
@@ -7630,6 +7868,85 @@ CORNERRADIUS=GFIL r=
     bakeParams = null;
     requestRender();
     return gridColorOverride;
+  }
+
+  // "Achsenfarbe" (Release 178, Sebastian, Punkt 2: "Bei 'Achsenfarbe' kann die Farbe jeweils für
+  // die X Y und Z Achsenlinien eingestellt werden im 3D der Simulation. Linienfarbe =
+  // Schriftfarbe.") - dieselbe self-persisting-Setter-Technik wie applyGridColor() direkt
+  // oberhalb, nur mit drei Hexcodes statt einem (x/y/z) UND ohne eigenen "automatisch"-Zustand
+  // über ein Häkchen (siehe Markup-Kommentar bei #axisColorPanel) - "colors" ist entweder ein
+  // {x,y,z}-Objekt mit drei gültigen Hexcodes, oder null für "automatisch"/Theme-Standard
+  // (exakt wie bei "Arbeitsgangfarbe"/applyOpColors() oben, nur mit drei statt zehn Werten).
+  // Überschreibt/entfernt dafür --axis-x/--axis-y/--axis-z PER INLINE-STYLE auf :root, exakt
+  // dieselbe Technik wie --path-1…10 bei applyOpColors() - drawAxisGizmo() (siehe weiter unten)
+  // liest ausschließlich über cssVar('--axis-x' usw.) und muss dafür selbst NICHT geändert
+  // werden: "Linienfarbe = Schriftfarbe" ist dort bereits erfüllt, weil Linie UND Beschriftung
+  // seit jeher denselben "color"-Wert verwenden (siehe dortiger Kommentar).
+  const LS_KEY_AXIS_COLORS = 'cncsim.axisColors';
+  function loadPersistedAxisColors() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_AXIS_COLORS);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') {
+        const x = normalizeHex(obj.x), y = normalizeHex(obj.y), z = normalizeHex(obj.z);
+        if (x && y && z) return { x, y, z };
+      }
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return null;
+  }
+  function persistAxisColors(colors) {
+    try {
+      if (colors) window.localStorage.setItem(LS_KEY_AXIS_COLORS, JSON.stringify(colors));
+      else window.localStorage.removeItem(LS_KEY_AXIS_COLORS);
+    } catch (e) { /* s.o. */ }
+  }
+  let axisColorOverride = null;
+  function applyAxisColors(colors) {
+    const x = colors && normalizeHex(colors.x), y = colors && normalizeHex(colors.y), z = colors && normalizeHex(colors.z);
+    axisColorOverride = (x && y && z) ? { x, y, z } : null;
+    if (axisColorOverride) {
+      root.style.setProperty('--axis-x', axisColorOverride.x);
+      root.style.setProperty('--axis-y', axisColorOverride.y);
+      root.style.setProperty('--axis-z', axisColorOverride.z);
+    } else {
+      root.style.removeProperty('--axis-x');
+      root.style.removeProperty('--axis-y');
+      root.style.removeProperty('--axis-z');
+    }
+    persistAxisColors(axisColorOverride);
+    bakeParams = null;
+    requestRender();
+    return axisColorOverride;
+  }
+
+  // "Achsenfarbe" -> Schriftgröße der Achsbuchstaben (Release 178, Punkt 3: "Die Schriftgröße der
+  // Achsbuchstaben X Y und Z kann auch eingestellt werden: 'klein' 'mittel' und 'groß' ... Das
+  // aktuelle ist 'mittel' und voreingestellt. 25% größer wäre 'groß', 25% kleiner 'klein'") -
+  // AXIS_LABEL_FONT_PX hält die drei tatsächlichen Pixelgrößen fest: "mittel" ist unverändert die
+  // bisherige, fest im Code gestandene Größe (11px, siehe drawAxisGizmo() weiter unten), "klein"/
+  // "groß" sind rechnerisch exakt ±25% davon. Dieselbe self-persisting-Setter-Technik wie
+  // applyAxisColors() direkt oberhalb, aber mit einem von drei festen Strings statt einem
+  // Hexcode/null - es gibt hier bewusst KEINEN "automatisch"-Zustand, "mittel" IST der
+  // Standardwert (Sebastian nennt ihn ausdrücklich "voreingestellt").
+  const LS_KEY_AXIS_LABEL_SIZE = 'cncsim.axisLabelFontSize';
+  const AXIS_LABEL_FONT_PX = { small: 11 * 0.75, medium: 11, large: 11 * 1.25 };
+  function loadPersistedAxisLabelFontSize() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_AXIS_LABEL_SIZE);
+      if (raw === 'small' || raw === 'medium' || raw === 'large') return raw;
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return 'medium';
+  }
+  function persistAxisLabelFontSize(size) {
+    try { window.localStorage.setItem(LS_KEY_AXIS_LABEL_SIZE, size); } catch (e) { /* s.o. */ }
+  }
+  let axisLabelFontSize = 'medium';
+  function applyAxisLabelFontSize(size) {
+    axisLabelFontSize = (size === 'small' || size === 'large') ? size : 'medium';
+    persistAxisLabelFontSize(axisLabelFontSize);
+    requestRender();
+    return axisLabelFontSize;
   }
 
   // "Vorschubskalierung" ("Infos" -> "Fräszeitberechnung" -> Eingabefeld "Vorschubskalierung",
@@ -12943,8 +13260,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const b = lastFramedBounds || { minx: -100, maxx: 100, miny: -100, maxy: 100 };
     const spanX = Math.max(60, b.maxx - b.minx), spanY = Math.max(60, b.maxy - b.miny);
     const span = Math.max(spanX, spanY);
-    let step = 10;
-    while (span / step > 12) step *= 2;
+    // "Rastergröße" (Release 178, siehe gridStepOverride/computeAutoGridStep() weiter oben): ein
+    // gesetzter Override ersetzt die automatische Berechnung vollständig durch einen festen
+    // mm-Wert, unabhängig von der aktuellen Bahn-/DXF-Ausdehnung.
+    const step = gridStepOverride || computeAutoGridStep();
     const cx = (b.minx + b.maxx) / 2, cy = (b.miny + b.maxy) / 2;
     const half = Math.ceil((span * 0.9) / step) * step / 2 + step;
     // "3D Rasterfarbe" (Release 157, siehe gridColorOverride/applyGridColor() weiter oben): eine
@@ -12990,7 +13309,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.fillStyle = ax.color;
       // Achsenbeschriftung "X"/"Y"/"Z" ist kein CNC-Programmcode -> folgt wie der Rest der
       // Oberfläche "Open Sans" (39. Runde, siehe Kommentar bei TREE_FONT weiter oben).
-      ctx.font = '600 11px "Open Sans", ui-sans-serif, system-ui, sans-serif';
+      // Schriftgröße seit Release 178 einstellbar (klein/mittel/groß, siehe
+      // AXIS_LABEL_FONT_PX/axisLabelFontSize weiter oben bei applyAxisLabelFontSize()) - "mittel"
+      // ist weiterhin exakt die bisherige, bis Release 177 fest codierte Größe (11px).
+      ctx.font = '600 ' + AXIS_LABEL_FONT_PX[axisLabelFontSize] + 'px "Open Sans", ui-sans-serif, system-ui, sans-serif';
       ctx.fillText(ax.label, end.x + 4, end.y + 4);
     });
   }
@@ -15393,7 +15715,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Felder weiter unten.
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
     LS_KEY_FEED_SCALE, // Release 161, siehe eigenes "feedScaleFactor"-Feld weiter unten
-    LS_KEY_KNOWLEDGE_BASE_EN // Release 164, siehe eigenes "knowledgeBaseTextEn"-Feld weiter unten
+    LS_KEY_KNOWLEDGE_BASE_EN, // Release 164, siehe eigenes "knowledgeBaseTextEn"-Feld weiter unten
+    // Release 178 (Sebastian, Punkt 5: "Alle neuen Einstellungen bitte auch sicher stellen, dass
+    // das in den Einstellungsexport reinfließt."), siehe eigene "axisColors"/
+    // "axisLabelFontSize"/"gridStep"-Felder weiter unten.
+    LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -15460,6 +15786,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // bei den einzelnen Schlüsseln in "fontColors" oben, nur als eigenes, einfaches Feld statt
       // Unterobjekt (da es hier nur eine einzige Farbe statt fünf gibt).
       gridColor: gridColorOverride,
+      // "Achsenfarbe" (Release 178, Sebastian, Punkt 5: "Alle neuen Einstellungen bitte auch
+      // sicher stellen, dass das in den Einstellungsexport reinfließt.") - null (automatisch)
+      // oder ein {x,y,z}-Objekt mit drei Hexcodes, exakt dieselbe Konvention wie "gridColor"
+      // direkt oberhalb, nur mit drei statt einer Farbe.
+      axisColors: axisColorOverride,
+      // "Achsenfarbe" -> Schriftgröße der Achsbeschriftung (Release 178, Punkt 5) - einer von drei
+      // festen Strings ("small"/"medium"/"large"), exakt dieselbe Behandlung wie
+      // "feedScaleFactor"/"gridVisible" oben (kein Unterobjekt, da nur ein einziger Wert
+      // existiert).
+      axisLabelFontSize,
+      // "Rastergröße" (Release 178, Punkt 4+5) - null (automatisch) oder ein fester mm-Wert,
+      // exakt dieselbe Konvention wie "gridColor"/"axisColors" oben (null = automatisch).
+      gridStep: gridStepOverride,
       // "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit", Punkt 3) - einfacher
       // Zahlenwert, exakt dieselbe Behandlung wie "Rotation"/"Raster" oben (kein Unterobjekt, da
       // nur ein einziger Faktor existiert).
@@ -15476,12 +15815,48 @@ Sebastian Bäcker (Anschrift wie oben)`,
       otherSettings: collectOtherCncsimSettings()
     }, null, 2);
   }
-  el('btnSaveSettings').addEventListener('click', () => {
-    const blob = new Blob([buildSettingsExport()], { type: 'application/json;charset=utf-8' });
+  // Release 178 (Sebastian, Punkt 6: "Beim Einstellungsexport speichert die Sim die .json
+  // aktuell im Downloadsordner automatisch. Dort soll auch eine Abfrage nach dem Speicherort
+  // kommen."): bis Release 177 landete die exportierte Datei IMMER automatisch im
+  // browserseitigen Downloads-Ordner (klassische <a download>-Technik, siehe Git-Historie) -
+  // ohne jede Rückfrage, wo genau sie gespeichert wird. Seither wird zuerst versucht, den
+  // nativen "Speichern als…"-Dialog des Browsers/Hosts zu öffnen (File System Access API,
+  // window.showSaveFilePicker() - fragt aktiv nach dem gewünschten Speicherort/Dateinamen,
+  // vorbelegt mit demselben Dateinamen wie bisher). Zwei Sonderfälle dabei bewusst
+  // unterschiedlich behandelt:
+  // 1. Bricht der Benutzer diesen Dialog selbst ab ("AbortError") - KEIN Fallback, die Aktion
+  //    endet dort einfach ohne jede Datei, exakt wie ein abgebrochener "Speichern als…"-Dialog
+  //    in jeder anderen Anwendung auch.
+  // 2. Jeder andere Fehler (z.B. weil showSaveFilePicker() in diesem per WebView2 eingebetteten
+  //    Host zwar als Funktion existiert, aber von dort nicht unterstützt/erlaubt wird, oder weil
+  //    die Funktion dort komplett fehlt - geprüft per "typeof") - automatischer Rückfall auf
+  //    exakt die bisherige, unveränderte <a download>-Technik, damit der Knopf in JEDEM Fall
+  //    eine Datei liefert, auch wenn der native Dialog selbst nicht verfügbar ist.
+  // Der eigentliche Dateiinhalt (buildSettingsExport()) UND der vorbelegte Dateiname
+  // ("cncsim_einstellungen.json") bleiben in beiden Pfaden unverändert.
+  el('btnSaveSettings').addEventListener('click', async () => {
+    const jsonText = buildSettingsExport();
+    const SUGGESTED_NAME = 'cncsim_einstellungen.json';
+    if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: SUGGESTED_NAME,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(jsonText);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // Benutzer hat den Dialog selbst abgebrochen
+        // sonst: Fallback unten (API vorhanden, aber im Host nicht nutzbar)
+      }
+    }
+    const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'cncsim_einstellungen.json';
+    a.download = SUGGESTED_NAME;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -15589,6 +15964,30 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.gridColor === null || typeof data.gridColor === 'string') {
         gridColorOverride = applyGridColor(data.gridColor);
         syncGridColorPanelFromActive();
+      }
+      // "Achsenfarbe" (Release 178, Punkt 5): fehlt das Feld (ältere Datei), bleibt die aktuell
+      // aktive Übersteuerung unangetastet - dieselbe Regel wie bei "3D Rasterfarbe" direkt
+      // oberhalb, inklusive explizitem null -> "automatisch" (applyAxisColors(null)).
+      // applyAxisColors() selbst verwirft ein unvollständiges/ungültiges {x,y,z}-Objekt bereits
+      // intern (fällt dann auf "automatisch" zurück), ein Import-Abbruch ist dafür nicht nötig.
+      if (data.axisColors === null || (data.axisColors && typeof data.axisColors === 'object')) {
+        axisColorOverride = applyAxisColors(data.axisColors);
+        syncAxisColorPanelFromActive();
+      }
+      // "Achsenfarbe" -> Schriftgröße (Release 178, Punkt 5): fehlt das Feld oder ist es kein
+      // bekannter Wert (ältere Datei), bleibt die aktuell aktive Größe unangetastet -
+      // applyAxisLabelFontSize() selbst fällt bei einem unbekannten String ohnehin auf "medium"
+      // zurück, ein zusätzlicher Validierungs-Zweig hier ist deshalb nicht nötig.
+      if (data.axisLabelFontSize === 'small' || data.axisLabelFontSize === 'medium' || data.axisLabelFontSize === 'large') {
+        axisLabelFontSize = applyAxisLabelFontSize(data.axisLabelFontSize);
+        syncAxisColorPanelFromActive();
+      }
+      // "Rastergröße" (Release 178, Punkt 4+5): fehlt das Feld (ältere Datei), bleibt die aktuell
+      // aktive Übersteuerung unangetastet - dieselbe null-=-"automatisch"-Regel wie bei
+      // "3D Rasterfarbe"/"Achsenfarbe" oben.
+      if (data.gridStep === null || (typeof data.gridStep === 'number' && data.gridStep > 0)) {
+        gridStepOverride = applyGridStep(data.gridStep);
+        syncGridSettingsPanelFromActive();
       }
       // "Vorschubskalierung" (Release 161): fehlt das Feld (ältere Datei), bleibt der aktuell
       // aktive Faktor unangetastet - dieselbe Regel wie bei "3D Rasterfarbe"/"Raster"/"Rotation"
@@ -15773,6 +16172,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
     persistColorProfile(activeColorProfile);
     colorProfilePanel.classList.remove('open');
   });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1, siehe ausführlichen Markup-Kommentar
+  // bei #colorProfilePanel in template_top.html) - setzt AUSSCHLIESSLICH die Hintergrundfarbe auf
+  // "automatisch" zurück (dieselbe Zielwert-Logik wie resetAllDisplaySettingsToDefaults() weiter
+  // unten), mit vorheriger Ja/Nein-Sicherheitsabfrage (nativer window.confirm(), bewusst dieselbe
+  // Technik wie beim generellen Knopf/"Maschinentypen zurücksetzen" - siehe dort für die
+  // Begründung). Bei "Abbrechen" (Nein) passiert nichts.
+  el('btnColorProfileResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Hintergrundfarbe wird auf „automatisch" zurückgesetzt. Fortführen?')) return;
+    try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) { /* siehe loadPersistedColorProfile() oben */ }
+    activeColorProfile = applyColorProfile(null);
+    syncColorProfilePanelFromActive();
+    colorProfilePanel.classList.remove('open');
+  });
 
   // "Einstellungen" -> "Farben" -> "Schriftfarbe" (66. Runde, siehe #fontColorPanel in
   // template_top.html sowie applyFontColors()/FONT_COLOR_SLOTS weiter oben). Jede Zeile hat ein
@@ -15841,6 +16253,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
     persistFontColors(activeFontColors);
     fontColorPanel.classList.remove('open');
   });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1) - setzt AUSSCHLIESSLICH alle fünf
+  // Schriftfarben-Zeilen auf "Standard" zurück, mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe
+  // Kommentar bei #btnColorProfileResetDefaults oben für die Begründung der Technik).
+  el('btnFontColorResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Schriftfarbe wird auf „Standard" zurückgesetzt. Fortführen?')) return;
+    activeFontColors = applyFontColors({});
+    persistFontColors(activeFontColors);
+    syncFontColorPanelFromActive();
+    fontColorPanel.classList.remove('open');
+  });
 
   // "Einstellungen" -> "Farben" -> "Arbeitsgangfarbe" (Release 100, siehe #opColorPanel in
   // template_top.html sowie applyOpColors()/LS_KEY_OP_COLORS weiter oben; Release 101: auf zehn
@@ -15891,6 +16313,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     activeOpColors = applyOpColors(next);
     persistOpColors(activeOpColors);
+    opColorPanel.classList.remove('open');
+  });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1) - setzt AUSSCHLIESSLICH die
+  // Arbeitsgangfarbe auf "automatisch" zurück, mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe
+  // Kommentar bei #btnColorProfileResetDefaults oben für die Begründung der Technik).
+  el('btnOpColorResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Arbeitsgangfarbe wird auf „automatisch" zurückgesetzt. Fortführen?')) return;
+    activeOpColors = applyOpColors(null);
+    persistOpColors(activeOpColors);
+    syncOpColorPanelFromActive();
     opColorPanel.classList.remove('open');
   });
 
@@ -15947,6 +16379,87 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     gridColorOverride = applyGridColor(norm);
     gridColorPanel.classList.remove('open');
+  });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1) - setzt AUSSCHLIESSLICH die 3D
+  // Rasterfarbe auf "automatisch" zurück, mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe
+  // Kommentar bei #btnColorProfileResetDefaults oben für die Begründung der Technik).
+  el('btnGridColorResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die 3D Rasterfarbe wird auf „automatisch" zurückgesetzt. Fortführen?')) return;
+    gridColorOverride = applyGridColor(null);
+    syncGridColorPanelFromActive();
+    gridColorPanel.classList.remove('open');
+  });
+
+  // "Einstellungen" -> "Farben" -> "Achsenfarbe" (Release 178, siehe #axisColorPanel in
+  // template_top.html sowie applyAxisColors()/applyAxisLabelFontSize()/LS_KEY_AXIS_COLORS/
+  // LS_KEY_AXIS_LABEL_SIZE weiter oben). Drei feste Hexcode-Zeilen (dieselbe Text<->Farbwähler-
+  // Synchronisation UND dieselbe "alle gemeinsam als EIN Satz übernehmen"-Logik OHNE eigenes
+  // Häkchen je Zeile wie bei "Arbeitsgangfarbe"/syncOpColorPanelFromActive() oben, nur mit drei
+  // statt zehn Zeilen) PLUS die Schriftgröße-Radiogruppe (Punkt 3) in demselben Panel - beide
+  // werden von EINEM gemeinsamen "Übernehmen"-Knopf gemeinsam angewendet.
+  const axisColorPanel = el('axisColorPanel');
+  const axisColorHexWarning = el('axisColorHexWarning');
+  const axisColorFields = ['x', 'y', 'z'].map(axis => ({
+    axis,
+    hex: el('axisColor' + axis.toUpperCase() + 'Hex'),
+    picker: el('axisColor' + axis.toUpperCase() + 'Picker')
+  }));
+  // Belegt die drei Zeilen mit dem aktuell tatsächlich aktiven Stand vor - bei aktiver
+  // Übersteuerung (axisColorOverride) mit deren drei Hexcodes, sonst mit den gerade LIVE
+  // aufgelösten Theme-Standardfarben (cssVar('--axis-x' usw.), berücksichtigt automatisch
+  // Hell-/Dark-Mode) als sinnvoller Ausgangspunkt - exakt dieselbe Technik wie bei
+  // syncOpColorPanelFromActive() oben. Die Radiogruppe wird unabhängig davon mit der aktuell
+  // aktiven axisLabelFontSize vorbelegt.
+  function syncAxisColorPanelFromActive() {
+    axisColorFields.forEach(f => {
+      const hex = (axisColorOverride && axisColorOverride[f.axis]) || normalizeHex(cssVar('--axis-' + f.axis)) || '#000000';
+      f.hex.value = hex;
+      f.picker.value = hex;
+    });
+    axisColorHexWarning.hidden = true;
+    const sizeRadio = document.querySelector('input[name="axisLabelFontSize"][value="' + axisLabelFontSize + '"]');
+    if (sizeRadio) sizeRadio.checked = true;
+  }
+  axisColorFields.forEach(f => {
+    f.hex.addEventListener('input', () => {
+      const norm = normalizeHex(f.hex.value);
+      if (norm) f.picker.value = norm;
+    });
+    f.picker.addEventListener('input', () => { f.hex.value = f.picker.value; });
+  });
+  el('btnAxisColor').addEventListener('click', () => {
+    syncAxisColorPanelFromActive();
+    axisColorPanel.classList.add('open');
+  });
+  el('btnAxisColorCancel').addEventListener('click', () => axisColorPanel.classList.remove('open'));
+  el('btnAxisColorApply').addEventListener('click', () => {
+    const next = {};
+    let allValid = true;
+    axisColorFields.forEach(f => {
+      const norm = normalizeHex(f.hex.value);
+      if (!norm) { allValid = false; return; }
+      next[f.axis] = norm;
+    });
+    if (!allValid) {
+      axisColorHexWarning.hidden = false;
+      return;
+    }
+    axisColorOverride = applyAxisColors(next);
+    const checkedSize = document.querySelector('input[name="axisLabelFontSize"]:checked');
+    axisLabelFontSize = applyAxisLabelFontSize(checkedSize ? checkedSize.value : axisLabelFontSize);
+    axisColorPanel.classList.remove('open');
+  });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1) - setzt AUSSCHLIESSLICH die
+  // Achsenfarbe auf die eingebauten Standardfarben zurück, mit vorheriger Ja/Nein-
+  // Sicherheitsabfrage (siehe Kommentar bei #btnColorProfileResetDefaults oben für die Begründung
+  // der Technik). Betrifft bewusst NICHT axisLabelFontSize (siehe Markup-Kommentar bei
+  // #axisColorPanel sowie resetAllDisplaySettingsToDefaults() weiter unten) - syncAxisColorPanelFromActive()
+  // belegt die Radiogruppe deshalb unverändert mit der aktuell aktiven Schriftgröße neu.
+  el('btnAxisColorResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Achsenfarbe wird auf die Standardfarben zurückgesetzt. Fortführen?')) return;
+    axisColorOverride = applyAxisColors(null);
+    syncAxisColorPanelFromActive();
+    axisColorPanel.classList.remove('open');
   });
 
   // "Infos" -> "Fräszeitberechnung" (Release 161, siehe Konzept "Ungefähre Fräszeit" sowie
@@ -16273,6 +16786,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // exakt dasselbe Vorgehen wie bei Arbeitsgangfarbe/Hintergrundfarbe oben.
     gridColorOverride = applyGridColor(null);
     syncGridColorPanelFromActive();
+    // "Achsenfarbe" (Release 178): zurück auf "automatisch" (kein persistiertes Override) -
+    // exakt dasselbe Vorgehen wie bei "3D Rasterfarbe"/Arbeitsgangfarbe oben, da "Achsenfarbe"
+    // eine reine Farbeinstellung im "Farben"-Untermenü ist (genau der von Sebastian für diesen
+    // Knopf abgesteckte Umfang, siehe Kommentar oben). Die im selben Dialog sitzende
+    // Schriftgröße der Achsbeschriftung (axisLabelFontSize) ist dagegen KEINE Farbe, sondern eine
+    // Darstellungsgröße wie "Raster"/"Rotation"/"Werkzeuge" - genau jene drei Bereiche, die
+    // dieser Knopf laut seinem dokumentierten, historischen Funktionsumfang bewusst NICHT
+    // zurücksetzt (siehe Kommentar oben sowie bei #btnResetDisplayDefaults im Markup) - bleibt
+    // deshalb hier konsequent unangetastet, genau wie die "Rastergröße" (gridStepOverride)
+    // direkt unterhalb aus demselben Grund.
+    axisColorOverride = applyAxisColors(null);
+    syncAxisColorPanelFromActive();
     // Spaltenbreiten: zurück auf 100%/100%, inkl. sofortiger Anwendung auf ein ggf. bereits
     // geladenes Programm - identische Anwenden-Logik wie beim "Übernehmen"-Klick im
     // "Spalteneinstellungen"-Dialog (siehe dort für die ausführliche Begründung der Reihenfolge).
@@ -16343,6 +16868,25 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     columnScalePanel.classList.remove('open');
   });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 4, siehe ausführlichen Markup-Kommentar
+  // bei #colorProfilePanel in template_top.html) - setzt die Spalteneinstellungen auf
+  // DEFAULT_COLUMN_SCALE (100%/Ausgeklappt) zurück, inkl. derselben Sofort-Anwenden-Logik und
+  // Reihenfolge wie beim "Übernehmen"-Klick direkt oberhalb, mit vorheriger Ja/Nein-
+  // Sicherheitsabfrage (siehe Kommentar bei #btnColorProfileResetDefaults oben für die Begründung
+  // der Technik).
+  el('btnColumnScaleResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Spalteneinstellungen werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
+    columnScalePreference = Object.assign({}, DEFAULT_COLUMN_SCALE);
+    persistColumnScale(columnScalePreference);
+    if (current) {
+      applyOpsScaleToCurrent();
+      const prefStage = PROG_STAGE_PCT.indexOf(columnScalePreference.code);
+      progCollapseStage = prefStage >= 0 ? prefStage : 0;
+      applyProgCollapseStage();
+    }
+    syncColumnScalePanelFromActive();
+    columnScalePanel.classList.remove('open');
+  });
 
   // "Einstellungen" -> "Erscheinungsbild" -> "Rotation" (Release 141, Punkt 8) - eine einzige
   // Ja/Nein-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Spalten" oben, nur ohne die
@@ -16371,10 +16915,20 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // An/Aus-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Rotation" direkt oberhalb. "Übernehmen"
   // ruft dieselbe setGridVisible() auf wie der Kontextmenü-Direktumschalter weiter unten (siehe
   // dort) - beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
+  // Release 178 (Punkt 4, siehe ausführlichen Kommentar bei #gridSettingsPanel in
+  // template_top.html sowie gridStepOverride/computeAutoGridStep()/applyGridStep() weiter oben):
+  // das neue Zahlenfeld "Rastergröße" wird bei JEDEM Öffnen dieses Panels frisch vorbefüllt -
+  // mit dem Override, falls gesetzt, sonst mit dem gerade aktuell automatisch berechneten Wert
+  // ("den aktuellen Wert vorausgewählt", wörtlich) - exakt dieselbe Vorbefüllung-bei-jedem-
+  // Öffnen-Technik wie beim G0-Vorschub-/Vorschubskalierung-Feld in "Fräszeitberechnung".
   const gridSettingsPanel = el('gridSettingsPanel');
+  const gridStepSizeInput = el('gridStepSizeInput');
+  const gridStepSizeWarning = el('gridStepSizeWarning');
   function syncGridSettingsPanelFromActive() {
     const radio = document.querySelector('input[name="gridVisible"][value="' + (gridVisible ? '1' : '0') + '"]');
     if (radio) radio.checked = true;
+    gridStepSizeInput.value = String(gridStepOverride || computeAutoGridStep());
+    gridStepSizeWarning.hidden = true;
   }
   el('btnGridSettings').addEventListener('click', () => {
     syncGridSettingsPanelFromActive();
@@ -16384,6 +16938,28 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('btnGridSettingsApply').addEventListener('click', () => {
     const checked = document.querySelector('input[name="gridVisible"]:checked');
     setGridVisible(checked ? checked.value === '1' : gridVisible);
+    const enteredStep = normalizeFeedScaleFactor(gridStepSizeInput.value, null);
+    if (enteredStep === null) {
+      gridStepSizeWarning.hidden = false;
+      gridStepSizeInput.value = String(gridStepOverride || computeAutoGridStep());
+      return;
+    }
+    gridStepSizeWarning.hidden = true;
+    gridStepOverride = applyGridStep(enteredStep);
+    gridSettingsPanel.classList.remove('open');
+  });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 3, siehe ausführlichen Markup-Kommentar
+  // bei #colorProfilePanel in template_top.html) - setzt sowohl die Rastersichtbarkeit (zurück auf
+  // "an") als auch die Rastergröße (zurück auf "automatisch", über computeAutoGridStep()) zurück,
+  // mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe Kommentar bei #btnColorProfileResetDefaults
+  // oben für die Begründung der Technik). Dies ist seit dieser Runde der einzige Weg, die
+  // Rastergröße wieder auf "automatisch" zu bekommen - der generelle Knopf
+  // (resetAllDisplaySettingsToDefaults()) lässt gridStepOverride bewusst unangetastet.
+  el('btnGridSettingsResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Raster-Sichtbarkeit und Rastergröße werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
+    setGridVisible(true);
+    gridStepOverride = applyGridStep(null);
+    syncGridSettingsPanelFromActive();
     gridSettingsPanel.classList.remove('open');
   });
 
@@ -16429,6 +17005,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     activeMenuColor = applyMenuHighlightColor({ bg, ink });
     persistMenuColor(activeMenuColor);
+    menuColorPanel.classList.remove('open');
+  });
+  // "Standardwerte wiederherstellen" (Release 179, Punkt 1) - setzt AUSSCHLIESSLICH die
+  // Buttonfarbe auf die eingebaute Standardfarbe (DEFAULT_MENU_COLOR, Rot) zurück, mit vorheriger
+  // Ja/Nein-Sicherheitsabfrage (siehe Kommentar bei #btnColorProfileResetDefaults oben für die
+  // Begründung der Technik).
+  el('btnMenuColorResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Die Buttonfarbe wird auf die Standardfarbe zurückgesetzt. Fortführen?')) return;
+    activeMenuColor = applyMenuHighlightColor(DEFAULT_MENU_COLOR);
+    persistMenuColor(activeMenuColor);
+    syncMenuColorPanelFromActive();
     menuColorPanel.classList.remove('open');
   });
 
@@ -17180,6 +17767,26 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (e.key === 'Home') {
       e.preventDefault();
       goHomeView();
+    }
+  });
+
+  // Strg+L schaltet die Sprache um (Release 178, Sebastian, Punkt 8: "Neues Makro für
+  // Sprachenwechsel: 'Strg + L' -> Wechselt immer zwischen den Sprachen hin und her.") - ruft
+  // dieselbe, unveränderte applyLanguage()-Funktion auf wie ein Klick auf #langBtnDe/#langBtnEn
+  // (siehe dort), einfach mit der jeweils ANDEREN Sprache als aktuell aktiv (currentLang) - bei
+  // genau zwei Sprachen ist "immer hin und her wechseln" exakt gleichbedeutend mit "zur jeweils
+  // anderen Sprache wechseln", eine dritte Sprache existiert nicht. Bewusst OHNE die bei Shift+L/
+  // Shift+W/Leertaste weiter oben übliche Eingabefeld-Ausnahme: Sebastian nennt das Makro
+  // ausdrücklich "immer" wirksam, und Strg+L hat (anders als ein einzelner Buchstabe oder die
+  // Leertaste) ohnehin keine erwartbare Standardbedeutung innerhalb eines Textfelds dieser
+  // Anwendung. e.preventDefault() unterdrückt zusätzlich die in regulären Browsern (nicht aber in
+  // diesem per WebView2 eingebetteten Host) übliche Strg+L-Standardwirkung ("Adressleiste
+  // fokussieren") - rein vorsorglich, falls die Seite doch einmal in einem echten Browser-Tab
+  // geöffnet wird (siehe Host-Token-Prüfung ganz oben in dieser Datei).
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyL') {
+      e.preventDefault();
+      applyLanguage(currentLang === 'en' ? 'de' : 'en');
     }
   });
 
@@ -17989,6 +18596,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Raster" direkt oberhalb - direkt von
   // drawGrid() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
   gridColorOverride = loadPersistedGridColor();
+  // "Rastergröße" (Release 178, Punkt 4): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "3D Rasterfarbe" direkt
+  // oberhalb - direkt von drawGrid()/computeAutoGridStep() ausgewertet (siehe dort), exakt
+  // dieselbe reine Variablenzuweisung ohne eigenen applyGridStep()-Aufruf wie bei
+  // gridColorOverride, da auch die Rastergröße ausschließlich als JS-Wert (nicht über eine
+  // CSS-Variable) gelesen wird.
+  gridStepOverride = loadPersistedGridStep();
   // "Vorschubskalierung" (Release 161, siehe Konzept "Ungefähre Fräszeit"): ebenfalls schon vor
   // dem ersten Programm-Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei
   // "3D Rasterfarbe" direkt oberhalb - direkt von computeApproxMillingTime() ausgewertet (siehe
@@ -18016,6 +18630,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Stelle ein No-Op, da segments/current hier noch leer sind, wird aber trotzdem sicherheitshalber
   // konsistent mit den anderen Anwendungsstellen aufgerufen.
   activeOpColors = applyOpColors(loadPersistedOpColors());
+  // "Achsenfarbe" (Release 178, Punkt 2): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Arbeitsgangfarbe"/
+  // "Schriftfarbe" direkt oberhalb - applyAxisColors() setzt wie applyOpColors() CSS-Variablen
+  // auf :root (hier --axis-x/-y/-z statt --path-1…10), root muss dafür bereits existieren.
+  axisColorOverride = applyAxisColors(loadPersistedAxisColors());
+  // "Achsenfarbe" -> Schriftgröße (Release 178, Punkt 3): reine Variablenzuweisung ohne eigenen
+  // Funktionsaufruf, exakt wie gridStepOverride oben - wird direkt von drawAxisGizmo() als
+  // JS-Wert gelesen (siehe AXIS_LABEL_FONT_PX dort), keine CSS-Variable nötig.
+  axisLabelFontSize = loadPersistedAxisLabelFontSize();
   fitCanvas();
   setScope({ type: 'all' });
   // Automatische Spaltenbreiten (siehe autoFitColumnWidths oben) messen mit der aktuell
