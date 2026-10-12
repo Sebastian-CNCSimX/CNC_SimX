@@ -2948,7 +2948,7 @@
     <div class="file-status-row">
       <span class="machine-badge" id="machineBadge" hidden><span class="dot"></span><span id="machineBadgeText">Keine Datei geladen</span></span>
       <span class="filename" id="filenameLabel"></span>
-      <label class="reichenbacher-switch" id="reichenbacherSwitchWrap" hidden title="Kardanische Winkelkorrektur für den Reichenbacher-Aggregatkopf (siehe Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - steuert, ob das Werkzeug in der 3D-Ansicht mit der verifizierten Korrekturformel oder mit der ursprünglichen, unkorrigierten Berechnung ausgerichtet wird" data-i18n-en-title="Gimbal angle correction for the Reichenbacher aggregate head (see Notiz_Reichenbacher_Aggregat_Winkelkorrektur.md) - controls whether the tool in the 3D view is aligned using the verified correction formula or the original, uncorrected calculation">
+      <label class="reichenbacher-switch" id="reichenbacherSwitchWrap" hidden>
         <input type="checkbox" id="chkReichenbacherCorrection" checked>
         <span class="reichenbacher-switch-track"><span class="reichenbacher-switch-thumb"></span></span>
         <span class="reichenbacher-switch-text" data-i18n-en="Gimbal angle correction">Kardan-Winkelkorrektur</span>
@@ -7570,8 +7570,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 197;
-  const APP_RELEASE_TIMESTAMP = '12.10.2026, 19:10 Uhr';
+  const APP_RELEASE_NUMBER = 198;
+  const APP_RELEASE_TIMESTAMP = '12.10.2026, 20:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -10544,9 +10544,35 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // exakt die bisherige, bereits in Release 147 per Playwright-Screenshot gegen Sebastians
   // Vorgabe verifizierte theta=-3π/4 (Front+Left-Blickrichtung, siehe Herleitung oben) - dadurch
   // bleibt das Verhalten für alle, die nur einmal klicken, unverändert zu vorher.
+  //
+  // Release 198 - komplette Neudefinition der vier Perspektiven samt Reihenfolge, mit exakter
+  // Bildschirm-Achsen-Vorgabe pro Ansicht: Sebastian: "Die Iso-Ansichten (Perspektiven und
+  // Reihenfolge) bitte ändern: 1. Klick = Ansicht von Oben + schräg von links vorne (X Achse zeigt
+  // nach oben rechts, Y-Achse nach oben links, Z nach oben) 2. Klick = ... schräg von rechts vorne
+  // (X -> unten rechts, Y -> oben rechts, Z nach oben) 3. Klick = ... schräg von rechts hinten (X
+  // -> unten links, Y -> unten rechts, Z nach oben) 4. Klick = ... schräg von links hinten (X ->
+  // links oben, Y -> links unten, Z nach oben)." Zuvor (bis Release 197) zeigte "Ansicht 1" mit
+  // phi=-asin(1/√3) tatsächlich eine Ansicht VON UNTEN (Kamera unterhalb des Werkstücks, siehe
+  // Release-197-Nachtrag oben) - unabhängig vom Händigkeits-Bugfix immer schon so, nur bis dahin
+  // nie von Sebastian bemängelt. Per Node direkt durchgerechnet (alle vier von Sebastian genannten
+  // Bildschirm-Achsrichtungen gegen `basisFromAngles()` nach dem Release-197-Fix geprüft): Ein
+  // simples Vorzeichen-Tauschen des bestehenden Kippwinkels - phi=+asin(1/√3) statt -asin(1/√3),
+  // bei UNVERÄNDERTEM Betrag (weiterhin die exakte Isometrie, v_x=v_y=v_z=1) - dreht die Kamera
+  // von "unterhalb" auf "oberhalb" des Werkstücks, exakt Sebastians "Ansicht von Oben" für alle
+  // vier Klicks. Für die Reihenfolge/Drehrichtung ergibt dieselbe Nachrechnung: Die vier von
+  // Sebastian beschriebenen Azimut-Ecken (links-vorne/rechts-vorne/rechts-hinten/links-hinten)
+  // entsprechen exakt denselben vier theta-Werten wie bisher (theta beginnt weiterhin bei -3π/4),
+  // nur in UMGEKEHRTER Reihenfolge durchlaufen (-π/2 statt +π/2 je Schritt) - die neue
+  // Durchlaufrichtung ist damit die bildschirm-gespiegelte Richtung der alten, nicht nur eine neu
+  // gewählte Startecke. Rechnerisch für alle vier Ansichten bitgenau bestätigt (per Playwright
+  // gegen die echten X/Y/Z-Achsbeschriftungen im 3D-Bereich nachgeprüft, siehe CNC_Simulation.md):
+  // Ansicht 1 X→oben rechts/Y→oben links/Z→oben, Kamera bei links-vorne; Ansicht 2 X→unten
+  // rechts/Y→oben rechts/Z→oben, Kamera bei rechts-vorne; Ansicht 3 X→unten links/Y→unten
+  // rechts/Z→oben, Kamera bei rechts-hinten; Ansicht 4 X→oben links/Y→unten links/Z→oben, Kamera
+  // bei links-hinten - exakt Sebastians vollständige Tabelle, für alle vier Ansichten gleichzeitig.
   const HOME_VIEW_ANGLE_SEQUENCE = [0, 1, 2, 3].map(k => ({
-    theta: -3 * Math.PI / 4 + k * (Math.PI / 2),
-    phi: -Math.asin(1 / Math.sqrt(3))
+    theta: -3 * Math.PI / 4 - k * (Math.PI / 2),
+    phi: Math.asin(1 / Math.sqrt(3))
   }));
 
   // Kamera-Orientierung als ROTIERTE BASIS statt als theta/phi-Winkelpaar (Release 143, Bugfix zu
@@ -19413,20 +19439,24 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // evtl. vorhandene Neigung zurück, da jede der vier HOME_VIEW_ANGLE_SEQUENCE-Ansichten von
     // Haus aus keinen Roll-Anteil hat.
     //
-    // Drehrichtung "nach links" (Release 152, Punkt "Ansicht 2 = Ansicht 1 nach links gedreht"):
-    // theta wird in der Sequenz um jeweils +π/2 weitergedreht (siehe HOME_VIEW_ANGLE_SEQUENCE
-    // oben). Physikalische Herleitung: Ansicht 1 (theta=-3π/4) zeigt die Kamera aus Südwesten (auf
-    // halbem Weg zwischen "Front"=Süden und "Left"=Westen, siehe Herleitung bei theta=-3π/4 oben).
-    // Ein Objekt "nach links drehen" (wie ein Lenkrad/Globus nach links/gegen den Uhrzeigersinn von
-    // oben betrachtet) bringt die bisher LINKE Seite des Objekts zur Kamera hin, d.h. die neue
-    // Ansicht entspricht einem Blick aus der Richtung, die zuvor "links" vom Betrachter lag -
-    // äquivalent dazu, dass die KAMERA selbst um +90° weiter in Richtung Westen->Norden->Osten->
-    // Süden wandert (math. positiver Drehsinn in der XY-Ebene entspricht hier wachsendem theta,
-    // siehe dir={cosφ·sinθ, sinφ, cosφ·cosθ} in basisFromAngles() weiter unten). Die Sequenz lautet
-    // damit: Ansicht 1 Südwesten (Front+Left) -> Ansicht 2 Südosten (Front+Right) ... (jeweils
-    // +π/2), siehe HOME_VIEW_ANGLE_SEQUENCE. Per Playwright-Screenshot-Vergleich der vier Schritte
-    // gegengeprüft, dass sich die sichtbaren Würfel-/Kompass-Flächen in genau dieser Reihenfolge
-    // weiterdrehen (keine Sprünge, keine Wiederholung vor dem vierten Klick).
+    // Drehrichtung (bis Release 197, "nach links" - Release 152, Punkt "Ansicht 2 = Ansicht 1 nach
+    // links gedreht"): theta wurde in der Sequenz um jeweils +π/2 weitergedreht. Physikalische
+    // Herleitung damals: Ansicht 1 (theta=-3π/4) zeigt die Kamera aus Südwesten (auf halbem Weg
+    // zwischen "Front"=Süden und "Left"=Westen, siehe Herleitung bei theta=-3π/4 oben). Ein Objekt
+    // "nach links drehen" (wie ein Lenkrad/Globus nach links/gegen den Uhrzeigersinn von oben
+    // betrachtet) bringt die bisher LINKE Seite des Objekts zur Kamera hin, d.h. die neue Ansicht
+    // entspricht einem Blick aus der Richtung, die zuvor "links" vom Betrachter lag.
+    //
+    // Release 198 - Drehrichtung umgekehrt (siehe ausführliche Herleitung bei
+    // HOME_VIEW_ANGLE_SEQUENCE oben): theta wird jetzt um jeweils −π/2 weitergedreht, damit die vier
+    // Ansichten exakt in der von Sebastian neu vorgegebenen Reihenfolge durchlaufen werden
+    // (links-vorne -> rechts-vorne -> rechts-hinten -> links-hinten) - Ansicht 1 bleibt weiterhin
+    // theta=-3π/4, nur der Umlaufsinn kehrt sich um (die KAMERA wandert jetzt in Richtung Westen->
+    // Süden->Osten->Norden statt umgekehrt). Per Playwright direkt gegen die tatsächlichen X/Y/Z-
+    // Achsbeschriftungen im 3D-Bereich für alle vier Ansichten bitgenau gegen Sebastians vollständige
+    // Tabelle verifiziert (siehe CNC_Simulation.md) sowie per Screenshot-Vergleich bestätigt, dass
+    // sich die sichtbaren Würfel-/Kompass-Flächen in genau dieser neuen Reihenfolge weiterdrehen
+    // (keine Sprünge, keine Wiederholung vor dem vierten Klick).
     const angles = HOME_VIEW_ANGLE_SEQUENCE[homeViewCycleIndex];
     cam.orient = basisFromAngles(angles.theta, angles.phi);
     frameCamera();
