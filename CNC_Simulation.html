@@ -102,9 +102,20 @@
     --danger: #b3261e;
     --danger-soft: #fbe2e0;
     --muted-soft: #eef2f4;
-    --axis-x: #c73a3a;
-    --axis-y: #1f8a52;
-    --axis-z: #2b62c9;
+    /* Neue Standardfarben der X/Y/Z-Achsen (Release 196, Sebastian, wörtlich: "Neue Standard-
+       farben für die X Y und Z-Achsen: X = #0c1ae4, Y = #13eb0f, Z = #f4010d") - ersetzt die
+       bisherigen, seit Release 178 getrennt für Hell/Dunkel gepflegten Standardwerte
+       (hell: #c73a3a/#1f8a52/#2b62c9, dunkel: #ff7a72/#5fdb9a/#7ab0ff) an allen drei Stellen,
+       an denen --axis-x/--axis-y/--axis-z definiert werden (hier, im
+       "@media (prefers-color-scheme: dark)"-Block weiter unten und in ":root[data-theme="dark"]"
+       weiter unten) - jetzt EIN einheitlicher Satz für Hell UND Dunkel (Sebastian hat nur einen
+       einzigen Satz Werte genannt, keine theme-abhängigen Varianten). Betrifft ausschließlich die
+       automatischen Standardwerte; eine bereits aktive eigene Übersteuerung (axisColorOverride,
+       siehe "Achsenfarbe einstellen"/#axisColorPanel, Release 178) bleibt davon unberührt - siehe
+       Abschnitt 12.6 der Projekt-Doku. */
+    --axis-x: #0c1ae4;
+    --axis-y: #13eb0f;
+    --axis-z: #f4010d;
     --grid-line: rgba(23,50,74,0.08);
     --shadow: 0 8px 24px rgba(23,50,74,0.10);
     /* Farbpalette auf 10 statt 6 erweitert (Sebastian: "Aktuell wiederholen sich alle 6
@@ -151,9 +162,9 @@
       --danger: #ff7a72;
       --danger-soft: #3a1614;
       --muted-soft: #1a232d;
-      --axis-x: #ff7a72;
-      --axis-y: #5fdb9a;
-      --axis-z: #7ab0ff;
+      --axis-x: #0c1ae4;
+      --axis-y: #13eb0f;
+      --axis-z: #f4010d;
       --grid-line: rgba(232,237,241,0.08);
       --shadow: 0 8px 28px rgba(0,0,0,0.45);
       --path-1: #ef5b56;
@@ -190,9 +201,9 @@
     --danger: #ff7a72;
     --danger-soft: #3a1614;
     --muted-soft: #1a232d;
-    --axis-x: #ff7a72;
-    --axis-y: #5fdb9a;
-    --axis-z: #7ab0ff;
+    --axis-x: #0c1ae4;
+    --axis-y: #13eb0f;
+    --axis-z: #f4010d;
     --grid-line: rgba(232,237,241,0.08);
     --shadow: 0 8px 28px rgba(0,0,0,0.45);
     --path-1: #ef5b56;
@@ -1189,9 +1200,21 @@
     font-weight: 600;
     overflow: hidden;
   }
+  /* "Spalteneinstellungen"-Zahnrad links vom Ein-/Ausklappen-Knopf (Release 193, Punkt 7,
+     Sebastian: "Bei 'Arbeitsgänge' links vom 'Spalten zuklappen'-Symbol ein Einstellungicon
+     einbauen, was die 'Spalteneinstellungen' aufruft") - eigener Sub-Flex-Wrapper um Zahnrad +
+     #btnOpsToggle, damit ".ops-col-head-row" selbst weiterhin nur ZWEI direkte Kinder hat (Titel/
+     Wrapper) und "justify-content: space-between" dadurch unverändert Titel links/Wrapper rechts
+     verteilt - mit drei direkten Kindern würde das neue Zahnrad stattdessen mittig zwischen Titel
+     und Knopf landen statt unmittelbar links neben #btnOpsToggle zu kleben. */
+  .ops-col-head-actions { display: flex; align-items: center; gap: 4px; }
   .ops-col.collapsed .ops-col-head { padding: 9px 4px; }
   .ops-col.collapsed .ops-col-head-row { justify-content: center; }
   .ops-col.collapsed .ops-col-title { display: none; }
+  /* Im eingeklappten Zustand bleibt (wie bisher) nur #btnOpsToggle übrig, um die Spalte wieder
+     aufzuklappen - das neue Zahnrad (Spalteneinstellungen betreffen die AUSGEKLAPPTE Spalte) wird
+     dabei ausgeblendet, exakt nach demselben Muster wie ".ops-showall-btn" direkt oberhalb. */
+  .ops-col.collapsed .ops-col-head .ops-col-settings-btn { display: none; }
   /* "Alle AG ausblenden"/"Alle AG anzeigen"-Umschalt-Knopf (Benutzer, Weiterentwicklung: "1
      Standardmäßig würde ein Klick darauf alle Arbeitsgänge ausblenden, wenn alles eingeblendet
      ist -> 'Alle AG ausblenden' 2 Wenn ich einen Arbeitsgang manuell ausgeblendet habe, wird der
@@ -1641,6 +1664,37 @@
     display: flex; align-items: center; justify-content: center;
     pointer-events: auto;
   }
+  /* Zahnrad-Icon neben dem Haussymbol (Release 193, Punkt 5, Sebastian: "Einstellungsicon rechts
+     neben dem Haussymbol (Kästchen und Icon hat dieselbe Größe wie das 'Haus') einbauen, das die
+     '3D Bereichseinstellungen' aufruft") - "Haussymbol" ist hierbei #btnTopView (trägt seit
+     Release 186 das ⌂-Zeichen, siehe dessen Markup-Kommentar sowie ".gizmo-home-btn" oben für den
+     Hintergrund des Icon-Tauschs zwischen #btnHomeView/#btnTopView - NICHT #btnHomeView, das seit
+     Release 186 den Iso-Würfel trägt). Gleiche 30x30px-Kästchengröße wie #btnTopView/#btnHomeView
+     (wörtlich gefordert), unmittelbar RECHTS daneben (kleinerer "right"-Wert, da #btnTopView bei
+     `right:151px` steht - 151 − 30 (Breite #btnTopView) − 8 (Abstand, derselbe Wert wie das
+     ".machine-type-quick-group"-Flex-"gap" an anderer Stelle im Menüband) = 113px), auf derselben
+     Höhe (`top:125px`, identisch zu #btnTopView). Eigene Klasse statt Wiederverwendung von
+     ".toolbar-btn.gizmo-top-btn" (dieselben Maße, aber ein eigener "right"-Wert).
+     Release 194 (Sebastian: "Das Einstellungicon am 'Kompass' bitte von den Farben her so
+     gestalten wie die anderen beiden Symbole (Haus und Iso). Weißer Background ist nicht so
+     schön.") - der Knopf trug im Markup bislang NUR die eigene Klasse ".gizmo-settings-btn", nicht
+     zusätzlich ".toolbar-btn" wie #btnTopView/#btnHomeView - dadurch fehlten ihm deren Farben
+     (Hintergrund/Rahmen/Schrift aus ".toolbar-btn" weiter unten, siehe dort), der Browser zeigte
+     stattdessen seinen eigenen, weißen Standard-Button-Hintergrund. Fix: Markup bekommt zusätzlich
+     die Klasse "toolbar-btn" (siehe dort). Der Selektor hier wird dafür zu
+     ".toolbar-btn.gizmo-settings-btn" (zwei Klassen statt einer) erweitert, statt die Klasse OHNE
+     Selektor-Anpassung zu ergänzen - sonst hätte exakt derselbe Spezifitäts-/Reihenfolge-Fehler wie
+     beim ".toolbar-btn.gizmo-top-btn"-Bugfix in Release 187 (siehe dessen Kommentar oben)
+     zugeschlagen: ".toolbar-btn" steht im Stylesheet TEXTUELL NACH dieser Regel und hätte bei
+     gleicher Ein-Klassen-Spezifität Breite/Höhe/Schriftgröße/Position hier überschrieben. */
+  .toolbar-btn.gizmo-settings-btn {
+    position: absolute; top: 125px; right: 113px;
+    width: 30px; height: 30px;
+    padding: 0;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: auto;
+  }
 
   .empty-viewer-msg {
     position: absolute; inset: 0;
@@ -1976,6 +2030,19 @@
   }
   .paste-card h3 { margin: 0; font-size: 14px; }
   .paste-card.wide { width: min(960px, 96vw); }
+  /* "Maschinentypen bearbeiten" (Release 193, Sebastian, Punkt 3: "Das Fenster 'Maschinentypen
+     bearbeiten' bitte 1/3 größer machen") - 960px * 4/3 = 1280px. Eigene, nur auf
+     #machineTypeEditPanel beschränkte Überschreibung statt die gemeinsame ".paste-card.wide"-Regel
+     direkt zu ändern (würde sonst auch "Knowledge Base" und "Programm bearbeiten" mitbetreffen,
+     die unverändert bei 960px bleiben sollen) - ein ID-Selektor gewinnt dabei automatisch gegen die
+     zwei Klassen von ".paste-card.wide" selbst, unabhängig von der Reihenfolge im Stylesheet, kein
+     "!important" nötig. Die Höhe wächst separat über #machineTypeEditArea weiter unten im
+     Stylesheet (siehe dortiger Kommentar).
+     Release 194 (Sebastian, Punkt 2: "Das Menü ist in der Breite 1/3 größer geworden. Mach es
+     bitte 1/3 in der Breite kleiner...") - Breite war Sebastian zu groß; Rechnung auf dem jetzigen
+     (bereits vergrößerten) Wert statt auf den ursprünglichen 960px, analog zur Höhen-Rechnung
+     weiter unten ("nochmal 1/4 größer"): 1280px * 2/3 = 853,33px, auf 853px gerundet. */
+  #machineTypeEditPanel .paste-card.wide { width: min(853px, 98vw); }
   /* "Knowledge Base" (Release 105, Sebastian: "'Knowledge Base' ist eine editierbare Liste an
      Infos, auch in der Größe skalierbar, seitlich wie nach unten.") - ".paste-card" ist bereits
      ein Flex-Container (flex-direction: column), "resize: both" darauf reicht deshalb aus, um den
@@ -2043,8 +2110,22 @@
      unverändert bleiben. 220px * 1,3 = 286px; da ".paste-panel" den Dialog per Flexbox zentriert
      (align-items/justify-content: center), wächst die höhere Karte beim Zentrieren automatisch
      symmetrisch nach oben UND unten - exakt die gewünschten "jeweils 15%", ohne eigene
-     Positionierungslogik. */
-  #machineTypeEditArea { height: 286px; }
+     Positionierungslogik.
+     Release 193 (Sebastian, Punkt 3: "Das Fenster 'Maschinentypen bearbeiten' bitte 1/3 größer
+     machen") - 286px * 4/3 = 381,33px, auf 381px gerundet; dieselbe zentrierte Flexbox-Technik wie
+     oben wächst das höhere Textfeld dadurch wieder automatisch symmetrisch nach oben UND unten.
+     Die Breite wächst separat über die neue, auf dieses eine Panel beschränkte Regel
+     "#machineTypeEditPanel .paste-card.wide" weiter unten (ebenfalls 1/3 größer als die bisherigen
+     960px) - siehe dortigen Kommentar.
+     Release 194 (Sebastian, Punkt 2: "...und nochmal 1/4 größer nach unten hin") - Rechnung
+     wieder auf dem jetzigen (schon vergrößerten) Wert statt auf den ursprünglichen 286px, analog
+     zur Breiten-Rechnung oben ("#machineTypeEditPanel .paste-card.wide"): 381px * 5/4 = 476,25px,
+     auf 476px gerundet. "Nach unten hin" wird dabei NICHT separat positioniert - die zentrierte
+     Flexbox wächst bei einer reinen Höhenänderung weiterhin symmetrisch nach oben UND unten (wie
+     bei den beiden Vorgänger-Änderungen oben); eine einseitig NUR nach unten wachsende Höhe hätte
+     eine eigene, von der gemeinsamen Zentrierung abweichende Positionierung nötig gemacht, was
+     Sebastian hier nicht ausdrücklich verlangt hat. */
+  #machineTypeEditArea { height: 476px; }
   /* Warnung bei einem Knowledge-Base-Eintrag, der nicht mit "[" beginnt bzw. nicht mit "]" endet
      (Release 106, Sebastian: "Warnung ausgeben, wenn neuer Hilfeeintrag in Knowledge Base nicht
      mit [ oder ] gestartet bzw. beendet worden ist. Jetzt fällt der Eintrag einfach unter den
@@ -2524,20 +2605,21 @@
                    wiederherstellen" - bis zu dieser Runde stand "Spalten" vor "Rotation" vor
                    "Raster"; jetzt "Raster" und "Rotation" nach vorne, "Spalten" dahinter. Alle
                    IDs UND ihre komplette dahinterliegende Logik in app.js bleiben dabei
-                   unverändert - reine Umsortierung im Markup. -->
-              <!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt
-                   es einen Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus'
-                   einbauen.") - direkt flach nach "Farben" (kein eigenes Untermenü, analog zu
-                   "Spalten"/"Rotation" selbst), siehe #gridSettingsPanel weiter unten sowie
-                   gridVisible/LS_KEY_GRID_VISIBLE in app.js. Derselbe Zustand ist zusätzlich über
-                   das Rechtsklick-Kontextmenü im 3D-Bereich erreichbar, siehe dort. -->
-              <button class="menu-item" id="btnGridSettings" type="button" title="Bodenraster im 3D-Bereich ein-/ausblenden" data-i18n-en="Grid" data-i18n-en-title="Show/hide the floor grid in the 3D area">Raster</button>
-              <!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen ->
-                   Erscheinungsbild gibt es einen neuen Menüpunkt: 'Rotation'. Dort kann die
-                   Kipprichtung invertiert werden.") - direkt flach nach "Raster" (kein eigenes
-                   Untermenü, analog zu "Spalten"/"Raster" selbst), siehe #rotationSettingsPanel
-                   weiter unten sowie invertTiltPreference/LS_KEY_INVERT_TILT in app.js. -->
-              <button class="menu-item" id="btnRotationSettings" type="button" title="Kipprichtung der 3D-Ansicht (vertikale Mausbewegung) umkehren" data-i18n-en="Rotation" data-i18n-en-title="Invert the tilt direction of the 3D view (vertical mouse movement)">Rotation</button>
+                   unverändert - reine Umsortierung im Markup.
+                   Release 193 (Sebastian, Punkt 4: "'Raster' und 'Rotation' in einem Menüpunkt
+                   zusammenfassen -> '3D Bereichseinstellungen'. Dort können dann Raster und
+                   Rotationsverhalten eingestellt werden") - die beiden vormals eigenständigen
+                   Menüpunkte "Raster" (#btnGridSettings) und "Rotation" (#btnRotationSettings)
+                   entfallen zugunsten EINES gemeinsamen Menüpunkts "3D Bereichseinstellungen"
+                   (#btnArea3dSettings), der dasselbe, jetzt zusammengelegte Panel öffnet (siehe
+                   #area3dSettingsPanel weiter unten). Beide bisherigen Zustände/IDs der eigentlichen
+                   Einstellungen selbst (gridVisible/invertTiltPreference, gridVisibleChoice/
+                   invertTiltChoice, gridStepSizeInput usw.) UND der Rechtsklick-Kontextmenü-
+                   Direktumschalter "Raster an"/"Raster aus" (#ctxToggleGrid, siehe dort) bleiben
+                   dabei vollständig unverändert - ausschließlich die beiden Menüpunkte UND die zwei
+                   bisherigen Dialog-Hüllen (#gridSettingsPanel/#rotationSettingsPanel) wurden zu
+                   einer gemeinsamen Hülle zusammengelegt. -->
+              <button class="menu-item" id="btnArea3dSettings" type="button" title="Bodenraster und Dreh-/Kipprichtung der 3D-Ansicht einstellen" data-i18n-en="3D area settings" data-i18n-en-title="Set the floor grid and the rotation/tilt direction of the 3D view">3D Bereichseinstellungen</button>
               <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für
                    'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
                    siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
@@ -2844,6 +2926,21 @@
     </div>
     <div class="machine-type-quick-group" id="machineTypeQuickGroup">
       <span class="machine-type-label" data-i18n-en="Machine type">Maschinentyp</span>
+      <!-- Release 193 (Sebastian, Punkt 1+2: "Im Menüband oben, direkt rechts neben 'Maschinentyp'
+           ein Einstellungsicon (so ein Zahnrad) einbauen ... ruft 'Maschinentypen bearbeiten'-
+           Funktion auf, mit derselben Logik, dass das zum ausgewählten Maschinentypen in der
+           Liste springt") - eigener, direkt klickbarer Schnellzugriff AUF DENSELBEN Dialog wie
+           "Bearbeiten" -> "Maschinentypen" -> "Maschinentypen bearbeiten" (#btnEditMachineTypes,
+           siehe dort für die vollständige "springt zum aktiven Maschinentyp"-Logik), statt die
+           Logik zu duplizieren wird hier schlicht ein echter Klick auf den bestehenden,
+           unveränderten Knopf simuliert (dieselbe ".click()"-Weiterleitungstechnik wie z.B. bei
+           den Kontextmenü-Einträgen weiter unten, siehe dort) - beide Bedienwege bleiben dadurch
+           garantiert exakt gleichwertig, inklusive Sprung zum aktiven Maschinentyp. Wiederverwendet
+           dieselbe ".sidebar-edit-btn"-Optik (24x24px, Zahnrad-Glyphe "⚙") wie das bereits
+           bestehende Stift-Symbol "✎" (#btnEditProgramIcon, "CNC-Programmcode" -> "Code
+           bearbeiten") - ein generisches, bereits etabliertes kleines quadratisches Icon-Knopf-
+           Muster, keine neue CSS-Klasse dafür nötig. -->
+      <button class="sidebar-edit-btn" id="btnMachineTypeSettings" type="button" title="Maschinentypen bearbeiten" data-i18n-en-title="Edit machine types">⚙</button>
       <select id="machineTypeSelect" title="Maschinentyp auswählen - wird erst nach Klick auf 'Ok' auf das geladene Programm angewendet" data-i18n-en-title="Select machine type - only applied to the loaded program after clicking 'Ok'"></select>
       <button class="btn ghost" id="btnMachineTypeOk" type="button" disabled title="Ausgewählten Maschinentyp auf das geladene Programm anwenden (Austausch + Achsberechnung)" data-i18n-en-title="Apply the selected machine type to the loaded program (replacement + axis calculation)">Ok</button>
     </div>
@@ -3263,7 +3360,15 @@
           <div class="ops-col-head">
             <div class="ops-col-head-row">
               <span class="ops-col-title" id="opsColTitle">Arbeitsgänge</span>
-              <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen" data-i18n-en-title="Expand/collapse the processing steps column">»</button>
+              <div class="ops-col-head-actions">
+                <!-- "Spalteneinstellungen"-Zahnrad (Release 193, Punkt 7) - siehe ausführlichen
+                     Kommentar bei ".ops-col-head-actions" im Stylesheet oben. Simuliert einen
+                     echten Klick auf #btnColumnScale (öffnet #columnScalePanel, dieselbe
+                     "Spalteneinstellungen" wie im Menü "Einstellungen" -> "Erscheinungsbild" ->
+                     "Spalten"), statt dessen Logik zu duplizieren. -->
+                <button class="ops-toggle-btn ops-col-settings-btn" id="btnOpsColumnSettings" type="button" title="Spalteneinstellungen" data-i18n-en-title="Column settings">⚙</button>
+                <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen" data-i18n-en-title="Expand/collapse the processing steps column">»</button>
+              </div>
             </div>
             <button class="ops-showall-btn" id="btnShowAllOps" type="button" title="Alle Arbeitsgänge in der 3D-Ansicht ausblenden" data-i18n-en-title="Hide all processing steps in the 3D view"><span class="eye-glyph">👁</span> <span class="ops-showall-label">Alle AG ausblenden</span></button>
           </div>
@@ -3324,6 +3429,12 @@
              das zuvor #btnHomeView trug (siehe dessen Kommentar oben für den Tausch-Grund) - Größe/
              Position/ID/Klick-Funktion (weiterhin goTopView()) bleiben unverändert. -->
         <button class="toolbar-btn gizmo-top-btn" id="btnTopView" type="button" title="Ansicht von oben, herausgezoomt und auf das aktuell angezeigte Programm zentriert" data-i18n-en-title="Top-down view, zoomed out and centered on the currently displayed program">⌂</button>
+        <!-- Zahnrad-Icon neben dem Haussymbol (Release 193, Punkt 5) - siehe ausführlichen
+             Kommentar bei ".gizmo-settings-btn" im Stylesheet oben. Simuliert einen echten Klick
+             auf #btnArea3dSettings (öffnet das zusammengelegte "3D Bereichseinstellungen"-Panel,
+             siehe dort), statt dessen Logik zu duplizieren - derselbe ".click()"-Weiterleitungs-
+             Trick wie z.B. bei #btnMachineTypeSettings/#ctxLoadProgram. -->
+        <button class="toolbar-btn gizmo-settings-btn" id="btnGizmoArea3dSettings" type="button" title="3D Bereichseinstellungen (Raster, Rotation) öffnen" data-i18n-en-title="Open 3D area settings (grid, rotation)">⚙</button>
         <!-- Verschiebbares Info-Fenster (70. Runde, Punkte 2/10/13) - siehe ausführlichen
              Kommentar bei ".info-panel" im Stylesheet oben. Startet hidden, genau wie #readout
              vorher (siehe readoutEl.hidden-Zuweisung in app.js, dort um infoPanelEl.hidden
@@ -4020,21 +4131,21 @@
       <span data-i18n-en="X axis">X-Achse</span>
       <span class="color-field-inputs">
         <input type="color" id="axisColorXPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
-        <input type="text" id="axisColorXHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c73a3a">
+        <input type="text" id="axisColorXHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#0c1ae4">
       </span>
     </label>
     <label class="color-field-row">
       <span data-i18n-en="Y axis">Y-Achse</span>
       <span class="color-field-inputs">
         <input type="color" id="axisColorYPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
-        <input type="text" id="axisColorYHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#1f8a52">
+        <input type="text" id="axisColorYHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#13eb0f">
       </span>
     </label>
     <label class="color-field-row">
       <span data-i18n-en="Z axis">Z-Achse</span>
       <span class="color-field-inputs">
         <input type="color" id="axisColorZPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
-        <input type="text" id="axisColorZHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#2b62c9">
+        <input type="text" id="axisColorZHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#f4010d">
       </span>
     </label>
     <p class="panel-hint" id="axisColorHexWarning" data-i18n-en="Please enter valid hex codes (e.g. #ff00ff or #f0f)." hidden>Bitte gültige Hexcodes eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
@@ -4556,24 +4667,42 @@
   </div>
 </div>
 
-<!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen -> Erscheinungsbild gibt
-     es einen neuen Menüpunkt: 'Rotation'. Dort kann die Kipprichtung invertiert werden. Die
-     Schwenkrichtungen nach links/rechts, wenn die Maus bewegt wird, bleibt nach links und rechts,
-     nur oben/unten sind vertauscht, bei der Auswahl von 'Ja' bei 'Kipprichtung invertieren'
-     (andere Auswahl dort ist 'Nein', dann bleibt alles auf Standard), wird die Richtung beim
-     Kippen (Bewegung der Maus nach oben/unten) umgekehrt") - eine einzige Radiogruppe
-     (Ja/Nein), Aufbau 1:1 nach dem Muster der "Arbeitsgänge"-Gruppe im #columnScalePanel oben,
-     siehe invertTiltPreference/LS_KEY_INVERT_TILT sowie die Klick-Verdrahtung in app.js. -->
-    <!-- Release 154 (Sebastian: "Bitte den Text übersetzen für EN-Version") - bis einschließlich
+<!-- "3D Bereichseinstellungen" (Release 193, Sebastian, Punkt 4: "'Raster' und 'Rotation' in einem
+     Menüpunkt zusammenfassen -> '3D Bereichseinstellungen'. Dort können dann Raster und
+     Rotationsverhalten eingestellt werden") - EIN gemeinsames Panel statt der beiden bisherigen
+     eigenständigen Dialoge #rotationSettingsPanel/#gridSettingsPanel (deren komplette Historie/
+     Herleitung siehe die jeweils direkt bei ihrer Radiogruppe stehenden Kommentare weiter unten) -
+     schlicht beide bisherigen Karteninhalte hintereinander in EINE gemeinsame Karte gehängt, nach
+     demselben Vorbild wie z. B. "Achsenfarbe" (mehrere zusammengehörige Einstellungen in einem
+     Dialog). ALLE bisherigen inneren IDs (invertTiltChoice/gridVisibleChoice/gridStepSizeInput/
+     gridStepSizeWarning) UND die komplette dahinterliegende JS-Logik (setGridVisible()/
+     applyGridStep()/invertTiltPreference/syncRotationSettingsPanelFromActive()/
+     syncGridSettingsPanelFromActive(), inkl. der vom Einstellungsexport-Import separat
+     aufgerufenen Sync-Funktionen) bleiben dabei UNVERÄNDERT bestehen - nur die beiden äußeren
+     Panel-Hüllen samt je eigenem Öffnen-/Abbrechen-/Übernehmen-Knopfsatz wurden zu einer
+     gemeinsamen Hülle (#area3dSettingsPanel) mit EINEM gemeinsamen Knopfsatz
+     (#btnArea3dSettings/-Cancel/-Apply/-ResetDefaults) zusammengelegt - "Übernehmen" wendet jetzt
+     beide Einstellungsgruppen in einem Schritt an, "Standardwerte wiederherstellen" setzt jetzt
+     ebenfalls beide zurück (vorher nur Raster/Rastergröße). Der Rechtsklick-Kontextmenü-
+     Direktumschalter "Raster an"/"Raster aus" (#ctxToggleGrid) bleibt davon komplett unberührt -
+     er ruft wie bisher direkt setGridVisible() auf, unabhängig von diesem Panel. -->
+<div class="paste-panel" id="area3dSettingsPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="3D area settings">3D Bereichseinstellungen</h3>
+    <!-- "Rotation" (Release 141, Punkt 8, Sebastian: "In den Einstellungen -> Erscheinungsbild gibt
+         es einen neuen Menüpunkt: 'Rotation'. Dort kann die Kipprichtung invertiert werden. Die
+         Schwenkrichtungen nach links/rechts, wenn die Maus bewegt wird, bleibt nach links und
+         rechts, nur oben/unten sind vertauscht, bei der Auswahl von 'Ja' bei 'Kipprichtung
+         invertieren' (andere Auswahl dort ist 'Nein', dann bleibt alles auf Standard), wird die
+         Richtung beim Kippen (Bewegung der Maus nach oben/unten) umgekehrt") - eine einzige
+         Radiogruppe (Ja/Nein), Aufbau 1:1 nach dem Muster der "Arbeitsgänge"-Gruppe im
+         #columnScalePanel oben, siehe invertTiltPreference/LS_KEY_INVERT_TILT sowie die
+         Klick-Verdrahtung in app.js.
+         Release 154 (Sebastian: "Bitte den Text übersetzen für EN-Version") - bis einschließlich
          Release 153 trug dieses Panel (anders als die meisten übrigen Texte der App) noch KEINE
          [data-i18n-en]-Attribute und blieb beim Wechsel auf Englisch dadurch unübersetzt deutsch
-         stehen - siehe applyLanguage()/T() weiter unten für den allgemeinen Mechanismus. Die
-         Überschrift "Rotation" bleibt bewusst ohne eigenes [data-i18n-en]: Das Wort ist im
-         Englischen identisch, ein Attribut mit demselben Wert wäre reine Redundanz. -->
-<div class="paste-panel" id="rotationSettingsPanel">
-  <div class="paste-card">
-    <h3>Rotation</h3>
-    <p class="panel-hint" data-i18n-en="Direction of the 3D view rotation when dragging the mouse up or down (tilting). The direction of rotation to the left or right (panning) always remains unchanged.">Richtung der 3D-Ansichts-Drehung beim Ziehen mit der Maus nach oben/unten (Kippen). Die Drehrichtung nach links/rechts (Schwenken) bleibt davon immer unverändert.</p>
+         stehen - siehe applyLanguage()/T() weiter unten für den allgemeinen Mechanismus. -->
+    <p class="panel-hint" data-i18n-en="Direction of the 3D view rotation when dragging the mouse up or down (tilting). This setting does not affect the left/right direction below.">Richtung der 3D-Ansichts-Drehung beim Ziehen mit der Maus nach oben/unten (Kippen). Dieser Schalter wirkt sich nicht auf die Links/Rechts-Richtung unterhalb aus.</p>
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="Invert tilt direction">Kipprichtung invertieren</div>
       <div class="scale-choice" id="invertTiltChoice">
@@ -4581,46 +4710,52 @@
         <label class="scale-option"><input type="radio" name="invertTilt" value="1"> <span data-i18n-en="Yes">Ja</span></label>
       </div>
     </div>
-    <div class="paste-actions">
-      <button class="btn ghost" id="btnRotationSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
-      <button class="btn primary" id="btnRotationSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
-    </div>
-  </div>
-</div>
-
-<!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt es einen
-     Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus' einbauen.") - eine einzige
-     Radiogruppe, Aufbau 1:1 nach dem Muster von #rotationSettingsPanel oben, nur mit den
-     Options-Beschriftungen "Raster an"/"Raster aus" selbst statt "Ja"/"Nein" (Sebastian nennt
-     diese beiden Beschriftungen wörtlich), siehe gridVisible/LS_KEY_GRID_VISIBLE sowie die
-     Klick-Verdrahtung in app.js.
-     Release 178 (Sebastian, Punkt 4: "Bei 'Einstellungen -> Erscheinungsbild -> Raster' kann beim
-     Raster auch die Rastergröße, der einzelnen Rasterkästchen eingestellt werden. Bitte als
-     Standardwert den aktuellen Wert vorausgewählt nehmen.") - neues Zahlenfeld
-     (#gridStepSizeInput) direkt unter der bestehenden Radiogruppe, nach demselben Muster wie
-     "G0-Vorschub"/"Vorschubskalierung" (normalizeFeedScaleFactor(), > 0 erforderlich, sonst
-     #gridStepSizeWarning). Bis zu dieser Runde berechnete drawGrid() die Kästchengröße
-     ("step") IMMER automatisch aus der jeweils sichtbaren Bahn-/DXF-Ausdehnung (verdoppelt sich
-     ausgehend von 10mm, bis maximal 12 Kästchen über die größere Spanne passen, siehe
-     computeAutoGridStep() in app.js, aus drawGrid() dafür extrahiert) - diese automatische
-     Berechnung bleibt UNVERÄNDERT der Standardfall, wird aber jetzt bei jedem Öffnen dieses
-     Panels als Vorbelegung des neuen Feldes angezeigt ("den aktuellen Wert vorausgewählt"),
-     damit der Benutzer sieht, was die Simulation gerade tatsächlich anzeigt, bevor er einen
-     eigenen, festen Wert eingibt. Nach dem ersten "Übernehmen" mit einem geänderten Wert ersetzt
-     dieser feste Wert (gridStepSizeOverride/LS_KEY_GRID_STEP, siehe applyGridStepSize() in
-     app.js) die automatische Berechnung vollständig, unabhängig von der Bahn-/DXF-Ausdehnung -
-     exakt dieselbe "einmal gesetzt, bleibt fest"-Konvention wie bei "3D Rasterfarbe"/
-     "Achsenfarbe" oben. Zurück auf "automatisch" kommt man NICHT über den generellen Knopf
-     "Standardwerte wiederherstellen" (#btnResetDisplayDefaults lässt gridStepOverride bewusst
-     unangetastet, siehe dort), sondern seit Release 179 über den eigenen, lokalen
-     "Standardwerte wiederherstellen"-Knopf direkt in diesem Panel (#btnGridSettingsResetDefaults,
-     siehe weiter unten sowie app.js) - dieser korrigiert damit zugleich eine zuvor hier
-     fälschlich dokumentierte Annahme, der generelle Knopf würde das bereits abdecken. -->
-<div class="paste-panel" id="gridSettingsPanel">
-  <div class="paste-card">
-    <h3 data-i18n-en="Grid">Raster</h3>
-    <p class="panel-hint" data-i18n-en="Shows or hides the floor grid (square boxes) under the part in the 3D area.">Blendet das Bodenraster (quadratische Kästchen) unter dem Bauteil im 3D-Bereich ein oder aus.</p>
+    <!-- "Drehrichtung invertieren" (Release 195, Sebastian: "Bitte noch bei '3D Bereichsaeinstellungen'
+         auch die 'Drehrichtung invertieren' können. Das ist direkt unter 'Kipprichtung invertieren'
+         angeordnet") - zweite, eigenständige Radiogruppe direkt unterhalb von "Kipprichtung
+         invertieren", 1:1 nach demselben Aufbau (Ja/Nein, gleiche ".scale-group"/".scale-choice"-
+         Optik) wie diese, siehe invertRotationPreference/LS_KEY_INVERT_ROTATION sowie die
+         Klick-Verdrahtung in app.js. Invertiert NUR den horizontalen Mausbewegungsanteil (dx, "dTheta"
+         - Schwenken nach links/rechts); der vertikale Anteil (dy, "dPhi", Kippen) bleibt davon
+         unberührt - exakt spiegelbildlich zu "Kipprichtung invertieren" oberhalb, die wiederum nur
+         den vertikalen Anteil betrifft und den horizontalen unberührt lässt (siehe deren Hinweistext
+         oben sowie die Rotationsformel in rotateCamOrientation()/dem Ziehen-Handler in app.js). -->
+    <p class="panel-hint" data-i18n-en="Direction of the 3D view rotation when dragging the mouse left or right (panning). This setting does not affect the up/down (tilt) direction above.">Richtung der 3D-Ansichts-Drehung beim Ziehen mit der Maus nach links/rechts (Schwenken). Dieser Schalter wirkt sich nicht auf die Oben/Unten-Richtung (Kippen) oberhalb aus.</p>
     <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Invert rotation direction">Drehrichtung invertieren</div>
+      <div class="scale-choice" id="invertRotationChoice">
+        <label class="scale-option"><input type="radio" name="invertRotation" value="0"> <span data-i18n-en="No">Nein</span></label>
+        <label class="scale-option"><input type="radio" name="invertRotation" value="1"> <span data-i18n-en="Yes">Ja</span></label>
+      </div>
+    </div>
+    <!-- "Raster" (Release 154, Sebastian: "Unter 'Einstellungen -> Erscheinungsbild' gibt es einen
+         Neuen Menüpunkt 'Raster' dort dann 'Raster an' und 'Raster aus' einbauen.") - eine
+         einzige Radiogruppe, nur mit den Options-Beschriftungen "Raster an"/"Raster aus" selbst
+         statt "Ja"/"Nein" (Sebastian nennt diese beiden Beschriftungen wörtlich), siehe
+         gridVisible/LS_KEY_GRID_VISIBLE sowie die Klick-Verdrahtung in app.js. Eigene
+         "Raster"-Zwischenüberschrift (neu seit der Zusammenlegung, Release 193) grenzt diesen
+         zweiten Themenblock innerhalb derselben Karte optisch klar von "Kipprichtung invertieren"
+         oberhalb ab - dieselbe ".scale-group-title"-Optik wie dort, nur ohne eigene Radiogruppen-
+         Beschriftung direkt daneben (die beiden Optionen "Raster an"/"Raster aus" sprechen für
+         sich selbst).
+         Release 178 (Sebastian, Punkt 4: "Bei 'Einstellungen -> Erscheinungsbild -> Raster' kann
+         beim Raster auch die Rastergröße, der einzelnen Rasterkästchen eingestellt werden. Bitte
+         als Standardwert den aktuellen Wert vorausgewählt nehmen.") - neues Zahlenfeld
+         (#gridStepSizeInput) direkt unter der bestehenden Radiogruppe, nach demselben Muster wie
+         "G0-Vorschub"/"Vorschubskalierung" (normalizeFeedScaleFactor(), > 0 erforderlich, sonst
+         #gridStepSizeWarning). drawGrid() berechnet die Kästchengröße ("step") IMMER automatisch
+         aus der jeweils sichtbaren Bahn-/DXF-Ausdehnung (verdoppelt sich ausgehend von 10mm, bis
+         maximal 12 Kästchen über die größere Spanne passen, siehe computeAutoGridStep() in
+         app.js), es sei denn, ein fester Wert wurde hier gesetzt (gridStepSizeOverride/
+         LS_KEY_GRID_STEP, siehe applyGridStep() in app.js) - exakt dieselbe "einmal gesetzt,
+         bleibt fest"-Konvention wie bei "3D Rasterfarbe"/"Achsenfarbe". Zurück auf "automatisch"
+         kommt man NICHT über den generellen Knopf "Standardwerte wiederherstellen"
+         (#btnResetDisplayDefaults lässt gridStepOverride bewusst unangetastet, siehe dort),
+         sondern über den eigenen, lokalen "Standardwerte wiederherstellen"-Knopf direkt in diesem
+         Panel (#btnArea3dSettingsResetDefaults, siehe weiter unten sowie app.js) - der seit
+         Release 193 zusätzlich auch die Kipprichtung zurücksetzt (siehe dortiger Kommentar). -->
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Grid">Raster</div>
       <div class="scale-choice" id="gridVisibleChoice">
         <label class="scale-option"><input type="radio" name="gridVisible" value="1"> <span data-i18n-en="Grid on">Raster an</span></label>
         <label class="scale-option"><input type="radio" name="gridVisible" value="0"> <span data-i18n-en="Grid off">Raster aus</span></label>
@@ -4637,9 +4772,9 @@
     </label>
     <p class="panel-hint" id="gridStepSizeWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 10 or 20)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 10 oder 20).</p>
     <div class="paste-actions">
-      <button class="btn ghost" id="btnGridSettingsResetDefaults" type="button" style="margin-right:auto" title="Setzt Raster-Sichtbarkeit und Rastergröße auf ihre Standardwerte zurück (Raster an, Rastergröße automatisch)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets grid visibility and grid cell size to their default values (grid on, cell size automatic).">Standardwerte wiederherstellen</button>
-      <button class="btn ghost" id="btnGridSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
-      <button class="btn primary" id="btnGridSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+      <button class="btn ghost" id="btnArea3dSettingsResetDefaults" type="button" style="margin-right:auto" title="Setzt Kipprichtung, Drehrichtung, Raster-Sichtbarkeit und Rastergröße auf ihre Standardwerte zurück (Kipprichtung nicht invertiert, Drehrichtung nicht invertiert, Raster an, Rastergröße automatisch)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets tilt direction, rotation direction, grid visibility and grid cell size to their default values (tilt direction not inverted, rotation direction not inverted, grid on, cell size automatic).">Standardwerte wiederherstellen</button>
+      <button class="btn ghost" id="btnArea3dSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnArea3dSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
 </div>
@@ -4716,40 +4851,91 @@
   <button class="menu-item" id="ctxCodeJump" type="button" data-i18n-en="Jump in code">Codesprung</button>
   <button class="menu-item" id="ctxWholeProgram" type="button" data-i18n-en="Complete Programcode">Gesamtes Programm</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxLoadProgram" type="button" data-i18n-en="Load program">Programm laden</button>
-  <button class="menu-item" id="ctxClearProgram" type="button" data-i18n-en="Delete program">Programm löschen</button>
-  <!-- "Programmliste erstellen"/"Programmliste löschen" (Release 117: ursprünglich nur
-       "CNC-Programmliste erstellen" direkt unter "Programm laden", siehe Sebastian-Zitat im
-       Architektur-Kommentar bei "programList" in app.js; Release 118, Sebastian: "im Rechtsklick
-       Kontextmenü soll auch 'Programmliste löschen' auftauchen. Reihenfolge: Programm laden /
-       Programm löschen / Programmliste erstellen / Programmliste löschen / Alle Arbeitsgänge
-       ausblenden" sowie "CNC-Programmliste erstellen in 'Programmliste erstellen' umbenennen im
-       Rechtsklickmenü" und "'CNC Programmliste löschen' heißt direkt 'Programmliste löschen'") -
-       beide ohne "CNC-"-Präfix, wie die übrigen kurzen Kontextmenü-Beschriftungen
-       ("Programm laden"/"Programm löschen"/"DXF laden" usw.). "Programmliste erstellen" ruft
-       denselben #fileInputList-Dialog auf wie "Datei" -> "CNC-Programm" -> "Neue
-       CNC-Programmliste"/das Symbolleisten-Icon "☰+ Liste" (siehe dort sowie
-       startNewProgramList() in app.js); "Programmliste löschen" ruft dieselbe clearProgramList()
-       auf wie der Menüpunkt "CNC-Programmliste löschen"/das Symbolleisten-Icon "☰✕ Liste" und ist
-       ebenso deaktiviert, solange die Programmliste leer ist. -->
-  <button class="menu-item" id="ctxNewProgramList" type="button" data-i18n-en="Create program list">Programmliste erstellen</button>
-  <button class="menu-item" id="ctxClearProgramList" type="button" data-i18n-en="Delete program list">Programmliste löschen</button>
+  <!-- "Programm" (Release 193, Punkt 8) - fasst die vier bisherigen flachen Einträge "Programm
+       laden"/"Programm löschen"/"Programmliste erstellen"/"Programmliste löschen" in EIN
+       Untermenü-Flyout zusammen (Sebastian, wörtlich: "Programm -> (klappt bei Klick darauf auf,
+       darin dann folgende 4 Menüpunkte bis zum Trennstrich:) Programm laden / Programm löschen /
+       Programmliste erstellen / Programmliste löschen") - dieselbe generische ".menu-submenu"-
+       Technik wie z. B. bei "Werkzeuge" unter "Einstellungen" -> "Erscheinungsbild" (siehe
+       Kommentar dort). ALLE VIER IDs (ctxLoadProgram/ctxClearProgram/ctxNewProgramList/
+       ctxClearProgramList) UND ihre komplette dahinterliegende Verdrahtung/Freischaltlogik in
+       app.js bleiben dabei unverändert - reine Markup-Umhüllung, siehe ctxItems/
+       updateContextMenuState() weiter unten. -->
+  <div class="menu-submenu" id="ctxSubmenuProgram">
+    <button class="menu-item submenu-trigger" id="ctxProgramTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Program &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Programm <span class="submenu-arrow">▸</span></button>
+    <div class="submenu-dropdown" id="ctxProgramDropdown" hidden>
+      <button class="menu-item" id="ctxLoadProgram" type="button" data-i18n-en="Load program">Programm laden</button>
+      <button class="menu-item" id="ctxClearProgram" type="button" data-i18n-en="Delete program">Programm löschen</button>
+      <button class="menu-item" id="ctxNewProgramList" type="button" data-i18n-en="Create program list">Programmliste erstellen</button>
+      <button class="menu-item" id="ctxClearProgramList" type="button" data-i18n-en="Delete program list">Programmliste löschen</button>
+    </div>
+  </div>
+  <div class="context-menu-divider"></div>
+  <!-- "DXF" (Release 193, Punkt 8) - fasst die vier bisherigen flachen Einträge "DXF laden"/"DXF
+       löschen"/"DXF-Layer ausblenden"/"DXF-verschieben" nach demselben Muster wie "Programm"
+       direkt oberhalb in EIN Untermenü-Flyout zusammen. Alle vier IDs (ctxLoadDxf/ctxClearDxf/
+       ctxToggleDxfLayers/ctxMoveDxf) UND ihre Verdrahtung bleiben unverändert. -->
+  <div class="menu-submenu" id="ctxSubmenuDxf">
+    <button class="menu-item submenu-trigger" id="ctxDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
+    <div class="submenu-dropdown" id="ctxDxfDropdown" hidden>
+      <button class="menu-item" id="ctxLoadDxf" type="button" data-i18n-en="Load DXF">DXF laden</button>
+      <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
+      <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
+      <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
+    </div>
+  </div>
+  <div class="context-menu-divider"></div>
+  <!-- "Alle Arbeitsgänge ausblenden" (Release 193, Punkt 8) - seither eine eigene, flache Gruppe
+       für sich allein (zuvor Teil der "Programm"-Gruppe) - ID/Verdrahtung/Dynamisch-Beschriftung
+       (siehe ctxItems.toggleAllOps/updateContextMenuState() weiter unten) bleiben unverändert. -->
   <button class="menu-item" id="ctxToggleAllOps" type="button" data-i18n-en="Hide all processing steps">Alle Arbeitsgänge ausblenden</button>
   <div class="context-menu-divider"></div>
-  <button class="menu-item" id="ctxLoadDxf" type="button" data-i18n-en="Load DXF">DXF laden</button>
-  <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
-  <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
-  <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
-  <!-- "Raster aus"/"Raster an" (Release 154, Sebastian: "Mit einem Rechtsklick in der 3D Sim ->
-       Kontextmenü: ganz unten unter dem DXF-Block, Trennstrich danach dann 'Raster aus', wenn
-       'Raster aus' geklickt worden ist, soll 'Raster an' eingeblendet sein, was das Raster wieder
-       anstellt.") - eigene, fünfte Gruppe ganz unten, per eigenem Trennstrich von der DXF-Gruppe
-       abgesetzt. Direkt-Umschalter (ein Klick = ein Zustandswechsel), exakt dieselbe Technik wie
-       "Alle Arbeitsgänge ausblenden"/"DXF-Layer ausblenden" weiter oben - siehe
-       toggleGridFromContextMenu()/updateContextMenuState() in app.js für die dynamische
-       Beschriftung. -->
-  <div class="context-menu-divider"></div>
+  <!-- "Raster aus"/"Raster an" (Release 154, zuletzt umsortiert Release 193, Punkt 8) - eigene,
+       flache Gruppe, jetzt direkt vor "Einstellungen" statt ganz am Ende. Direkt-Umschalter (ein
+       Klick = ein Zustandswechsel), ID/Verdrahtung/Dynamisch-Beschriftung unverändert (siehe
+       ctxItems.toggleGrid/updateContextMenuState() weiter unten). -->
   <button class="menu-item" id="ctxToggleGrid" type="button" data-i18n-en="Grid off">Raster aus</button>
+  <div class="context-menu-divider"></div>
+  <!-- "Einstellungen" (Release 193, Punkt 8, Sebastian wörtlich: "Einstellungen -> (klappt bei
+       Klick darauf auf, darin dann 9 Menüpunkte - Werkzeuge ist darin enthalten und auch
+       aufklappbar!) Arbeitsgangfarbe / Buttonfarbe / Hintergrundfarbe / Schriftfarbe /
+       3D Rasterfarbe / Achsenfarbe ————— Spalten ————— 3D Bereichseinstellungen ————— Werkzeuge ->
+       (klappt bei Klick darauf auf, darin dann:) Säge / Spannfutter / Fräser") - neues
+       Untermenü-Flyout, dessen neun Einträge (sechs Farben + Spalten + 3D Bereichseinstellungen +
+       "Werkzeuge" als neuntes, selbst wieder aufklappbares Element) JEDER einen echten Klick auf
+       sein bereits bestehendes Gegenstück im Menüband ("Einstellungen" -> "Erscheinungsbild",
+       siehe dort) simulieren (".click()"-Weiterleitungs-Trick, exakt wie z. B.
+       #btnMachineTypeSettings/#ctxLoadProgram), statt deren Öffnen-Logik zu duplizieren - dadurch
+       bleiben beide Bedienwege (Menüband und Kontextmenü) automatisch für immer exakt
+       gleichwertig, auch bei künftigen Änderungen an den jeweiligen Panels. Eigene, neue IDs
+       (ctxBtn...-Präfix) für diese neun Weiterleitungs-Knöpfe, da die ORIGINAL-IDs
+       (btnOpColor usw.) bereits im Menüband vergeben sind (jede ID muss im Dokument eindeutig
+       sein) - die Originale UND ihre gesamte dahinterliegende Logik bleiben davon komplett
+       unberührt. Siehe Verdrahtung weiter unten (direkt nach den übrigen ctxItems). -->
+  <div class="menu-submenu" id="ctxSubmenuSettings">
+    <button class="menu-item submenu-trigger" id="ctxSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Settings &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Einstellungen <span class="submenu-arrow">▸</span></button>
+    <div class="submenu-dropdown" id="ctxSettingsDropdown" hidden>
+      <button class="menu-item" id="ctxBtnOpColor" type="button" data-i18n-en="Processing step color">Arbeitsgangfarbe</button>
+      <button class="menu-item" id="ctxBtnMenuColor" type="button" data-i18n-en="Button color">Buttonfarbe</button>
+      <button class="menu-item" id="ctxBtnEditColors" type="button" data-i18n-en="Background color">Hintergrundfarbe</button>
+      <button class="menu-item" id="ctxBtnFontColor" type="button" data-i18n-en="Font color">Schriftfarbe</button>
+      <button class="menu-item" id="ctxBtnGridColor" type="button" data-i18n-en="3D grid color">3D Rasterfarbe</button>
+      <button class="menu-item" id="ctxBtnAxisColor" type="button" data-i18n-en="Axes color">Achsenfarbe</button>
+      <div class="context-menu-divider"></div>
+      <button class="menu-item" id="ctxBtnColumnScale" type="button" data-i18n-en="Columns">Spalten</button>
+      <div class="context-menu-divider"></div>
+      <button class="menu-item" id="ctxBtnArea3dSettings" type="button" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
+      <div class="context-menu-divider"></div>
+      <div class="menu-submenu" id="ctxSubmenuTools">
+        <button class="menu-item submenu-trigger" id="ctxToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
+        <div class="submenu-dropdown" id="ctxToolsDropdown" hidden>
+          <button class="menu-item" id="ctxBtnToolSaw" type="button" data-i18n-en="Saw">Säge</button>
+          <button class="menu-item" id="ctxBtnToolCollet" type="button" data-i18n-en="Collet">Spannfutter</button>
+          <button class="menu-item" id="ctxBtnToolCutter" type="button" data-i18n-en="Cutter">Fräser</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -7384,8 +7570,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 192;
-  const APP_RELEASE_TIMESTAMP = '09.10.2026, 15:05 Uhr';
+  const APP_RELEASE_NUMBER = 197;
+  const APP_RELEASE_TIMESTAMP = '12.10.2026, 19:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -8123,6 +8309,32 @@ CORNERRADIUS=GFIL r=
   // Aktuell aktive Vorgabe (nach dem Start aus localStorage geladen, siehe Seitenstart-Block ganz
   // unten) - direkt im pointermove-Handler des 3D-Bereichs abgefragt (siehe dort).
   let invertTiltPreference = DEFAULT_INVERT_TILT;
+
+  // ============================================================
+  // "Drehrichtung invertieren" ("Einstellungen" -> "Erscheinungsbild" -> "3D Bereichseinstellungen",
+  // Release 195, Sebastian: "Bitte noch bei '3D Bereichsaeinstellungen' auch die 'Drehrichtung
+  // invertieren' können. Das ist direkt unter 'Kipprichtung invertieren' angeordnet") - spiegelbildlich
+  // zu "Kipprichtung invertieren" direkt oberhalb: genau EIN Bool-Wert, ob die HORIZONTALE
+  // Zieh-Richtung (dTheta, Schwenken nach links/rechts, siehe pointermove-Handler weiter unten)
+  // umgekehrt angewendet wird - die vertikale Richtung (Kippen, invertTiltPreference oben) bleibt
+  // davon unberührt. Persistenz-Muster 1:1 analog zu LS_KEY_INVERT_TILT oben (gleiches Projekt,
+  // gleiche Konvention, eigener localStorage-Schlüssel).
+  const LS_KEY_INVERT_ROTATION = 'cncsim.invertRotation';
+  const DEFAULT_INVERT_ROTATION = false; // "Nein" ist die Standard-Auswahl im Dialog (s.o.)
+  function loadPersistedInvertRotation() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_INVERT_ROTATION);
+      if (raw === null) return DEFAULT_INVERT_ROTATION;
+      return raw === '1' || raw === 'true';
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return DEFAULT_INVERT_ROTATION;
+  }
+  function persistInvertRotation(invert) {
+    try { window.localStorage.setItem(LS_KEY_INVERT_ROTATION, invert ? '1' : '0'); } catch (e) { /* s.o. */ }
+  }
+  // Aktuell aktive Vorgabe (nach dem Start aus localStorage geladen, siehe Seitenstart-Block ganz
+  // unten) - direkt im pointermove-Handler des 3D-Bereichs abgefragt (siehe dort).
+  let invertRotationPreference = DEFAULT_INVERT_ROTATION;
 
   // ============================================================
   // "Raster" (Release 154, Sebastian, drei zusammenhängende Punkte): "Aktuell liegt ein Raster
@@ -10248,37 +10460,40 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // demselben Muster wie "Links" (Kamera auf der -X-Seite, theta=-π/2) und "Rechts" (Kamera auf
   // der +X-Seite, theta=+π/2) folgend.
   //
-  // Warum "top" negatives phi zugeordnet ist (nicht positives): historisch bedingt (frühe Runden
-  // dieses Projekts) - die Kamera-Position, die bei "X rechts" zwangsläufig "Y oben" liefert
-  // (Chiralitäts-Zwang eines rechtshändigen Dreibeins, siehe basisFromAngles() weiter unten), ist
-  // exakt die mit NEGATIVEM phi; die mit positivem phi liefert zwangsläufig "Y unten" und trägt
-  // deshalb den Namen "bottom". Eine reine Namenskonvention, keine physikalische Notwendigkeit -
-  // an der grundsätzlichen Stetigkeit der Formel ändert das nichts.
+  // Warum "top" positives phi zugeordnet ist (nicht negatives): seit dem Händigkeits-Bugfix in
+  // Release 197 (siehe die ausführliche Herleitung bei basisFromAngles() weiter unten) liefert
+  // POSITIVES phi die Kamera-Position, die tatsächlich "X rechts, Y oben, Z Richtung Bediener"
+  // ergibt - vor Release 197 war es (bei der damals noch linkshändigen Basis) genau umgekehrt
+  // NEGATIVES phi, das stand hier ursprünglich so beschrieben. Eine reine Namenskonvention, keine
+  // physikalische Notwendigkeit - an der grundsätzlichen Stetigkeit der Formel ändert das nichts.
   //
   // Release 156 - exakt ±π/2 statt (bis Release 155) ±1.45 (≈83°, knapp AM Pol vorbei): Sebastian
   // bemerkte, dass "Top" (und ebenso "Bottom") noch einen "Rest von Rear" zeigte - das Bauteil war
   // beim Klick auf "Top" nicht WIRKLICH senkrecht von oben zu sehen, sondern um die fehlenden ca.
-  // 7° (90°−83°) leicht schräg gekippt. Ursache: Bei phi=-1.45 hat "fwd" eine kleine, aber nicht
-  // exakt null z-Komponente (fwd.z ≈ -0.1205) - dadurch ergibt sich für die "Rear"-Würfelseite
-  // (Normale (0,0,1)) ein Facing-Wert von ≈ -0.1205, der den Rückflächen-Schwellenwert von -0.02
-  // in drawViewGizmo() (siehe dort) klar überschreitet: Die Seite wird (dezent, aber sichtbar samt
-  // Beschriftung) MIT gezeichnet, obwohl man eigentlich praktisch senkrecht von oben schaut. Bei
-  // "Bottom" (phi=+1.45) passiert exakt dasselbe mit derselben "Rear"-Seite (Facing ebenfalls
-  // ≈ -0.1205, siehe GIZMO_MAIN_FACES oben). Der historische Grund für ±1.45 statt exakt ±π/2 war
-  // reine Vorsicht gegenüber der Pol-Entartung im Kreuzprodukt von basisFromAngles() (siehe dort) -
-  // per Playwright/Node direkt nachgerechnet, GREIFT der dort bereits vorhandene Sicherheitsfallback
-  // (`if (!isFinite(right.x) || len(right) < 1e-6) right = {x:1,y:0,z:0}`) exakt am Pol zuverlässig
-  // und liefert dabei GENAU dieselbe "right"-Richtung (Welt-X bleibt Bildschirm-rechts), die sich
-  // bei phi=-1.45 ohnehin schon ergab - keine Änderung der Bildschirmausrichtung/Ost-West-Zuordnung,
-  // nur eine exaktere Blickrichtung. Mit phi=±π/2 ergibt sich fwd.z rechnerisch zu ±6·10⁻¹⁷ (reines
-  // Gleitkomma-Rundungsrauschen) statt -0,1205 - weit unterhalb des -0,02-Schwellenwerts, die
-  // "Rear"-Seite (und ebenso alle anderen Seitenflächen) bleiben dadurch bei "Top"/"Bottom"
-  // zuverlässig unsichtbar, exakt wie beim manuellen Drehen bis zum tatsächlichen Geradeaus-Blick.
-  // Betrifft ausschließlich diese beiden festen Voreinstellungen - Links/Rechts/Vorn/Hinten (phi=0)
-  // und die Home-Isometrie (phi=∓asin(1/√3)) waren von diesem Leck nie betroffen.
+  // 7° (90°−83°) leicht schräg gekippt. Ursache: bei dem damaligen ±1.45 statt exakt ±π/2 hat
+  // "fwd" eine kleine, aber nicht exakt null z-Komponente (|fwd.z| ≈ 0.1205) - dadurch ergibt sich
+  // für die "Rear"-Würfelseite (Normale (0,0,1)) ein Facing-Wert von ≈ -0.1205, der den
+  // Rückflächen-Schwellenwert von -0.02 in drawViewGizmo() (siehe dort) klar überschreitet: Die
+  // Seite wird (dezent, aber sichtbar samt Beschriftung) MIT gezeichnet, obwohl man eigentlich
+  // praktisch senkrecht von oben schaut - bei BEIDEN Voreinstellungen gleichermaßen (Facing
+  // ebenfalls ≈ -0.1205, siehe GIZMO_MAIN_FACES oben). Der historische Grund für ±1.45 statt exakt
+  // ±π/2 war reine Vorsicht gegenüber der Pol-Entartung im Kreuzprodukt von basisFromAngles()
+  // (siehe dort) - per Playwright/Node direkt nachgerechnet, GREIFT der dort vorhandene
+  // Sicherheitsfallback exakt am Pol zuverlässig und liefert dabei GENAU dieselbe "right"-Richtung
+  // (Welt-X bleibt Bildschirm-rechts), die sich bei ±1.45 ohnehin schon ergab - keine Änderung der
+  // Bildschirmausrichtung/Ost-West-Zuordnung, nur eine exaktere Blickrichtung. Mit phi=±π/2 ergibt
+  // sich fwd.z rechnerisch zu ±6·10⁻¹⁷ (reines Gleitkomma-Rundungsrauschen) statt ±0,1205 - weit
+  // unterhalb des -0,02-Schwellenwerts, die "Rear"-Seite (und ebenso alle anderen Seitenflächen)
+  // bleiben dadurch bei "Top"/"Bottom" zuverlässig unsichtbar, exakt wie beim manuellen Drehen bis
+  // zum tatsächlichen Geradeaus-Blick. Betrifft ausschließlich diese beiden festen Voreinstellungen
+  // - Links/Rechts/Vorn/Hinten (phi=0) und die Home-Isometrie (phi=∓asin(1/√3)) waren von diesem
+  // Leck nie betroffen. (Welches der beiden Vorzeichen seitdem "top" und welches "bottom" heißt,
+  // hat sich mit dem Händigkeits-Bugfix in Release 197 geändert - siehe VIEW_PRESETS direkt unten
+  // sowie die ausführliche Herleitung bei basisFromAngles() weiter unten; die hier beschriebene
+  // ±π/2-vs-±1.45-Erkenntnis selbst gilt unverändert für beide Voreinstellungen gleichermaßen.)
   const VIEW_PRESETS = {
-    top: { theta: 0, phi: -Math.PI / 2 },
-    bottom: { theta: 0, phi: Math.PI / 2 },
+    top: { theta: 0, phi: Math.PI / 2 },
+    bottom: { theta: 0, phi: -Math.PI / 2 },
     left: { theta: -Math.PI / 2, phi: 0 },
     right: { theta: Math.PI / 2, phi: 0 },
     front: { theta: Math.PI, phi: 0 },
@@ -10387,22 +10602,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // cameraPosition()/buildBasis() weiter unten) - dadurch lässt sich buildBasis(cameraPosition())
   // 1:1 unverändert für die Gizmo-Rotation wiederverwenden, siehe drawViewGizmo() weiter unten.
   //
-  // Zuordnung Hauptseite -> Beschriftung/View-Preset: unverändert aus dem vorherigen Gizmo
-  // übernommen (dort rechnerisch aus der tatsächlichen Kamera-Position der sechs VIEW_PRESETS
-  // hergeleitet, siehe Projekt-Dokumentation Abschnitt zum Würfel-Gizmo für die Herleitung):
-  //   Normale (0,-1,0) -> "Top"    -> VIEW_PRESETS.top
-  //   Normale (0, 1,0) -> "Bottom" -> VIEW_PRESETS.bottom
+  // Zuordnung Hauptseite -> Beschriftung/View-Preset: rechnerisch aus der tatsächlichen
+  // Kamera-Position der sechs VIEW_PRESETS hergeleitet (muss exakt zu "-fwd" der jeweiligen
+  // Voreinstellung passen, damit die zugehörige Würfelseite GENAU dann sichtbar/vorne ist, wenn
+  // die Kamera tatsächlich dort steht, siehe Facing-Test weiter unten).
+  //   Normale (0, 1,0) -> "Top"    -> VIEW_PRESETS.top
+  //   Normale (0,-1,0) -> "Bottom" -> VIEW_PRESETS.bottom
   //   Normale (-1,0,0) -> "Left"   -> VIEW_PRESETS.left
   //   Normale (1, 0,0) -> "Right"  -> VIEW_PRESETS.right
   //   Normale (0,0,-1) -> "Front"  -> VIEW_PRESETS.front
   //   Normale (0,0, 1) -> "Rear"   -> VIEW_PRESETS.back (intern weiterhin "back" benannt, siehe
   //                                    VIEW_PRESETS - "Rear" ist nur die Beschriftung dieser
   //                                    Seite, keine neue Ansicht)
+  // Release 197 (Händigkeits-Bugfix, siehe ausführliche Herleitung bei basisFromAngles() weiter
+  // unten sowie bei VIEW_PRESETS weiter oben): die Top/Bottom-Normalen wurden hier GETAUSCHT
+  // (Top: vormals (0,-1,0), jetzt (0,1,0); Bottom umgekehrt), weil VIEW_PRESETS.top/.bottom ihr
+  // phi-Vorzeichen getauscht haben und sich dadurch "-fwd" für beide Voreinstellungen ebenfalls
+  // umgekehrt hat - ohne diesen Tausch hätte die Würfelseite "Top" beim Klick auf "Top" plötzlich
+  // auf der Rückseite (unsichtbar) gelegen und stattdessen "Bottom" wäre fälschlich vorne
+  // erschienen. Left/Right/Front/Rear sind von diesem Tausch NICHT betroffen (deren fwd ändert
+  // sich durch den Händigkeits-Fix nicht, nur right/up - siehe dort).
   const GIZMO_MAIN_FACES = [
     { axis: 'x', sign: 1, label: 'Right', view: 'right' },
     { axis: 'x', sign: -1, label: 'Left', view: 'left' },
-    { axis: 'y', sign: 1, label: 'Bottom', view: 'bottom' },
-    { axis: 'y', sign: -1, label: 'Top', view: 'top' },
+    { axis: 'y', sign: -1, label: 'Bottom', view: 'bottom' },
+    { axis: 'y', sign: 1, label: 'Top', view: 'top' },
     { axis: 'z', sign: 1, label: 'Rear', view: 'back' },
     { axis: 'z', sign: -1, label: 'Front', view: 'front' }
   ];
@@ -11736,8 +11960,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const headPad = 8 + 10; // .ops-col-head { padding: 9px 8px 7px 10px }
     const headRowGap = 4;
     const toggleBtnW = 20; // .ops-toggle-btn { width: 20px }
+    // Release 193, Punkt 7: neues Zahnrad-Icon (#btnOpsColumnSettings, "Spalteneinstellungen")
+    // links vom Ein-/Ausklappen-Knopf, gemeinsam in ".ops-col-head-actions" (siehe Markup-/CSS-
+    // Kommentar dort) - dieselbe Breite wie #btnOpsToggle (teilt sich ".ops-toggle-btn"), plus der
+    // eigene 4px-"gap" dieses Sub-Wrappers, beides zusätzlich zum bisherigen Platzbedarf.
+    const settingsBtnW = 20; // .ops-col-settings-btn teilt sich .ops-toggle-btn { width: 20px }
+    const actionsGap = 4; // .ops-col-head-actions { gap: 4px }
     const titleW = textWidth('ARBEITSGÄNGE', OPS_HEAD_TITLE_FONT);
-    const headRowW = headPad + titleW + headRowGap + toggleBtnW;
+    const headRowW = headPad + titleW + headRowGap + settingsBtnW + actionsGap + toggleBtnW;
 
     const showAllBtnChrome = 14 + 2 + 4; // Innenabstand 7px*2, Rahmen 1px*2, ein Zwischenraum 4px
     const eyeGlyphW = Math.ceil(textWidth('👁', OPS_HEAD_TITLE_FONT));
@@ -13012,22 +13242,58 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Welt-Y-Achse). Für einen festen, bekannten Winkel (wie die sechs VIEW_PRESETS) ist das
   // weiterhin exakt richtig und sicher - auch GENAU am Pol (phi=±π/2): Zwei der sechs
   // Voreinstellungen (Top/Bottom) liegen seit Release 156 bewusst exakt dort (siehe VIEW_PRESETS
-  // oben); der Sicherheitsfallback direkt unten (`if (!isFinite(right.x) || len(right) < 1e-6)
-  // right = {x:1,y:0,z:0}`) greift exakt an diesem Punkt zuverlässig (per Node/Playwright
-  // nachgerechnet) und liefert dabei GENAU dieselbe "right"-Richtung, die sich unmittelbar NEBEN
-  // dem Pol ohnehin ergibt - keine Diskontinuität bei diesem einmaligen, festen Sprung (anders als
-  // bei einer laufenden, kontinuierlichen Drehung DURCH den Pol hindurch - dafür ist diese Formel
-  // nach wie vor NICHT geeignet, siehe nächster Absatz). Ausschließlich für Sprünge auf eine feste
-  // Voreinstellung verwendet (applyViewAngles()/goHomeView()/Programm-Laden) - NIEMALS für die
-  // laufende Zieh-Drehung selbst (siehe rotateCamOrientation() unten, der eigentliche
-  // Release-143-Fix).
+  // oben); der Sicherheitsfallback direkt unten greift exakt an diesem Punkt zuverlässig.
+  // Ausschließlich für Sprünge auf eine feste Voreinstellung verwendet
+  // (applyViewAngles()/goHomeView()/Programm-Laden) - NIEMALS für die laufende Zieh-Drehung selbst
+  // (siehe rotateCamOrientation() unten, der eigentliche Release-143-Fix; diese dreht die
+  // PERSISTENTE cam.orient-Basis nur noch inkrementell per Rodrigues weiter und erbt dadurch die
+  // Händigkeit automatisch korrekt von genau dieser Funktion hier, ohne selbst je wieder einen
+  // Kreuzprodukt-Aufbau "von Grund auf" durchzuführen).
+  //
+  // Händigkeits-Bugfix (Release 197, Sebastian, mit vollständiger Blickrichtungs-Tabelle für alle
+  // sechs Würfelseiten): "1 Die Seiten vom Würfel sind vertauscht. Wenn ich manuell so drehe, dass
+  // 'Rear' am Würfel steht, schaue ich von vorne auf das Bauteil. Bei der Ansicht von links (auf
+  // 'W' geklickt) schau ich von rechts auf das Bauteil." - betraf NICHT nur die vier
+  // Seitenansichten (Links/Rechts/Vorn/Hinten), sondern denselben Fehler auch bei "Oben"/"Unten"
+  // (dort nur am Z-Vorzeichen erkennbar, von Sebastian als "Top (wie bisher)" unausgesprochen für
+  // richtig befunden, weil die beiden am leichtesten sichtbaren Achsen - X nach rechts, Y nach
+  // oben - dort zufällig schon stimmten). Ursache: toRender() (siehe weiter oben, "render-Z =
+  // CNC-Y") vertauscht beim Abbilden von CNC- auf Render-Koordinaten genau ZWEI Achsen (Y und Z)
+  // miteinander - eine einzelne Achsenvertauschung ist eine UNGERADE Permutation (Determinante
+  // -1, eine Spiegelung) und kehrt dadurch zwangsläufig die Händigkeit (rechts- vs. linkshändig)
+  // des Koordinatensystems um. "right"/"up" wurden bis Release 196 so berechnet, als sei der
+  // Render-Raum weiterhin genauso rechtshändig wie der ursprüngliche CNC-Raum (right per
+  // Kreuzprodukt aus "fwd" und der festen Welt-Hochachse, "up" anschließend aus "right" und "fwd")
+  // - das ergibt in Render-Koordinaten zwar ein mathematisch sauberes, orthonormales Dreibein,
+  // nach dem Rückrechnen in echte CNC-Richtungen (per Node/Playwright für alle sechs
+  // Voreinstellungen einzeln nachgerechnet und mit Sebastians Tabelle abgeglichen) aber ein
+  // LINKSHÄNDIGES statt des benötigten rechtshändigen - mit genau den von Sebastian beschriebenen
+  // Symptomen. Fix: BEIDE Kreuzprodukte in der jeweils umgekehrten Reihenfolge gebildet (right =
+  // cross(Welt-Hochachse, fwd) statt cross(fwd, Welt-Hochachse); up = cross(fwd, right) statt
+  // cross(right, fwd)) - das kehrt die Händigkeit der gesamten Basis genau einmal um und macht sie
+  // dadurch nach dem Rückrechnen über toRender() wieder rechtshändig, exakt passend zu Sebastians
+  // Tabelle, für alle sechs Voreinstellungen gleichzeitig nachgerechnet bestätigt (siehe
+  // CNC_Simulation.md für die vollständige Verifikationstabelle). Der Sicherheitsfallback für den
+  // Sonderfall "exakt am Pol" wurde dabei zusätzlich robuster gemacht: er prüft jetzt die Länge
+  // des NOCH NICHT normalisierten Kreuzprodukts (dort tatsächlich verlässlich nahe Null, ≈6·10⁻¹⁷
+  // bei phi=±π/2) statt wie bisher die Länge NACH der Normalisierung (die ist wegen
+  // normalize()s eigener Null-Vektor-Sonderbehandlung praktisch immer exakt 1 und hätte den
+  // Fallback dadurch nie zuverlässig ausgelöst - ein latenter, bis jetzt folgenloser Schönheitsfehler,
+  // der durch die neue Kreuzprodukt-Reihenfolge erstmals sichtbar geworden wäre, siehe
+  // VIEW_PRESETS oben für die dadurch nötig gewordene Vertauschung von Oben/Unten). project()/
+  // drawViewGizmo() usw. bleiben unverändert und übernehmen die korrigierte Händigkeit automatisch,
+  // weil sie cam.orient nur noch unverändert weiterverwenden. rotateCamOrientation()/
+  // rollCamOrientation() drehen cam.orient zwar ebenfalls nur noch weiter statt es neu aufzubauen,
+  // riefen dabei aber bei JEDEM Schritt renormalizeOrient() auf, die "up" aktiv per eigenem
+  // Kreuzprodukt neu erzwingt statt es rein inkrementell zu übernehmen - deren Reihenfolge musste
+  // deshalb ebenfalls umgekehrt werden (siehe eigener Nachtrag direkt bei renormalizeOrient() unten).
   function basisFromAngles(theta, phi) {
     const cp = Math.cos(phi);
     const dir = { x: cp * Math.sin(theta), y: Math.sin(phi), z: cp * Math.cos(theta) };
     const fwd = normalize({ x: -dir.x, y: -dir.y, z: -dir.z });
-    let right = normalize(cross(fwd, { x: 0, y: 1, z: 0 }));
-    if (!isFinite(right.x) || len(right) < 1e-6) right = { x: 1, y: 0, z: 0 };
-    const up = cross(right, fwd);
+    const rightRaw = cross({ x: 0, y: 1, z: 0 }, fwd);
+    const right = (!isFinite(rightRaw.x) || len(rightRaw) < 1e-6) ? { x: 1, y: 0, z: 0 } : normalize(rightRaw);
+    const up = cross(fwd, right);
     return { right, up, fwd };
   }
 
@@ -13036,10 +13302,29 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Kreuzprodukt hergeleitet. Die Rodrigues-Drehung selbst erhält Orthonormalität rechnerisch exakt
   // - dies ist reine Vorsicht gegen Gleitkomma-Drift bei sehr vielen aufeinanderfolgenden kleinen
   // Drehschritten (z. B. ein langes, langsames Ziehen).
+  //
+  // Nachtrag Release 197 (Sebastian, direkt nach Auslieferung): "Jetzt springt das 3D wieder,
+  // nachdem ich das Programm geladen haben und die Maus bewege ... egal, ob das vom Startpunkt aus
+  // ist oder nachdem ich auf eine Kante (z. B. Rear) geklickt habe und dann die Sim drehe." - ein
+  // bei der ersten Release-197-Fassung übersehener Folgefehler desselben Händigkeits-Fixes (siehe
+  // ausführliche Herleitung bei basisFromAngles() oben): Diese Funktion hier baut "up" bei JEDER
+  // einzelnen Drehbewegung aus "right"/"fwd" KOMPLETT NEU per Kreuzprodukt auf - sie "erbt" die
+  // Händigkeit entgegen der ursprünglichen Annahme eben NICHT automatisch von ihrem Eingabewert,
+  // sondern erzwingt bei jedem Aufruf aktiv eine FESTE Konvention. Die hier bis dahin weiter
+  // verwendete alte Reihenfolge ("up = cross(right, fwd)", Determinante -1) widersprach der seit
+  // Release 197 von basisFromAngles() gelieferten NEUEN, rechtshändigen Basis (Determinante +1):
+  // Der allererste Zieh-Schritt nach jedem Sprung auf eine feste Voreinstellung (Programm laden,
+  // Würfelseiten-/Kompass-Klick, "Home"/"Top") ließ "up" dadurch schlagartig um 180° umklappen -
+  // exakt der von Sebastian beschriebene Sprung, unabhängig vom Ausgangspunkt. Fix: dieselbe
+  // Kreuzprodukt-Reihenfolge wie im neuen basisFromAngles() ("up = cross(fwd, right)"), damit beide
+  // Stellen durchgehend dieselbe (jetzt korrekte) Händigkeit erzwingen. Per Node direkt nachgerechnet:
+  // Die alte Reihenfolge negierte "up" gegenüber dem unmittelbar zuvor per Rodrigues-Drehung
+  // errechneten (korrekten, stetigen) Wert bei jedem einzelnen Aufruf dieser Funktion; die neue
+  // Reihenfolge liefert exakt diesen unveränderten, stetigen Wert zurück.
   function renormalizeOrient(o) {
     const fwd = normalize(o.fwd);
     const right = normalize(sub(o.right, scaleVec(fwd, dot(o.right, fwd))));
-    const up = cross(right, fwd);
+    const up = cross(fwd, right);
     return { right, up, fwd };
   }
 
@@ -15452,6 +15737,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     sm.wrapper.classList.add('open');
     sm.dropdown.hidden = false;
     sm.trigger.setAttribute('aria-expanded', 'true');
+    // Release 194 (Sebastian: "Wenn ich das Kontextmenü am unteren Bildrand öffne, fliegen manche
+    // Menüpunkte raus und werden nicht mehr angezeigt.") - ".submenu-dropdown" hängt per CSS fix
+    // mit "top: -6px" an seinem eigenen Auslöser (siehe Stylesheet), ganz OHNE Randkorrektur -
+    // anders als #appContextMenu selbst, das in openContextMenu() oben bereits an den Fensterrand
+    // geklemmt wird. Steht der Auslöser (z. B. "Einstellungen ▸" oder das darin verschachtelte
+    // "Werkzeuge ▸") nah am unteren Bildschirmrand (z. B. weil der Rechtsklick selbst schon weit
+    // unten war), ragt das seitlich daneben aufklappende Flyout dadurch unten über den sichtbaren
+    // Bereich hinaus - bei "position: fixed" und ohne Scroll-Möglichkeit des restlichen Dokuments
+    // blieben die untersten Einträge darin dadurch unsichtbar UND unerreichbar. Fix: nach dem
+    // Öffnen die tatsächliche Position/Höhe messen (getBoundingClientRect() erzwingt dafür ein
+    // synchrones Reflow, "hidden = false" direkt oben macht das Element davor bereits layoutfähig)
+    // und bei Überstand nach oben verschieben - dieselbe "window.innerHeight minus 4px
+    // Sicherheitsabstand"-Grenze wie bei openContextMenu() oben, nur hier additiv auf die
+    // bestehende "top: -6px"-Grundposition aus dem Stylesheet statt als absoluter Wert (das
+    // Flyout bleibt seitlich wie gewohnt an seinem Auslöser verankert). style.top wird vor der
+    // Messung erst zurückgesetzt, damit ein von einem FRÜHEREN Öffnen an anderer Stelle
+    // zurückgebliebener Versatz nicht fälschlich mit einfließt. Bei genug Platz bleibt das
+    // Verhalten exakt wie bisher (overflowBelow <= 0, keine Korrektur).
+    sm.dropdown.style.top = '';
+    const rect = sm.dropdown.getBoundingClientRect();
+    const overflowBelow = rect.bottom - (window.innerHeight - 4);
+    if (overflowBelow > 0) sm.dropdown.style.top = (-6 - overflowBelow) + 'px';
   }
   allSubmenus.forEach(sm => {
     sm.trigger.addEventListener('click', (e) => {
@@ -15533,11 +15840,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     clearDxf: el('ctxClearDxf'),
     toggleDxfLayers: el('ctxToggleDxfLayers'),
     moveDxf: el('ctxMoveDxf'),
-    toggleGrid: el('ctxToggleGrid') // Release 154
+    toggleGrid: el('ctxToggleGrid'), // Release 154
+    // Release 193, Punkt 8: die neun ".click()"-Weiterleitungs-Knöpfe im "Einstellungen"-Flyout
+    // (siehe Markup-Kommentar bei #ctxSubmenuSettings) - nur für updateContextMenuState()
+    // brauchen diese keinen Eintrag hier (keiner von ihnen wird jemals deaktiviert/dynamisch
+    // umbeschriftet, exakt wie ihre Gegenstücke im Menüband selbst), die Liste dient hier
+    // lediglich der Vollständigkeit halber nicht - die eigentliche Verdrahtung steht direkt bei
+    // den übrigen ctxItems-Klick-Listenern weiter unten.
+    opColor: el('ctxBtnOpColor'),
+    menuColor: el('ctxBtnMenuColor'),
+    editColors: el('ctxBtnEditColors'),
+    fontColor: el('ctxBtnFontColor'),
+    gridColor: el('ctxBtnGridColor'),
+    axisColor: el('ctxBtnAxisColor'),
+    columnScale: el('ctxBtnColumnScale'),
+    area3dSettings: el('ctxBtnArea3dSettings'),
+    toolSaw: el('ctxBtnToolSaw'),
+    toolCollet: el('ctxBtnToolCollet'),
+    toolCutter: el('ctxBtnToolCutter')
   };
 
   function closeContextMenu() {
     appContextMenu.hidden = true;
+    // Release 193, Punkt 8: das Kontextmenü enthält seit der Überarbeitung selbst verschachtelte
+    // ".menu-submenu"-Flyouts ("Programm"/"DXF"/"Einstellungen" inkl. "Werkzeuge" darin) - ohne
+    // diese Zeile blieben beim erneuten Öffnen (z. B. an anderer Stelle) noch offene Flyouts vom
+    // letzten Mal sichtbar "hängen". Dieselbe Technik wie closeAllMenus() oben für die vier
+    // Hauptmenüs.
+    allSubmenus.forEach(closeSubmenu);
   }
 
   // Beschriftung/Aktivierbarkeit jedes Menüpunkts richten sich ausschließlich nach demselben
@@ -15597,6 +15927,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     openContextMenu(e.clientX, e.clientY);
   });
   appContextMenu.addEventListener('click', (e) => {
+    // Release 193, Punkt 8: ein Klick auf einen Untermenü-AUSLÖSER (".submenu-trigger", z. B.
+    // "Programm"/"DXF"/"Einstellungen"/"Werkzeuge") soll NUR sein eigenes Flyout auf-/zuklappen
+    // (siehe dessen eigener, generischer Klick-Listener bei "allSubmenus" weiter oben, inkl.
+    // e.stopPropagation() dort) und NICHT zusätzlich das ganze Kontextmenü schließen - exakt
+    // dieselbe Guard-Technik wie beim Klick-Listener der vier Hauptmenü-Dropdowns oben
+    // (".submenu-trigger" wird dort ebenfalls vorab ausgenommen). Ein Klick auf einen "echten"
+    // Menüpunkt (misst/lädt/öffnet ein Panel usw.), auch innerhalb eines Flyouts, schließt das
+    // Kontextmenü weiterhin wie bisher.
+    if (e.target.closest('.submenu-trigger')) return;
     if (e.target.closest('button')) closeContextMenu();
   });
   document.addEventListener('click', (e) => {
@@ -15627,6 +15966,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // wie "Übernehmen" im "Raster"-Panel unter "Einstellungen" -> "Erscheinungsbild" (siehe dort) -
   // beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
   ctxItems.toggleGrid.addEventListener('click', () => setGridVisible(!gridVisible));
+  // "Einstellungen"-Flyout im Kontextmenü (Release 193, Punkt 8, siehe Markup-Kommentar bei
+  // #ctxSubmenuSettings) - jeder der neun Einträge simuliert per ".click()" einen echten Klick auf
+  // sein bestehendes Gegenstück im Menüband, statt dessen Öffnen-Logik zu duplizieren (derselbe
+  // Weiterleitungs-Trick wie z. B. bei ctxItems.loadProgram oben).
+  ctxItems.opColor.addEventListener('click', () => el('btnOpColor').click());
+  ctxItems.menuColor.addEventListener('click', () => el('btnMenuColor').click());
+  ctxItems.editColors.addEventListener('click', () => el('btnEditColors').click());
+  ctxItems.fontColor.addEventListener('click', () => el('btnFontColor').click());
+  ctxItems.gridColor.addEventListener('click', () => el('btnGridColor').click());
+  ctxItems.axisColor.addEventListener('click', () => el('btnAxisColor').click());
+  ctxItems.columnScale.addEventListener('click', () => el('btnColumnScale').click());
+  ctxItems.area3dSettings.addEventListener('click', () => el('btnArea3dSettings').click());
+  ctxItems.toolSaw.addEventListener('click', () => el('btnToolAppearanceSaw').click());
+  ctxItems.toolCollet.addEventListener('click', () => el('btnToolAppearanceCollet').click());
+  ctxItems.toolCutter.addEventListener('click', () => el('btnToolAppearanceCutter').click());
 
   // Enter/Escape in allen Eingabe-Dialogen (Sebastian: "In allen Menüs/Dialogen der Sim wo ich
   // Dinge eingeben kann, möchte ich mit Enter rausgehen können (Bestätigung der Eingabe) oder mit
@@ -15822,12 +16176,29 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const computedLineHeight = parseFloat(getComputedStyle(machineTypeEditArea).lineHeight);
         const lineHeight = isFinite(computedLineHeight) ? computedLineHeight
           : parseFloat(getComputedStyle(machineTypeEditArea).fontSize) * 1.2;
-        machineTypeEditArea.scrollTop = linesBefore * lineHeight;
+        // Release 194 (Sebastian, Punkt 1: "Die Seite sollte aber weiter nach unten scrollen, so
+        // dass man direkt den Text unterm jeweiligen Maschinentypen sieht") - zuvor landete die
+        // Fundstelle selbst ("[MACHINETYPE Name=...]") exakt an der Oberkante des sichtbaren
+        // Bereichs (scrollTop = linesBefore * lineHeight), wodurch ganz oben nur noch diese eine
+        // Kopfzeile zu sehen war, nicht aber der eigentliche Inhalt direkt darunter.
+        // "+1 * lineHeight" allein reicht NICHT (per Playwright-Screenshot an einer Debug-Kopie
+        // nachgemessen): die Kopfzeile selbst beginnt erst bei "paddingTop + linesBefore *
+        // lineHeight", ein einziges zusätzliches lineHeight landet dadurch noch MITTEN in dieser
+        // Kopfzeile (nur ihr oberer Rand wird abgeschnitten, der Rest bleibt sichtbar). Erst
+        // "+2 * lineHeight" schiebt die komplette Kopfzeile aus dem sichtbaren Bereich heraus,
+        // sodass die erste vollständig sichtbare Zeile ganz oben tatsächlich die Zeile direkt
+        // UNTER dem Maschinentyp ist (bei den meisten Maschinentypen "[SWITCHCASEMACHINE]").
+        machineTypeEditArea.scrollTop = (linesBefore + 2) * lineHeight;
         jumped = true;
       }
     }
     if (!jumped) machineTypeEditArea.setSelectionRange(0, 0);
   });
+  // Release 193, Punkt 1+2: neues Zahnrad-Icon direkt im Menüband neben "Maschinentyp"
+  // (#btnMachineTypeSettings, siehe Markup-Kommentar dort) - simuliert einen echten Klick auf
+  // #btnEditMachineTypes, statt dessen Logik (inkl. Sprung zum aktiven Maschinentyp, siehe oben)
+  // zu duplizieren - beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
+  el('btnMachineTypeSettings').addEventListener('click', () => btnEditMachineTypes.click());
   el('btnMachineTypeEditCancel').addEventListener('click', () => machineTypeEditPanel.classList.remove('open'));
   el('btnMachineTypeEditApply').addEventListener('click', () => {
     machineTypesConfigText = machineTypeEditArea.value;
@@ -16388,7 +16759,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // entsprechende Rückschreib-Logik.
   const KNOWN_EXPORTED_LS_KEYS = [
     LS_KEY_MACHINETYPES_CONFIG, LS_KEY_ACTIVE_MACHINETYPE, LS_KEY_COLOR_PROFILE,
-    LS_KEY_COLUMN_SCALE, LS_KEY_INVERT_TILT, LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
+    LS_KEY_COLUMN_SCALE, LS_KEY_INVERT_TILT,
+    LS_KEY_INVERT_ROTATION, // Release 195, siehe eigenes "invertRotation"-Feld weiter unten
+    LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
     LS_KEY_GRID_VISIBLE, // Release 154, siehe eigenes "gridVisible"-Feld weiter unten
     LS_KEY_GRID_COLOR, // Release 157, siehe eigenes "gridColor"-Feld weiter unten
@@ -16442,6 +16815,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // "Rotation" (Release 141, Punkt 8) - genau wie bei den Spalteneinstellungen oben als
       // eigenes, einfaches JSON-Feld (simpler Bool-Wert).
       invertTilt: invertTiltPreference,
+      // "Drehrichtung invertieren" (Release 195) - eigenes, einfaches JSON-Feld, 1:1 analog zu
+      // "invertTilt" direkt oberhalb.
+      invertRotation: invertRotationPreference,
       menuHighlightBg: activeMenuColor.bg,
       menuHighlightInk: activeMenuColor.ink,
       // Schriftfarbe (66. Runde, Sebastian: "Das und alle vorherigen Einstellungen [...] werden
@@ -16635,6 +17011,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.invertTilt !== undefined) {
         invertTiltPreference = data.invertTilt === true || data.invertTilt === '1' || data.invertTilt === 1;
         persistInvertTilt(invertTiltPreference);
+        syncRotationSettingsPanelFromActive();
+      }
+      // "Drehrichtung invertieren" (Release 195): fehlt das Feld (ältere Datei vor diesem Release),
+      // bleibt die aktuell aktive Vorgabe unangetastet - dieselbe Regel wie bei "Kipprichtung
+      // invertieren" direkt oberhalb.
+      if (data.invertRotation !== undefined) {
+        invertRotationPreference = data.invertRotation === true || data.invertRotation === '1' || data.invertRotation === 1;
+        persistInvertRotation(invertRotationPreference);
         syncRotationSettingsPanelFromActive();
       }
       // "Raster" (Release 154): fehlt das Feld (ältere Datei), bleibt die aktuell aktive Vorgabe
@@ -17600,6 +17984,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     syncColumnScalePanelFromActive();
     columnScalePanel.classList.add('open');
   });
+  // Zahnrad-Icon links vom "Spalten zuklappen"-Symbol bei "Arbeitsgänge" (Release 193, Punkt 7,
+  // siehe Markup-Kommentar bei #btnOpsColumnSettings) - simuliert einen echten Klick auf
+  // #btnColumnScale, statt dessen Öffnen-Logik zu duplizieren.
+  el('btnOpsColumnSettings').addEventListener('click', () => el('btnColumnScale').click());
   el('btnColumnScaleCancel').addEventListener('click', () => columnScalePanel.classList.remove('open'));
   el('btnColumnScaleApply').addEventListener('click', () => {
     const codeChecked = document.querySelector('input[name="columnScaleCode"]:checked');
@@ -17647,56 +18035,58 @@ Sebastian Bäcker (Anschrift wie oben)`,
     columnScalePanel.classList.remove('open');
   });
 
-  // "Einstellungen" -> "Erscheinungsbild" -> "Rotation" (Release 141, Punkt 8) - eine einzige
-  // Ja/Nein-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Spalten" oben, nur ohne die
-  // Sofort-Anwenden-Logik auf ein geladenes Programm (invertTiltPreference wird direkt im
-  // pointermove-Handler des 3D-Bereichs abgefragt, siehe dort - "Übernehmen" muss daher nichts
-  // anderes tun als zu persistieren, eine bereits laufende Zieh-Bewegung gibt es zum
-  // Klick-Zeitpunkt ohnehin nie, da das Menü dafür geschlossen werden müsste).
-  const rotationSettingsPanel = el('rotationSettingsPanel');
+  // "Einstellungen" -> "Erscheinungsbild" -> "3D Bereichseinstellungen" (Release 141/154, zuletzt
+  // Release 193, Punkt 4: "'Raster' und 'Rotation' in einem Menüpunkt zusammenfassen ->
+  // '3D Bereichseinstellungen'. Dort können dann Raster und Rotationsverhalten eingestellt
+  // werden") - die beiden vormals getrennten Panels/Knopfsätze (Rotation/btnRotationSettings*
+  // und Raster/btnGridSettings*) sind jetzt EIN gemeinsames Panel (#area3dSettingsPanel) mit
+  // EINEM gemeinsamen Knopfsatz (#btnArea3dSettings/-Cancel/-Apply/-ResetDefaults), siehe
+  // ausführlichen Markup-Kommentar bei #area3dSettingsPanel in template_top.html. Die beiden
+  // sync...FromActive()-Funktionsnamen bleiben dabei UNVERÄNDERT bestehen (werden namentlich vom
+  // Einstellungen-Import weiter oben aufgerufen, siehe dort) - nur ihre Aufrufer (Öffnen/
+  // Abbrechen/Übernehmen/Zurücksetzen) sind jetzt auf das gemeinsame Panel umgestellt. Der
+  // Rechtsklick-Kontextmenü-Direktumschalter "Raster an"/"Raster aus" (#ctxToggleGrid, siehe dort)
+  // ruft weiterhin direkt setGridVisible() auf und bleibt von dieser Zusammenlegung unberührt.
+  const area3dSettingsPanel = el('area3dSettingsPanel');
+  const gridStepSizeInput = el('gridStepSizeInput');
+  const gridStepSizeWarning = el('gridStepSizeWarning');
   function syncRotationSettingsPanelFromActive() {
     const radio = document.querySelector('input[name="invertTilt"][value="' + (invertTiltPreference ? '1' : '0') + '"]');
     if (radio) radio.checked = true;
+    // Release 195: "Drehrichtung invertieren" ist Teil derselben "Rotation"-Einstellungsgruppe wie
+    // "Kipprichtung invertieren" direkt oberhalb (siehe deren gemeinsamer Markup-Kommentar) - wird
+    // deshalb bewusst in DERSELBEN Funktion mit synchronisiert statt in einer eigenen, auch wenn der
+    // Funktionsname selbst (vom Einstellungen-Import namentlich aufgerufen, siehe dort) unverändert
+    // bleibt.
+    const rotationRadio = document.querySelector('input[name="invertRotation"][value="' + (invertRotationPreference ? '1' : '0') + '"]');
+    if (rotationRadio) rotationRadio.checked = true;
   }
-  el('btnRotationSettings').addEventListener('click', () => {
-    syncRotationSettingsPanelFromActive();
-    rotationSettingsPanel.classList.add('open');
-  });
-  el('btnRotationSettingsCancel').addEventListener('click', () => rotationSettingsPanel.classList.remove('open'));
-  el('btnRotationSettingsApply').addEventListener('click', () => {
-    const checked = document.querySelector('input[name="invertTilt"]:checked');
-    invertTiltPreference = checked ? checked.value === '1' : invertTiltPreference;
-    persistInvertTilt(invertTiltPreference);
-    rotationSettingsPanel.classList.remove('open');
-  });
-
-  // "Einstellungen" -> "Erscheinungsbild" -> "Raster" (Release 154) - eine einzige
-  // An/Aus-Radiogruppe, Verdrahtung 1:1 nach dem Muster von "Rotation" direkt oberhalb. "Übernehmen"
-  // ruft dieselbe setGridVisible() auf wie der Kontextmenü-Direktumschalter weiter unten (siehe
-  // dort) - beide Bedienwege bleiben dadurch garantiert exakt gleichwertig.
-  // Release 178 (Punkt 4, siehe ausführlichen Kommentar bei #gridSettingsPanel in
-  // template_top.html sowie gridStepOverride/computeAutoGridStep()/applyGridStep() weiter oben):
-  // das neue Zahlenfeld "Rastergröße" wird bei JEDEM Öffnen dieses Panels frisch vorbefüllt -
-  // mit dem Override, falls gesetzt, sonst mit dem gerade aktuell automatisch berechneten Wert
-  // ("den aktuellen Wert vorausgewählt", wörtlich) - exakt dieselbe Vorbefüllung-bei-jedem-
-  // Öffnen-Technik wie beim G0-Vorschub-/Vorschubskalierung-Feld in "Fräszeitberechnung".
-  const gridSettingsPanel = el('gridSettingsPanel');
-  const gridStepSizeInput = el('gridStepSizeInput');
-  const gridStepSizeWarning = el('gridStepSizeWarning');
   function syncGridSettingsPanelFromActive() {
     const radio = document.querySelector('input[name="gridVisible"][value="' + (gridVisible ? '1' : '0') + '"]');
     if (radio) radio.checked = true;
     gridStepSizeInput.value = String(gridStepOverride || computeAutoGridStep());
     gridStepSizeWarning.hidden = true;
   }
-  el('btnGridSettings').addEventListener('click', () => {
+  el('btnArea3dSettings').addEventListener('click', () => {
+    syncRotationSettingsPanelFromActive();
     syncGridSettingsPanelFromActive();
-    gridSettingsPanel.classList.add('open');
+    area3dSettingsPanel.classList.add('open');
   });
-  el('btnGridSettingsCancel').addEventListener('click', () => gridSettingsPanel.classList.remove('open'));
-  el('btnGridSettingsApply').addEventListener('click', () => {
-    const checked = document.querySelector('input[name="gridVisible"]:checked');
-    setGridVisible(checked ? checked.value === '1' : gridVisible);
+  // Zahnrad-Icon neben dem Haussymbol im 3D-Bereich (Release 193, Punkt 5, siehe Markup-Kommentar
+  // bei #btnGizmoArea3dSettings) - simuliert einen echten Klick auf #btnArea3dSettings, statt
+  // dessen Öffnen-Logik zu duplizieren.
+  el('btnGizmoArea3dSettings').addEventListener('click', () => el('btnArea3dSettings').click());
+  el('btnArea3dSettingsCancel').addEventListener('click', () => area3dSettingsPanel.classList.remove('open'));
+  el('btnArea3dSettingsApply').addEventListener('click', () => {
+    const checkedTilt = document.querySelector('input[name="invertTilt"]:checked');
+    invertTiltPreference = checkedTilt ? checkedTilt.value === '1' : invertTiltPreference;
+    persistInvertTilt(invertTiltPreference);
+    // Release 195: "Drehrichtung invertieren" wird im selben Schritt mit übernommen.
+    const checkedRotation = document.querySelector('input[name="invertRotation"]:checked');
+    invertRotationPreference = checkedRotation ? checkedRotation.value === '1' : invertRotationPreference;
+    persistInvertRotation(invertRotationPreference);
+    const checkedGrid = document.querySelector('input[name="gridVisible"]:checked');
+    setGridVisible(checkedGrid ? checkedGrid.value === '1' : gridVisible);
     const enteredStep = normalizeFeedScaleFactor(gridStepSizeInput.value, null);
     if (enteredStep === null) {
       gridStepSizeWarning.hidden = false;
@@ -17705,21 +18095,25 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     gridStepSizeWarning.hidden = true;
     gridStepOverride = applyGridStep(enteredStep);
-    gridSettingsPanel.classList.remove('open');
+    area3dSettingsPanel.classList.remove('open');
   });
-  // "Standardwerte wiederherstellen" (Release 179, Punkt 3, siehe ausführlichen Markup-Kommentar
-  // bei #colorProfilePanel in template_top.html) - setzt sowohl die Rastersichtbarkeit (zurück auf
-  // "an") als auch die Rastergröße (zurück auf "automatisch", über computeAutoGridStep()) zurück,
-  // mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe Kommentar bei #btnColorProfileResetDefaults
-  // oben für die Begründung der Technik). Dies ist seit dieser Runde der einzige Weg, die
-  // Rastergröße wieder auf "automatisch" zu bekommen - der generelle Knopf
+  // "Standardwerte wiederherstellen" - setzt seit Release 193 zusätzlich auch die Kipprichtung
+  // zurück (zuvor nur Rastersichtbarkeit + Rastergröße), da das Panel jetzt beide Themenblöcke
+  // zusammen enthält, mit vorheriger Ja/Nein-Sicherheitsabfrage (siehe Kommentar bei
+  // #btnColorProfileResetDefaults oben für die Begründung der Technik). Dies ist weiterhin der
+  // einzige Weg, die Rastergröße wieder auf "automatisch" zu bekommen - der generelle Knopf
   // (resetAllDisplaySettingsToDefaults()) lässt gridStepOverride bewusst unangetastet.
-  el('btnGridSettingsResetDefaults').addEventListener('click', () => {
-    if (!window.confirm('Raster-Sichtbarkeit und Rastergröße werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
+  el('btnArea3dSettingsResetDefaults').addEventListener('click', () => {
+    if (!window.confirm('Kipprichtung, Drehrichtung, Raster-Sichtbarkeit und Rastergröße werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
+    invertTiltPreference = false;
+    persistInvertTilt(false);
+    invertRotationPreference = false;
+    persistInvertRotation(false);
     setGridVisible(true);
     gridStepOverride = applyGridStep(null);
+    syncRotationSettingsPanelFromActive();
     syncGridSettingsPanelFromActive();
-    gridSettingsPanel.classList.remove('open');
+    area3dSettingsPanel.classList.remove('open');
   });
 
   // "Ansicht" -> "Buttonfarbe einstellen" (53. Runde) - zwei Hexcode-Zeilen (Hintergrund/Schrift),
@@ -18780,7 +19174,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // kehrt NUR das Vorzeichen des vertikalen Mausbewegungsanteils (dy, hier dPhi) um; der
       // horizontale Anteil (dx, hier dTheta) bleibt davon explizit unberührt ("Die
       // Schwenkrichtungen nach links/rechts ... bleibt nach links und rechts").
-      const dTheta = -dx * 0.006;
+      //
+      // Release 195 (Sebastian: "Bitte noch bei '3D Bereichsaeinstellungen' auch die 'Drehrichtung
+      // invertieren' können") - invertRotationPreference (siehe LS_KEY_INVERT_ROTATION weiter oben)
+      // kehrt spiegelbildlich dazu NUR das Vorzeichen des horizontalen Mausbewegungsanteils (dx,
+      // hier dTheta) um; der vertikale Anteil (dPhi) bleibt davon unberührt.
+      const dTheta = (invertRotationPreference ? 1 : -1) * dx * 0.006;
       const dPhi = (invertTiltPreference ? -1 : 1) * dy * 0.006;
       rotateCamOrientation(dTheta, dPhi);
     }
@@ -19443,6 +19842,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // hier - direkt im pointermove-Handler des 3D-Bereichs abgefragt (siehe dort), kein weiterer
   // "Anwenden"-Schritt an dieser Stelle nötig.
   invertTiltPreference = loadPersistedInvertTilt();
+  // "Drehrichtung invertieren" (Release 195): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Kipprichtung invertieren"
+  // direkt oberhalb.
+  invertRotationPreference = loadPersistedInvertRotation();
   // "Raster" (Release 154): ebenfalls schon vor dem ersten Programm-Laden aus localStorage
   // übernehmen, dieselbe Reihenfolge/Begründung wie bei "Rotation" direkt oberhalb - direkt von
   // render() ausgewertet (siehe dort), kein weiterer "Anwenden"-Schritt an dieser Stelle nötig.
