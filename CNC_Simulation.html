@@ -7570,8 +7570,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 198;
-  const APP_RELEASE_TIMESTAMP = '12.10.2026, 20:05 Uhr';
+  const APP_RELEASE_NUMBER = 199;
+  const APP_RELEASE_TIMESTAMP = '13.10.2026, 06:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -7867,6 +7867,23 @@ Y*1
 Z*1
 [/CALCMACHINE]
 [/MACHINETYPE Name="HolzHer"]
+
+[MACHINETYPE Name="HolzHer A/C Versatz"]
+[SWITCHCASEMACHINE]
+CALL _DINISO ( VAL CODE:='->/
+')->/
+G03->G3
+G02->G2
+R=->R
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*1
+Z*1
+A-44.75
+C-57.05
+[/CALCMACHINE]
+[/MACHINETYPE Name="HolzHer A/C Versatz"]
 
 [MACHINETYPE Name="HOMAG"]
 [SWITCHCASEMACHINE]
@@ -14384,7 +14401,39 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       pts.forEach(p => { lx += p.x; ly += p.y; });
       lx /= pts.length; ly /= pts.length;
       ctx.fillStyle = cssVar('--ink') || '#1a1a1a';
+      // Release 199 (Sebastian, mit Screenshot + GIF: "Wenn man die Simulation dreht ... dann
+      // verzerrt sich der Kompasskreis etwas manchmal"): Der Kompass-RING selbst wird bei einer
+      // Blickrichtung nahe einer reinen Seitenansicht (phi nahe 0) bereits seit Release 147/156
+      // bewusst als flache Linie dargestellt (siehe Kommentar bei drawViewGizmo() oben - eine
+      // horizontale 3D-Kreislinie, von der Seite betrachtet, ist physikalisch tatsächlich eine
+      // Linie, kein Darstellungsfehler). Per Nachstellung des genauen Drehwegs (freies Ziehen von
+      // "Home" auf eine flache Seitenansicht, siehe CNC_Simulation.md für die Herleitung) zeigte
+      // sich aber ein ECHTER, bis dahin unbemerkter Zusatzfehler: Bei exakt dieser Blickrichtung
+      // sind IMMER zwei benachbarte Würfel-Hauptseiten gleichzeitig sichtbar (z. B. "Left" UND
+      // "Front"), beide dabei stark perspektivisch auf schmale, hohe Streifen zusammengestaucht
+      // (gemessen: ca. 20-30px breit statt der üblichen ca. 70-110px bei einer Ansicht schräg von
+      // vorne) - die VOLLE Höhe der beiden Flächen bleibt dabei unverändert (hängt nur von
+      // basis.up.y ab, nicht vom Azimut), nur ihre BREITE schrumpft. Die Beschriftung (mehrere
+      // Zeichen wie "Left"/"Front", anders als die einzelnen Kompass-Buchstaben N/W/E/S) ist dann
+      // breiter als die eigene, schmale Fläche und lief bisher sichtbar über die gemeinsame Kante
+      // hinweg in die Nachbarfläche hinein - beide Beschriftungen überlagerten sich dadurch zu dem
+      // von Sebastian beschriebenen unleserlichen "Gewusel" ("ReaFLeft" o. ä.). Fix: Die
+      // Beschriftung wird jetzt auf die Kontur der eigenen Fläche geclippt (`ctx.clip()` mit
+      // demselben Pfad `pts`, der auch für Füllung/Rahmen der Fläche selbst verwendet wird) - bei
+      // normal breiten Flächen (die weit überwiegende Mehrheit aller Blickwinkel) ändert sich
+      // dadurch sichtbar nichts (der volle Text passt ohnehin innerhalb der eigenen Kontur), bei
+      // einer stark gestauchten Fläche wird der überstehende Teil des Texts jetzt einfach an der
+      // eigenen Kante abgeschnitten statt sich mit der Nachbarfläche zu überlagern - zwei
+      // benachbarte Beschriftungen können sich dadurch nicht mehr vermischen. Klickfläche/
+      // Treffererkennung (`gizmoHitFaces`, unverändert die volle, ungeclippte Kontur `pts`) ist von
+      // dieser rein optischen Änderung nicht betroffen.
+      ctx.save();
+      ctx.beginPath();
+      pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+      ctx.closePath();
+      ctx.clip();
       ctx.fillText(f.label, lx, ly);
+      ctx.restore();
       // Jede der sechs (jetzt immer genau sechs, keine Kanten-/Eck-Facetten mehr) sichtbaren
       // Seiten hat IMMER ein gültiges "view" (siehe GIZMO_MAIN_FACES weiter oben) - der
       // Klick-Handler (siehe pointerup-Verdrahtung weiter unten) kann daher direkt
