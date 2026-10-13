@@ -1787,7 +1787,7 @@
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
-  #btnInsertToolData, #btnToggleTool, #btnToggleToolHolder {
+  #btnInsertToolData, #btnEditToolProfileToolbarIcon, #btnToggleTool, #btnToggleToolHolder {
     width: 118px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
   /* Release 99, Sebastian: "Haben +Werkzeuge, Werkzeugausblenden, Spannfutterausblenden,
@@ -2168,6 +2168,40 @@
      unten) - reine Überschrift + zugehörige .scale-choice-Radiogruppe darunter. */
   .scale-group { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
   .scale-group-title { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
+  /* "Werkzeug-DXF einlesen" (Release 200, #toolDxfImportPanel) - zweispaltiges Layout (links
+     Eingabefelder/Profilliste, rechts die 2D-Vorschau mit den beiden Referenzpunkt-Markern),
+     siehe dortigen Kommentar bei #toolDxfImportPanel in template_top.html. Bricht unter 720px
+     Kartenbreite (siehe media query weiter unten) auf eine einzelne Spalte um, damit das Fenster
+     auch bei schmaleren Fenstern/kleineren exe-Fensterbreiten benutzbar bleibt. */
+  .tool-dxf-import-body { display: flex; gap: 20px; align-items: flex-start; }
+  .tool-dxf-import-controls { flex: 1 1 320px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .tool-dxf-import-preview { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
+  /* Hilfebild (Release 202, Sebastian: "In der 'Werkzeugprofil bearbeiten'-Funktion ein Hilfebild
+     einbauen, was rechts neben der eingelesenen DXF-Datei ist") - dritte Spalte rechts neben der
+     2D-Vorschau, erklärt unabhängig von einer gerade geladenen Datei, welche DXF-Konturen
+     grundsätzlich eingelesen werden können (geschlossene Kontur, halbes oder komplettes Profil
+     inkl. Schaft) - immer sichtbar, auch bevor überhaupt eine Datei ausgewählt wurde. */
+  .tool-dxf-import-help { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
+  .tool-dxf-import-help-heading { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+  .tool-dxf-import-help-img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; display: block; }
+  .tool-dxf-profile-select {
+    width: 100%; height: 110px; padding: 4px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel-2); color: var(--ink);
+    font-size: 12.5px;
+  }
+  .tool-dxf-profile-list-actions { display: flex; gap: 8px; }
+  .tool-dxf-import-filename { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+  #toolDxfImportCanvas {
+    width: 100%; height: auto; aspect-ratio: 260 / 420;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    cursor: default;
+  }
+  @media (max-width: 720px) {
+    .tool-dxf-import-body { flex-direction: column; }
+    .tool-dxf-import-preview { width: 100%; }
+    .tool-dxf-import-help { width: 100%; }
+  }
   .color-profile-custom-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
   .color-field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--ink-muted); }
   .color-field-inputs { display: flex; align-items: center; gap: 8px; flex: none; }
@@ -2624,28 +2658,17 @@
                    'CNC-Programmcode' und 'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") -
                    siehe #columnScalePanel weiter unten sowie applyColumnScalePreference() in app.js. -->
               <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
-              <!-- "Werkzeuge" (Release 158, Sebastian: "Werkzeug bzw. Spannfutter-Darstellung: Bitte
-                   neue Einstellungen unter Einstellungen -> Erscheinungsbild -> 'Werkzeuge' (EN:
-                   Tools). Das ist unter 'Raster' angeordnet! Verschiedene Optionen im Menü einbauen
-                   dafür: 1. Die Einstellungen für Säge, Spannfutter und Fräser separieren. Allerdings
-                   in einem geöffneten Menü 'Werkzeuge' untereinander angeordnet") - direkt nach
-                   "Raster" (wie von Sebastian explizit verlangt), aber als eigenes, zweites
-                   Untermenü-Flyout wie "Farben" oben (nicht flach wie "Spalten"/"Rotation"/"Raster"
-                   selbst), da es drei eigenständige Unterpunkte bündelt. Dieselbe generische, rein
-                   rekursive ".menu-submenu"-Technik wie bei "Farben" (siehe Kommentar dort) -
-                   funktioniert unverändert ohne jede App.js-Änderung, nur durch diese
-                   Markup-Umhüllung. Reihenfolge der drei Einträge exakt wie von Sebastian genannt:
-                   Säge, Spannfutter, Fräser. Siehe #toolAppearanceSawPanel/#toolAppearanceColletPanel/
-                   #toolAppearanceCutterPanel weiter unten sowie applyToolAppearance()/
-                   TOOL_APPEARANCE_KINDS in app.js. -->
-              <div class="menu-submenu" id="submenuTools">
-                <button class="menu-item submenu-trigger" id="submenuToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
-                <div class="submenu-dropdown" id="submenuToolsDropdown" hidden>
-                  <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
-                  <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
-                  <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
-                </div>
-              </div>
+              <!-- "Werkzeuge" (Release 158) stand hier ursprünglich als eigenes Untermenü-Flyout -
+                   Release 200 (Sebastian: "Der Menüpunkt 'Einstellungen -> Erscheinungsbild ->
+                   Werkzeuge' soll unter 'Einstellungen -> Werkzeuge -> Werkzeugdarstellung:'
+                   verschoben werden") verschiebt das komplette Untermenü (umbenannt zu
+                   "Werkzeugdarstellung", IDs #btnToolAppearanceSaw/#btnToolAppearanceCollet/
+                   #btnToolAppearanceCutter samt kompletter dahinterliegender Logik unverändert) in
+                   das neue, direkt unter "Einstellungen" liegende Menü "Werkzeuge" (#submenuToolsTop,
+                   siehe weiter unten direkt nach dem Ende von "Erscheinungsbild") - dort jetzt
+                   zusammen mit dem ebenfalls neuen "Werkzeug-DXF einlesen" (siehe
+                   Konzept_DXF_Werkzeugdarstellung.md). Rein positionsbasierte Markup-Verschiebung,
+                   keine App.js-Änderung an der generischen ".menu-submenu"-Technik nötig. -->
               <!-- "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button bei den
                    Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
                    Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt.") - direkt flach
@@ -2672,6 +2695,30 @@
               <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Standardwerte wiederherstellen</button>
             </div>
           </div>
+          <!-- "Werkzeuge" (NEU, Release 200, Sebastian: "Der Menüpunkt soll zuerst unter
+               'Einstellungen -> Werkzeuge: Werkzeug-DXF einlesen' eingebaut werden. Der Menüpunkt
+               'Einstellungen -> Erscheinungsbild -> Werkzeuge' soll unter 'Einstellungen ->
+               Werkzeuge -> Werkzeugdarstellung:' verschoben werden. Aufbau des Menüs dann:
+               Einstellungen -> Werkzeuge: Werkzeug-DXF einlesen / Werkzeugdarstellung -> / Säge /
+               Spannfutter / Fräser") - neues, direkt unter "Einstellungen" liegendes Menü (Sibling
+               von "Erscheinungsbild" und "Maschinentypen"), siehe Konzept_DXF_Werkzeugdarstellung.md.
+               Enthält zwei Einträge:
+               1. "Werkzeug-DXF einlesen" (#btnToolDxfImport, NEU) - öffnet den neuen Import-Dialog
+                  (#toolDxfImportPanel, siehe weiter unten) zum Einlesen einer DXF-Datei eines
+                  echten (achssymmetrischen) Schneidwerkzeugs, automatischer Umwandlung der
+                  DXF-Geometrie in ein Rotationsprofil (parser.js: buildToolProfileFromDxfText()/
+                  buildProfileChainFromStrokes()) sowie Festlegung der unabhängigen Längen- und
+                  Radius-Referenzpunkte und eines optionalen Skalierungsfaktors (für DXF-Daten in
+                  cm statt mm). Siehe Konzept_DXF_Werkzeugdarstellung.md für die vollständige
+                  Herleitung.
+               2. "Werkzeugdarstellung" (#submenuToolAppearance, UNVERÄNDERT aus dem bisherigen
+                  "Einstellungen -> Erscheinungsbild -> Werkzeuge"-Flyout hierher verschoben) - IDs
+                  #btnToolAppearanceSaw/#btnToolAppearanceCollet/#btnToolAppearanceCutter samt
+                  kompletter dahinterliegender Logik in app.js (Panels, Kontextmenü-Verknüpfung
+                  ctxItems.toolSaw/toolCollet/toolCutter, resetAllDisplaySettingsToDefaults()
+                  BEWUSST weiterhin ausgenommen wie zuvor) bleiben dabei vollständig unverändert -
+                  reine Markup-Verschiebung, keine App.js-Änderung an der generischen
+                  ".menu-submenu"-Technik nötig (siehe Kommentar oben bei "Erscheinungsbild"). -->
           <!-- "Maschinentypen" + "Einstellungen exportieren"/"Einstellungen importieren" hierher
                verschoben (70. Runde, Sebastian, Punkte 20+21): "'Einstellungen exportieren' und
                'Einstellungen importieren' verschieben nach 'Einstellungen'." / "'Maschinentypen'-
@@ -2716,6 +2763,31 @@
             <button class="menu-item submenu-trigger" id="submenuOpNamesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Processing step names &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Arbeitsgang-Namen <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuOpNamesDropdown" hidden>
               <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+            </div>
+          </div>
+          <!-- "Werkzeuge" (#submenuToolsTop) - Release 200 ursprünglich direkt nach
+               "Erscheinungsbild" eingefügt (siehe 9.7.7 in der Doku für die vollständige
+               Herleitung), Release 201 auf Sebastians ausdrücklichen Wunsch hierher verschoben:
+               "Das 'Werkzeuge' hinter 'Arbeitsgang-Namen' verschieben im Menü" - reine
+               Markup-Verschiebung (jetzt letztes Untermenü vor dem Trennstrich zu "Einstellungen
+               importieren"), IDs und komplette dahinterliegende Logik unverändert. Zusätzlich
+               Release 201: Der erste Eintrag "Werkzeug-DXF einlesen" (#btnToolDxfImport) wurde auf
+               Sebastians Wunsch in "Werkzeugprofil bearbeiten" (EN "Edit tool profile") umbenannt -
+               reine Beschriftungsänderung, ID/Dialog/Logik unverändert; siehe dazu auch den neuen,
+               gleichwertigen Symbolleisten-Knopf #btnEditToolProfileToolbarIcon direkt neben
+               "+Werkzeuge (T)". -->
+          <div class="menu-submenu" id="submenuToolsTop">
+            <button class="menu-item submenu-trigger" id="submenuToolsTopTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
+            <div class="submenu-dropdown" id="submenuToolsTopDropdown" hidden>
+              <button class="menu-item" id="btnToolDxfImport" type="button" title="Gespeicherte Werkzeugprofile verwalten: DXF-Datei eines echten Schneidwerkzeugs einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-/Radius-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur einfachen Zylinderdarstellung zurückzukehren)" data-i18n-en="Edit tool profile" data-i18n-en-title="Manage saved tool profiles: read in a DXF file of a real cutting tool, automatically convert it into a revolve profile and use it for the 3D display (with length/radius reference point, scale factor, and the option to revert to the plain cylinder display at any time)">Werkzeugprofil bearbeiten</button>
+              <div class="menu-submenu" id="submenuToolAppearance">
+                <button class="menu-item submenu-trigger" id="submenuToolAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tool display &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeugdarstellung <span class="submenu-arrow">▸</span></button>
+                <div class="submenu-dropdown" id="submenuToolAppearanceDropdown" hidden>
+                  <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
+                  <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
+                  <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Trennstrich vor "Einstellungen importieren" (Release 167, Sebastian, Punkt 4: "Vor
@@ -3144,6 +3216,15 @@
            "Werkzeug" (btnToggleTool), dann "+Werkzeuge (T)" (btnInsertToolData); ab dieser Runde
            genau umgekehrt, plus der neue dritte Knopf "Spannfutter" dahinter. -->
       <button class="toolbar-btn" id="btnInsertToolData" type="button" disabled title="Werkzeugdaten (Radius/Länge/T-Länge/Werkzeugtyp) als Kommentar unter dem Arbeitsgangkommentar einfügen - nur verfügbar, wenn ein einzelner Arbeitsgang als 3D-Ansicht ausgewählt ist" data-i18n-en="+Tools (T)" data-i18n-en-title="Insert tool data (radius/length/tool length/tool type) as a comment below the processing step comment - only available when a single processing step is selected as the 3D view">+Werkzeuge (T)</button>
+      <!-- Release 201 (Sebastian wörtlich: "Rechts neben dem '+Werkzeuge (T)' die 'Werkzeugprofil
+           bearbeiten'-Funktion einfügen. Das besteht aus einem Werkzeug-Editier-Icon mit Werkzeug
+           als Text neben dem Editiersymbol") - zweiter, gleichwertiger Auslöser für denselben
+           Dialog wie der (ebenfalls in dieser Runde umbenannte, siehe Menü "Werkzeuge") Menüpunkt
+           "Werkzeugprofil bearbeiten" (vormals "Werkzeug-DXF einlesen"); selbes "✎"-Editiersymbol-
+           Muster wie bei #btnEditProgramToolbarIcon ("✎ CNC"), hier mit dem Text "Werkzeug" -
+           bewusst IMMER aktiv (kein disabled-Zustand), da das Bearbeiten gespeicherter
+           Werkzeugprofile unabhängig von einem geladenen Programm oder einer AG-Auswahl ist. -->
+      <button class="toolbar-btn" id="btnEditToolProfileToolbarIcon" type="button" title="Werkzeugprofil bearbeiten (dieselbe Aktion wie 'Einstellungen' → 'Werkzeuge' → 'Werkzeugprofil bearbeiten')" data-i18n-en-title="Edit tool profile (same action as 'Settings' → 'Tools' → 'Edit tool profile')">✎ <span data-i18n-en="Tool">Werkzeug</span></button>
       <button class="toolbar-btn tool-toggle-btn" id="btnToggleTool" type="button" title="Werkzeug (Zylinder aus Radius/Länge des Programms) in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the tool (cylinder from the program's radius/length) in the 3D view"><span class="eye-glyph">👁</span> <span data-i18n-en="Tools">Werkzeug</span></button>
       <!-- "Spannfutter" (74. Runde, NEU) - blendet den HSK63-Werkzeughalter (samt Sägeblatt-
            Adapterstück, siehe 9.7b) unabhängig vom Werkzeug selbst ein/aus, dieselbe
@@ -3645,7 +3726,7 @@
 <div class="paste-panel" id="toolDataPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Insert tool data">Werkzeugdaten einfügen</h3>
-    <p class="panel-hint" data-i18n-en-html="Inserts &lt;span class=&quot;k&quot;&gt;; RADIUS ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; LENGTH ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; TOOLMODE ..&lt;/span&gt; and &lt;span class=&quot;k&quot;&gt;; TOOLTYPE ..&lt;/span&gt; as comment lines directly below the processing-step comment of the currently active processing step into the program text (comma is accepted as the decimal separator for radius/length). If a tool data comment inserted by this button already exists there, it is updated with the new values instead of being duplicated.">Fügt <span class="k">; RADIUS ..</span>, <span class="k">; LENGTH ..</span>, <span class="k">; TOOLMODE ..</span> und <span class="k">; TOOLTYPE ..</span> als Kommentarzeilen direkt unter dem Arbeitsgangkommentar des aktuell aktiven Arbeitsgangs in den Programmtext ein (Komma wird bei Radius/Länge als Dezimaltrennzeichen akzeptiert). Steht dort bereits ein per diesem Knopf eingefügter Werkzeugdaten-Kommentar, wird er mit den neuen Werten aktualisiert statt dupliziert.</p>
+    <p class="panel-hint" data-i18n-en-html="Inserts &lt;span class=&quot;k&quot;&gt;; RADIUS ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; LENGTH ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; TOOLMODE ..&lt;/span&gt;, &lt;span class=&quot;k&quot;&gt;; TOOLTYPE ..&lt;/span&gt; and &lt;span class=&quot;k&quot;&gt;; TOOLPROFILE ..&lt;/span&gt; as comment lines directly below the processing-step comment of the currently active processing step into the program text (comma is accepted as the decimal separator for radius/length). If a tool data comment inserted by this button already exists there, it is updated with the new values instead of being duplicated. The tool profile only changes the 3D shape, never the radius/length values actually used for calculations.">Fügt <span class="k">; RADIUS ..</span>, <span class="k">; LENGTH ..</span>, <span class="k">; TOOLMODE ..</span>, <span class="k">; TOOLTYPE ..</span> und <span class="k">; TOOLPROFILE ..</span> als Kommentarzeilen direkt unter dem Arbeitsgangkommentar des aktuell aktiven Arbeitsgangs in den Programmtext ein (Komma wird bei Radius/Länge als Dezimaltrennzeichen akzeptiert). Steht dort bereits ein per diesem Knopf eingefügter Werkzeugdaten-Kommentar, wird er mit den neuen Werten aktualisiert statt dupliziert. Das Werkzeugprofil ändert dabei nur die 3D-Form, nie die tatsächlich für Berechnungen verwendeten Radius-/Längenwerte.</p>
     <!-- Werkzeugtyp jetzt DIREKT unter der Überschrift (61. Runde, Sebastian: "Die Auswahl für den
          Werkzeugtypen soll unter 'Werkzeugdate einfügen' stehen") - vorher stand er weiter unten,
          zusammen mit T-Längen, in der zweiten Zeile. Zusätzlich (Punkt 3): ein "change"-Listener
@@ -3688,6 +3769,30 @@
         <select id="toolModeSelect" class="filename-input" title="Bestimmt, ob der HSK63-Halter für dieses Werkzeug angezeigt wird - dieselbe Einstellung wie 'Spannzange ausblenden/einblenden' in der Werkzeugleiste" data-i18n-en-title="Determines whether the HSK63 holder is shown for this tool - the same setting as 'Hide/show collet' in the toolbar">
           <option value="eingespannt" data-i18n-en="Clamped length">Eingespannte Länge</option>
           <option value="ohnehsk63" data-i18n-en="Without HSK63 sample">Ohne HSK63-Sample</option>
+        </select>
+      </label>
+    </div>
+    <!-- "Werkzeugprofil" (NEU, Release 200, siehe Konzept_DXF_Werkzeugdarstellung.md sowie
+         Datenmodell toolDxfProfiles/saveToolDxfProfile() weiter oben in app.js). Auswahl PRO
+         ARBEITSGANG (bestätigte Antwort auf die entsprechende Klärungsfrage, exakt wie
+         Radius/Länge oben, NICHT global) - schreibt einen fünften Marker ("; TOOLPROFILE ..",
+         Werkzeugprofil-id oder "NONE") direkt hinter RADIUS/LENGTH/TOOLMODE/TOOLTYPE, siehe
+         insertToolDataComment()/TOOL_PROFILE_RE in parser.js. "Kein Profil (Zylinder)" ist
+         bewusst die erste, voreingestellte Option - exakt die von Sebastian verlangte
+         Ausblend-Möglichkeit ("Immer natürlich mit der Möglichkeit, falls es nicht so wie
+         erhofft läuft, das auszublenden") auf Ebene eines einzelnen Arbeitsgangs; der global
+         wirkende zweite Fallback-Schalter sitzt zusätzlich in der "Fräser"-Darstellung (siehe
+         dortigen Kommentar). WICHTIG: Der hier gewählte Wert beeinflusst AUSSCHLIESSLICH die
+         3D-Darstellung (Werkzeugkörper-Geometrie) - die tatsächlich für G41/G42 usw.
+         verwendeten Radius/Länge-ZAHLENWERTE bleiben unverändert die Felder oben bzw. der
+         Programmtext (bestätigte Antwort auf die Vorrang-Klärungsfrage). Die Optionsliste
+         selbst wird NICHT statisch hier im Markup gepflegt, sondern bei jedem Öffnen des
+         Dialogs sowie nach jedem Speichern/Löschen eines Profils per
+         refreshToolProfileDropdownOptions() in app.js aus toolDxfProfiles neu aufgebaut. -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Tool profile (3D shape):">Werkzeugprofil (3D-Form):</span>
+        <select id="toolProfileSelect" class="filename-input" title="Ordnet diesem Arbeitsgang ein per 'Werkzeug-DXF einlesen' gespeichertes Rotationsprofil für die 3D-Darstellung zu - 'Kein Profil' zeigt wie bisher den einfachen Zylinder." data-i18n-en-title="Assigns this processing step a revolve profile (saved via 'Read tool DXF') for the 3D display - 'No profile' shows the plain cylinder as before.">
+          <option value="" data-i18n-en="No profile (cylinder)">Kein Profil (Zylinder)</option>
         </select>
       </label>
     </div>
@@ -4619,9 +4724,123 @@
         <span class="slider-pct-label">100%</span>
       </div>
     </div>
+    <!-- "Werkzeugprofil (DXF-Form)" - globaler Fallback-Schalter (NEU, Release 200, Sebastian,
+         wörtlich: "Immer natürlich mit der Möglichkeit, falls es nicht so wie erhofft läuft,
+         das auszublenden"), siehe useToolProfileShapes/setUseToolProfileShapes() sowie
+         buildToolProfileForRender()/drawTool() in app.js. Bewusst NICHT Teil der generischen
+         TOOL_APPEARANCE_KINDS-Dreifachverdrahtung (gibt es nur beim Fräser, nicht bei Säge/
+         Spannfutter) - eigene, separate addEventListener-Aufrufe auf denselben Knopf-IDs
+         (#btnToolAppearanceCutter/#btnToolAppearanceCutterApply), exakt nach demselben Muster
+         wie schon die "Spannfutter einblenden/ausblenden"-Radiogruppe weiter oben
+         (#toolAppearanceColletVisibleChoice). Wirkt GLOBAL für alle Arbeitsgänge gleichzeitig,
+         zusätzlich zur (feingranularen) Pro-Arbeitsgang-Auswahl im "+Werkzeuge (T)"-Dialog
+         (#toolProfileSelect) - zwei unabhängige Ebenen, siehe dortigen Kommentar. -->
+    <div class="scale-group" id="toolAppearanceCutterProfileRow">
+      <div class="scale-group-title" data-i18n-en="Tool profile (DXF shape)">Werkzeugprofil (DXF-Form)</div>
+      <div class="scale-choice" id="toolAppearanceCutterProfileChoice">
+        <label class="scale-option"><input type="radio" name="toolAppearanceCutterProfile" value="1"> <span data-i18n-en="Use when assigned to a processing step">Verwenden, wenn einem Arbeitsgang zugewiesen</span></label>
+        <label class="scale-option"><input type="radio" name="toolAppearanceCutterProfile" value="0"> <span data-i18n-en="Always ignore (cylinder only)">Immer ignorieren (nur Zylinder)</span></label>
+      </div>
+      <p class="panel-hint" data-i18n-en="Global emergency switch: if a tool profile assigned to a processing step (via &quot;Read tool DXF&quot;) does not look right, this immediately falls back to the plain cylinder for ALL processing steps at once, regardless of individual assignments.">Globaler Notschalter: Sollte ein per Arbeitsgang zugewiesenes Werkzeugprofil (über "Werkzeug-DXF einlesen") nicht wie erhofft aussehen, fällt hiermit sofort für ALLE Arbeitsgänge gleichzeitig auf den einfachen Zylinder zurück, unabhängig von den einzelnen Zuweisungen.</p>
+    </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnToolAppearanceCutterCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnToolAppearanceCutterApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Werkzeug-DXF einlesen" (NEU, Release 200, siehe Menü-Kommentar bei #submenuToolsTop sowie
+     Konzept_DXF_Werkzeugdarstellung.md für die vollständige Herleitung). Liest eine DXF-Datei
+     eines echten, achssymmetrischen Schneidwerkzeugs ein (Sebastian: "Ich möchte in der
+     Simulation eine Werkzeugdatei öffnen (DXF) und dieses Werkzeug soll dargestellt werden"),
+     wandelt sie über parser.js: buildToolProfileFromDxfText() automatisch in ein
+     Rotationsprofil um und zeigt es in der 2D-Vorschau (#toolDxfImportCanvas) als Silhouette
+     an - mit zwei UNABHÄNGIGEN, sowohl per Maus (direkt im Canvas) als auch per Zahlenfeld
+     verschiebbaren Referenzpunkten: "Längen-Referenz" (markiert die simulierte Werkzeugspitze,
+     Sebastian: "Die Spitze des ausgegebenen Werkzeugs müsste auch verschoben werden können,
+     so dass der Fräser an der richtigen Stelle fräst") und unabhängig davon "Radius-Referenz"
+     (Sebastian: "Der Radius kann ggf. auch angepasst werden, falls das ein anderes
+     Profilwerkzeug wäre und es einen anderen relevanten Punkt gibt, der entscheidend ist").
+     Mehrere benannte Profile können parallel gespeichert/geladen/gelöscht werden (linke Liste,
+     siehe #toolDxfProfileSelect), Grundlage ist das Datenmodell aus saveToolDxfProfile() etc.
+     weiter oben in app.js. Der Skalierungsfaktor (#toolDxfImportScaleInput, Sebastian:
+     "bitte beim Werkzeugeinstellungsfenster eine DXF-Skalierung über einen Faktor einbauen,
+     falls jemand DXF-Daten in cm exportiert hat, stehen da viel zu kleine Angaben") wird VOR
+     jeder Neuberechnung angewendet (siehe reparseToolDxfImport() in app.js).
+     WICHTIG (Sebastian, wörtlich: "Immer natürlich mit der Möglichkeit, falls es nicht so wie
+     erhofft läuft, das auszublenden"): Das hier gespeicherte Profil liefert ausschließlich die
+     3D-Darstellung - ob ein Arbeitsgang es überhaupt verwendet (statt des unveränderten
+     einfachen Zylinders), wird separat pro Arbeitsgang im "+Werkzeuge (T)"-Dialog gewählt
+     (sec.toolProfileId) UND kann jederzeit über den globalen Fallback-Schalter in der
+     "Fräser"-Darstellung (#toolAppearanceCutterPanel oben, siehe dortige Erweiterung) komplett
+     deaktiviert werden - ein fehlgeschlagenes/unerwartetes DXF-Profil kann die Simulation
+     dadurch nie dauerhaft "zerstören". -->
+<div class="paste-panel" id="toolDxfImportPanel">
+  <div class="paste-card wide">
+    <h3 data-i18n-en="Read tool DXF">Werkzeug-DXF einlesen</h3>
+    <p class="panel-hint" data-i18n-en="Reads a DXF file of a real, axially symmetric cutting tool, automatically converts its outline into a revolve profile and shows it as a 3D tool body - can be hidden again at any time via the fallback switch in the cutter display settings or by simply not selecting a profile for a processing step.">Liest eine DXF-Datei eines echten, achssymmetrischen Schneidwerkzeugs ein, wandelt die Kontur automatisch in ein Rotationsprofil um und zeigt sie als 3D-Werkzeugkörper an - jederzeit über den Fallback-Schalter in der Fräser-Darstellung oder durch einfaches Nicht-Auswählen bei einem Arbeitsgang wieder ausblendbar.</p>
+
+    <div class="tool-dxf-import-body">
+      <div class="tool-dxf-import-controls">
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="Saved tool profiles">Gespeicherte Werkzeugprofile</div>
+          <select id="toolDxfProfileSelect" size="5" class="tool-dxf-profile-select"></select>
+          <div class="tool-dxf-profile-list-actions">
+            <button class="btn ghost small" id="btnToolDxfProfileNew" type="button" data-i18n-en="New">Neu</button>
+            <button class="btn ghost small" id="btnToolDxfProfileDelete" type="button" data-i18n-en="Delete">Löschen</button>
+          </div>
+        </div>
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="DXF file">DXF-Datei</div>
+          <input type="file" id="toolDxfImportFileInput" hidden accept=".dxf">
+          <button class="btn ghost" id="btnToolDxfImportChooseFile" type="button" data-i18n-en="Choose file…">Datei auswählen…</button>
+          <span class="tool-dxf-import-filename" id="toolDxfImportFileName" data-i18n-en="No file selected">Keine Datei ausgewählt</span>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Name">Name</span>
+          <input type="text" id="toolDxfImportNameInput" class="filename-input" maxlength="60" placeholder="z. B. OmegaFräser80x45">
+        </div>
+        <div class="color-field-row" title="Falls die DXF-Datei in cm statt mm exportiert wurde (zu kleine Werte), hier z. B. 10 eintragen." data-i18n-en-title="If the DXF file was exported in cm instead of mm (values far too small), enter e.g. 10 here.">
+          <span data-i18n-en="Scale factor">Skalierungsfaktor</span>
+          <input type="text" id="toolDxfImportScaleInput" class="filename-input" value="1" inputmode="decimal">
+        </div>
+        <p class="panel-hint" id="toolDxfImportScaleWarning" data-i18n-en="Please enter a value greater than 0." hidden>Bitte einen Wert größer 0 eingeben.</p>
+        <div class="scale-group" id="toolDxfImportAlternateRow" hidden>
+          <label class="scale-option"><input type="checkbox" id="toolDxfImportUseAlternateCheckbox"> <span data-i18n-en="Use other side">Andere Seite verwenden</span></label>
+          <p class="panel-hint" data-i18n-en="The DXF outline forms a closed loop; choose between the two possible profile sides here.">Die DXF-Kontur bildet eine geschlossene Schleife - hier zwischen den beiden möglichen Profilseiten wählen.</p>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Length reference point">Längen-Referenzpunkt</span>
+          <span class="color-field-inputs"><input type="text" id="toolDxfImportLengthRefInput" class="filename-input" inputmode="decimal"> mm</span>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Radius reference point">Radius-Referenzpunkt</span>
+          <span class="color-field-inputs"><input type="text" id="toolDxfImportRadiusRefInput" class="filename-input" inputmode="decimal"> mm</span>
+        </div>
+        <p class="panel-hint" id="toolDxfImportErrorHint" hidden></p>
+      </div>
+      <div class="tool-dxf-import-preview">
+        <canvas id="toolDxfImportCanvas" width="260" height="420"></canvas>
+        <p class="panel-hint" data-i18n-en="Orange line = length reference (tool tip), blue line = radius reference. Both markers can be dragged directly in the preview or entered precisely via the number fields on the left.">Orange Linie = Längen-Referenz (Werkzeugspitze), blaue Linie = Radius-Referenz. Beide Marker lassen sich direkt in der Vorschau verschieben oder über die Zahlenfelder links eingeben.</p>
+      </div>
+      <!-- Hilfebild (Release 202, Sebastian: "In der 'Werkzeugprofil bearbeiten'-Funktion ein
+           Hilfebild einbauen, was rechts neben der eingelesenen DXF-Datei ist. Das Vorschaubild
+           ist das angehangene Bild.") - erklärt unabhängig von der gerade gewählten Datei, welche
+           DXF-Konturen grundsätzlich eingelesen werden können: entweder das halbe Werkzeugprofil
+           (geschlossen über eine gerade Achs-Schlusslinie, linkes Teilbild) oder die komplette,
+           beidseitig gezeichnete Kontur inklusive Schaft (rechtes Teilbild) - siehe 9.7.7 für die
+           zugehörige Drehachsen-Erkennung (detectRotationAxisX), die beide Zeichenstile
+           gleichermassen unterstützt. Bild als Base64-PNG eingebettet, keine externe Datei. -->
+      <div class="tool-dxf-import-help">
+        <p class="tool-dxf-import-help-heading" data-i18n-en="The DXF file to be imported must have a closed contour. It can be either half of the tool profile or the entire profile, including the shank.">Die einzulesene DXF muss eine geschlossene Kontur haben. Es kann entweder das halbe Werkzeugprofil sein oder das gesamte inkl. Schaft.</p>
+        <img class="tool-dxf-import-help-img" alt="Beispiel: halbes Werkzeugprofil (links) und komplettes Profil inklusive Schaft (rechts), beides jeweils als geschlossene Kontur" data-i18n-en-alt="Example: half tool profile (left) and complete profile including shank (right), both as a closed contour" src="data:image/png;base64,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">
+      </div>
+    </div>
+
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnToolDxfImportCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnToolDxfImportSave" type="button" data-i18n-en="Save">Speichern</button>
     </div>
   </div>
 </div>
@@ -5058,6 +5277,19 @@
   //   FRAESER (unverändertes bisheriges Verhalten).
   const TOOL_MODE_RE = /TOOLMODE\s+(EINGESPANNT|AUSGESPANNT|OHNEHSK63)/i;
   const TOOL_TYPE_RE = /TOOLTYPE\s+(SAEGE|FRAESER)/i;
+  // "TOOLPROFILE" (NEU, Release 200, siehe Konzept_DXF_Werkzeugdarstellung.md) - fünfter Marker
+  // nach demselben "; SCHLÜSSELWORT WERT"-Prinzip wie TOOLMODE/TOOLTYPE oben, ebenfalls rein
+  // manuell über den "+Werkzeuge (T)"-Dialog gesetzt (siehe dortiges neues
+  // #toolProfileSelect-Dropdown sowie insertToolDataComment() in app.js). WERT ist entweder die
+  // id eines per "Werkzeug-DXF einlesen" gespeicherten Profils (toolDxfProfiles, siehe app.js -
+  // ids sind reine ASCII-Tokens ohne Leerzeichen, z. B. "tdp_abc123_xy", daher reicht ein
+  // einfaches \S+ statt einer Worte-Alternative wie bei TOOLMODE/TOOLTYPE) oder das feste
+  // Schlüsselwort NONE ("Kein Profil (Zylinder)" im Dropdown) - beide Fälle werden unten
+  // identisch behandelt (toolProfileId bleibt null), NONE wird aber bewusst trotzdem explizit
+  // geschrieben (statt den Marker einfach wegzulassen), damit erkennbar bleibt, dass der Dialog
+  // für diesen Arbeitsgang bereits bestätigt wurde - exakt dieselbe Begründung wie bei
+  // TOOLMODE/TOOLTYPE, die ebenfalls immer geschrieben werden, nie nur bei einem "aktiven" Wert.
+  const TOOL_PROFILE_RE = /TOOLPROFILE\s+(\S+)/i;
 
   // Durchsucht die übergebenen Zeilen (typischerweise ein einzelner Arbeitsgang-Abschnitt) nach
   // Radius/Länge und liefert {radius, length, isBlade, toolMode, toolType} (radius/length jeweils
@@ -5089,7 +5321,7 @@
   // Testfall), bleibt der BLADE-Wert als Rückfallebene erhalten, statt ersatzlos auf `null` zu
   // fallen.
   function extractToolData(lines) {
-    let radius = null, length = null, blade = null, toolMode = null, toolType = null;
+    let radius = null, length = null, blade = null, toolMode = null, toolType = null, toolProfileId = null;
     for (let i = 0; i < lines.length && toolType === null; i++) {
       const m = TOOL_TYPE_RE.exec(lines[i]);
       if (m) toolType = m[1].toLowerCase();
@@ -5120,11 +5352,20 @@
       const m = TOOL_MODE_RE.exec(lines[i]);
       if (m) toolMode = m[1].toLowerCase();
     }
+    // "TOOLPROFILE" (NEU, Release 200, siehe TOOL_PROFILE_RE oben) - unabhängig von den übrigen
+    // Markern über alle Zeilen gesucht, erster Treffer gewinnt (exakt dasselbe Muster wie
+    // TOOLMODE/TOOLTYPE oben). Der feste Wert "NONE" wird genauso wie ein fehlender Marker als
+    // "kein Profil" (null) zurückgegeben - app.js/drawTool() unterscheiden diese beiden Fälle
+    // bewusst nicht (siehe Kommentar oben bei TOOL_PROFILE_RE).
+    for (let i = 0; i < lines.length && toolProfileId === null; i++) {
+      const m = TOOL_PROFILE_RE.exec(lines[i]);
+      if (m && m[1].toUpperCase() !== 'NONE') toolProfileId = m[1];
+    }
     // Finaler Zahlenwert: eine tatsächlich gefundene LENGTH-Zeile gewinnt immer (egal ob generische
     // LENGTH-Notation oder die vom Dialog geschriebene, aktuell gültige Länge/Sägeblattstärke); nur
     // wenn gar keine LENGTH-Zeile gefunden wurde, wird auf den BLADE-Wert zurückgegriffen (reine
     // BLADE-Notation ohne LENGTH-Zeile, mit oder ohne TOOLTYPE-Markierung).
-    return { radius, length: length !== null ? length : blade, isBlade, toolMode, toolType };
+    return { radius, length: length !== null ? length : blade, isBlade, toolMode, toolType, toolProfileId };
   }
 
   // Teilt einen durchgehenden Zeilenblock an jeder erkannten Nullpunktverschiebung (siehe
@@ -6858,7 +7099,301 @@
     return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors };
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets };
+  // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
+  // Werkzeug soll dargestellt werden ... Die Werkzeugdaten sind immer achssymmetrisch", siehe
+  // Konzept_DXF_Werkzeugdarstellung.md): baut aus einer ungeordneten Menge einzelner, bereits von
+  // parseDXF() gelieferter Strichzüge (LINE als einfaches 2-Punkt-Segment, ARC/CIRCLE bereits über
+  // tessellateCircularArcDeg() in eine geordnete Punktfolge zerlegt) EINE durchgehende, geordnete
+  // {r,dist}[]-Profilkette, per Endpunkt-Matching (CHAIN_MATCH_TOLERANCE). Exakt dieselbe Grund-
+  // konvention wie beim seinerzeit von Hand abgeleiteten TOOL_HOLDER_HSK63_PROFILE_RAW weiter unten in
+  // app.js (DXF-X = Radius, DXF-Y = Achsdistanz) - hier nur automatisiert statt von Hand nachgezeichnet.
+  // Wirft bei uneindeutiger/unsauberer Geometrie (keine zwei echten freien Enden, Verzweigung an einem
+  // Punkt, mehrere getrennte Teilketten) einen Fehler mit klarer, auf Deutsch verständlicher Meldung,
+  // statt still ein falsches/unvollständiges Profil zu liefern - der aufrufende Import-Dialog in app.js
+  // zeigt diese Meldung dem Benutzer direkt an.
+  const CHAIN_MATCH_TOLERANCE = 0.01; // mm
+
+  function buildProfileChainFromStrokes(strokes) {
+    // Nur offene (nicht geschlossene) Strichzüge mit mindestens 2 Punkten sind als Kettenglied
+    // geeignet - ein "closed"-Strichzug (z.B. ein voller CIRCLE) kann prinzipbedingt kein Teil einer
+    // offenen Kette sein, die am eigentlichen Werkzeugkörper-Rand entlangläuft.
+    const segs = strokes
+      .filter(s => !s.closed && s.points && s.points.length >= 2)
+      .map(s => ({ pts: s.points.map(p => ({ x: p.x, y: p.y })), used: false }));
+    if (segs.length === 0) {
+      throw new Error('Keine verwendbaren Linien-/Bogen-Elemente auf dem gewählten Layer gefunden.');
+    }
+
+    function samePoint(a, b) {
+      return Math.abs(a.x - b.x) <= CHAIN_MATCH_TOLERANCE && Math.abs(a.y - b.y) <= CHAIN_MATCH_TOLERANCE;
+    }
+
+    // Für jeden Segment-Endpunkt zählen, mit wie vielen ANDEREN Segment-Endpunkten er übereinstimmt -
+    // ein "freies Ende" hat genau 0 Partner, ein normaler Ketten-Übergang genau 1, alles darüber (2+)
+    // bedeutet eine Verzweigung (mehr als zwei Linien/Bögen treffen sich im selben Punkt).
+    function countMatches(point, excludeIdx) {
+      let count = 0;
+      segs.forEach((s, i) => {
+        if (i === excludeIdx) return;
+        if (samePoint(point, s.pts[0]) || samePoint(point, s.pts[s.pts.length - 1])) count++;
+      });
+      return count;
+    }
+
+    let startIdx = -1, startAtFirst = true;
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i];
+      const cFirst = countMatches(s.pts[0], i);
+      const cLast = countMatches(s.pts[s.pts.length - 1], i);
+      if (cFirst > 1 || cLast > 1) {
+        throw new Error('Die Profil-Geometrie verzweigt sich (mehr als zwei Linien/Bögen treffen sich an einem Punkt) - bitte die DXF-Datei bereinigen.');
+      }
+      if (cFirst === 0) { startIdx = i; startAtFirst = true; break; }
+      if (cLast === 0) { startIdx = i; startAtFirst = false; break; }
+    }
+
+    // Zieht, beginnend bei segs[fromIdx] (in Richtung fromAtFirst), eine durchgehende Kette, solange
+    // sich jeweils ein noch ungenutztes Segment am letzten Punkt anschließt. "consumed" zählt, wie
+    // viele der insgesamt vorhandenen Segmente dabei tatsächlich verbraucht wurden - bleiben danach
+    // welche übrig, gibt es mehrere getrennte Teilketten/-schleifen statt einer einzigen.
+    function walkChain(fromIdx, fromAtFirst) {
+      const chain = [];
+      const first = segs[fromIdx];
+      first.used = true;
+      chain.push(...(fromAtFirst ? first.pts : first.pts.slice().reverse()));
+      let lastPoint = chain[chain.length - 1];
+      let consumed = 1;
+      while (true) {
+        let nextIdx = -1, nextPts = null;
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i];
+          if (s.used) continue;
+          if (samePoint(lastPoint, s.pts[0])) { nextIdx = i; nextPts = s.pts; break; }
+          if (samePoint(lastPoint, s.pts[s.pts.length - 1])) { nextIdx = i; nextPts = s.pts.slice().reverse(); break; }
+        }
+        if (nextIdx === -1) break;
+        segs[nextIdx].used = true;
+        // Erster Punkt von nextPts ist identisch mit lastPoint (per Konstruktion der Suche oben) -
+        // nicht doppelt anhängen.
+        chain.push(...nextPts.slice(1));
+        lastPoint = chain[chain.length - 1];
+        consumed++;
+      }
+      return { chain, consumed };
+    }
+
+    // In das {r,dist}-Format übersetzen und unmittelbar aufeinanderfolgende, (nahezu) identische
+    // Punkte entfernen (z.B. doppelt erfasste Kettenübergänge). `axisX` ist die X-Koordinate der
+    // tatsächlichen Drehachse des Werkzeugs (siehe detectRotationAxisX() weiter unten) - für die
+    // offene Kette (Normalfall, z.B. das von Hand abgeleitete HSK63-Aufnahmeprofil) ist das immer
+    // 0 (diese Profile werden bereits relativ zur Achse gezeichnet).
+    //
+    // Bugfix (Release 200, gefunden beim ersten echten 3D-Render-Test mit Sebastians
+    // OmegaFraeser80x45.DXF): "r" ist eine REINE Betrags-/Radiusgröße und darf nie negativ sein
+    // - eine reale, in einem CAD-Programm gezeichnete DXF-Datei hat aber KEINE festgelegte
+    // Vorzeichen-Konvention für die X-Koordinate (je nachdem, auf welcher Seite der
+    // Referenzachse/"COMPASS" das Profil gezeichnet wurde, sind ALLE X-Werte durchgehend
+    // negativ - exakt der Fall bei Sebastians Beispieldatei, deren gesamtes Profil im negativen
+    // X-Bereich liegt). Ohne Math.abs() hier würde drawToolHolder() (siehe app.js) wegen seiner
+    // "pt.r > 1e-6"-Prüfungen (Ring-/Stirnflächen-Sichtbarkeit) fälschlich JEDEN Profilpunkt als
+    // "Radius ~0" behandeln und obendrein durch die bei negativem r um 180° phasenverschobene
+    // Kreisberechnung (cos(theta)*r) ein verdrehtes, sich selbst überkreuzendes Drahtgitter
+    // erzeugen - die seinerzeit von Hand abgeleitete TOOL_HOLDER_HSK63_PROFILE_RAW blieb von
+    // diesem Fehler nur deshalb verschont, weil ihre Werte zufällig bereits alle positiv waren.
+    function toProfile(chainPts, axisX) {
+      const ax = axisX || 0;
+      const profile = [];
+      chainPts.forEach(p => {
+        const r = Math.abs(p.x - ax);
+        const last = profile[profile.length - 1];
+        if (last && Math.abs(last.r - r) <= CHAIN_MATCH_TOLERANCE && Math.abs(last.dist - p.y) <= CHAIN_MATCH_TOLERANCE) return;
+        profile.push({ r: r, dist: p.y });
+      });
+      return profile;
+    }
+
+    if (startIdx !== -1) {
+      // Normalfall: eine offene Kette mit zwei echten freien Enden (wie beim seinerzeit von Hand
+      // abgeleiteten HSK63-Aufnahmeprofil) - direkte Übernahme, keine Mehrdeutigkeit.
+      const { chain, consumed } = walkChain(startIdx, startAtFirst);
+      if (consumed !== segs.length) {
+        throw new Error('Die Profil-Geometrie besteht aus mehreren getrennten Teilketten statt einer durchgehenden Kontur - bitte die DXF-Datei prüfen.');
+      }
+      return { profile: toProfile(chain, 0), alternateProfile: null, wasClosedLoop: false };
+    }
+
+    // Kein freies Ende gefunden, aber auch keine Verzweigung erkannt (sonst wäre oben bereits ein
+    // Fehler geworfen worden) - das kann nur bedeuten, dass die Geometrie aus einer oder mehreren
+    // geschlossenen Schleifen besteht. In der Praxis (siehe das von Sebastian mitgeschickte
+    // OmegaFraeser80x45.DXF-Beispiel) üblich bei Werkzeugprofil-DXFs, die als vollständig
+    // geschlossene Halbschnitt-Kontur gezeichnet sind: eine Seite ist die eigentliche, meist
+    // deutlich komplexere Außenkontur/Schneide (viele Zwischenpunkte durch Bögen), die andere,
+    // kürzere Seite eine einfache Rückseiten-/Schaft-Referenzlinie samt kurzer Abschluss-Stücke oben
+    // und unten.
+    const { chain: loopChain, consumed } = walkChain(0, true);
+    if (consumed !== segs.length) {
+      throw new Error('Die Profil-Geometrie besteht aus mehreren getrennten geschlossenen Schleifen statt einer einzigen - bitte die DXF-Datei prüfen.');
+    }
+    if (!samePoint(loopChain[0], loopChain[loopChain.length - 1])) {
+      throw new Error('Die Profil-Geometrie ist weder eine offene Kette mit zwei freien Enden noch eine einzelne geschlossene Schleife - bitte die DXF-Datei prüfen.');
+    }
+    const core = loopChain.slice(0, loopChain.length - 1); // wiederholten Schlusspunkt nicht doppelt führen
+    const N = core.length;
+    let maxIdx = 0, minIdx = 0;
+    core.forEach((p, i) => { if (p.y > core[maxIdx].y) maxIdx = i; if (p.y < core[minIdx].y) minIdx = i; });
+    function pathBetween(iStart, iEnd) {
+      const path = [];
+      let i = iStart;
+      while (true) {
+        path.push(core[i]);
+        if (i === iEnd) break;
+        i = (i + 1) % N;
+      }
+      return path;
+    }
+    const pathA = pathBetween(minIdx, maxIdx);
+    const pathB = pathBetween(maxIdx, minIdx);
+    // Heuristik: Die tatsächliche, komplexe Außenkontur (meist mit Bögen, also vielen Zwischen-
+    // punkten) ist in der Praxis fast immer die Seite mit deutlich mehr Punkten als die einfache
+    // Rückseiten-/Schaft-Referenzlinie - diese wird automatisch als Hauptprofil vorgeschlagen, die
+    // jeweils andere Seite bleibt als "alternateProfile" verfügbar, falls die Vorschau zeigt, dass
+    // die Heuristik hier danebenlag (Import-Dialog: Knopf "Andere Seite verwenden" - siehe app.js).
+    const useAasMain = pathA.length >= pathB.length;
+    const mainChain = useAasMain ? pathA : pathB;
+    const altChain = useAasMain ? pathB : pathA;
+
+    // Release 200, zweiter Nachtrag (Sebastian, mit drei gegenübergestellten Bildern: "Irgendwas
+    // ist da immer noch nicht korrekt... Das scheint nicht richtig eingelesen zu werden" - danach
+    // zur Klärung zusätzlich die Datei "OmegaFraeser80x45komplett.DXF" mitgeschickt, in der der
+    // Fräser vollständig - beide Seiten real gezeichnet statt nur eine Hälfte - dargestellt ist,
+    // mit der Erklärung "Das, was dabei rauskommt, ist genau das negativ von dem was gebraucht
+    // wird"): Die bisherige Annahme, DXF-X=0 sei immer die Drehachse (daher schlicht
+    // "r = Math.abs(p.x)"), war FALSCH - ein in einem CAD-Programm gezeichnetes Werkzeugprofil
+    // liegt in aller Regel NICHT bei X=0, sondern irgendwo frei im Zeichenraum. Bei einer
+    // geschlossenen Schleife lässt sich die tatsächliche Drehachse aber aus der Geometrie selbst
+    // ableiten (detectRotationAxisX(), s.u.) - mit axisX=0 (altes Verhalten) ergab sich bei
+    // Sebastians Datei ein rechnerisch zwar in sich konsistentes, aber INHALTLICH VERTAUSCHTES
+    // Profil (Schaft > Fräskopf statt umgekehrt - "genau das Negativ"), weil als Achse fälschlich
+    // X=0 statt der tatsächlichen Achse bei X=-47,767 angenommen wurde. Mit korrektem axisX fügen
+    // sich mainProfile UND alternateProfile zu praktisch identischen Ergebnissen zusammen, ganz
+    // gleich ob die DXF-Datei nur die halbe Kontur (plus Achs-Schlusslinie) oder - wie
+    // "...komplett.DXF" - beide Seiten tatsächlich ausgezeichnet enthält; das bestätigt die
+    // Herleitung unabhängig vom jeweiligen Zeichenstil der Quelldatei.
+    const axisX = detectRotationAxisX(core, pathA, pathB);
+    return { profile: toProfile(mainChain, axisX), alternateProfile: toProfile(altChain, axisX), wasClosedLoop: true };
+  }
+
+  // Ermittelt die X-Koordinate der tatsächlichen Werkzeug-Drehachse innerhalb einer geschlossenen
+  // Profil-Schleife (siehe Kommentar am Aufruf oben) - zwei in der Praxis vorkommende Zeichenstile,
+  // unterschieden anhand des Längenverhältnisses der beiden Teilpfade (pathA/pathB):
+  //
+  // 1) "Halbschnitt + Achs-Schlusslinie" (der weit häufigere Fall, z.B. Sebastians ursprüngliche
+  //    OmegaFraeser80x45.DXF): nur eine Hälfte des Profils ist real gezeichnet, zum Schließen der
+  //    Schleife (für CAD-seitige Flächen-/Schraffurberechnung) läuft eine gerade Linie exakt ENTLANG
+  //    der Drehachse zurück - erkennbar als der deutlich kürzere/einfachere der beiden Teilpfade
+  //    (meist nur 2-4 Punkte). Deren Punkte liegen (von kurzen Eckstücken abgesehen) auf einer
+  //    einzigen, über einen großen "dist"-Bereich konstanten X-Koordinate - das ist die Achse.
+  //    Ermittelt über den längsten zusammenhängenden senkrechten Lauf (konstantes X über einen
+  //    "dist"-Bereich) innerhalb dieses kürzeren Pfads.
+  // 2) "Vollständig beidseitig gezeichnet" (z.B. Sebastians Ergänzung "...komplett.DXF", in der
+  //    "das, was innerhalb der Kontur liegt, der Fräskörper" ist): beide Seiten sind als echte,
+  //    spiegelsymmetrische Kontur gezeichnet, pathA und pathB daher von ÄHNLICHER Länge/Komplexität
+  //    - hier liegt die Achse in der Mitte zwischen dem kleinsten und größten X-Wert der gesamten
+  //    Schleife (Mittelpunkt der Bounding-Box), da beide Seiten exakt spiegelbildlich sind.
+  //
+  // Liefert 0 (bisheriges Verhalten als Rückfallebene), falls sich keine eindeutige Achse ermitteln
+  // lässt (z.B. eine Schleife ganz ohne erkennbaren geraden Lauf) - betrifft nur die Umrechnung
+  // X->Radius, niemals die Kettenbildung selbst.
+  function detectRotationAxisX(core, pathA, pathB) {
+    const AXIS_RUN_TOLERANCE = 1e-3;
+    const shorterLen = Math.min(pathA.length, pathB.length);
+    const longerLen = Math.max(pathA.length, pathB.length);
+    // Schwellwert 0,4: beide Seiten "vergleichbar komplex" (voll beidseitig gezeichnet) vs. eine
+    // Seite deutlich einfacher als die andere (Halbschnitt + simple Achs-Schlusslinie) - bei
+    // Sebastians Beispieldateien liegt das tatsächliche Verhältnis bei 3/35 (=0,086, Halbschnitt)
+    // bzw. 36/36 (=1,0, vollständig) - ein Schwellwert mittendrin ist für beide Fälle robust.
+    if (shorterLen >= longerLen * 0.4) {
+      const xs = core.map(p => p.x);
+      return (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
+    }
+    const altChain = (pathA.length <= pathB.length) ? pathA : pathB;
+    const runs = {};
+    for (let i = 0; i < altChain.length - 1; i++) {
+      const a = altChain[i], b = altChain[i + 1];
+      if (Math.abs(a.x - b.x) <= AXIS_RUN_TOLERANCE) {
+        const key = ((a.x + b.x) / 2).toFixed(4);
+        runs[key] = (runs[key] || 0) + Math.abs(b.y - a.y);
+      }
+    }
+    let bestKey = null, bestSpan = -1;
+    Object.keys(runs).forEach(k => { if (runs[k] > bestSpan) { bestSpan = runs[k]; bestKey = k; } });
+    return bestKey !== null ? parseFloat(bestKey) : 0;
+  }
+
+  // Release 200: eine komplette DXF-Datei (Rohtext) direkt in ein Werkzeug-Profil umwandeln - ruft
+  // parseDXF() auf und filtert auf den Layer "COMPASS" (dieselbe Konvention wie beim HSK63-
+  // Aufnahmeprofil), fällt aber auf ALLE Strichzüge zurück, falls dieser Layer in der Datei gar nicht
+  // vorkommt (z.B. eine DXF-Datei ohne eigene Layer-Einteilung) - damit ein Import nicht allein wegen
+  // eines abweichenden/fehlenden Layer-Namens ins Leere läuft. `opts.scale` (Sebastian: "bitte beim
+  // Werkzeugeinstellungsfenster eine DXF-Skalierung über einen Faktor einbauen, falls jemand
+  // DXF-Daten in cm exportiert hat") skaliert r UND dist gleichermaßen (z.B. 10 für cm->mm) - rein
+  // multiplikativ auf das fertige Profil angewendet, ändert nichts an der Ketten-Bildung selbst.
+  function buildToolProfileFromDxfText(text, opts) {
+    opts = opts || {};
+    const scale = (typeof opts.scale === 'number' && isFinite(opts.scale) && opts.scale > 0) ? opts.scale : 1;
+    const geo = parseDXF(text);
+    const onCompass = geo.strokes.filter(s => s.layer === 'COMPASS');
+    const strokesToUse = onCompass.length ? onCompass : geo.strokes;
+    const result = buildProfileChainFromStrokes(strokesToUse);
+    function applyScale(profile) {
+      if (!profile || scale === 1) return profile;
+      return profile.map(p => ({ r: p.r * scale, dist: p.dist * scale }));
+    }
+    return {
+      profile: applyScale(result.profile),
+      alternateProfile: applyScale(result.alternateProfile),
+      wasClosedLoop: result.wasClosedLoop,
+      usedLayer: onCompass.length ? 'COMPASS' : null
+    };
+  }
+
+  // Release 200, Nachtrag (Sebastian, nach Test mit seinem eigenen realen Werkzeug: "Die
+  // eingelesene Kontur ist genau anders herum. ... Das im Bild dunkel dargestellte ist der
+  // Fräser am Ende." - bestätigt auf Rückfrage: der komplexe, gestufte Profilteil ist die
+  // tatsächliche Schneide/Spitze, NICHT der gerade, gleichmäßig dicke Schaft): Die bisherige
+  // Vorbelegung von Längen-/Radius-Referenz auf schlicht den größten "dist"-Wert
+  // (buildToolProfileFromDxfText() selbst kennt dabei keine Richtung - "größer"/"kleiner" ist
+  // reiner Zufall der jeweiligen DXF-Zeichenrichtung) traf bei seinem realen Testwerkzeug den
+  // FALSCHEN Extrempunkt: Der gerade Schaft (Richtung Spannzange) endete an diesem Extrempunkt
+  // einfach dort, wo die DXF-Zeichnung selbst aufhörte (keine Stirnfläche, reiner
+  // Linien-Abbruch), während das tatsächliche Schneidenende (der gestufte Teil) an SEINEM
+  // Extrempunkt eine echte Stirnfläche/Schulter besitzt (zwei unterschiedliche Radien exakt am
+  // selben "dist"-Wert - z. B. ein plan abgedrehtes Ende). Diese Funktion erkennt genau dieses
+  // Muster und liefert den geometrisch plausibleren "dist"-Extremwert als bessere Default-
+  // Vorbelegung, statt blind den größten Wert zu wählen - wirkt sich NUR auf die anfängliche
+  // Vorbelegung der beiden Referenzmarker aus (Import-Dialog, app.js), niemals auf die
+  // Profilform selbst; eine bereits vom Benutzer gesetzte/verschobene Referenz bleibt davon
+  // selbstverständlich unberührt. Liefert `null` (= bisheriges Verhalten, größter Wert bleibt
+  // Standard), falls an KEINEM oder an BEIDEN Extrempunkten eine Stirnfläche erkennbar ist
+  // (uneindeutiger Fall, kein Rückschluss möglich).
+  function guessToolProfileTipDist(profile) {
+    if (!Array.isArray(profile) || profile.length < 2) return null;
+    const distVals = profile.map(p => p.dist);
+    const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+    if (distMax - distMin <= 1e-6) return null;
+    const TOL = 1e-6;
+    function hasFaceAt(target) {
+      const rsAtTarget = profile.filter(p => Math.abs(p.dist - target) <= TOL).map(p => p.r);
+      if (rsAtTarget.length < 2) return false;
+      return (Math.max.apply(null, rsAtTarget) - Math.min.apply(null, rsAtTarget)) > TOL;
+    }
+    const minHasFace = hasFaceAt(distMin), maxHasFace = hasFaceAt(distMax);
+    if (minHasFace && !maxHasFace) return distMin;
+    if (maxHasFace && !minHasFace) return distMax;
+    return null;
+  }
+
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX };
 });
 </script>
 <script>
@@ -7570,7 +8105,7 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 199;
+  const APP_RELEASE_NUMBER = 202;
   const APP_RELEASE_TIMESTAMP = '13.10.2026, 06:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
@@ -8793,6 +9328,179 @@ CORNERRADIUS=GFIL r=
     bakeParams = null;
     requestRender();
     return normalized;
+  }
+
+  // ============================================================
+  // "Werkzeug-DXF einlesen" (Release 200, Sebastian: "Noch nicht umsetzen, es geht um
+  // Machbarkeit: Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
+  // Werkzeug soll dargestellt werden ... 1. Kann die DXF dauerhaft eingelesen bleiben für
+  // spätere Zugriffe?" - ja, siehe Konzept_DXF_Werkzeugdarstellung.md) - Datenmodell für
+  // benannte, aus einer DXF-Datei abgeleitete Werkzeug-Rotationsprofile. Jedes Profil wird
+  // über parser.js: buildToolProfileFromDxfText() aus dem ORIGINAL-DXF-Text gewonnen, der
+  // Text selbst bleibt dauerhaft Teil des gespeicherten Profils (Feld "dxfText" unten) -
+  // beantwortet Sebastians erste Frage direkt: die DXF bleibt vollständig, nicht nur ihr
+  // Rechenergebnis, dauerhaft in localStorage erhalten. Eine spätere Änderung von
+  // Skalierungsfaktor oder "andere Seite verwenden" (bei geschlossener DXF-Kontur, siehe
+  // wasClosedLoop/alternateProfile unten) kann dadurch jederzeit verlustfrei neu berechnet
+  // werden, ohne die Originaldatei erneut einlesen zu müssen.
+  //
+  // lengthRef/radiusRef (Sebastian: "Die Spitze des ausgegebenen Werkzeugs müsste auch
+  // verschoben werden können" / "Der Radius kann ggf. auch angepasst werden ... falls das
+  // ein anderes Profilwerkzeug wäre und es einen anderen relevanten Punkt gibt, der
+  // entscheidend ist") - ZWEI UNABHÄNGIGE Referenzpunkte (bestätigte Antwort auf die
+  // entsprechende Klärungsfrage, bewusst kein gemeinsamer Punkt): beide sind "dist"-Werte
+  // (Achsabstand) im eigenen Koordinatensystem des jeweils aktiven Profils (0 = "hinteres"
+  // Profilende, siehe buildProfileChainFromStrokes() in parser.js). "lengthRef" markiert den
+  // Punkt, der beim Zeichnen auf die tatsächliche, simulierte Werkzeugspitze ausgerichtet
+  // wird (Sebastian: "verschieben, so dass der Fräser an der richtigen Stelle fräst" - die
+  // Geometrie selbst bleibt dabei UNVERÄNDERT/unskaliert, es wird nur entlang der Achse
+  // verschoben: "Darstellen Werkzeug bleibt aber gleich, nur das DXF wird verschoben").
+  // "radiusRef" markiert unabhängig davon den Punkt, dessen Radius als der "entscheidende"
+  // gilt. Beide Punkte dienen AUSSCHLIESSLICH der Visualisierung/als Vorschlagswert - die
+  // tatsächlich für Berechnungen (G41/G42 usw.) verwendeten toolRadius/toolLength-Werte
+  // kommen weiterhin unverändert aus Programmtext (RADIUS/LENGTH) oder manueller Eingabe im
+  // "+Werkzeuge (T)"-Dialog (bestätigte Antwort auf die dritte Klärungsfrage: Programmtext/
+  // Dialog haben bei Konflikt immer Vorrang, das DXF-Profil liefert nur Form +
+  // Standardvorschlag).
+  //
+  // mainProfile/alternateProfile/usedAlternate (nur bei wasClosedLoop=true relevant) - bei
+  // einer geschlossenen DXF-Kontur liefert buildToolProfileFromDxfText() zwei mögliche
+  // Profile (das längere/komplexere als "mainProfile", das kürzere als "alternateProfile",
+  // siehe Herleitung dort); der Import-Dialog (#toolDxfImportPanel, siehe weiter unten)
+  // bietet dafür einen Umschalter "andere Seite verwenden" an - das Ergebnis wird hier als
+  // einfaches Bool-Flag festgehalten, damit ein Neuladen/eine spätere Skalierungsänderung
+  // dieselbe Wahl beibehält.
+  //
+  // Profilauswahl PRO ARBEITSGANG statt global (bestätigte Antwort auf die zweite
+  // Klärungsfrage, exakt wie Radius/Länge heute im "+Werkzeuge (T)"-Dialog) - siehe
+  // sec.toolProfileId bei der dortigen Dialog-Erweiterung; dieses Datenmodell hier verwaltet
+  // nur die global verfügbaren, benannten Profile selbst (Liste, nicht Auswahl).
+  //
+  // Persistenz: EIN JSON-Array unter einem einzigen "cncsim."-Schlüssel (LS_KEY_TOOL_DXF_
+  // PROFILES) - bewusst NICHT in KNOWN_EXPORTED_LS_KEYS weiter unten eingetragen, sondern
+  // über das bereits bestehende generische "otherSettings"-Sicherheitsnetz
+  // (collectOtherCncsimSettings(), siehe dort/5.9 in CNC_Simulation.md) automatisch
+  // mitexportiert/-importiert - identisches Verhalten wie bei jedem anderen, (noch) nicht
+  // explizit verdrahteten "cncsim."-Schlüssel, nur ohne eigene Export-/Import-Zeile hier;
+  // vollkommen ausreichend, da ohnehin nur beim Seitenstart gelesen wird (kein Live-Re-Apply
+  // beim Import nötig - "wirkt nach einem Neuladen der Seite", siehe dortiger Kommentar).
+  const LS_KEY_TOOL_DXF_PROFILES = 'cncsim.toolDxfProfiles';
+  function normalizeDxfRDistArray(raw) {
+    if (!Array.isArray(raw)) return null;
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      const p = raw[i];
+      const r = Number(p && p.r);
+      const dist = Number(p && p.dist);
+      if (!Number.isFinite(r) || !Number.isFinite(dist)) return null;
+      out.push({ r, dist });
+    }
+    return out.length >= 2 ? out : null;
+  }
+  function normalizeToolDxfProfile(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
+    const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+    const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
+    const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
+    if (!id || !name || !dxfText || !mainProfile) return null;
+    const alternateProfile = normalizeDxfRDistArray(raw.alternateProfile);
+    const usedAlternate = !!raw.usedAlternate && !!alternateProfile;
+    let scale = Number(raw.scale);
+    if (!Number.isFinite(scale) || scale <= 0) scale = 1;
+    const activeProfile = usedAlternate ? alternateProfile : mainProfile;
+    const distValues = activeProfile.map(function (p) { return p.dist; });
+    const minDist = Math.min.apply(null, distValues);
+    const maxDist = Math.max.apply(null, distValues);
+    let lengthRef = Number(raw.lengthRef);
+    let radiusRef = Number(raw.radiusRef);
+    // Release 200, Nachtrag: bessere Default-Vorbelegung über CNCParser.guessToolProfileTipDist()
+    // (siehe dortige Herleitung) statt blind "maxDist" - greift hier nur im seltenen Fall eines
+    // unvollständigen/alten Datensatzes ohne eigene lengthRef/radiusRef-Werte (der reguläre
+    // Speicherpfad über saveToolDxfProfile() schreibt beide Werte immer explizit mit).
+    const guessedTipDist = (typeof CNCParser !== 'undefined' && CNCParser.guessToolProfileTipDist) ? CNCParser.guessToolProfileTipDist(activeProfile) : null;
+    const defaultRef = (guessedTipDist !== null) ? guessedTipDist : maxDist;
+    if (!Number.isFinite(lengthRef)) lengthRef = defaultRef;
+    if (!Number.isFinite(radiusRef)) radiusRef = defaultRef;
+    lengthRef = Math.max(minDist, Math.min(maxDist, lengthRef));
+    radiusRef = Math.max(minDist, Math.min(maxDist, radiusRef));
+    const now = Date.now();
+    const createdAt = Number(raw.createdAt);
+    const updatedAt = Number(raw.updatedAt);
+    return {
+      id: id, name: name, dxfText: dxfText,
+      mainProfile: mainProfile, alternateProfile: alternateProfile,
+      wasClosedLoop: !!raw.wasClosedLoop,
+      usedAlternate: usedAlternate,
+      scale: scale,
+      lengthRef: lengthRef, radiusRef: radiusRef,
+      createdAt: Number.isFinite(createdAt) ? createdAt : now,
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : now
+    };
+  }
+  function loadPersistedToolDxfProfiles() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_TOOL_DXF_PROFILES);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data.map(normalizeToolDxfProfile).filter(Boolean);
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return [];
+  }
+  function persistToolDxfProfiles(list) {
+    try { window.localStorage.setItem(LS_KEY_TOOL_DXF_PROFILES, JSON.stringify(list)); } catch (e) { /* s.o. */ }
+  }
+  let toolDxfProfiles = [];
+  function generateToolDxfProfileId() {
+    return 'tdp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+  function getToolDxfProfileById(id) {
+    for (let i = 0; i < toolDxfProfiles.length; i++) { if (toolDxfProfiles[i].id === id) return toolDxfProfiles[i]; }
+    return null;
+  }
+  // Liefert das aktuell WIRKSAME r/dist-Profil eines gespeicherten Werkzeugs (abhängig von
+  // usedAlternate) - von drawTool()/der neuen profilbasierten Zeichenfunktion (siehe
+  // weiter unten) sowie vom Import-Dialog für die 2D-Vorschau verwendet.
+  function getActiveToolDxfRDistProfile(p) {
+    if (!p) return null;
+    return (p.usedAlternate && p.alternateProfile) ? p.alternateProfile : p.mainProfile;
+  }
+  // Legt ein neues Profil an ODER aktualisiert ein bestehendes (per vorhandener "id" in
+  // `data`) - Rückgabe ist das normalisierte, tatsächlich gespeicherte Profilobjekt (oder
+  // null bei ungültigen/unvollständigen Daten). `data` muss mindestens name/dxfText/
+  // mainProfile enthalten (siehe normalizeToolDxfProfile() oben für alle erkannten Felder).
+  function saveToolDxfProfile(data) {
+    const now = Date.now();
+    const incoming = Object.assign({}, data, {
+      updatedAt: now,
+      createdAt: (data && Number.isFinite(Number(data.createdAt))) ? Number(data.createdAt) : now
+    });
+    if (!incoming.id) incoming.id = generateToolDxfProfileId();
+    const normalized = normalizeToolDxfProfile(incoming);
+    if (!normalized) return null;
+    const idx = toolDxfProfiles.findIndex(function (p) { return p.id === normalized.id; });
+    if (idx === -1) toolDxfProfiles.push(normalized);
+    else toolDxfProfiles[idx] = normalized;
+    persistToolDxfProfiles(toolDxfProfiles);
+    return normalized;
+  }
+  function renameToolDxfProfile(id, newName) {
+    const p = getToolDxfProfileById(id);
+    if (!p) return false;
+    const name = String(newName == null ? '' : newName).trim();
+    if (!name) return false;
+    p.name = name;
+    p.updatedAt = Date.now();
+    persistToolDxfProfiles(toolDxfProfiles);
+    return true;
+  }
+  function deleteToolDxfProfile(id) {
+    const idx = toolDxfProfiles.findIndex(function (p) { return p.id === id; });
+    if (idx === -1) return false;
+    toolDxfProfiles.splice(idx, 1);
+    persistToolDxfProfiles(toolDxfProfiles);
+    return true;
   }
 
   // ============================================================
@@ -10092,6 +10800,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // (Vorbelegung) sowie confirmInsertToolData()/insertToolDataComment() (Übernahme) weiter unten.
   const toolModeSelect = el('toolModeSelect');
   const toolTypeSelect = el('toolTypeSelect');
+  // "Werkzeugprofil" (NEU, Release 200) - siehe ausführlichen HTML-Kommentar bei
+  // #toolProfileSelect in template_top.html sowie refreshToolProfileDropdownOptions()/
+  // btnInsertToolData-Klick-Handler/confirmInsertToolData() weiter unten.
+  const toolProfileSelect = el('toolProfileSelect');
   // Arbeitsgang-Abschnitt, für den der "+Werkzeuge (T)"-Dialog gerade geöffnet ist (siehe
   // applyToolTypeUI() weiter unten) - null, solange der Dialog geschlossen ist.
   let toolDataActiveSec = null;
@@ -11840,6 +12552,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // ältere, vor Release 140 geschriebene Kommentarzeilen erhalten, siehe TOOL_MODE_RE in
         // parser.js).
         sec.toolMode = toolData.toolMode;
+        // "TOOLPROFILE" (NEU, Release 200, siehe TOOL_PROFILE_RE/extractToolData() in parser.js
+        // sowie Konzept_DXF_Werkzeugdarstellung.md) - id eines per "Werkzeug-DXF einlesen"
+        // gespeicherten Rotationsprofils (toolDxfProfiles) oder null ("Kein Profil (Zylinder)"
+        // bzw. noch nie über den Dialog gesetzt). Ausschließlich für die 3D-Darstellung
+        // relevant (siehe drawTool() weiter unten) - beeinflusst NIEMALS sec.toolRadius/
+        // sec.toolLength selbst (bestätigte Antwort auf die Vorrang-Klärungsfrage: Programmtext/
+        // Dialog-Zahlenwerte haben bei Konflikt immer Vorrang vor dem DXF-Profil).
+        sec.toolProfileId = toolData.toolProfileId;
       });
     }
     // ALLE Leerzeilen werden in der Programm-Ansicht ausgeblendet (Benutzer, 20. Runde: "Wenn
@@ -12854,7 +13574,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
             // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
             // setScope()-Neuaufbau, siehe dort.
-            segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode });
+            segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId });
           });
         } else if (current.sections.length) {
           // Kein Arbeitsgang-Schema erkannt: Das Programm ist trotzdem gültig und wird als
@@ -12884,7 +13604,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
             title: sec.title, opIndex: sec.index, points: pts, context: !isActive,
-            toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode
+            toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId
           });
         });
       }
@@ -12903,7 +13623,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     points = [];
     segments.filter(seg => !seg.context).forEach(seg => {
       seg.rangeStart = points.length;
-      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, colorCursor: seg.colorCursor, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode }, p)));
+      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, colorCursor: seg.colorCursor, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode, toolProfileId: seg.toolProfileId }, p)));
     });
 
     // Sichtbare Punkte fürs Kamera-Framing/Raster: inklusive gedimmtem Kontext.
@@ -15290,6 +16010,81 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
   }
 
+  // ============================================================
+  // "Werkzeug-DXF einlesen" - profilbasierte 3D-Darstellung (NEU, Release 200, siehe
+  // Konzept_DXF_Werkzeugdarstellung.md sowie das Datenmodell toolDxfProfiles weiter oben).
+  // ============================================================
+  //
+  // Globaler Fallback-Schalter (Sebastian, wörtlich: "Immer natürlich mit der Möglichkeit, falls
+  // es nicht so wie erhofft läuft, das auszublenden") - EIN gemeinsamer, global wirkender
+  // Ja/Nein-Zustand, zusätzlich zur (feingranularen) Pro-Arbeitsgang-Auswahl selbst (sec.
+  // toolProfileId === null = "Kein Profil (Zylinder)" für genau diesen einen Arbeitsgang, siehe
+  // #toolProfileSelect im "+Werkzeuge (T)"-Dialog) - bewusst ZWEI unabhängige Ebenen: Die
+  // Pro-Arbeitsgang-Auswahl ist der normale, gezielte Bedienweg; dieser globale Schalter ist der
+  // "Notausschalter", der mit EINEM Klick für ALLE Arbeitsgänge gleichzeitig zurück auf den
+  // bisherigen, immer funktionierenden einfachen Zylinder zurückfällt, egal wie viele
+  // Arbeitsgänge einzeln ein Profil zugewiesen bekommen haben - sitzt deshalb bewusst nicht im
+  // selben Dialog wie die Profile selbst (dort könnte man ihn übersehen), sondern in der
+  // ohnehin schon bestehenden "Fräser"-Darstellung (#toolAppearanceCutterPanel, siehe dortige
+  // neue Radiogruppe #toolAppearanceCutterProfileChoice weiter unten in template_top.html), die
+  // als Teil der ganz regulären Werkzeug-Darstellungseinstellungen sowieso vertraut ist. Default
+  // true ("verwenden") - ein frisch zugewiesenes Profil wirkt dadurch sofort sichtbar, ohne
+  // dass der Benutzer zusätzlich noch diesen Schalter aktivieren müsste; erst ein tatsächliches
+  // Problem erfordert das aktive Umschalten auf "immer ignorieren".
+  const LS_KEY_USE_TOOL_PROFILE_SHAPES = 'cncsim.useToolProfileShapes';
+  function loadPersistedUseToolProfileShapes() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_USE_TOOL_PROFILE_SHAPES);
+      if (raw === null) return true;
+      return raw === '1' || raw === 'true';
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return true;
+  }
+  function persistUseToolProfileShapes(v) {
+    try { window.localStorage.setItem(LS_KEY_USE_TOOL_PROFILE_SHAPES, v ? '1' : '0'); } catch (e) { /* s.o. */ }
+  }
+  let useToolProfileShapes = true;
+  function setUseToolProfileShapes(v) {
+    useToolProfileShapes = !!v;
+    persistUseToolProfileShapes(useToolProfileShapes);
+    bakeParams = null;
+    requestRender();
+  }
+
+  // Übersetzt das gespeicherte, rein DXF-eigene {r,dist}-Profil eines Werkzeugprofils in ein für
+  // drawToolHolder() verwendbares Profil, dessen "dist" bereits relativ zur simulierten
+  // Werkzeugspitze (3D "tip", dist=0) gemessen ist, mit WACHSENDEM dist in Richtung "top"
+  // (Halter/Spindel) - exakt dieselbe Konvention, die TOOL_HOLDER_HSK63_PROFILE bereits nutzt
+  // (dort von Hand so vermessen). Die Geometrie selbst bleibt dabei bewusst VOLLSTÄNDIG
+  // UNVERÄNDERT/unskaliert (Sebastian: "Darstellen Werkzeug bleibt aber gleich, nur das DXF wird
+  // verschoben") - diese Funktion verschiebt nur den Nullpunkt der "dist"-Achse auf
+  // profile.lengthRef, skaliert aber nichts.
+  //
+  // Vorzeichen-Heuristik: Ob wachsendes "dist" im UNVERÄNDERTEN, aus der DXF übernommenen
+  // Koordinatensystem in Richtung der Werkzeugspitze oder in Richtung des Schafts/Halters
+  // zeigt, hängt einzig davon ab, wie die jeweilige DXF-Datei ursprünglich gezeichnet wurde (die
+  // Y-Achsrichtung ist beim Zeichnen frei wählbar) - rein numerisch nicht bekannt. Da eine echte
+  // Werkzeugspitze aber per Definition an einem der BEIDEN ENDEN des Profils liegt (nie
+  // irgendwo "in der Mitte" eines durchgehenden Rotationskörpers), genügt ein einfacher
+  // Abstandsvergleich: liegt der vom Benutzer gesetzte Längen-Referenzpunkt (lengthRef) näher
+  // am MINIMUM der Profil-"dist"-Werte, zeigt "wachsendes dist" vom Profil her gesehen vom
+  // Spitzenende WEG (also schon in die gewünschte Richtung Richtung Halter) - sonst (näher am
+  // Maximum) ist es genau umgekehrt und das Vorzeichen muss gedreht werden. Der Normalfall
+  // (lengthRef auf den beim ersten Einlesen vorbelegten Standardwert = Maximum stehen gelassen,
+  // siehe #toolDxfImportLengthRefInput/reparse() im Import-Dialog) fällt dabei auf den zweiten
+  // Fall (gedrehtes Vorzeichen).
+  function buildToolProfileForRender(entry) {
+    const raw = getActiveToolDxfRDistProfile(entry);
+    if (!raw || raw.length < 2) return null;
+    const distVals = raw.map(p => p.dist);
+    const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+    const tipNearMin = (entry.lengthRef - distMin) <= (distMax - entry.lengthRef);
+    return raw.map(p => ({
+      r: p.r,
+      dist: tipNearMin ? (p.dist - entry.lengthRef) : (entry.lengthRef - p.dist)
+    }));
+  }
+
   function drawTool(proj) {
     // Werkzeug (Zylinder) und Spannfutter (HSK63-Halter, s.u.) sind seit der 74. Runde zwei
     // UNABHÄNGIG voneinander aus-/einblendbare Baugruppen (siehe showTool/showToolHolder oben,
@@ -15408,72 +16203,110 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const u = normalize(cross(axis, helper));
     const v = cross(axis, u);
 
-    // Werkzeug-Zylinder selbst (74. Runde: eigenständig über showTool aus-/einblendbar, siehe
-    // Kommentar am Funktionsanfang) - "u"/"v" (oben berechnet) werden unabhängig davon auch vom
-    // Spannfutter-Block weiter unten benötigt und bleiben deshalb außerhalb dieses Blocks stehen.
+    // Werkzeug-Zylinder bzw. - NEU, Release 200 - profilbasierter Werkzeugkörper (74. Runde:
+    // eigenständig über showTool aus-/einblendbar, siehe Kommentar am Funktionsanfang) - "u"/"v"
+    // (oben berechnet) werden unabhängig davon auch vom Spannfutter-Block weiter unten benötigt
+    // und bleiben deshalb außerhalb dieses Blocks stehen.
     if (showTool) {
-      // Release 160 (Sebastian: "Kann die Säge theoretisch etwas runder dargestellt werden
-      // oder geht das zu sehr auf die Performance?" - Tippfehler "runter"->"runder" per
-      // Rückfrage geklärt): Segmentzahl des Kreisquerschnitts separat je Werkzeugtyp erhöht
-      // (zuvor einheitlich 16 für beide) - Säge (großer Radius, Kreisform fällt bei N=16
-      // optisch als Facetten auf) jetzt 64, Fräser 32. Performance-Einfluss vernachlässigbar,
-      // da drawTool() pro Frame nur EINMAL für die aktuelle Scrub-Position aufgerufen wird
-      // (siehe Aufrufstelle "if (points.length) { drawMarker(proj); drawTool(proj); }" weiter
-      // oben, außerhalb jeder Schleife über Programmpunkte) - mehr Segmente bedeuten hier nur
-      // ein paar Dutzend zusätzliche Vierecke pro Frame, nicht pro Programmpunkt.
-      const N = p.toolIsBlade ? 64 : 32;
-      const bottomPts = [], topPts = [];
-      for (let i = 0; i <= N; i++) {
-        const theta = (i / N) * Math.PI * 2;
-        const ct = Math.cos(theta) * p.toolRadius, st = Math.sin(theta) * p.toolRadius;
-        bottomPts.push({
-          x: tip.x + u.x * ct + v.x * st, y: tip.y + u.y * ct + v.y * st, z: tip.z + u.z * ct + v.z * st
-        });
-        topPts.push({
-          x: top.x + u.x * ct + v.x * st, y: top.y + u.y * ct + v.y * st, z: top.z + u.z * ct + v.z * st
-        });
-      }
-
-      const bottomScreen = bottomPts.map(pt => proj(toRender(pt)));
-      const topScreen = topPts.map(pt => proj(toRender(pt)));
-
-      ctx.strokeStyle = cssVar('--tool-color');
-      ctx.lineWidth = 1.3;
-      ctx.globalAlpha = 0.85;
-      ctx.setLineDash([]);
-
-      function strokeRing(ring) {
-        ctx.beginPath();
-        let started = false;
-        ring.forEach(s => {
-          if (!s) { started = false; return; }
-          if (!started) { ctx.moveTo(s.x, s.y); started = true; } else { ctx.lineTo(s.x, s.y); }
-        });
-        ctx.stroke();
-      }
-      strokeRing(bottomScreen);
-      strokeRing(topScreen);
-      // Mantellinien (jeden 4. Punkt verbinden, genügt für den Drahtgitter-Eindruck ohne die
-      // Ansicht bei kleinem Werkzeug-Radius optisch zu überladen).
-      for (let i = 0; i < N; i += 4) {
-        const a = bottomScreen[i], b = topScreen[i];
-        if (!a || !b) continue;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-
-      // Gefüllte Darstellung (Release 158, "Säge"/"Fräser" - siehe applyToolAppearance() weiter
-      // oben): p.toolIsBlade entscheidet, welche der beiden unabhängigen Einstellungen für DIESEN
-      // Punkt gilt (derselbe Zylinder-Zeichencode wird für Säge UND Fräser gemeinsam genutzt,
-      // siehe Kommentar am Funktionsanfang - nur tip/top/axis unterscheiden sich). Stirnflächen an
-      // beiden Enden, da bottomPts/topPts beim Zylinder immer Radius > 0 haben (anders als beim
-      // HSK63-Profil in drawToolHolder(), wo einzelne Profilpunkte auf Radius 0 zulaufen können).
+      // "Säge"/"Fräser" (Release 158, siehe applyToolAppearance() weiter oben): p.toolIsBlade
+      // entscheidet, welche der beiden unabhängigen Einstellungen für DIESEN Punkt gilt - gilt
+      // jetzt für BEIDE Zweige unten (Zylinder UND profilbasierte Darstellung) gleichermaßen,
+      // deshalb hier VOR der Verzweigung berechnet (vorher erst innerhalb des Zylinder-Zweigs
+      // direkt vor dessen eigener Füllungs-Prüfung).
       const activeToolAppearance = p.toolIsBlade ? sawAppearance : cutterAppearance;
-      if (activeToolAppearance.filled) {
-        fillRevolutionBody([bottomPts, topPts], [bottomScreen, topScreen], activeToolAppearance, {
-          startCapNormal: { x: -axis.x, y: -axis.y, z: -axis.z },
-          endCapNormal: { x: axis.x, y: axis.y, z: axis.z }
-        }, { x: axis.x, y: axis.z, z: axis.y });
+
+      // "Werkzeug-DXF einlesen" (NEU, Release 200, siehe Konzept_DXF_Werkzeugdarstellung.md) -
+      // ein per Arbeitsgang zugewiesenes Profil (sec.toolProfileId, siehe extractToolData() in
+      // parser.js) wird NUR verwendet, wenn (a) überhaupt eines zugewiesen ist UND (b) das
+      // tatsächlich noch existierende, gespeicherte Profil dahinter gefunden wird (ein seitdem
+      // gelöschtes Profil fällt automatisch auf den Zylinder zurück, siehe getToolDxfProfileById())
+      // UND (c) der globale Fallback-Schalter useToolProfileShapes (siehe oben,
+      // #toolAppearanceCutterProfileChoice) nicht auf "immer ignorieren" steht - fehlt irgendeine
+      // dieser drei Bedingungen, zeichnet der unveränderte "else"-Zweig unten exakt denselben
+      // Zylinder wie vor dieser Runde, GENAU die von Sebastian verlangte Ausblend-Garantie
+      // ("Immer natürlich mit der Möglichkeit, falls es nicht so wie erhofft läuft, das
+      // auszublenden").
+      const toolProfileEntry = (p.toolProfileId && useToolProfileShapes) ? getToolDxfProfileById(p.toolProfileId) : null;
+      const renderProfile = toolProfileEntry ? buildToolProfileForRender(toolProfileEntry) : null;
+      // Nur für Diagnose/Regressionstests (window.__debug_getToolProfileRenderInfo in den
+      // instrumentierten Testkopien, siehe make_rNNN_instrumented.py) - ohne Funktion für die
+      // eigentliche Darstellung, bewusst ungeprüft auf Objektgröße etc., da nur bei Bedarf gelesen.
+      window.__lastToolProfileRenderInfo = {
+        toolProfileId: p.toolProfileId || null,
+        hasEntry: !!toolProfileEntry,
+        hasRenderProfile: !!renderProfile,
+        anyNegativeR: renderProfile ? renderProfile.some(function(pt){ return pt.r < 0; }) : null,
+        pointCount: renderProfile ? renderProfile.length : 0
+      };
+      if (renderProfile) {
+        // drawToolHolder() ist bereits eine vollständig generische, profilbasierte
+        // Drahtgitter-/Füllkörper-Zeichenfunktion (52./53. Runde, seinerzeit für den HSK63-Halter
+        // entwickelt) - für den Werkzeugkörper selbst hier 1:1 wiederverwendet, nur mit "tip"
+        // statt "holderOrigin" als Ursprung (dieselbe Bedeutung: der Punkt, an dem "dist=0" des
+        // übergebenen Profils ansetzt) und derselben, bereits für den Zylinder-Zweig berechneten
+        // activeToolAppearance anstelle von colletAppearance.
+        drawToolHolder(tip, axis, u, v, proj, renderProfile, activeToolAppearance);
+      } else {
+        // Release 160 (Sebastian: "Kann die Säge theoretisch etwas runder dargestellt werden
+        // oder geht das zu sehr auf die Performance?" - Tippfehler "runter"->"runder" per
+        // Rückfrage geklärt): Segmentzahl des Kreisquerschnitts separat je Werkzeugtyp erhöht
+        // (zuvor einheitlich 16 für beide) - Säge (großer Radius, Kreisform fällt bei N=16
+        // optisch als Facetten auf) jetzt 64, Fräser 32. Performance-Einfluss vernachlässigbar,
+        // da drawTool() pro Frame nur EINMAL für die aktuelle Scrub-Position aufgerufen wird
+        // (siehe Aufrufstelle "if (points.length) { drawMarker(proj); drawTool(proj); }" weiter
+        // oben, außerhalb jeder Schleife über Programmpunkte) - mehr Segmente bedeuten hier nur
+        // ein paar Dutzend zusätzliche Vierecke pro Frame, nicht pro Programmpunkt.
+        const N = p.toolIsBlade ? 64 : 32;
+        const bottomPts = [], topPts = [];
+        for (let i = 0; i <= N; i++) {
+          const theta = (i / N) * Math.PI * 2;
+          const ct = Math.cos(theta) * p.toolRadius, st = Math.sin(theta) * p.toolRadius;
+          bottomPts.push({
+            x: tip.x + u.x * ct + v.x * st, y: tip.y + u.y * ct + v.y * st, z: tip.z + u.z * ct + v.z * st
+          });
+          topPts.push({
+            x: top.x + u.x * ct + v.x * st, y: top.y + u.y * ct + v.y * st, z: top.z + u.z * ct + v.z * st
+          });
+        }
+
+        const bottomScreen = bottomPts.map(pt => proj(toRender(pt)));
+        const topScreen = topPts.map(pt => proj(toRender(pt)));
+
+        ctx.strokeStyle = cssVar('--tool-color');
+        ctx.lineWidth = 1.3;
+        ctx.globalAlpha = 0.85;
+        ctx.setLineDash([]);
+
+        function strokeRing(ring) {
+          ctx.beginPath();
+          let started = false;
+          ring.forEach(s => {
+            if (!s) { started = false; return; }
+            if (!started) { ctx.moveTo(s.x, s.y); started = true; } else { ctx.lineTo(s.x, s.y); }
+          });
+          ctx.stroke();
+        }
+        strokeRing(bottomScreen);
+        strokeRing(topScreen);
+        // Mantellinien (jeden 4. Punkt verbinden, genügt für den Drahtgitter-Eindruck ohne die
+        // Ansicht bei kleinem Werkzeug-Radius optisch zu überladen).
+        for (let i = 0; i < N; i += 4) {
+          const a = bottomScreen[i], b = topScreen[i];
+          if (!a || !b) continue;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // Gefüllte Darstellung (Release 158) - Stirnflächen an beiden Enden, da bottomPts/topPts
+        // beim Zylinder immer Radius > 0 haben (anders als beim HSK63-Profil/profilbasierten
+        // Werkzeugkörper in drawToolHolder(), wo einzelne Profilpunkte auf Radius 0 zulaufen
+        // können).
+        if (activeToolAppearance.filled) {
+          fillRevolutionBody([bottomPts, topPts], [bottomScreen, topScreen], activeToolAppearance, {
+            startCapNormal: { x: -axis.x, y: -axis.y, z: -axis.z },
+            endCapNormal: { x: axis.x, y: axis.y, z: axis.z }
+          }, { x: axis.x, y: axis.z, z: axis.y });
+        }
       }
     }
 
@@ -16764,6 +17597,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       }
       elem.setAttribute('placeholder', lang === 'en' ? elem.getAttribute('data-i18n-en-placeholder') : elem.dataset.i18nDePlaceholder);
     });
+    // [data-i18n-en-alt] (Release 202, Hilfebild im "Werkzeugprofil bearbeiten"-Dialog, siehe
+    // 9.7.7): dieselbe Technik wie bei [data-i18n-en-title]/[data-i18n-en-placeholder] oben, nur
+    // für das alt-Attribut von <img>-Elementen statt für title/placeholder.
+    document.querySelectorAll('[data-i18n-en-alt]').forEach(elem => {
+      if (elem.dataset.i18nDeAlt === undefined) {
+        elem.dataset.i18nDeAlt = elem.getAttribute('alt') || '';
+      }
+      elem.setAttribute('alt', lang === 'en' ? elem.getAttribute('data-i18n-en-alt') : elem.dataset.i18nDeAlt);
+    });
     document.documentElement.lang = lang === 'en' ? 'en' : 'de';
     // "Letzte Releasezeit" im "?"-Menü (Release 165) - anders als die übrigen [data-i18n-en]-
     // Elemente oben kein fester Alternativtext, sondern ein bei jedem Sprachwechsel neu berechneter
@@ -17970,6 +18812,420 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (checked) setShowToolHolder(checked.value === '1');
   });
 
+  // "Werkzeugprofil (DXF-Form)" - globaler Fallback-Schalter (NEU, Release 200, siehe
+  // ausführlichen HTML-Kommentar bei #toolAppearanceCutterProfileRow in template_top.html sowie
+  // useToolProfileShapes/setUseToolProfileShapes() weiter oben bei drawTool()). BEWUSST NICHT in
+  // die generische TOOL_APPEARANCE_KINDS-Verdrahtung oben eingebaut (gibt es nur beim Fräser),
+  // sondern per eigenen, zusätzlichen addEventListener-Aufrufen auf denselben Knopf-IDs
+  // (#btnToolAppearanceCutter/#btnToolAppearanceCutterApply) - exakt dieselbe Technik wie bei
+  // der "Spannfutter einblenden/ausblenden"-Radiogruppe direkt oberhalb.
+  function syncToolProfileShapeChoiceFromActive() {
+    const radio = document.querySelector('input[name="toolAppearanceCutterProfile"][value="' + (useToolProfileShapes ? '1' : '0') + '"]');
+    if (radio) radio.checked = true;
+  }
+  el('btnToolAppearanceCutter').addEventListener('click', syncToolProfileShapeChoiceFromActive);
+  el('btnToolAppearanceCutterApply').addEventListener('click', () => {
+    const checked = document.querySelector('input[name="toolAppearanceCutterProfile"]:checked');
+    if (checked) setUseToolProfileShapes(checked.value === '1');
+  });
+
+  // ============================================================
+  // "Werkzeug-DXF einlesen" (Release 200, #toolDxfImportPanel) - UI-Verdrahtung. Das
+  // Datenmodell selbst (toolDxfProfiles/saveToolDxfProfile() usw.) sitzt weiter oben neben den
+  // übrigen "Werkzeuge"-Einstellungen (siehe dortigen ausführlichen Kommentar sowie
+  // Konzept_DXF_Werkzeugdarstellung.md). In einem eigenen IIFE gekapselt, damit die vielen
+  // lokalen Hilfsvariablen (currentId/dxfText/parsedMain usw.) nicht den umgebenden
+  // app.js-Namensraum verschmutzen - dasselbe Kapselungsprinzip wie bei anderen, komplexeren
+  // Dialog-Verdrahtungen in diesem Programm.
+  // ============================================================
+  (function () {
+    const panel = el('toolDxfImportPanel');
+    const profileSelect = el('toolDxfProfileSelect');
+    const fileInput = el('toolDxfImportFileInput');
+    const fileNameLabel = el('toolDxfImportFileName');
+    const nameInput = el('toolDxfImportNameInput');
+    const scaleInput = el('toolDxfImportScaleInput');
+    const scaleWarning = el('toolDxfImportScaleWarning');
+    const alternateRow = el('toolDxfImportAlternateRow');
+    const alternateCheckbox = el('toolDxfImportUseAlternateCheckbox');
+    const lengthRefInput = el('toolDxfImportLengthRefInput');
+    const radiusRefInput = el('toolDxfImportRadiusRefInput');
+    const errorHint = el('toolDxfImportErrorHint');
+    const canvas = el('toolDxfImportCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Bearbeitungszustand des Dialogs - unabhängig vom globalen toolDxfProfiles-Array, erst
+    // "Speichern" schreibt zurück (siehe unten). currentId===null bedeutet "neues Profil",
+    // sonst wird ein bestehendes, gespeichertes Profil bearbeitet (erneutes "Speichern"
+    // aktualisiert es per gleicher id statt ein zweites, doppeltes Profil anzulegen).
+    let currentId = null;
+    let dxfText = null;
+    let parsedMain = null;       // zuletzt berechnetes mainProfile (r/dist-Array)
+    let parsedAlternate = null;  // zuletzt berechnetes alternateProfile (r/dist-Array) oder null
+    let wasClosedLoop = false;
+    let lengthRef = 0;
+    let radiusRef = 0;
+    let refsInitialized = false; // erstmalige Default-Zuweisung (= Maximum) erfolgt nur einmal
+    let lastScale = 1;           // für die proportionale Mitverschiebung der Referenzpunkte
+    let dragTarget = null;       // 'length' | 'radius' | null, während eines Canvas-Drags
+
+    function activeProfile() {
+      return (alternateCheckbox.checked && parsedAlternate) ? parsedAlternate : parsedMain;
+    }
+    function distRange() {
+      const prof = activeProfile();
+      if (!prof || !prof.length) return { min: 0, max: 0 };
+      const vals = prof.map(p => p.dist);
+      return { min: Math.min.apply(null, vals), max: Math.max.apply(null, vals) };
+    }
+    function clampRefs() {
+      const { min, max } = distRange();
+      lengthRef = Math.max(min, Math.min(max, lengthRef));
+      radiusRef = Math.max(min, Math.min(max, radiusRef));
+    }
+    function fmtNum(n) { return (Math.round(n * 1000) / 1000).toString().replace('.', ','); }
+    function parseNum(s) {
+      const n = parseFloat(String(s == null ? '' : s).trim().replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    }
+    function syncRefInputsFromState() {
+      lengthRefInput.value = fmtNum(lengthRef);
+      radiusRefInput.value = fmtNum(radiusRef);
+    }
+
+    // Zeichnet die 2D-Vorschau: die Werkzeugkontur ACHSSYMMETRISCH gespiegelt (r nach links UND
+    // rechts von der Mittelachse) als durchgehende Silhouette, dazu die Mittelachse sowie die
+    // beiden Referenzpunkt-Marker (waagerechte Linien samt kleinem Griff rechts) - "dist" wächst
+    // nach OBEN im Bild (0 = unten = "hinteres" Profilende, siehe
+    // buildProfileChainFromStrokes() in parser.js), exakt wie bei Sebastians Beispielskizze
+    // (Spitze oben).
+    function draw() {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const prof = activeProfile();
+      if (!prof || prof.length < 2) {
+        ctx.fillStyle = '#8a93a6';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(T('Keine DXF-Datei geladen', 'No DXF file loaded'), w / 2, h / 2);
+        return;
+      }
+      const distVals = prof.map(p => p.dist);
+      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
+      const padding = 24;
+      const drawableH = h - padding * 2;
+      const drawableW = w - padding * 2;
+      const distSpan = (distMax - distMin) || 1;
+      function yOf(dist) { return padding + drawableH * (1 - (dist - distMin) / distSpan); }
+      function xOf(r) { return w / 2 + (r / rMax) * (drawableW / 2) * 0.9; }
+
+      // Silhouette (sortiert nach dist, damit sie unabhängig von der DXF-Ketten-Reihenfolge
+      // korrekt von unten nach oben verläuft) - rechte Kontur hoch, linke (gespiegelte) Kontur
+      // wieder runter, als ein einziger geschlossener Pfad.
+      const sorted = prof.slice().sort((a, b) => a.dist - b.dist);
+      ctx.beginPath();
+      sorted.forEach((p, i) => {
+        const x = xOf(p.r), y = yOf(p.dist);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        ctx.lineTo(xOf(-sorted[i].r), yOf(sorted[i].dist));
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(120,140,170,0.35)';
+      ctx.fill();
+      ctx.strokeStyle = '#5b6b85';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Mittelachse
+      ctx.beginPath();
+      ctx.moveTo(w / 2, padding);
+      ctx.lineTo(w / 2, h - padding);
+      ctx.strokeStyle = '#8a93a6';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      function drawMarker(dist, color, label) {
+        const y = yOf(dist);
+        ctx.beginPath();
+        ctx.moveTo(padding * 0.4, y);
+        ctx.lineTo(w - padding * 0.4, y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(w - padding * 0.4, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, 4, y - 4);
+      }
+      // Radius-Referenz (blau) zuerst, Längen-Referenz (orange) danach gezeichnet, damit sie bei
+      // exakt übereinanderliegenden Markern (häufiger Fall: beide zeigen zunächst auf dieselbe
+      // Werkzeugspitze) oben/zuletzt sichtbar bleibt - rein optische Priorität, keine
+      // fachliche Bedeutung.
+      drawMarker(radiusRef, '#2f7bd6', 'R');
+      drawMarker(lengthRef, '#e0792f', 'L');
+    }
+
+    function yToDistHelpers() {
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = canvas.height / rect.height;
+      const padding = 24;
+      const drawableH = canvas.height - padding * 2;
+      const { min, max } = distRange();
+      const span = (max - min) || 1;
+      return {
+        canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
+        distOf: (canvasY) => min + (1 - (canvasY - padding) / drawableH) * span,
+        yOf: (dist) => padding + drawableH * (1 - (dist - min) / span)
+      };
+    }
+    function hitTestMarker(clientYOffsetInRect) {
+      const helpers = yToDistHelpers();
+      const canvasY = helpers.canvasY(clientYOffsetInRect);
+      const tol = 8;
+      if (Math.abs(helpers.yOf(lengthRef) - canvasY) <= tol) return 'length';
+      if (Math.abs(helpers.yOf(radiusRef) - canvasY) <= tol) return 'radius';
+      return null;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const target = hitTestMarker(e.clientY - rect.top);
+      if (target) { dragTarget = target; e.preventDefault(); }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragTarget || !panel.classList.contains('open')) return;
+      const rect = canvas.getBoundingClientRect();
+      const helpers = yToDistHelpers();
+      const dist = helpers.distOf(helpers.canvasY(e.clientY - rect.top));
+      if (dragTarget === 'length') lengthRef = dist; else radiusRef = dist;
+      clampRefs();
+      syncRefInputsFromState();
+      draw();
+    });
+    window.addEventListener('mouseup', () => { dragTarget = null; });
+
+    lengthRefInput.addEventListener('change', () => {
+      const n = parseNum(lengthRefInput.value);
+      if (n !== null) lengthRef = n;
+      clampRefs();
+      syncRefInputsFromState();
+      draw();
+    });
+    radiusRefInput.addEventListener('change', () => {
+      const n = parseNum(radiusRefInput.value);
+      if (n !== null) radiusRef = n;
+      clampRefs();
+      syncRefInputsFromState();
+      draw();
+    });
+
+    function showError(msg) {
+      errorHint.textContent = msg;
+      errorHint.hidden = !msg;
+    }
+
+    // Berechnet das Profil aus dem aktuell gehaltenen dxfText NEU (parser.js:
+    // buildToolProfileFromDxfText()) - wird bei jedem neuen Datei-Einlesen UND bei jeder
+    // Änderung des Skalierungsfaktors aufgerufen (Sebastians Nachtrag zur cm/mm-Skalierung:
+    // "bitte beim Werkzeugeinstellungsfenster eine DXF-Skalierung über einen Faktor
+    // einbauen"). Das Umschalten von "andere Seite verwenden" selbst braucht dagegen KEINE
+    // Neuberechnung, da sowohl mainProfile als auch alternateProfile bereits aus demselben
+    // Aufruf vorliegen. Bestehende Referenzpunkte werden bei einer Skalierungsänderung
+    // proportional mitverschoben (lastScale-Verhältnis), damit z. B. eine bereits auf die
+    // Werkzeugspitze gesetzte Längen-Referenz dort auch nach einer nachträglichen
+    // Skalierungskorrektur stehen bleibt, statt auf einen jetzt falschen alten mm-Wert
+    // "einzufrieren".
+    function reparse() {
+      if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      scaleWarning.hidden = true;
+      try {
+        const result = window.CNCParser.buildToolProfileFromDxfText(dxfText, { scale });
+        parsedMain = result.profile;
+        parsedAlternate = result.alternateProfile;
+        wasClosedLoop = result.wasClosedLoop;
+        alternateRow.hidden = !wasClosedLoop;
+        if (!wasClosedLoop) alternateCheckbox.checked = false;
+        if (!refsInitialized) {
+          // Release 200, Nachtrag (Sebastian, nach Test mit seinem realen Werkzeug: "Die
+          // eingelesene Kontur ist genau anders herum"): Statt blind den größten "dist"-Wert
+          // vorzubelegen (zufällige DXF-Zeichenrichtung, traf bei seinem Testwerkzeug den
+          // falschen - geraden, schaftseitigen - Extrempunkt statt des tatsächlichen,
+          // gestuften Schneidenendes), zuerst die geometrische Heuristik fragen
+          // (CNCParser.guessToolProfileTipDist(), siehe dortige Herleitung): Das Ende mit
+          // einer erkennbaren echten Stirnfläche (zwei unterschiedliche Radien am selben
+          // "dist"-Extremwert) ist mit hoher Wahrscheinlichkeit die tatsächliche Werkzeug-
+          // spitze. Nur falls keines der beiden Enden eindeutig erkennbar ist, bleibt der
+          // bisherige Standard (Maximum) als Fallback bestehen - der Benutzer kann die
+          // Referenzmarker jederzeit manuell per Ziehen/Zahlenfeld korrigieren.
+          const { max } = distRange();
+          const guessedTipDist = (window.CNCParser && window.CNCParser.guessToolProfileTipDist) ? window.CNCParser.guessToolProfileTipDist(activeProfile()) : null;
+          lengthRef = (guessedTipDist !== null) ? guessedTipDist : max;
+          radiusRef = lengthRef;
+          refsInitialized = true;
+        } else if (scale !== lastScale && lastScale > 0) {
+          const ratio = scale / lastScale;
+          lengthRef *= ratio; radiusRef *= ratio;
+        }
+        lastScale = scale;
+        clampRefs();
+        syncRefInputsFromState();
+        showError('');
+      } catch (err) {
+        parsedMain = null; parsedAlternate = null; wasClosedLoop = false;
+        alternateRow.hidden = true;
+        showError(err && err.message ? err.message : String(err));
+      }
+      draw();
+    }
+    scaleInput.addEventListener('change', reparse);
+    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); draw(); });
+
+    function stripDxfExtension(filename) { return filename.replace(/\.dxf$/i, ''); }
+
+    el('btnToolDxfImportChooseFile').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      readFileAsText(file, (text) => {
+        dxfText = text;
+        fileNameLabel.textContent = file.name;
+        if (!nameInput.value.trim()) nameInput.value = stripDxfExtension(file.name);
+        refsInitialized = false;
+        lastScale = parseNum(scaleInput.value) || 1;
+        reparse();
+      }, () => {
+        showError(T('Die Datei konnte nicht gelesen werden.', 'The file could not be read.'));
+      });
+      fileInput.value = '';
+    });
+
+    function populateProfileSelect(selectId) {
+      profileSelect.innerHTML = '';
+      toolDxfProfiles.slice().sort((a, b) => a.name.localeCompare(b.name, 'de')).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === selectId) opt.selected = true;
+        profileSelect.appendChild(opt);
+      });
+    }
+
+    function resetForm() {
+      currentId = null;
+      dxfText = null;
+      parsedMain = null; parsedAlternate = null; wasClosedLoop = false;
+      lengthRef = 0; radiusRef = 0; refsInitialized = false; lastScale = 1;
+      nameInput.value = '';
+      scaleInput.value = '1';
+      scaleWarning.hidden = true;
+      alternateRow.hidden = true;
+      alternateCheckbox.checked = false;
+      fileNameLabel.textContent = T('Keine Datei ausgewählt', 'No file selected');
+      lengthRefInput.value = '';
+      radiusRefInput.value = '';
+      showError('');
+      profileSelect.selectedIndex = -1;
+      draw();
+    }
+
+    function loadProfileIntoForm(p) {
+      currentId = p.id;
+      dxfText = p.dxfText;
+      parsedMain = p.mainProfile;
+      parsedAlternate = p.alternateProfile;
+      wasClosedLoop = p.wasClosedLoop;
+      nameInput.value = p.name;
+      scaleInput.value = fmtNum(p.scale);
+      lastScale = p.scale;
+      scaleWarning.hidden = true;
+      alternateRow.hidden = !wasClosedLoop;
+      alternateCheckbox.checked = !!p.usedAlternate;
+      fileNameLabel.textContent = T('Aus gespeichertem Profil geladen', 'Loaded from saved profile');
+      lengthRef = p.lengthRef;
+      radiusRef = p.radiusRef;
+      refsInitialized = true;
+      syncRefInputsFromState();
+      showError('');
+      draw();
+    }
+
+    profileSelect.addEventListener('change', () => {
+      const p = getToolDxfProfileById(profileSelect.value);
+      if (p) loadProfileIntoForm(p);
+    });
+    el('btnToolDxfProfileNew').addEventListener('click', resetForm);
+    el('btnToolDxfProfileDelete').addEventListener('click', () => {
+      const id = profileSelect.value;
+      const p = id && getToolDxfProfileById(id);
+      if (!p) return;
+      if (!window.confirm(T('Werkzeugprofil "' + p.name + '" wirklich löschen?', 'Really delete the "' + p.name + '" tool profile?'))) return;
+      deleteToolDxfProfile(id);
+      populateProfileSelect(null);
+      if (currentId === id) resetForm();
+      if (typeof refreshToolProfileDropdownOptions === 'function') refreshToolProfileDropdownOptions();
+    });
+
+    function openToolDxfImportPanel() {
+      resetForm();
+      populateProfileSelect(null);
+      panel.classList.add('open');
+    }
+    el('btnToolDxfImport').addEventListener('click', openToolDxfImportPanel);
+    // Release 201, Sebastian wörtlich: "Rechts neben dem '+Werkzeuge (T)' die 'Werkzeugprofil
+    // bearbeiten'-Funktion einfügen" - zweiter, gleichwertiger Auslöser direkt in der
+    // Symbolleiste (#btnEditToolProfileToolbarIcon, siehe dessen Deklaration neben
+    // #btnInsertToolData), exakt nach demselben Muster wie z.B. #btnEditProgramToolbarIcon als
+    // zweiter Auslöser neben dem Menüpunkt "CNC-Programm bearbeiten".
+    const btnEditToolProfileToolbarIcon = el('btnEditToolProfileToolbarIcon');
+    if (btnEditToolProfileToolbarIcon) {
+      btnEditToolProfileToolbarIcon.addEventListener('click', openToolDxfImportPanel);
+    }
+    el('btnToolDxfImportCancel').addEventListener('click', () => panel.classList.remove('open'));
+    el('btnToolDxfImportSave').addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) { showError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+      if (!dxfText || !parsedMain) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      const saved = saveToolDxfProfile({
+        id: currentId,
+        name: name,
+        dxfText: dxfText,
+        mainProfile: parsedMain,
+        alternateProfile: parsedAlternate,
+        wasClosedLoop: wasClosedLoop,
+        usedAlternate: alternateCheckbox.checked,
+        scale: scale,
+        lengthRef: lengthRef,
+        radiusRef: radiusRef
+      });
+      if (!saved) { showError(T('Das Profil konnte nicht gespeichert werden.', 'The profile could not be saved.')); return; }
+      currentId = saved.id;
+      populateProfileSelect(saved.id);
+      // "+Werkzeuge (T)"-Dropdown (siehe dortige Erweiterung) muss die neue/aktualisierte
+      // Profilliste ebenfalls kennen - refreshToolProfileDropdownOptions() wird dort definiert;
+      // zum Zeitpunkt DIESES Klicks (Dialog wird per Klick geöffnet, nicht beim Seitenstart
+      // ausgeführt) liegt die Definition bereits vor, der typeof-Schutz bleibt dennoch bestehen,
+      // falls diese Funktion künftig einmal entfernt werden sollte.
+      if (typeof refreshToolProfileDropdownOptions === 'function') refreshToolProfileDropdownOptions();
+      bakeParams = null;
+      requestRender();
+      panel.classList.remove('open');
+    });
+
+    draw();
+  })();
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -18651,7 +19907,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // "alreadyPresent"-Prüfung unten verlangt nur die ERSTEN beiden Zeilen, nicht schon alle vier).
   // Zeilenumbruch-Stil (CRLF/LF) des Originals bleibt erhalten (erkannt am ersten vorkommenden
   // "\r\n"), analog zur an anderer Stelle bereits dokumentierten Zeilenzahl-Erhaltung von swap.js.
-  function insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType) {
+  // "TOOLPROFILE" (NEU, Release 200, siehe TOOL_PROFILE_RE in parser.js sowie
+  // Konzept_DXF_Werkzeugdarstellung.md) - fünfter Parameter/fünfte Kommentarzeile, nach
+  // RADIUS/LENGTH/TOOLMODE/TOOLTYPE angefügt (gleiche Reihenfolge wie die Felder im Dialog
+  // selbst). Die bisherige, auf GENAU vier Zeilen zugeschnittene Einfüge-/Aktualisierungslogik
+  // (feste Indizes insertAt+2/+3) wurde dafür auf eine fortlaufende "cursor"-Variante
+  // umgestellt, die eine beliebige Anzahl optionaler Marker-Zeilen nacheinander prüft/einfügt -
+  // ältere Zwei-/Vier-Zeilen-Blöcke (aus Programmen, die noch nie mit dieser Runde bearbeitet
+  // wurden) werden dadurch beim nächsten "Ok" automatisch um die fehlenden Marker ergänzt,
+  // ohne vorhandene Werte zu duplizieren - exakt dasselbe Prinzip wie beim seinerzeitigen
+  // Übergang von zwei auf vier Zeilen (60. Runde, siehe historischer Kommentar oben).
+  function insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId) {
     const eol = rawProgramText.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
     const lines = rawProgramText.split(/\r\n|\n/);
     const insertAt = sec.headerEndIdx + 1;
@@ -18659,27 +19925,21 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const lengthLine = '; LENGTH ' + lengthStr;
     const modeLine = '; TOOLMODE ' + toolMode.toUpperCase();
     const typeLine = '; TOOLTYPE ' + toolType.toUpperCase();
+    const profileLine = '; TOOLPROFILE ' + (toolProfileId || 'NONE');
     const alreadyPresent = /^;\s*RADIUS\s/i.test(lines[insertAt] || '') && /^;\s*LENGTH\s/i.test(lines[insertAt + 1] || '');
     if (alreadyPresent) {
-      // Bereits vorhandener Vierzeilen-Block (oder ein älterer Zweizeilen-Block, der hier auf vier
-      // erweitert wird): TOOLMODE/TOOLTYPE-Zeilen nur dann als "schon vorhanden" behandeln, wenn
-      // sie tatsächlich an ihrer erwarteten Stelle (insertAt+2/+3) stehen - sonst werden sie neu
-      // eingefügt statt eine andere, nachfolgende Zeile versehentlich zu überschreiben.
       lines[insertAt] = radiusLine;
       lines[insertAt + 1] = lengthLine;
-      const hasModeLine = /^;\s*TOOLMODE\s/i.test(lines[insertAt + 2] || '');
-      const hasTypeLine = /^;\s*TOOLTYPE\s/i.test(lines[insertAt + (hasModeLine ? 3 : 2)] || '');
-      if (hasModeLine && hasTypeLine) {
-        lines[insertAt + 2] = modeLine;
-        lines[insertAt + 3] = typeLine;
-      } else if (hasModeLine) {
-        lines[insertAt + 2] = modeLine;
-        lines.splice(insertAt + 3, 0, typeLine);
-      } else {
-        lines.splice(insertAt + 2, 0, modeLine, typeLine);
+      let cursor = insertAt + 2;
+      function upsertMarker(re, line) {
+        if (re.test(lines[cursor] || '')) { lines[cursor] = line; } else { lines.splice(cursor, 0, line); }
+        cursor++;
       }
+      upsertMarker(/^;\s*TOOLMODE\s/i, modeLine);
+      upsertMarker(/^;\s*TOOLTYPE\s/i, typeLine);
+      upsertMarker(/^;\s*TOOLPROFILE\s/i, profileLine);
     } else {
-      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine);
+      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine, profileLine);
     }
     rawProgramText = lines.join(eol);
   }
@@ -18730,11 +19990,46 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   toolTypeSelect.addEventListener('change', applyToolTypeUI);
 
+  // "Werkzeugprofil" (NEU, Release 200, #toolProfileSelect) - baut die Optionsliste des
+  // Dropdowns komplett neu aus dem aktuellen toolDxfProfiles-Array auf (alphabetisch sortiert,
+  // "Kein Profil (Zylinder)" bleibt fest an erster Stelle - exakt dasselbe Grundprinzip wie
+  // populateMachineTypeSelect() weiter oben). `selectedId` wird - falls noch vorhanden -
+  // vorausgewählt, sonst fällt die Auswahl automatisch auf "Kein Profil" zurück (z. B. wenn das
+  // zuletzt für einen Arbeitsgang gewählte Profil inzwischen gelöscht wurde - dieser Arbeitsgang
+  // zeigt dann automatisch wieder den einfachen Zylinder, statt mit einer toten id ins Leere zu
+  // laufen). Wird sowohl beim ÖFFNEN dieses Dialogs (siehe Klick-Handler unten) als auch vom
+  // "Werkzeug-DXF einlesen"-Dialog nach jedem Speichern/Löschen eines Profils aufgerufen (siehe
+  // dortige btnToolDxfImportSave/btnToolDxfProfileDelete-Handler) - bewusst eine global
+  // erreichbare Funktion (nicht Teil des dortigen IIFE), da beide Dialoge unabhängig voneinander
+  // geöffnet werden können und die Liste immer aktuell sein muss.
+  function refreshToolProfileDropdownOptions(selectedId) {
+    const noneOption = toolProfileSelect.querySelector('option[value=""]');
+    toolProfileSelect.innerHTML = '';
+    if (noneOption) toolProfileSelect.appendChild(noneOption);
+    else {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = T('Kein Profil (Zylinder)', 'No profile (cylinder)');
+      toolProfileSelect.appendChild(opt);
+    }
+    toolDxfProfiles.slice().sort((a, b) => a.name.localeCompare(b.name, 'de')).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      toolProfileSelect.appendChild(opt);
+    });
+    toolProfileSelect.value = (selectedId && getToolDxfProfileById(selectedId)) ? selectedId : '';
+  }
+
   btnInsertToolData.addEventListener('click', () => {
     if (btnInsertToolData.disabled || scopeMode.type !== 'op' || !current) return;
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
     if (!sec) return;
     toolDataActiveSec = sec;
+    // "Werkzeugprofil" (NEU, Release 200): Vorbelegung mit dem zuletzt für DIESEN Arbeitsgang
+    // gesetzten Profil (sec.toolProfileId, siehe extractToolData()/TOOL_PROFILE_RE in parser.js) -
+    // exakt dasselbe Vorbelegungs-Prinzip wie bei Radius/Länge/Werkzeugtyp direkt darunter.
+    refreshToolProfileDropdownOptions(sec.toolProfileId);
     // Vorbelegung der beiden Dropdowns (60. Runde) mit den zuletzt für diesen Arbeitsgang
     // erkannten/gesetzten Werten (siehe extractToolData()/sec.toolMode/sec.toolType oben) -
     // fehlender Marker (null, z.B. bei noch nie über diesen Dialog gesetzten Werkzeugdaten oder
@@ -18775,7 +20070,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const lengthStr = normalizeToolValue(toolLengthInput.value, 200);
     const toolMode = toolModeSelect.value === 'ohnehsk63' ? 'ohnehsk63' : 'eingespannt';
     const toolType = toolTypeSelect.value === 'saege' ? 'saege' : 'fraeser';
-    insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType);
+    // "Werkzeugprofil" (NEU, Release 200): leerer Wert ("Kein Profil (Zylinder)") wird als
+    // null übergeben - insertToolDataComment() schreibt dafür bewusst explizit "; TOOLPROFILE
+    // NONE" statt den Marker wegzulassen (siehe dortiger Kommentar).
+    const toolProfileId = toolProfileSelect.value || null;
+    insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId);
     // "Spannzange, Änderung" (Release 140, Sebastian: "'Ohne HSK63-Sample' ist quasi wie
     // 'Spannzange ausgeblendet'"): die Dropdown-Auswahl wirkt beim Bestätigen NICHT nur auf den
     // für diesen Arbeitsgang geschriebenen Kommentar-Marker (oben), sondern auch direkt auf den
@@ -19963,6 +21262,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   cutterAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_CUTTER);
   sawAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_SAW);
   colletAppearance = loadPersistedToolAppearance(LS_KEY_TOOL_APPEARANCE_COLLET);
+  // "Werkzeug-DXF einlesen" (Release 200): ebenfalls schon vor dem ersten Programm-Laden aus
+  // localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Werkzeuge" direkt
+  // oberhalb - direkt vom "+Werkzeuge (T)"-Dialog (Profil-Dropdown) sowie von der neuen
+  // profilbasierten Zeichenfunktion ausgewertet (siehe dort).
+  toolDxfProfiles = loadPersistedToolDxfProfiles();
+  // Globaler Fallback-Schalter "Werkzeugprofil (DXF-Form)" (Release 200) - ebenfalls schon vor
+  // dem ersten Programm-Laden übernehmen, direkt von drawTool() ausgewertet (siehe dort).
+  useToolProfileShapes = loadPersistedUseToolProfileShapes();
   // "Spannfutter einblenden"/"ausblenden" (Release 192): ebenfalls schon vor dem ersten Programm-
   // Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Werkzeuge" direkt
   // oberhalb - reine Variablenzuweisung statt setShowToolHolder() (genau wie bei gridVisible weiter
