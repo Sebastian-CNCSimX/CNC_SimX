@@ -3748,6 +3748,23 @@
         <input type="text" id="toolLengthInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
+    <!-- Radius-/Längenwerte muessen groesser als 0 sein (Release 204, Sebastian: "Bei den
+         Werkzeuglängen (+Werkzeuge (T)) sind negative Längen als Eingabe zulässig und das Werkzeug
+         verschwindet dann. Bitte verbiete negative Längeneingaben." - zunaechst nur negative Werte
+         gesperrt. Release 205, direkte Ruckmeldung dazu, Sebastian: "0 sollte auch als Eingabe
+         verboten werden. 0mm Länge/Radius ergibt auch nichts. :/" - Grenze deshalb seit Release 205
+         von "< 0" auf "<= 0" verschaerft, Warnungstext entsprechend von "nicht negativ" auf "groesser
+         als 0" umformuliert; ID/Markup-Position unveraendert.) - bis Release 203 liess
+         normalizeToolValue() (siehe dort) jede syntaktisch gueltige Zahl inklusive eines fuehrenden
+         Minus durch (bewusst so, fuer die DXF-Verschiebung/-Drehung, wo negative Werte sinnvoll/
+         noetig sind, siehe dortige Kommentare) - ein negativer ODER NULL-RADIUS/LENGTH-Wert lieferte
+         in drawTool() eine "unsichtbare" bzw. optisch zerstoerte Geometrie, exakt wie der bereits
+         einmal beim DXF-Werkzeugprofil behobene Bug mit negativen Radien (siehe 9.7.7), hier aber
+         eine Ebene hoeher bei der direkten Zahleneingabe selbst. Dieselbe "Übernehmen"-Zeitpunkt-
+         Validierung wie beim Vorschub-Skalierungsfaktor (#millTimeFeedScaleWarning) - siehe
+         confirmInsertToolData() in app.js: Radius ODER Länge <= 0 -> Warnung einblenden, Dialog
+         bleibt offen, nichts wird eingefuegt. -->
+    <p class="panel-hint" id="toolDataNegativeWarning" data-i18n-en="Radius and length must be greater than 0." hidden>Radius und Länge müssen größer als 0 sein.</p>
     <div class="tool-data-row">
       <!-- "Spannzange, Änderung" (Release 140, Sebastian: "Es gibt keine eingespannte und
            ausgespannte Länge mehr. Länge Werkzeug ist immer eingespannt.") - die frühere
@@ -5145,9 +5162,19 @@
       <div class="context-menu-divider"></div>
       <button class="menu-item" id="ctxBtnArea3dSettings" type="button" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
       <div class="context-menu-divider"></div>
+      <!-- "Werkzeugprofil bearbeiten" im Kontextmenü ergänzt (Release 203, Sebastian: "'Werkzeugprofil
+           bearbeiten' bitte auch ins Rechtsklickkontextmenü einbauen. :-)") - direkt im "Werkzeuge"-
+           Flyout hier, als neuer erster Eintrag vor "Säge"/"Spannfutter"/"Fräser" (eigener Trennstrich
+           dazwischen) - spiegelt damit dieselbe Reihenfolge wie im echten Menüband-Untermenü
+           "Werkzeuge" (#submenuToolsTop: "Werkzeugprofil bearbeiten" flach, dann "Werkzeugdarstellung"
+           mit Säge/Spannfutter/Fräser, siehe dort). Exakt dieselbe ".click()"-Weiterleitungs-Technik
+           wie die drei bestehenden Einträge darunter (ctxBtnToolSaw usw.) - ruft #btnToolDxfImport
+           auf, keine eigene neue Öffnen-Logik. -->
       <div class="menu-submenu" id="ctxSubmenuTools">
         <button class="menu-item submenu-trigger" id="ctxToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
         <div class="submenu-dropdown" id="ctxToolsDropdown" hidden>
+          <button class="menu-item" id="ctxBtnEditToolProfile" type="button" data-i18n-en="Edit tool profile">Werkzeugprofil bearbeiten</button>
+          <div class="context-menu-divider"></div>
           <button class="menu-item" id="ctxBtnToolSaw" type="button" data-i18n-en="Saw">Säge</button>
           <button class="menu-item" id="ctxBtnToolCollet" type="button" data-i18n-en="Collet">Spannfutter</button>
           <button class="menu-item" id="ctxBtnToolCutter" type="button" data-i18n-en="Cutter">Fräser</button>
@@ -8105,7 +8132,7 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 202;
+  const APP_RELEASE_NUMBER = 207;
   const APP_RELEASE_TIMESTAMP = '13.10.2026, 06:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
@@ -9414,12 +9441,13 @@ CORNERRADIUS=GFIL r=
     const maxDist = Math.max.apply(null, distValues);
     let lengthRef = Number(raw.lengthRef);
     let radiusRef = Number(raw.radiusRef);
-    // Release 200, Nachtrag: bessere Default-Vorbelegung über CNCParser.guessToolProfileTipDist()
-    // (siehe dortige Herleitung) statt blind "maxDist" - greift hier nur im seltenen Fall eines
-    // unvollständigen/alten Datensatzes ohne eigene lengthRef/radiusRef-Werte (der reguläre
-    // Speicherpfad über saveToolDxfProfile() schreibt beide Werte immer explizit mit).
-    const guessedTipDist = (typeof CNCParser !== 'undefined' && CNCParser.guessToolProfileTipDist) ? CNCParser.guessToolProfileTipDist(activeProfile) : null;
-    const defaultRef = (guessedTipDist !== null) ? guessedTipDist : maxDist;
+    // Release 207 (vorher: CNCParser.guessToolProfileTipDist()-Heuristik, siehe deren
+    // ausführliche Herleitung beim Aufruf in reparse() oben): Default-Vorbelegung für einen
+    // unvollständigen/alten Datensatz ohne eigene lengthRef/radiusRef-Werte (der reguläre
+    // Speicherpfad über saveToolDxfProfile() schreibt beide Werte immer explizit mit) folgt
+    // seit Sebastians Konvention ("Werkzeugreferenzpunkt immer unten") ebenfalls einfach dem
+    // unteren "dist"-Extremwert statt der Heuristik bzw. "maxDist".
+    const defaultRef = minDist;
     if (!Number.isFinite(lengthRef)) lengthRef = defaultRef;
     if (!Number.isFinite(radiusRef)) radiusRef = defaultRef;
     lengthRef = Math.max(minDist, Math.min(maxDist, lengthRef));
@@ -10795,6 +10823,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const toolDataPanel = el('toolDataPanel');
   const toolRadiusInput = el('toolRadiusInput');
   const toolLengthInput = el('toolLengthInput');
+  const toolDataNegativeWarning = el('toolDataNegativeWarning'); // Release 204, siehe confirmInsertToolData()
   const toolLengthLabelText = el('toolLengthLabelText');
   // "T-Längen:"/Werkzeugtyp-Dropdowns (60. Runde) - siehe btnInsertToolData-Klick-Handler
   // (Vorbelegung) sowie confirmInsertToolData()/insertToolDataComment() (Übernahme) weiter unten.
@@ -16763,6 +16792,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     axisColor: el('ctxBtnAxisColor'),
     columnScale: el('ctxBtnColumnScale'),
     area3dSettings: el('ctxBtnArea3dSettings'),
+    // Release 203: "Werkzeugprofil bearbeiten" im "Werkzeuge"-Kontextmenü-Flyout, siehe
+    // Markup-Kommentar bei #ctxBtnEditToolProfile - aus demselben Grund wie die übrigen neun
+    // Weiterleitungs-Knöpfe oben kein Eintrag für updateContextMenuState() nötig (nie
+    // deaktiviert/dynamisch umbeschriftet), die eigentliche Verdrahtung steht bei den übrigen
+    // ctxItems-Klick-Listenern weiter unten.
+    editToolProfile: el('ctxBtnEditToolProfile'),
     toolSaw: el('ctxBtnToolSaw'),
     toolCollet: el('ctxBtnToolCollet'),
     toolCutter: el('ctxBtnToolCutter')
@@ -16886,6 +16921,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   ctxItems.axisColor.addEventListener('click', () => el('btnAxisColor').click());
   ctxItems.columnScale.addEventListener('click', () => el('btnColumnScale').click());
   ctxItems.area3dSettings.addEventListener('click', () => el('btnArea3dSettings').click());
+  ctxItems.editToolProfile.addEventListener('click', () => el('btnToolDxfImport').click());
   ctxItems.toolSaw.addEventListener('click', () => el('btnToolAppearanceSaw').click());
   ctxItems.toolCollet.addEventListener('click', () => el('btnToolAppearanceCollet').click());
   ctxItems.toolCutter.addEventListener('click', () => el('btnToolAppearanceCutter').click());
@@ -18865,7 +18901,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     let wasClosedLoop = false;
     let lengthRef = 0;
     let radiusRef = 0;
-    let refsInitialized = false; // erstmalige Default-Zuweisung (= Maximum) erfolgt nur einmal
+    let refsInitialized = false; // erstmalige Default-Zuweisung (seit Release 207 = Minimum/"unten", siehe reparse()) erfolgt nur einmal
     let lastScale = 1;           // für die proportionale Mitverschiebung der Referenzpunkte
     let dragTarget = null;       // 'length' | 'radius' | null, während eines Canvas-Drags
 
@@ -18920,17 +18956,35 @@ Sebastian Bäcker (Anschrift wie oben)`,
       function yOf(dist) { return padding + drawableH * (1 - (dist - distMin) / distSpan); }
       function xOf(r) { return w / 2 + (r / rMax) * (drawableW / 2) * 0.9; }
 
-      // Silhouette (sortiert nach dist, damit sie unabhängig von der DXF-Ketten-Reihenfolge
-      // korrekt von unten nach oben verläuft) - rechte Kontur hoch, linke (gespiegelte) Kontur
-      // wieder runter, als ein einziger geschlossener Pfad.
-      const sorted = prof.slice().sort((a, b) => a.dist - b.dist);
+      // Silhouette - rechte Kontur hoch, linke (gespiegelte) Kontur wieder runter, als ein
+      // einziger geschlossener Pfad.
+      //
+      // Bugfix (Release 206, Sebastian mit Minizinkenfraeser.DXF: "Die DXF sieht aber 'etwas'
+      // anders aus unten. Kannst du da mal drüberschauen?"): Hier wurde bislang NACH "dist"
+      // sortiert ("damit sie unabhängig von der DXF-Ketten-Reihenfolge korrekt von unten nach
+      // oben verläuft"). Das setzt voraus, dass "dist" entlang der Kette durchgehend monoton
+      // verläuft - trifft auf ein Kammfräser-/Zinkenprofil wie Sebastians Minizinkenfraeser aber
+      // NICHT zu: der letzte, spitzennahe Zahn hat dort (geometrisch völlig korrekt, siehe die
+      // unverändert passenden einzelnen LINE-Elemente in der DXF) einen kurzen Rücksprung in
+      // "dist" (z.B. 15,2 -> 10,4 -> 9,6 -> 11,2mm), bevor das Profil weiter zur Spitze hin
+      // verjüngt. Eine reine dist-Sortierung reißt genau an dieser Stelle benachbarte, in
+      // Wirklichkeit unzusammenhängende Punkte zu "neuen" Nachbarn zusammen und erzeugt dadurch
+      // sich selbst überkreuzende Linien in der Vorschau (zwei Zähne kurz vor der Spitze wirkten
+      // dadurch ineinander verdreht statt sauber gezackt).
+      //
+      // `prof` kommt aus buildProfileChainFromStrokes()/toProfile() aber bereits als
+      // durchgehend verbundene, geometrisch korrekte Punktkette (jeder Punkt ist der reale
+      // Nachbar des vorigen entlang der Kontur) - hier reicht es, diese Reihenfolge UNVERÄNDERT
+      // zu übernehmen und nötigenfalls (falls die Kette bei distMax statt bei distMin beginnt)
+      // EINMAL als Ganzes zu spiegeln, statt die einzelnen Punkte umzusortieren.
+      const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
       ctx.beginPath();
-      sorted.forEach((p, i) => {
+      ordered.forEach((p, i) => {
         const x = xOf(p.r), y = yOf(p.dist);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
-      for (let i = sorted.length - 1; i >= 0; i--) {
-        ctx.lineTo(xOf(-sorted[i].r), yOf(sorted[i].dist));
+      for (let i = ordered.length - 1; i >= 0; i--) {
+        ctx.lineTo(xOf(-ordered[i].r), yOf(ordered[i].dist));
       }
       ctx.closePath();
       ctx.fillStyle = 'rgba(120,140,170,0.35)';
@@ -19060,16 +19114,32 @@ Sebastian Bäcker (Anschrift wie oben)`,
           // eingelesene Kontur ist genau anders herum"): Statt blind den größten "dist"-Wert
           // vorzubelegen (zufällige DXF-Zeichenrichtung, traf bei seinem Testwerkzeug den
           // falschen - geraden, schaftseitigen - Extrempunkt statt des tatsächlichen,
-          // gestuften Schneidenendes), zuerst die geometrische Heuristik fragen
-          // (CNCParser.guessToolProfileTipDist(), siehe dortige Herleitung): Das Ende mit
-          // einer erkennbaren echten Stirnfläche (zwei unterschiedliche Radien am selben
-          // "dist"-Extremwert) ist mit hoher Wahrscheinlichkeit die tatsächliche Werkzeug-
-          // spitze. Nur falls keines der beiden Enden eindeutig erkennbar ist, bleibt der
-          // bisherige Standard (Maximum) als Fallback bestehen - der Benutzer kann die
-          // Referenzmarker jederzeit manuell per Ziehen/Zahlenfeld korrigieren.
-          const { max } = distRange();
-          const guessedTipDist = (window.CNCParser && window.CNCParser.guessToolProfileTipDist) ? window.CNCParser.guessToolProfileTipDist(activeProfile()) : null;
-          lengthRef = (guessedTipDist !== null) ? guessedTipDist : max;
+          // gestuften Schneidenendes), zunächst die geometrische Heuristik
+          // CNCParser.guessToolProfileTipDist() befragt (zwei unterschiedliche Radien am
+          // selben "dist"-Extremwert = erkennbare echte Stirnfläche). Funktionierte für
+          // Sebastians OmegaFraeser80x45.DXF (Stirnfläche eindeutig am unteren Ende), versagte
+          // aber beim Minizinkenfraeser.DXF (Release 206): BEIDE Enden sind dort einfache,
+          // symmetrische Stirnflächen mit GLEICHEM Radius auf beiden Seiten - die Heuristik
+          // erkennt an keinem der beiden Enden eine "echte" (unterschiedliche) Stirnfläche und
+          // fiel auf das bisherige Maximum (Schaftende) zurück, obwohl die tatsächliche Spitze
+          // eindeutig am unteren Ende lag.
+          //
+          // Fix (Release 207, Sebastian wörtlich: "Bitte automatisch lösen, dass der
+          // Werkzeugreferenzpunkt immer unten ist. Die DXF wird immer so eingelesen, wie das
+          // Werkzeug so vor dir stehen würde. Was in der DXF 'oben' ist, ist auch in der
+          // Realität oben."): Die Heuristik wird durch eine einfache, von Sebastian explizit
+          // vorgegebene KONVENTION ersetzt - die Werkzeugspitze liegt IMMER am unteren
+          // "dist"-Extremwert (Minimum), das Schaft-/Spannfutterende immer am oberen
+          // (Maximum), unabhängig von erkennbaren Stirnflächen. Für beide bislang bekannten
+          // echten Testwerkzeuge (OmegaFraeser80x45.DXF: Spitze bei -85mm = Minimum;
+          // Minizinkenfraeser.DXF: Spitze bei 0mm = Minimum) liefert das exakt dasselbe,
+          // korrekte Ergebnis wie zuvor die Heuristik bzw. jetzt zusätzlich auch für den
+          // bislang falsch behandelten Minizinkenfraeser-Fall. `guessToolProfileTipDist()`
+          // selbst bleibt unverändert im Parser-Modul bestehen (weiterhin exportiert), wird für
+          // diese Default-Vorbelegung aber nicht mehr aufgerufen - der Benutzer kann die
+          // Referenzmarker ohnehin jederzeit manuell per Ziehen/Zahlenfeld korrigieren.
+          const { min } = distRange();
+          lengthRef = min;
           radiusRef = lengthRef;
           refsInitialized = true;
         } else if (scale !== lastScale && lastScale > 0) {
@@ -19197,6 +19267,31 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (!dxfText || !parsedMain) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      // Bugfix (Release 207, Sebastian: "Bei der Eingabe der Längenreferenzpunkte,
+      // Radiusreferenzpunkte usw. geht in dem Fenster 'Enter' nicht. Das Fenster geht zu, aber
+      // die Werte werden nicht gespeichert"): lengthRef/radiusRef werden bislang NUR über den
+      // 'change'-Listener der beiden Zahlenfelder aktualisiert (s. o.) - 'change' feuert aber nur
+      // bei echtem Fokusverlust (Tab/Klick woanders hin). Der globale Enter-Shortcut (window-
+      // keydown-Handler weiter oben) klickt bei offenem Dialog direkt den Primary-Button
+      // (`.btn.primary`, hier „Speichern") per `primaryBtn.click()` - ein rein synthetischer
+      // Klick, der (anders als ein echter Mausklick) das gerade fokussierte Eingabefeld NICHT
+      // vorher blur(t) und damit auch kein 'change' auslöst. Tippt man also einen neuen Wert in
+      // eines der beiden Referenzfelder und drückt direkt Enter (ohne vorher z. B. zu tabben),
+      // blieb `lengthRef`/`radiusRef` beim ALTEN Wert - „Name"/„Skalierungsfaktor" (oben) waren
+      // davon NICHT betroffen, weil sie ihren Wert immer schon hier, frisch direkt aus dem
+      // jeweiligen Eingabefeld (`.value`), lesen statt aus einer separat zwischengespeicherten
+      // Variable. Fix: dieselbe Technik - die beiden Referenzfelder hier ebenfalls noch einmal
+      // frisch auslesen (inkl. erneutem `clampRefs()`/`syncRefInputsFromState()`), BEVOR
+      // gespeichert wird - deckt sowohl den Enter-Fall als auch ein aus irgendeinem Grund
+      // übersprungenes 'change' ab, ohne an der bestehenden Drag-/Zahlenfeld-Logik selbst (noch
+      // am globalen Enter-Shortcut-Mechanismus, der von vielen anderen Dialogen unverändert so
+      // gebraucht wird) etwas zu ändern.
+      const typedLengthRef = parseNum(lengthRefInput.value);
+      if (typedLengthRef !== null) lengthRef = typedLengthRef;
+      const typedRadiusRef = parseNum(radiusRefInput.value);
+      if (typedRadiusRef !== null) radiusRef = typedRadiusRef;
+      clampRefs();
+      syncRefInputsFromState();
       const saved = saveToolDxfProfile({
         id: currentId,
         name: name,
@@ -20026,6 +20121,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
     if (!sec) return;
     toolDataActiveSec = sec;
+    toolDataNegativeWarning.hidden = true; // Release 204, siehe confirmInsertToolData()
     // "Werkzeugprofil" (NEU, Release 200): Vorbelegung mit dem zuletzt für DIESEN Arbeitsgang
     // gesetzten Profil (sec.toolProfileId, siehe extractToolData()/TOOL_PROFILE_RE in parser.js) -
     // exakt dasselbe Vorbelegungs-Prinzip wie bei Radius/Länge/Werkzeugtyp direkt darunter.
@@ -20068,6 +20164,20 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!sec) { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; return; }
     const radiusStr = normalizeToolValue(toolRadiusInput.value, 8);
     const lengthStr = normalizeToolValue(toolLengthInput.value, 200);
+    // Radius-/Längenwerte muessen > 0 sein (Release 204 zunaechst nur "< 0" verboten, seit Release
+    // 205 auf "<= 0" verschaerft - siehe Markup-Kommentar bei #toolDataNegativeWarning, Sebastian
+    // direkt im Anschluss an Release 204: "0 sollte auch als Eingabe verboten werden. 0mm Länge/
+    // Radius ergibt auch nichts. :/"). normalizeToolValue() selbst akzeptiert ein führendes Minus
+    // weiterhin unverändert (bleibt für andere Felder wie die DXF-Verschiebung nötig) - die
+    // eigentliche Sperre sitzt deshalb erst hier, auf den bereits normalisierten Werten. Ist der
+    // Radius ODER die Länge kleiner-gleich 0, wird die Eingabe zurückgewiesen (Warnung einblenden,
+    // Dialog bleibt offen, nichts wird in den Programmtext eingefügt) - exakt dasselbe "Übernehmen"-
+    // Zeitpunkt-Validierungsmuster wie bei #millTimeFeedScaleWarning (dort ebenfalls "<= 0").
+    if (parseFloat(radiusStr) <= 0 || parseFloat(lengthStr) <= 0) {
+      toolDataNegativeWarning.hidden = false;
+      return;
+    }
+    toolDataNegativeWarning.hidden = true;
     const toolMode = toolModeSelect.value === 'ohnehsk63' ? 'ohnehsk63' : 'eingespannt';
     const toolType = toolTypeSelect.value === 'saege' ? 'saege' : 'fraeser';
     // "Werkzeugprofil" (NEU, Release 200): leerer Wert ("Kein Profil (Zylinder)") wird als
