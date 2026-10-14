@@ -1783,7 +1783,7 @@
      lang, um sie ohne unnötiges Aufblähen der kurzen CNC-/DXF-Icons in dieselbe Breite zu
      zwingen; Sebastian hat für diese Anfrage ausdrücklich nur "CNC und DXF" genannt. */
   #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
-  #btnDxfImportIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
+  #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
@@ -2190,7 +2190,11 @@
     background: var(--panel-2); color: var(--ink);
     font-size: 12.5px;
   }
-  .tool-dxf-profile-list-actions { display: flex; gap: 8px; }
+  /* Release 209 ("Kopieren"-Knopf ergänzt, siehe #btnToolDxfProfileCopy): flex-wrap ergänzt,
+     damit drei statt vormals zwei kleine Knöpfe auch bei schmalem Fenster (siehe die
+     Einspaltig-Umschaltung unter 720px weiter oben) notfalls zweizeilig statt überlaufend
+     umbrechen. */
+  .tool-dxf-profile-list-actions { display: flex; flex-wrap: wrap; gap: 8px; }
   .tool-dxf-import-filename { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
   #toolDxfImportCanvas {
     width: 100%; height: auto; aspect-ratio: 260 / 420;
@@ -2452,6 +2456,16 @@
             <button class="menu-item submenu-trigger" id="submenuFileDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuFileDxfDropdown" hidden>
               <button class="menu-item" id="btnDxfImport" type="button" title="DXF-Datei als Unterlage unter die gefräste Kontur importieren (unabhängig vom geladenen CNC-Programm)" data-i18n-en="Import DXF" data-i18n-en-title="Import a DXF file as an underlay beneath the milled contour (independent of the loaded CNC program)">DXF importieren</button>
+              <!-- "DXF speichern als..." (Release 208, Sebastian, Punkt 2: "'Datei -> DXF -> DXF
+                   speichern als...' (Format nur .DXF ermöglichen). Angeordnet in der Höhe unter
+                   'DXF importieren'") - speichert die rohen, nicht tessellierten DXF-Entitäten
+                   (siehe dxfEntities/parseDxfEntitiesRaw() in app.js/parser.js) unter einem frei
+                   wählbaren Dateinamen als .DXF-Datei (erzwungene Endung, siehe
+                   confirmDxfSaveAs()). Punkt 7: nur aktivierbar, solange ein DXF importiert UND
+                   KEIN CNC-Programm geladen ist (reine DXF-Standalone-Nutzung) - siehe
+                   updateDxfUI(). Drei gleichwertige Auslöser für dieselbe Funktion (hier, das
+                   Toolbar-Icon "💾 DXF" #btnDxfSaveAsIcon, und der Kontextmenüpunkt #ctxDxfSaveAs). -->
+              <button class="menu-item" id="btnDxfSaveAsFileMenu" type="button" disabled title="DXF speichern als... - erst verfügbar, sobald ein DXF importiert und KEIN CNC-Programm geladen ist" data-i18n-en="Save DXF as…" data-i18n-en-title="Save DXF as... - only available once a DXF has been imported and NO CNC program is loaded">DXF speichern als…</button>
               <!-- "DXF löschen" (Release 169, Sebastian, Punkt 4: NEU) - dritter, gleichwertiger
                    Auslöser für dieselbe, unveränderte clearDxf()-Funktion wie der Menüpunkt
                    "DXF löschen" im "Bearbeiten"->"DXF"-Menü (#btnDxfDeleteMenu) und das
@@ -2539,6 +2553,19 @@
           <div class="menu-submenu" id="submenuDxf">
             <button class="menu-item submenu-trigger" id="submenuDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuDxfDropdown" hidden>
+              <!-- "DXF Polylinien auflösen" (Release 208, Sebastian, Punkt 1: "Neue Menüpunkte 1
+                   'Bearbeiten -> DXF -> DXF Polylinien auflösen'. Angeordnet in der Höhe ganz
+                   oben") - zerlegt jede Polylinien-Entität der importierten DXF-Unterlage
+                   (LWPOLYLINE bzw. POLYLINE/VERTEX) in einzelne, eigenständige Linien- und
+                   Bogen(ARC)-Entitäten (siehe explodeDxfEntities() in parser.js) - wirkt sich NUR
+                   auf die rohen, für "DXF speichern als..." vorgehaltenen Entitäten aus
+                   (dxfEntities in app.js), nicht auf die bereits ohnehin tessellierte 3D-Anzeige
+                   selbst. Punkt 7: nur aktivierbar, solange ein DXF importiert UND KEIN
+                   CNC-Programm geladen ist UND die DXF tatsächlich noch (mindestens) eine
+                   Polylinie enthält - siehe updateDxfUI(). Drei gleichwertige Auslöser für
+                   dieselbe Funktion (hier, das Toolbar-Icon "💣 DXF" #btnDxfExplodeIcon, und der
+                   Kontextmenüpunkt #ctxDxfExplode). -->
+              <button class="menu-item" id="btnDxfExplodeMenu" type="button" disabled title="DXF Polylinien auflösen - erst verfügbar, sobald ein DXF mit Polylinien importiert und KEIN CNC-Programm geladen ist" data-i18n-en="Explode DXF polylines" data-i18n-en-title="Explode DXF polylines - only available once a DXF with polylines has been imported and NO CNC program is loaded">DXF Polylinien auflösen</button>
               <button class="menu-item" id="btnDxfMoveMenu" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Move DXF" data-i18n-en-title="Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported">DXF verschieben</button>
               <button class="menu-item" id="btnDxfMirrorXMenu" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (X axis)" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">DXF spiegeln X-Achse</button>
               <button class="menu-item" id="btnDxfMirrorYMenu" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (Y axis)" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">DXF spiegeln Y-Achse</button>
@@ -3191,6 +3218,15 @@
          bisherigen internen Reihenfolge aus der 67./68. Runde. -->
     <div class="toolbar-row" id="toolbarRow2">
       <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
+      <!-- "💾 DXF"/"💣 DXF" (Release 208, Sebastian, Punkte 5+6: "Rechts neben DXF-Laden
+           (Symbolleiste) ein 'DXF speichern als...' Symbol (am besten einfach eine Diskette +
+           DXF) einbauen" sowie "Rechts neben 'DXF speichern als...' (Symbolleiste) ein 'DXF
+           Sprengen' Symbol (am besten einfach ein 'Bombensymbol' + DXF) einbauen. So sieht das in
+           CAD Programmen meist aus.") - zwei weitere, gleichwertige Auslöser direkt rechts neben
+           "📂 DXF" (Laden), noch vor "👁 DXF" (Ein-/Ausblenden), für dieselben Funktionen wie
+           #btnDxfSaveAsFileMenu/#ctxDxfSaveAs bzw. #btnDxfExplodeMenu/#ctxDxfExplode. -->
+      <button class="toolbar-btn" id="btnDxfSaveAsIcon" type="button" disabled title="DXF speichern als... - erst verfügbar, sobald ein DXF importiert und KEIN CNC-Programm geladen ist" data-i18n-en-title="Save DXF as... - only available once a DXF has been imported and NO CNC program is loaded">💾 DXF</button>
+      <button class="toolbar-btn" id="btnDxfExplodeIcon" type="button" disabled title="DXF Polylinien auflösen - erst verfügbar, sobald ein DXF mit Polylinien importiert und KEIN CNC-Programm geladen ist" data-i18n-en-title="Explode DXF polylines - only available once a DXF with polylines has been imported and NO CNC program is loaded">💣 DXF</button>
       <button class="toolbar-btn tool-toggle-btn" id="btnToggleDxf" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the imported DXF in the 3D view"><span class="eye-glyph">👁</span> DXF</button>
       <button class="toolbar-btn" id="btnDxfMoveIcon" type="button" disabled title="Verschiebung (X/Y/Z) des importierten DXF eingeben - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Enter the offset (X/Y/Z) of the imported DXF - only available once a DXF has been imported">✥ DXF</button>
       <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">⬍ DXF</button>
@@ -3704,6 +3740,22 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnSaveAsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnSaveAsConfirm" type="button" data-i18n-en="Save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- "DXF speichern als..." (Release 208, Sebastian, Punkt 2: "Format nur .DXF ermöglichen") -
+     dasselbe Dialog-Markup-Muster wie #saveAsPanel direkt oberhalb, siehe
+     openDxfSaveAsPanel()/confirmDxfSaveAs() in app.js. Die erzwungene .dxf-Endung wird dort beim
+     Speichern selbst nachgezogen, nicht schon im Eingabefeld bevormundet. -->
+<div class="paste-panel" id="dxfSaveAsPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Save DXF as…">DXF speichern als…</h3>
+    <p class="panel-hint" data-i18n-en="Downloads the imported DXF underlay (including any polylines already exploded into lines/arcs) under this file name as a .DXF file.">Lädt die importierte DXF-Unterlage (inkl. bereits in Linien/Bögen aufgelöster Polylinien) unter diesem Dateinamen als .DXF-Datei herunter.</p>
+    <input type="text" id="dxfSaveAsFilenameInput" class="filename-input" spellcheck="false">
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnDxfSaveAsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnDxfSaveAsConfirm" type="button" data-i18n-en="Save">Speichern</button>
     </div>
   </div>
 </div>
@@ -4805,6 +4857,18 @@
           <select id="toolDxfProfileSelect" size="5" class="tool-dxf-profile-select"></select>
           <div class="tool-dxf-profile-list-actions">
             <button class="btn ghost small" id="btnToolDxfProfileNew" type="button" data-i18n-en="New">Neu</button>
+            <!-- "Kopieren" (Release 209, Sebastian: "Kannst du bitte beim 'Werkzeugprofil
+                 bearbeiten' dort wo Neu und Löschen steht einen neuen Punkt daneben einbauen
+                 'Kopieren'. Der kopiert ein Profil sofort und fügt ein '_1' hinter dem Namen ein
+                 und das Profil ist dann direkt zum weiterbearbeiten aktiv. Man kann dadurch
+                 Daten sofort anpassen.") - dritter, zwischen "Neu" und "Löschen" eingefügter
+                 Knopf, operiert wie "Löschen" auf dem gerade in der Liste ausgewählten Profil
+                 (#toolDxfProfileSelect), siehe copyToolDxfProfile()/den Klick-Handler weiter
+                 unten für die vollständige Herleitung. Bewusst kein eigener disabled-Zustand -
+                 exakt dasselbe, bereits etablierte Muster wie bei "Löschen" direkt daneben (kein
+                 ausgewähltes Profil -> Klick ist wirkungslos, kein Hinweis/keine Fehlermeldung
+                 nötig). -->
+            <button class="btn ghost small" id="btnToolDxfProfileCopy" type="button" data-i18n-en="Copy">Kopieren</button>
             <button class="btn ghost small" id="btnToolDxfProfileDelete" type="button" data-i18n-en="Delete">Löschen</button>
           </div>
         </div>
@@ -5115,6 +5179,16 @@
     <button class="menu-item submenu-trigger" id="ctxDxfTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
     <div class="submenu-dropdown" id="ctxDxfDropdown" hidden>
       <button class="menu-item" id="ctxLoadDxf" type="button" data-i18n-en="Load DXF">DXF laden</button>
+      <!-- "DXF speichern als..."/"DXF Polylinien auflösen" (Release 208, Sebastian, Punkte 3+4:
+           "Rechtsklick (Kontextmenü) -> DXF -> 'DXF Polylinien auflösen'. Angeordnet in der Höhe
+           unter DXF 'speichern als...'" sowie "Rechtsklick (Kontextmenü) -> DXF -> 'DXF speichern
+           als...' (selbe Funktion wie bei 2). Angeordnet in der Höhe unter 'DXF laden'") - dritter
+           bzw. dritter gleichwertiger Auslöser für dieselben Funktionen wie
+           #btnDxfSaveAsFileMenu/#btnDxfSaveAsIcon bzw. #btnDxfExplodeMenu/#btnDxfExplodeIcon,
+           disabled-Zustand wird wie bei den übrigen DXF-Kontextmenüpunkten in
+           updateContextMenuState() aus deren Menüband-Gegenstück übernommen. -->
+      <button class="menu-item" id="ctxDxfSaveAs" type="button" data-i18n-en="Save DXF as…">DXF speichern als…</button>
+      <button class="menu-item" id="ctxDxfExplode" type="button" data-i18n-en="Explode DXF polylines">DXF Polylinien auflösen</button>
       <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
       <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
       <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
@@ -7420,7 +7494,368 @@
     return null;
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX };
+  // ============================================================
+  // DXF-Polylinien auflösen / DXF speichern als... (Release 208, Sebastian: "Zum DXF-Aufsprengen:
+  // Kannst du das einbauen?" - vollständige 8-Punkt-Spezifikation siehe CNC_Simulation.md)
+  // ============================================================
+  // parseDXF() oben zerlegt JEDE Entität sofort in einen flachen, bereits tessellierten
+  // Punktzug ("strokes": nur noch {points, closed, color, layer}) - der ursprüngliche
+  // Entitätstyp (LINE/ARC/CIRCLE/LWPOLYLINE/POLYLINE/3DFACE) sowie seine "rohen" Parameter
+  // (Mittelpunkt/Radius/Winkel bzw. Eckpunkt-/Bulge-Liste) gehen dabei unwiderruflich verloren.
+  // Für das "DXF speichern als..." (möglichst verlustarme Wiedergabe der eingelesenen Datei) und
+  // insbesondere für "DXF Polylinien auflösen" (Bulge-Segmente einer Polylinie müssen als ECHTE,
+  // einzelne ARC-Entitäten ausgegeben werden, nicht als tessellierte Punktzüge) wird daher diese
+  // zweite, parallele Parse-Funktion benötigt, die die Entitäten unverändert/"roh" einliest. Sie
+  // teilt sich bewusst collectDxfEntityFields() und dieselbe Sektions-Erkennung (SECTION/TABLES/
+  // ENTITIES/EOF) mit parseDXF() oben, ruft aber nirgends handleEntity()/tessellateCircularArcDeg()/
+  // polylineVerticesToPoints() auf.
+  //
+  // Rückgabe: { entities, layers } - "entities" ist ein flaches Array von Records
+  // { type, layer, ... } je Entität:
+  //   LINE:      { type:'LINE', layer, p1:{x,y,z}, p2:{x,y,z} }
+  //   POINT:     { type:'POINT', layer, p:{x,y,z} }
+  //   CIRCLE:    { type:'CIRCLE', layer, cx, cy, cz, r }
+  //   ARC:       { type:'ARC', layer, cx, cy, cz, r, a0, a1 } (a0/a1 = Gruppencode 50/51, UNVERÄNDERT
+  //              übernommen - siehe tessellateCircularArcDeg()-Kommentar: a1 kann < a0 sein, das ist
+  //              in echten DXF-Dateien normal, siehe z.B. OmegaFraeser80x45komplett.DXF)
+  //   POLYLINE:  { type:'POLYLINE', layer, closed, verts:[{x,y,z,bulge}] } (vereinheitlicht sowohl
+  //              LWPOLYLINE als auch das ältere POLYLINE/VERTEX/SEQEND-Trio zu EINEM internen Typ)
+  //   3DFACE:    { type:'3DFACE', layer, p1, p2, p3, p4, isTriangle }
+  // "layers" ist die alphabetisch sortierte Liste aller tatsächlich benutzten Layer-Namen (analog
+  // zu parseDXF()s "layers", aber hier ohne Farbauflösung - siehe buildDxfText() unten: beim
+  // Speichern wird bewusst auf die ursprünglichen Layer-Farben verzichtet, siehe dortigen Kommentar).
+  function parseDxfEntitiesRaw(text) {
+    const raw = String(text || '').replace(/\r\n?/g, '\n');
+    const lines = raw.split('\n').map(l => l.trim());
+    const n = lines.length;
+    const entities = [];
+    let currentSection = 'ENTITIES';
+    let pendingSectionStart = false;
+    let currentPolyline = null; // { verts:[], closed, layer } während POLYLINE...SEQEND
+
+    function finalizeCurrentPolyline() {
+      if (currentPolyline) entities.push({ type: 'POLYLINE', layer: currentPolyline.layer, closed: currentPolyline.closed, verts: currentPolyline.verts });
+      currentPolyline = null;
+    }
+
+    function handleEntity(type, fields) {
+      const get = (code) => { const f = fields.find(f => f.code === code); return f ? f.value : undefined; };
+      const getNum = (code, def) => { const v = get(code); return v !== undefined ? num(v) : def; };
+      const layer = get(8) !== undefined ? get(8) : '0';
+
+      if (type === 'LINE') {
+        entities.push({ type: 'LINE', layer, p1: { x: getNum(10, 0), y: getNum(20, 0), z: getNum(30, 0) }, p2: { x: getNum(11, 0), y: getNum(21, 0), z: getNum(31, 0) } });
+        return;
+      }
+      if (type === 'POINT') {
+        entities.push({ type: 'POINT', layer, p: { x: getNum(10, 0), y: getNum(20, 0), z: getNum(30, 0) } });
+        return;
+      }
+      if (type === 'CIRCLE') {
+        entities.push({ type: 'CIRCLE', layer, cx: getNum(10, 0), cy: getNum(20, 0), cz: getNum(30, 0), r: getNum(40, 0) });
+        return;
+      }
+      if (type === 'ARC') {
+        entities.push({ type: 'ARC', layer, cx: getNum(10, 0), cy: getNum(20, 0), cz: getNum(30, 0), r: getNum(40, 0), a0: getNum(50, 0), a1: getNum(51, 360) });
+        return;
+      }
+      if (type === 'LWPOLYLINE') {
+        const verts = [];
+        let flag = 0, constElev = 0;
+        fields.forEach(f => {
+          if (f.code === 70) flag = num(f.value) | 0;
+          else if (f.code === 38) constElev = num(f.value);
+          else if (f.code === 10) verts.push({ x: num(f.value), y: 0, z: undefined, bulge: 0 });
+          else if (f.code === 20 && verts.length) verts[verts.length - 1].y = num(f.value);
+          else if (f.code === 30 && verts.length) verts[verts.length - 1].z = num(f.value);
+          else if (f.code === 42 && verts.length) verts[verts.length - 1].bulge = num(f.value);
+        });
+        verts.forEach(v => { if (v.z === undefined) v.z = constElev; });
+        entities.push({ type: 'POLYLINE', layer, closed: !!(flag & 1), verts });
+        return;
+      }
+      if (type === 'POLYLINE') {
+        let flag = 0;
+        fields.forEach(f => { if (f.code === 70) flag = num(f.value) | 0; });
+        currentPolyline = { verts: [], closed: !!(flag & 1), layer };
+        return;
+      }
+      if (type === 'VERTEX') {
+        if (!currentPolyline) return;
+        currentPolyline.verts.push({ x: getNum(10, 0), y: getNum(20, 0), z: getNum(30, 0), bulge: getNum(42, 0) });
+        return;
+      }
+      if (type === '3DFACE') {
+        const p1 = { x: getNum(10, 0), y: getNum(20, 0), z: getNum(30, 0) };
+        const p2 = { x: getNum(11, 0), y: getNum(21, 0), z: getNum(31, 0) };
+        const p3 = { x: getNum(12, 0), y: getNum(22, 0), z: getNum(32, 0) };
+        const has4th = get(13) !== undefined || get(23) !== undefined || get(33) !== undefined;
+        const p4 = has4th ? { x: getNum(13, p3.x), y: getNum(23, p3.y), z: getNum(33, p3.z) } : p3;
+        const isTriangle = !has4th || (Math.abs(p4.x - p3.x) < 1e-9 && Math.abs(p4.y - p3.y) < 1e-9 && Math.abs(p4.z - p3.z) < 1e-9);
+        entities.push({ type: '3DFACE', layer, p1, p2, p3, p4, isTriangle });
+        return;
+      }
+      // Unbekannte/nicht unterstützte Entitätstypen (z.B. TEXT/DIMENSION/HATCH/INSERT) werden beim
+      // Rohlesen stillschweigend übersprungen - dieselbe fehlertolerante Philosophie wie parseDXF()
+      // oben; für Sprengen/Speichern-als genügt es, dass sie nicht abstürzen - eine vollständige,
+      // lückenlose Wiedergabe exotischer Entitätstypen ist nicht Ziel dieser Funktion.
+    }
+
+    let i = 0;
+    while (i + 1 < n) {
+      const code = parseInt(lines[i], 10);
+      const value = lines[i + 1];
+      if (Number.isNaN(code)) { i += 2; continue; }
+      if (code === 0) {
+        i += 2;
+        if (value === 'SECTION') { pendingSectionStart = true; currentSection = null; continue; }
+        if (value === 'ENDSEC') { currentSection = null; continue; }
+        if (value === 'EOF') break;
+        if (currentSection !== 'ENTITIES') continue;
+        if (value === 'SEQEND') { finalizeCurrentPolyline(); continue; }
+        const { fields, nextIndex } = collectDxfEntityFields(lines, i);
+        i = nextIndex;
+        handleEntity(value, fields);
+        continue;
+      }
+      if (code === 2 && pendingSectionStart) {
+        currentSection = value.toUpperCase();
+        pendingSectionStart = false;
+      }
+      i += 2;
+    }
+    finalizeCurrentPolyline();
+
+    const layerSet = new Set();
+    entities.forEach(e => layerSet.add(e.layer));
+    const layers = Array.from(layerSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    return { entities, layers };
+  }
+
+  // Rückrechnung eines einzelnen LWPOLYLINE-/POLYLINE-Bulge-Segments (zwischen zwei Eckpunkten
+  // a, b mit Bulge-Wert "bulge" an a) in die Parameter einer ECHTEN DXF-ARC-Entität
+  // {cx, cy, cz, r, a0, a1}. Reine Umkehrung von bulgeSegmentPoints() oben (siehe dort für die
+  // Herleitung von theta/r/Mittelpunkt) - die kritische Zusatzüberlegung hier ist die Zuordnung,
+  // WELCHER der beiden Endpunktwinkel zum DXF-Gruppencode 50 (Start) bzw. 51 (Ende) wird: eine
+  // DXF-ARC-Entität verläuft laut Spezifikation IMMER von a0 nach a1 in mathematisch positiver
+  // Richtung (CCW) - bulgeSegmentPoints() dagegen kann je nach Vorzeichen von "bulge" sowohl CCW
+  // als auch CW von a nach b verlaufen (dirSign). Verläuft das Bulge-Segment selbst CW (dirSign
+  // === -1), muss die Zuordnung getauscht werden (Start=Winkel von b, Ende=Winkel von a), damit
+  // die CCW-Interpretation des erzeugten ARC exakt denselben Bogen (dieselbe Kreisteilfläche)
+  // beschreibt wie das ursprüngliche Bulge-Segment - NICHT denselben Umlaufsinn (der ist für eine
+  // einzelne, eigenständige ARC-Entität ohnehin bedeutungslos, siehe explodeDxfEntities() unten:
+  // es entsteht keine fortlaufende Bahn mehr, sondern unabhängige Einzel-Entitäten). Numerisch
+  // gegen die Original-Tessellierung verifiziert (7 Testfälle inkl. Halbkreis-Sonderfall bulge=±1
+  // und einem realen Minizinkenfraeser-Wert, siehe verify_bulge_arc.js, Fehler durchgehend auf
+  // Gleitkomma-Präzisionsniveau ~1e-14).
+  function bulgeToArc(a, b, bulge) {
+    const az = a.z || 0, bz = b.z || 0;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.hypot(dx, dy);
+    const theta = 4 * Math.atan(bulge);
+    const r = d / (2 * Math.abs(Math.sin(theta / 2)));
+    const chordAngle = Math.atan2(dy, dx);
+    const sign = bulge >= 0 ? -1 : 1;
+    const h = sign * Math.sqrt(Math.max(r * r - (d / 2) * (d / 2), 0));
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const perpAngle = chordAngle + Math.PI / 2;
+    const cx = mx + h * Math.cos(perpAngle);
+    const cy = my + h * Math.sin(perpAngle);
+    const aA = Math.atan2(a.y - cy, a.x - cx);
+    const aB = Math.atan2(b.y - cy, b.x - cx);
+    const dirSign = theta >= 0 ? -1 : 1;
+    const startRad = dirSign === -1 ? aB : aA;
+    const endRad = dirSign === -1 ? aA : aB;
+    return { cx, cy, cz: (az + bz) / 2, r, a0: startRad * 180 / Math.PI, a1: endRad * 180 / Math.PI };
+  }
+
+  // "DXF Polylinien auflösen" (Release 208, Sebastian, Punkt 1/3): zerlegt jede POLYLINE-Entität
+  // (aus parseDxfEntitiesRaw() oben, egal ob ursprünglich LWPOLYLINE oder POLYLINE/VERTEX/SEQEND)
+  // in ihre einzelnen Segmente und gibt für jedes Segment eine eigenständige, "echte" LINE- bzw.
+  // (bei Bulge != 0) ARC-Entität zurück - exakt das, was CAD-Programme unter "Explode"/"Sprengen"
+  // verstehen (Punkt 8: "Datei soll am Ende Bögen ausgeben wie z.B. OmegaFraeser80x45komplett.DXF.
+  // Selbe DXF-Logik darin!" - d.h. echte ARC-Entitäten mit 10/20/40/50/51, nicht etwa viele kurze
+  // Geradenstücke). Alle anderen Entitätstypen (LINE/ARC/CIRCLE/POINT/3DFACE) bleiben unverändert
+  // (als neues Objekt kopiert, damit der Aufrufer die Rückgabe gefahrlos weiterreichen kann, ohne
+  // versehentlich das Original zu verändern). Idempotent: ein zweiter Aufruf auf einem bereits
+  // vollständig aufgesprengten Entitäten-Array (keine POLYLINE-Entität mehr enthalten) liefert
+  // unverändert dieselbe Liste zurück (jeweils flach kopiert).
+  function explodeDxfEntities(entities) {
+    const result = [];
+    (entities || []).forEach(e => {
+      if (e.type !== 'POLYLINE') { result.push(Object.assign({}, e)); return; }
+      const verts = e.verts || [];
+      if (verts.length < 2) return; // einzelner/kein Punkt - keine Segmente, nichts zu sprengen
+      const segCount = e.closed ? verts.length : verts.length - 1;
+      for (let k = 0; k < segCount; k++) {
+        const a = verts[k];
+        const b = verts[(k + 1) % verts.length];
+        const bulge = a.bulge || 0;
+        if (Math.abs(bulge) < 1e-9) {
+          result.push({ type: 'LINE', layer: e.layer, p1: { x: a.x, y: a.y, z: a.z || 0 }, p2: { x: b.x, y: b.y, z: b.z || 0 } });
+        } else {
+          const arc = bulgeToArc(a, b, bulge);
+          result.push({ type: 'ARC', layer: e.layer, cx: arc.cx, cy: arc.cy, cz: arc.cz, r: arc.r, a0: arc.a0, a1: arc.a1 });
+        }
+      }
+    });
+    return result;
+  }
+
+  // "DXF speichern als..." (Release 208, Sebastian, Punkt 2/4): serialisiert ein Entitäten-Array
+  // (parseDxfEntitiesRaw() bzw. dessen Ergebnis nach explodeDxfEntities()) wieder zu einem
+  // vollständigen, gültigen DXF-Text - dasselbe minimale Dateigerüst (SECTION/HEADER (leer),
+  // SECTION/TABLES mit LTYPE "CONTINUOUS" + einer LAYER-Tabelle, SECTION/BLOCKS (leer),
+  // SECTION/ENTITIES, EOF), wie es die mitgelieferten Beispieldateien (z.B.
+  // OmegaFraeser80x45komplett.DXF) selbst verwenden. Bewusste Vereinfachung (Scoping-Entscheidung,
+  // siehe CNC_Simulation.md): Pro Layer wird KEINE ursprüngliche Farbe übernommen (Farben werden
+  // von parseDxfEntitiesRaw() gar nicht erst mitgelesen) - jeder Layer erhält schlicht den
+  // DXF-Standard-ACI-Farbindex 7 ("weiß/schwarz", faktisch neutral/automatisch). Z-Koordinaten
+  // werden bei LINE/POINT/CIRCLE/ARC vollständig mit ausgegeben (das unterstützt auch 3D-DXF-
+  // Dateien, siehe die 3DFACE-Unterstützung weiter oben); LWPOLYLINE/-Segmente verwenden die
+  // DXF-übliche konstante Elevation (Gruppencode 38, aus der Z-Höhe des ersten Eckpunkts) statt
+  // einer Z-Angabe je Eckpunkt, da LWPOLYLINE laut Spezifikation ohnehin nur eine einzige,
+  // gemeinsame Ebene je Entität kennt.
+  function fmtDxfNum(n) {
+    const v = Number(n) || 0;
+    // Feste Nachkommastellen (12), wie in den Beispieldateien selbst üblich (z.B. "51.192651797000")
+    // - Standard-DXF-ASCII verlangt ohnehin einen Dezimalpunkt, kein Tausendertrennzeichen.
+    return v.toFixed(12);
+  }
+  // Release 211, Bugfix: ALLE von Sebastian als "funktionierend" bestätigten DXF-Dateien
+  // (Minizinkenfraeser.DXF, OmegaFraeser80x45komplett.DXF, StufenprofilR6Oben.DXF,
+  // "Gestemmt Handlauf A.DXF", "EG- Unterbau Wange B.DXF") halten JEDEN ARC-Start-/Endwinkel
+  // (Gruppencode 50/51) konsequent im Bereich (-180°, 180°] - niemals z.B. 270 oder 360, sondern
+  // stattdessen die äquivalenten negativen Werte (-90 bzw. 0). Die beim "Sprengen"/"Speichern als"
+  // erzeugte bzw. unverändert durchgereichte Datei konnte dagegen Winkelwerte außerhalb dieses
+  // Bereichs enthalten (z.B. a0=180/a1=270 für einen Bogen, der ebenso gültig als a0=180/a1=-90
+  // beschrieben werden kann - mathematisch identische Geometrie, nur andere Zahlendarstellung).
+  // Das war nach dem Fix von Release 210 (Farbcode 62 + keine Z-Codes bei 2D-Entitäten) der
+  // letzte verbleibende, von Sebastian anhand weiterer funktionierender/nicht funktionierender
+  // Dateien aufgedeckte Unterschied. normDxfAngleDeg() bringt jeden Winkel (sowohl beim Sprengen
+  // frisch berechnete als auch unverändert durchgereichte, ursprünglich aus der Quelldatei
+  // stammende) in genau diesen Bereich: zuerst Normierung nach [0°, 360°), danach alles > 180°
+  // um 360° verschoben nach (-180°, 180°] - identisch zur beobachteten Konvention (180° bleibt
+  // positiv erhalten, 270°->-90°, 360°->0°). Ändert NICHTS an der tatsächlichen Geometrie (der
+  // Bogen bleibt exakt derselbe Kreisbogen), nur an der Zahlendarstellung der beiden Winkel.
+  function normDxfAngleDeg(deg) {
+    let x = ((Number(deg) || 0) % 360 + 360) % 360; // zunächst nach [0, 360) normiert
+    if (x > 180) x -= 360; // jetzt nach (-180, 180] normiert
+    return x;
+  }
+  function buildDxfText(entities) {
+    const list = entities || [];
+    const layerSet = new Set();
+    list.forEach(e => layerSet.add(e.layer || '0'));
+    const layers = Array.from(layerSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    const lines = [];
+    const push = (code, value) => { lines.push(String(code)); lines.push(String(value)); };
+
+    push(0, 'SECTION'); push(2, 'HEADER'); push(0, 'ENDSEC');
+
+    push(0, 'SECTION'); push(2, 'TABLES');
+    push(0, 'TABLE'); push(2, 'LTYPE'); push(70, 1);
+    // Release 213, Bugfix: ausnahmslos jede von Sebastian als funktionierend bestätigte native
+    // Referenzdatei (inzwischen sieben Stück) trägt auf dem LTYPE-Eintrag "CONTINUOUS" den
+    // Flag-Wert "70 64", während unser Export hier durchgängig "70 0" schrieb - der einzige
+    // verbliebene, nie zuvor korrigierte Strukturunterschied, nachdem v4Fingerzinkenfraeser.dxf
+    // (bereits mit allen Fixes aus Release 210-212) immer noch mit identischer "unbekanntes
+    // Format"-Fehlermeldung scheiterte. Rein vorsorglich an die beobachtete Konvention angepasst.
+    push(0, 'LTYPE'); push(2, 'CONTINUOUS'); push(70, 64); push(3, 'Solid line'); push(72, 65); push(73, 0); push(40, 0.0);
+    push(0, 'ENDTAB');
+    push(0, 'TABLE'); push(2, 'LAYER'); push(70, layers.length || 1);
+    (layers.length ? layers : ['0']).forEach(name => {
+      push(0, 'LAYER'); push(2, name); push(70, 0); push(62, 7); push(6, 'CONTINUOUS');
+    });
+    push(0, 'ENDTAB');
+    push(0, 'ENDSEC');
+
+    push(0, 'SECTION'); push(2, 'BLOCKS'); push(0, 'ENDSEC');
+
+    push(0, 'SECTION'); push(2, 'ENTITIES');
+    // Hinweis (Release 210, Bugfix): Reale, bei Sebastian in der Praxis funktionierende DXF-Dateien
+    // (z.B. "Minizinkenfraeser.DXF", "OmegaFraeser80x45komplett.DXF") tragen auf JEDER Entität direkt
+    // nach dem Layer-Code (8) einen expliziten Farb-Gruppencode "62" mit Wert 0 und verzichten bei
+    // reinen 2D-Entitäten (LINE/ARC/CIRCLE) komplett auf die Z-Gruppencodes (30/31). Das von
+    // "DXF Polylinien auflösen" + "DXF speichern als..." (Release 208) erzeugte, exportierte LINE/ARC/
+    // CIRCLE enthielt bislang weder den Farbcode 62 noch ließ es die (bei 2D-Werkzeugprofilen stets 0
+    // betragenden) Z-Codes weg - das hat den Import in Sebastians externes CNC/CAM-Programm verhindert.
+    // Beide Punkte werden hier nachgezogen, um exakt der Konvention der nachweislich funktionierenden
+    // Dateien zu folgen.
+    list.forEach(e => {
+      const layer = e.layer || '0';
+      if (e.type === 'LINE') {
+        push(0, 'LINE'); push(8, layer); push(62, 0);
+        push(10, fmtDxfNum(e.p1.x)); push(20, fmtDxfNum(e.p1.y));
+        push(11, fmtDxfNum(e.p2.x)); push(21, fmtDxfNum(e.p2.y));
+      } else if (e.type === 'POINT') {
+        push(0, 'POINT'); push(8, layer); push(62, 0);
+        push(10, fmtDxfNum(e.p.x)); push(20, fmtDxfNum(e.p.y)); push(30, fmtDxfNum(e.p.z || 0));
+      } else if (e.type === 'CIRCLE') {
+        // Release 212, Bugfix: Sebastian lieferte nach den Fixes aus Release 210/211 noch drei
+        // weitere, bei ihm funktionierende native Referenzdateien ("StufenprofilR6Oben.DXF",
+        // "Gestemmt Handlauf A.DXF", "EG- Unterbau Wange B.DXF", später zusätzlich "1000x1000
+        // Stufe 1.DXF", "Gestemmt Wange B.DXF") - KEINE von ihnen enthält auch nur eine einzige
+        // CIRCLE-Entität. Umgekehrt enthielt JEDE bislang gemeldete, NICHT importierbare Version
+        // der Fingerzinkenfräser-Datei genau eine CIRCLE-Entität (die kleine Bohrungs-Markierung
+        // in der Kontur) - über alle drei Korrekturversuche hinweg unverändert, unabhängig davon,
+        // welcher der anderen Punkte (Farbcode/Z-Codes/Winkelbereich) bereits behoben war. Zwei der
+        // Referenzdateien ("EG- Unterbau Wange B.DXF", "Gestemmt Wange B.DXF") bilden runde
+        // Bohrungs-Markierungen stattdessen konsequent als vier Viertel-ARC-Entitäten (gleicher
+        // Mittelpunkt/Radius, Winkel-Quartett -90/0, 0/90, 90/180, 180/-90) ab - niemals als
+        // eigenständige CIRCLE-Entität. Sebastians externes CNC/CAM-Programm scheint CIRCLE-
+        // Entitäten grundsätzlich nicht zu unterstützen (plausibel: beim Verketten der
+        // Werkzeugkontur zu einer zusammenhängenden Bahn braucht jede Entität zwei Endpunkte, die
+        // eine vollständige CIRCLE-Entität - ein in sich geschlossener Kreis ohne Anfang/Ende -
+        // naturgemäß nicht hat; LINE/ARC haben dagegen immer genau zwei Endpunkte). Fix: beim
+        // Export wird jede CIRCLE-Entität durch genau diese vier Viertel-ARCs ersetzt statt als
+        // CIRCLE geschrieben - geometrisch identisch (derselbe Vollkreis), nur als vier verkettbare
+        // Teilbögen statt einer eigenständigen, endpunktlosen Kreis-Entität.
+        const quarters = [[-90, 0], [0, 90], [90, 180], [180, -90]];
+        quarters.forEach(([qa0, qa1]) => {
+          push(0, 'ARC'); push(8, layer); push(62, 0);
+          push(10, fmtDxfNum(e.cx)); push(20, fmtDxfNum(e.cy)); push(40, fmtDxfNum(e.r));
+          push(50, fmtDxfNum(normDxfAngleDeg(qa0))); push(51, fmtDxfNum(normDxfAngleDeg(qa1)));
+        });
+      } else if (e.type === 'ARC') {
+        push(0, 'ARC'); push(8, layer); push(62, 0);
+        push(10, fmtDxfNum(e.cx)); push(20, fmtDxfNum(e.cy)); push(40, fmtDxfNum(e.r));
+        push(50, fmtDxfNum(normDxfAngleDeg(e.a0))); push(51, fmtDxfNum(normDxfAngleDeg(e.a1)));
+      } else if (e.type === 'POLYLINE') {
+        const verts = e.verts || [];
+        const elev = verts.length ? (verts[0].z || 0) : 0;
+        push(0, 'LWPOLYLINE'); push(8, layer); push(62, 0);
+        push(90, verts.length); push(70, e.closed ? 1 : 0); push(38, fmtDxfNum(elev));
+        verts.forEach(v => {
+          push(10, fmtDxfNum(v.x)); push(20, fmtDxfNum(v.y));
+          if (v.bulge) push(42, fmtDxfNum(v.bulge));
+        });
+      } else if (e.type === '3DFACE') {
+        push(0, '3DFACE'); push(8, layer); push(62, 0);
+        push(10, fmtDxfNum(e.p1.x)); push(20, fmtDxfNum(e.p1.y)); push(30, fmtDxfNum(e.p1.z || 0));
+        push(11, fmtDxfNum(e.p2.x)); push(21, fmtDxfNum(e.p2.y)); push(31, fmtDxfNum(e.p2.z || 0));
+        push(12, fmtDxfNum(e.p3.x)); push(22, fmtDxfNum(e.p3.y)); push(32, fmtDxfNum(e.p3.z || 0));
+        const p4 = e.p4 || e.p3;
+        push(13, fmtDxfNum(p4.x)); push(23, fmtDxfNum(p4.y)); push(33, fmtDxfNum(p4.z || 0));
+      }
+    });
+    push(0, 'ENDSEC');
+
+    push(0, 'EOF');
+    // Release 213, Bugfix: zusätzlich zum LTYPE-Flag (siehe Kommentar oben) auf CRLF-Zeilenenden
+    // umgestellt - die von AutoCAD/DXF-ASCII-Spezifikation eigentlich vorgesehene Konvention
+    // (Windows-Zeilenenden), die ein schlichter JavaScript-String mit "\n" nicht automatisch
+    // erzeugt. Pastetexte lassen Zeilenenden nicht erkennen, daher konnte dieser Unterschied
+    // bislang nicht direkt verglichen werden - da aber jede bisherige inhaltliche Korrektur
+    // (Farbcode/Z-Codes/Winkelbereich/CIRCLE->ARCs) denselben "unbekanntes Format"-Fehler nicht
+    // beheben konnte, wird vorsorglich auch dieser naheliegende, rein strukturelle Unterschied
+    // behoben. CNCParser.parseDxfEntitiesRaw() liest sowohl CRLF als auch LF unverändert korrekt
+    // (siehe dort: "replace(/\r\n?/g, '\n')"), daher ist diese Änderung für die eigene
+    // Wiedereinlese-Fähigkeit der App gefahrlos.
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg };
 });
 </script>
 <script>
@@ -8132,7 +8567,7 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 207;
+  const APP_RELEASE_NUMBER = 213;
   const APP_RELEASE_TIMESTAMP = '13.10.2026, 06:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
@@ -9530,6 +9965,54 @@ CORNERRADIUS=GFIL r=
     persistToolDxfProfiles(toolDxfProfiles);
     return true;
   }
+  // "Kopieren" (Release 209, Sebastian: "Der kopiert ein Profil sofort und fügt ein '_1' hinter
+  // dem Namen ein und das Profil ist dann direkt zum weiterbearbeiten aktiv. Man kann dadurch
+  // Daten sofort anpassen.") - findet zu einem Basisnamen den ersten noch unbenutzten
+  // "<Basisname>_N"-Namen (N beginnend bei 1, hochzählend bei Kollision) statt immer blind nur
+  // "_1" anzuhängen: Sebastians wörtliche Vorgabe "_1" trifft exakt den Normalfall (einmaliges
+  // Kopieren), ein zweites Kopieren DESSELBEN Profils (oder einer bereits zuvor kopierten "_1"
+  // Variante) würde mit stur immer "_1" sonst zwei (oder mehr) gleichnamige Profile in der Liste
+  // erzeugen - nur optisch verwirrend, da die tatsächliche Unterscheidung technisch ohnehin über
+  // die jeweils eigene, neu generierte `id` erfolgt (siehe copyToolDxfProfile() unten), aber für
+  // den Benutzer in der alphabetisch sortierten Liste (populateProfileSelect()) sonst nicht mehr
+  // auseinanderzuhalten.
+  function uniqueToolDxfProfileCopyName(baseName) {
+    const existing = new Set(toolDxfProfiles.map(function (p) { return p.name; }));
+    let n = 1;
+    let candidate = baseName + '_' + n;
+    while (existing.has(candidate)) { n++; candidate = baseName + '_' + n; }
+    return candidate;
+  }
+  // Dupliziert ein gespeichertes Profil sofort (ohne Zwischenschritt über das Formular) als
+  // neuen, eigenständigen Eintrag mit neuer `id`/neuem Namen (siehe
+  // uniqueToolDxfProfileCopyName() direkt oberhalb) - Original bleibt dabei vollständig
+  // unangetastet. `mainProfile`/`alternateProfile` werden dabei bewusst tief kopiert (eigene
+  // Punkt-Objekte, nicht nur ein neues Array mit denselben geteilten Referenzen) - zwar mutiert
+  // aktuell keine bestehende Stelle im Code ein bereits gespeichertes Profil-Array nachträglich
+  // in-place, aber die Kopie bleibt dadurch auch für künftige Änderungen von vornherein
+  // garantiert unabhängig vom Original, ganz ohne auf dieses Verhalten an anderer Stelle
+  // vertrauen zu müssen. Rückgabe ist das neue, normalisierte Profilobjekt (oder `null`, wenn
+  // `id` kein gespeichertes Profil trifft) - `loadProfileIntoForm()` im Dialog selbst macht es
+  // direkt im Anschluss "zum Weiterbearbeiten aktiv", siehe dortigen Klick-Handler.
+  function copyToolDxfProfile(id) {
+    const p = getToolDxfProfileById(id);
+    if (!p) return null;
+    const cloneProfileArray = function (arr) { return arr ? arr.map(function (pt) { return { r: pt.r, dist: pt.dist }; }) : arr; };
+    return saveToolDxfProfile({
+      name: uniqueToolDxfProfileCopyName(p.name),
+      dxfText: p.dxfText,
+      mainProfile: cloneProfileArray(p.mainProfile),
+      alternateProfile: cloneProfileArray(p.alternateProfile),
+      wasClosedLoop: p.wasClosedLoop,
+      usedAlternate: p.usedAlternate,
+      scale: p.scale,
+      lengthRef: p.lengthRef,
+      radiusRef: p.radiusRef
+      // Bewusst OHNE id/createdAt/updatedAt - saveToolDxfProfile() generiert dadurch eine neue
+      // id und setzt createdAt/updatedAt frisch auf "jetzt" (siehe dortige Logik), statt das
+      // Original per gleicher id zu überschreiben.
+    });
+  }
 
   // ============================================================
   // "Buttonfarbe einstellen" ("Ansicht" -> "Buttonfarbe einstellen", 53. Runde, Sebastian:
@@ -10706,6 +11189,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // dritter, gleichwertiger Auslöser für dieselbe clearDxf()-Funktion wie #btnDxfDeleteMenu/
   // #btnDxfDeleteIcon.
   const btnDxfDeleteFileMenu = el('btnDxfDeleteFileMenu');
+  // "DXF speichern als..."/"DXF Polylinien auflösen" (Release 208, siehe
+  // openDxfSaveAsPanel()/confirmDxfSaveAs()/explodeDxfPolylines() weiter unten für die volle
+  // Herleitung) - je drei gleichwertige Auslöser (Menü/Toolbar-Icon/Kontextmenü, letzteres über
+  // ctxItems) für dieselben beiden neuen Funktionen.
+  const btnDxfSaveAsFileMenu = el('btnDxfSaveAsFileMenu');
+  const btnDxfSaveAsIcon = el('btnDxfSaveAsIcon');
+  const dxfSaveAsPanel = el('dxfSaveAsPanel');
+  const dxfSaveAsFilenameInput = el('dxfSaveAsFilenameInput');
+  const btnDxfExplodeMenu = el('btnDxfExplodeMenu');
+  const btnDxfExplodeIcon = el('btnDxfExplodeIcon');
   const dxfMovePanel = el('dxfMovePanel');
   const dxfOffsetXInput = el('dxfOffsetXInput');
   const dxfOffsetYInput = el('dxfOffsetYInput');
@@ -11006,6 +11499,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // NICHT über localStorage/"CNC Sim speichern"/"Simulation speichern" persistiert (siehe
   // CNC_Simulation.md, Abschnitt "Bekannte Einschränkungen").
   let dxfGeometry = null;   // { strokes:[{points,closed,color,layer}], entityCount, pointCount, skippedTypes, layerCount } | null (siehe parseDXF in parser.js) - "color" (72. Runde) ist {r,g,b} | null je Strichzug, "layer" (73. Runde) der zugehörige Layer-Name, "layerCount" die Anzahl unterschiedlicher tatsächlich gezeichneter Layer, siehe drawDxf()
+  // Release 208: die ROHEN, NICHT tessellierten DXF-Entitäten (Array von {type, layer, ...}, siehe
+  // parseDxfEntitiesRaw() in parser.js) - unabhängig von/parallel zu dxfGeometry (das weiterhin
+  // ausschließlich die bereits tessellierten Strokes für die 3D-Anzeige liefert und von dieser
+  // Ergänzung UNBERÜHRT bleibt). Wird für "DXF speichern als..."/"DXF Polylinien auflösen"
+  // benötigt (siehe openDxfSaveAsPanel()/confirmDxfSaveAs()/explodeDxfPolylines() weiter unten);
+  // null, solange kein DXF importiert ist, exakt synchron zu dxfGeometry (siehe loadDxfText()/
+  // clearDxf()).
+  let dxfEntities = null;
   let dxfFilename = null;
   let dxfOffset = { x: 0, y: 0, z: 0 };
   let dxfVisible = true;
@@ -11752,6 +12253,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnMachineTypeOk.disabled = false;
     displayCurrentProgram();
     updateSidebarHeader();
+    // Release 208: "DXF speichern als..."/"DXF Polylinien auflösen" sind nur aktivierbar, solange
+    // KEIN CNC-Programm geladen ist (siehe updateDxfUI(), Sebastian Punkt 7) - ein neu geladenes
+    // Programm muss sie deshalb sofort ausgrauen, auch wenn sich dxfGeometry/dxfEntities selbst
+    // dabei nicht ändern.
+    updateDxfUI();
   }
 
   // ============================================================
@@ -12170,6 +12676,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // geleerter Eintrag fälschlich noch als "aktiv" in der Dropdownliste markiert bleibt.
     activeProgramId = null;
     renderProgramListUI();
+    // Release 208: siehe entsprechenden Kommentar am Ende von loadText() - das Löschen des
+    // CNC-Programms kann "DXF speichern als..."/"DXF Polylinien auflösen" von ausgegraut auf
+    // aktivierbar umschalten (sofern noch ein DXF importiert ist), muss deshalb genauso
+    // gegengeprüft werden.
+    updateDxfUI();
   }
 
   // ============================================================
@@ -12216,6 +12727,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // "DXF löschen" im "Datei"->"DXF"-Menü (Release 169, Punkt 4) - derselbe dritte,
     // gleichwertige Auslöser, folgt derselben disabled-/title-Logik.
     btnDxfDeleteFileMenu.disabled = !dxfGeometry;
+    // "DXF speichern als..."/"DXF Polylinien auflösen" (Release 208, Sebastian, Punkt 7: "Die
+    // Funktion ist nur aktivierbar, wenn KEIN CNC-Programm geladen worden ist, sondern nur als
+    // DXF-Standalone quasi. Sonst ist das Icon/die Funktion ausgegraut") - beide neuen Funktionen
+    // sind bewusst (zusätzlich zur ohnehin nötigen "DXF importiert"-Bedingung) an diese einzige
+    // neue Zusatzbedingung gekoppelt, nicht nur das explizit genannte "Sprengen" - konsistent mit
+    // Sebastians Einleitung "nur als DXF-Standalone quasi" für den gesamten neuen Funktionsblock
+    // (Sprengen UND Speichern-als). "DXF Polylinien auflösen" braucht zusätzlich mindestens eine
+    // noch vorhandene Polylinie (dxfEntities, siehe parseDxfEntitiesRaw()/explodeDxfEntities() in
+    // parser.js) - ohne jede Polylinie (z. B. bereits vollständig gesprengt, oder eine DXF, die
+    // von Anfang an nur aus LINE/ARC bestand) gäbe es nichts mehr zu sprengen.
+    const dxfStandaloneActive = !!dxfGeometry && rawProgramText == null;
+    const dxfHasPolylines = !!(dxfEntities && dxfEntities.some(e => e.type === 'POLYLINE'));
+    btnDxfSaveAsFileMenu.disabled = !dxfStandaloneActive;
+    btnDxfSaveAsIcon.disabled = !dxfStandaloneActive;
+    btnDxfExplodeMenu.disabled = !(dxfStandaloneActive && dxfHasPolylines);
+    btnDxfExplodeIcon.disabled = !(dxfStandaloneActive && dxfHasPolylines);
     // Spiegeln/Drehen/Bauteilstärke (67. Runde) - dieselbe disabled-Logik wie die übrigen
     // DXF-Knöpfe; die beiden Spiegeln-Umschalter zeigen ihren aktuellen Zustand zusätzlich per
     // ".active" (dieselbe Klasse/Optik wie z. B. die aktive Geschwindigkeitsstufe).
@@ -12267,6 +12794,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
       btnDxfDeleteFileMenu.title = deleteTitle;
+      // "DXF speichern als..."/"DXF Polylinien auflösen" (Release 208) - dieselbe
+      // Zusammensetzung (Funktionsbeschreibung + evtl. Begründung, warum gerade ausgegraut, + " — "
+      // + Dateistatus) wie die übrigen DXF-Titel oben.
+      const saveAsTitle = T('Rohdaten des importierten DXF als .DXF-Datei speichern - nur möglich, solange kein CNC-Programm geladen ist', 'Save the raw data of the imported DXF as a .DXF file - only possible while no CNC program is loaded') + ' — ' + title;
+      btnDxfSaveAsFileMenu.title = saveAsTitle;
+      btnDxfSaveAsIcon.title = saveAsTitle;
+      const explodeTitle = (dxfHasPolylines
+        ? T('Polylinien der importierten DXF in einzelne Linien/Bögen auflösen - nur möglich, solange kein CNC-Programm geladen ist', 'Explode the imported DXF polylines into individual lines/arcs - only possible while no CNC program is loaded')
+        : T('Keine Polylinien zum Auflösen vorhanden (oder es ist ein CNC-Programm geladen)', 'No polylines to explode (or a CNC program is loaded)')) + ' — ' + title;
+      btnDxfExplodeMenu.title = explodeTitle;
+      btnDxfExplodeIcon.title = explodeTitle;
     } else {
       dxfFilenameLabel.textContent = '';
       dxfFilenameLabel.title = '';
@@ -12280,6 +12818,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       btnDxfDeleteMenu.title = deleteTitle;
       btnDxfDeleteIcon.title = deleteTitle;
       btnDxfDeleteFileMenu.title = deleteTitle;
+      const saveAsTitleEmpty = T('Rohdaten des importierten DXF als .DXF-Datei speichern - erst verfügbar, sobald ein DXF importiert und KEIN CNC-Programm geladen ist', 'Save the raw data of the imported DXF as a .DXF file - only available once a DXF has been imported and NO CNC program is loaded');
+      btnDxfSaveAsFileMenu.title = saveAsTitleEmpty;
+      btnDxfSaveAsIcon.title = saveAsTitleEmpty;
+      const explodeTitleEmpty = T('Polylinien der importierten DXF in einzelne Linien/Bögen auflösen - erst verfügbar, sobald ein DXF mit Polylinien importiert und KEIN CNC-Programm geladen ist', 'Explode the imported DXF polylines into individual lines/arcs - only available once a DXF with polylines has been imported and NO CNC program is loaded');
+      btnDxfExplodeMenu.title = explodeTitleEmpty;
+      btnDxfExplodeIcon.title = explodeTitleEmpty;
     }
     updateDxfFilenameSep();
     updateSidebarHeader();
@@ -12447,6 +12991,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Sichtbarkeit, die für die neue Datei wieder auf den Ausgangszustand zurückgesetzt werden).
   function loadDxfText(text, filename) {
     dxfGeometry = CNCParser.parseDXF(text);
+    // Release 208: parallel zur bestehenden Tessellierung (dxfGeometry) auch die rohen, nicht
+    // tessellierten Entitäten einlesen - siehe parseDxfEntitiesRaw() in parser.js sowie den
+    // ausführlichen Kommentar bei der Deklaration von dxfEntities weiter oben.
+    dxfEntities = CNCParser.parseDxfEntitiesRaw(text).entities;
     dxfFilename = filename;
     dxfOffset = { x: 0, y: 0, z: 0 };
     dxfVisible = true;
@@ -12483,6 +13031,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function clearDxf() {
     if (!dxfGeometry) return;
     dxfGeometry = null;
+    dxfEntities = null; // Release 208, siehe dessen Deklaration oben
     dxfFilename = null;
     dxfOffset = { x: 0, y: 0, z: 0 };
     dxfVisible = true;
@@ -12496,6 +13045,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfRotatePanel.classList.remove('open');
     dxfThicknessPanel.classList.remove('open');
     dxfScalePanel.classList.remove('open');
+    dxfSaveAsPanel.classList.remove('open'); // Release 208
     updateDxfUI();
     frameCamera();
     requestRender();
@@ -16774,6 +17324,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     clearProgramList: el('ctxClearProgramList'), // Release 118, siehe Architektur-Kommentar bei "programList"
     toggleAllOps: el('ctxToggleAllOps'),
     loadDxf: el('ctxLoadDxf'),
+    dxfSaveAs: el('ctxDxfSaveAs'), // Release 208
+    dxfExplode: el('ctxDxfExplode'), // Release 208
     clearDxf: el('ctxClearDxf'),
     toggleDxfLayers: el('ctxToggleDxfLayers'),
     moveDxf: el('ctxMoveDxf'),
@@ -16830,6 +17382,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
     const dxfLayers = (dxfGeometry && dxfGeometry.layers) || [];
     ctxItems.clearDxf.disabled = btnDxfDeleteMenu.disabled;
+    // Release 208, siehe updateDxfUI() für die eigentliche Freischalt-Logik.
+    ctxItems.dxfSaveAs.disabled = btnDxfSaveAsFileMenu.disabled;
+    ctxItems.dxfExplode.disabled = btnDxfExplodeMenu.disabled;
     ctxItems.moveDxf.disabled = btnDxfMoveMenu.disabled;
     ctxItems.toggleDxfLayers.disabled = !dxfLayers.length;
     ctxItems.toggleDxfLayers.textContent = dxfHiddenLayers.size > 0 ? T('DXF-Layer anzeigen', 'Show DXF layers') : T('DXF-Layer ausblenden', 'Hide DXF layers');
@@ -19234,6 +19789,24 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (p) loadProfileIntoForm(p);
     });
     el('btnToolDxfProfileNew').addEventListener('click', resetForm);
+    // "Kopieren" (Release 209) - dupliziert das in der Liste gerade ausgewählte Profil sofort
+    // (copyToolDxfProfile(), siehe dortigen Kommentar für die volle Herleitung inkl. der
+    // "_1"/"_2"/...-Namensvergabe bei Kollision) und macht die neue Kopie unmittelbar im
+    // Formular "zum Weiterbearbeiten aktiv" (loadProfileIntoForm()), exakt wie Sebastian es
+    // wörtlich verlangt hat - ein anschließendes "Speichern" aktualisiert dann gezielt NUR noch
+    // diese neue Kopie (currentId zeigt bereits auf ihre neue id), das Original bleibt
+    // unverändert bestehen. Operiert - wie "Löschen" direkt daneben - auf
+    // `profileSelect.value`, nicht auf einen evtl. im Formular noch unbearbeiteten/
+    // ungespeicherten Zwischenstand.
+    el('btnToolDxfProfileCopy').addEventListener('click', () => {
+      const id = profileSelect.value;
+      if (!id || !getToolDxfProfileById(id)) return;
+      const copy = copyToolDxfProfile(id);
+      if (!copy) return;
+      populateProfileSelect(copy.id);
+      loadProfileIntoForm(copy);
+      if (typeof refreshToolProfileDropdownOptions === 'function') refreshToolProfileDropdownOptions();
+    });
     el('btnToolDxfProfileDelete').addEventListener('click', () => {
       const id = profileSelect.value;
       const p = id && getToolDxfProfileById(id);
@@ -19829,6 +20402,64 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   el('btnSaveAsConfirm').addEventListener('click', confirmSaveAs);
   saveAsFilenameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmSaveAs(); } });
+
+  // "DXF speichern als..." (Release 208, Sebastian, Punkt 2+4) - dasselbe Dialog-/Download-Muster
+  // wie "Programm speichern als..." direkt oberhalb (#saveAsPanel/confirmSaveAs()), hier für die
+  // rohen DXF-Entitäten (dxfEntities, siehe loadDxfText()/parseDxfEntitiesRaw() in parser.js)
+  // statt des CNC-Programmtexts. Einzige Abweichung vom bestehenden Muster: die Dateiendung wird
+  // erzwungen auf ".dxf" (Sebastian, Punkt 2: "Format nur .DXF ermöglichen") - ein vom Benutzer
+  // eingegebener Name ohne (oder mit abweichender) Endung wird beim Speichern automatisch
+  // korrigiert, ohne das Eingabefeld selbst während des Tippens zu bevormunden.
+  function forceDxfExtension(name) {
+    const trimmed = (name || '').trim() || 'dxf_export';
+    return /\.dxf$/i.test(trimmed) ? trimmed : trimmed.replace(/\.+$/, '') + '.dxf';
+  }
+  function openDxfSaveAsPanel() {
+    if (btnDxfSaveAsFileMenu.disabled) return;
+    dxfSaveAsFilenameInput.value = forceDxfExtension(dxfFilename || 'dxf_export.dxf');
+    dxfSaveAsPanel.classList.add('open');
+    dxfSaveAsFilenameInput.focus();
+    dxfSaveAsFilenameInput.select();
+  }
+  function confirmDxfSaveAs() {
+    const name = forceDxfExtension(dxfSaveAsFilenameInput.value);
+    const text = CNCParser.buildDxfText(dxfEntities || []);
+    const blob = new Blob([text], { type: 'application/dxf;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    dxfSaveAsPanel.classList.remove('open');
+  }
+  el('btnDxfSaveAsCancel').addEventListener('click', () => dxfSaveAsPanel.classList.remove('open'));
+  el('btnDxfSaveAsConfirm').addEventListener('click', confirmDxfSaveAs);
+  dxfSaveAsFilenameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfSaveAs(); } });
+  btnDxfSaveAsFileMenu.addEventListener('click', openDxfSaveAsPanel);
+  btnDxfSaveAsIcon.addEventListener('click', openDxfSaveAsPanel);
+  ctxItems.dxfSaveAs.addEventListener('click', openDxfSaveAsPanel);
+
+  // "DXF Polylinien auflösen" (Release 208, Sebastian, Punkt 1+3+8) - ersetzt dxfEntities durch
+  // das Ergebnis von explodeDxfEntities() (parser.js): jede Polylinie wird in einzelne Linien-/
+  // Bogen-Entitäten zerlegt (Punkt 8: "Datei soll am Ende Bögen ausgeben wie z.B.
+  // OmegaFraeser80x45komplett.DXF. Selbe DXF-Logik darin!"). Wirkt ausschließlich auf die für
+  // "DXF speichern als..." vorgehaltenen Rohdaten - die bereits ohnehin tessellierte 3D-Anzeige
+  // (dxfGeometry) bleibt unverändert, da dieselbe Geometrie zuvor schon exakt identisch gezeichnet
+  // wurde (parseDXF() tesselliert Bulge-Segmente bereits seit jeher zu denselben Punktzügen, nur
+  // ohne die jetzt zusätzlich vorgehaltene Information, dass es sich um einen echten Kreisbogen
+  // handelt). Kein Bestätigungsdialog/Toast (dieselbe "sofort wirksam"-Philosophie wie z.B. "DXF
+  // löschen") - direkt per updateDxfUI() erneut ausgegraut, sobald keine Polylinie mehr übrig ist.
+  function explodeDxfPolylines() {
+    if (btnDxfExplodeMenu.disabled || !dxfEntities) return;
+    dxfEntities = CNCParser.explodeDxfEntities(dxfEntities);
+    updateDxfUI();
+  }
+  btnDxfExplodeMenu.addEventListener('click', explodeDxfPolylines);
+  btnDxfExplodeIcon.addEventListener('click', explodeDxfPolylines);
+  ctxItems.dxfExplode.addEventListener('click', explodeDxfPolylines);
 
   // 72. Runde: Sebastian - "Messfunktionen für Länge/Winkel rechts neben
   // 'Zeilensprungbestätigung' einfügen, damit mehrere Optionen zum Messen bestehen." - hält die
