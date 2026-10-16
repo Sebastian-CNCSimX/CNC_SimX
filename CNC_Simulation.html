@@ -586,7 +586,13 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
+    /* Release 216, Sebastian: "Der geladene/angezeigte DXF Name ist sehr kurz. 'Gestemmt Handlauf
+       A (St...)' wird z.B. nur angezeigt. Könnten das noch 30 Zeichen mehr werden?" - bei dieser
+       Schriftgröße (12.5px) entsprechen rund 30 weitere Zeichen ca. 210px zusätzlich zur bisherigen
+       Breite (160px), daher 370px. Der volle Dateiname steht ohnehin immer als title-Tooltip zur
+       Verfügung (siehe updateDxfUI() weiter unten) - diese Breite betrifft nur die reine
+       Sichtbarkeit in der Titelzeile.*/
+    max-width: 370px;
   }
 
   /* Reichenbacher-Winkelkorrektur-Schalter (Sebastian, 44. Runde: "Bau bitte einen eigenen
@@ -3980,7 +3986,14 @@
 
 <!-- "Bauteilstärke" (67. Runde) - derselbe Dialog-Grundaufbau wie "DXF verschieben"/"DXF drehen",
      nur mit einem einzelnen Stärke-Feld (mm). 0 = keine zweite Kontur/Extrusion gezeichnet, siehe
-     drawDxf()/openDxfThicknessPanel() in app.js. -->
+     drawDxf()/openDxfThicknessPanel() in app.js.
+     Release 216 (Sebastian, Fortsetzung von Konzept_DXF_Bauteilstaerke_Ausfuellen.md): ergänzt um
+     Transparenz-Schieberegler (0=undurchsichtig..100=komplett durchsichtig, Default 100 =
+     unverändertes Drahtgitter-Altverhalten) + Füllfarbe (erst ab <=99% sichtbar/relevant, daher
+     per [hidden] analog zum bestehenden Muster bei #toolAppearanceCutterPanel u.ä. oben nur dann
+     eingeblendet) - betrifft ausschließlich den automatisch erkannten Kontur-Layer (siehe
+     detectKonturLayerName() in parser.js), alle übrigen Layer bleiben unverändert als Drahtgitter
+     an beiden Z-Ebenen sichtbar. -->
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Part thickness">Bauteilstärke</h3>
@@ -3990,6 +4003,23 @@
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
+    <div class="scale-group" id="dxfThicknessTransparencyRow">
+      <div class="scale-group-title"><span data-i18n-en="Fill transparency">Füll-Transparenz</span>: <span id="dxfThicknessTransparencyValue">100%</span></div>
+      <div class="slider-row">
+        <span class="slider-pct-label">0%</span>
+        <input type="range" id="dxfThicknessTransparencySlider" min="0" max="100" step="1" value="100">
+        <span class="slider-pct-label">100%</span>
+      </div>
+      <p class="panel-hint" data-i18n-en="Only affects the automatically detected contour layer (layer name containing &quot;Kont&quot;/&quot;Cont&quot;, otherwise the first layer in the file). 0% = opaque, shown as a filled solid body. 100% (default, unchanged behavior) = fully transparent, pure wireframe as before.">Wirkt nur auf den automatisch erkannten Kontur-Layer (Layername mit "Kont"/"Cont", sonst der erste Layer der Datei). 0% = undurchsichtig, als gefüllter Körper dargestellt. 100% (Standard, unverändertes Verhalten) = komplett durchsichtig, reines Drahtgitter wie bisher.</p>
+    </div>
+    <div class="color-field-row" id="dxfThicknessColorRow" hidden>
+      <span data-i18n-en="Fill color">Füllfarbe</span>
+      <span class="color-field-inputs">
+        <input type="color" id="dxfThicknessColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="dxfThicknessColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#3399ff">
+      </span>
+    </div>
+    <p class="panel-hint" id="dxfThicknessColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnDxfThicknessCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfThicknessConfirm" type="button">Ok</button>
@@ -7135,6 +7165,12 @@
     let currentTable = null;   // Tabellenname (z.B. 'LAYER') während innerhalb SECTION 2/TABLES
     let pendingTableStart = false;
     const layerColors = {};    // Layer-Name -> {r,g,b} | null, aus der TABLES/LAYER-Tabelle (72. Runde)
+    // Reihenfolge der LAYER-Tabelle (Release 216, siehe detectKonturLayerName() weiter unten) -
+    // anders als "layers" unten (alphabetisch-numerisch sortiert, 78. Runde) wird hier die
+    // tatsächliche Deklarationsreihenfolge innerhalb der Datei festgehalten, da "Layer 1" (Sebastian:
+    // "Wenn [kein Layername mit 'Kont'/'Cont'] vorhanden ist, ist Layer 1 die Kontur") den ERSTEN in
+    // der Datei definierten Layer meint, nicht den alphabetisch ersten.
+    const layerTableOrder = [];
     let currentPolyline = null; // { verts:[], closed, color } während POLYLINE...SEQEND
 
     function pushSkipped(type) {
@@ -7151,6 +7187,7 @@
       const get = (code) => { const f = fields.find(f => f.code === code); return f ? f.value : undefined; };
       const name = get(2);
       if (name === undefined) return;
+      if (!layerTableOrder.includes(name)) layerTableOrder.push(name);
       const trueColor = get(420);
       const aci = get(62);
       let rgb = null;
@@ -7355,7 +7392,112 @@
     // (keine Farbe in der Datei definiert), liefert app.js dafür die bisherige einheitliche
     // --dxf-color.
     const layers = Array.from(layerSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-    return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors };
+    // "layerOrder" (Release 216, siehe detectKonturLayerName() weiter unten): dieselbe Grundmenge
+    // wie "layers" oben (nur tatsächlich gezeichnete Layer), aber in der Reihenfolge der
+    // TABLES/LAYER-Tabelle statt alphabetisch - ein in strokes vorkommender, aber in der
+    // LAYER-Tabelle gar nicht deklarierter Layer (z.B. der Default-Layer "0" einer Datei ohne
+    // eigene Layer-Einteilung) wird dabei in der Reihenfolge seines ERSTEN Auftretens unter den
+    // strokes angehängt (layerSet, ein Set, bewahrt Einfügereihenfolge) - dieselbe Fallback-Logik
+    // wie "Layer 1 ist die Kontur" sie für eine Datei ganz ohne LAYER-Tabelle braucht.
+    const layerOrder = layerTableOrder.filter(name => layerSet.has(name));
+    layerSet.forEach(name => { if (!layerOrder.includes(name)) layerOrder.push(name); });
+    return { strokes, entityCount, pointCount, skippedTypes, layerCount: layerSet.size, layers, layerColors, layerOrder };
+  }
+
+  // Release 216 (Sebastian, Fortsetzung des Konzepts "DXF-Bauteilstärke 'ausfüllen'", siehe
+  // Konzept_DXF_Bauteilstaerke_Ausfuellen.md): ermittelt, welcher Layer einer geladenen DXF-Datei
+  // als "Kontur" gilt - die äußere Bauteilsilhouette, die beim Ausfüllen zum echten 3D-Körper
+  // wird. Regel wörtlich von Sebastian: "Es ist entweder ein Layername vorhanden, der 'Kont' (DE)
+  // oder 'Cont' (EN, wenn die Datei von einem englischsprachigen Kunden ist) enthält. Wenn die
+  // nicht vorhanden sind, ist Layer 1 die Kontur." - "Layer 1" bedeutet dabei der erste
+  // tatsächlich mit Geometrie belegte Layer in der Reihenfolge der TABLES/LAYER-Tabelle der Datei
+  // (geo.layerOrder, s.o.), NICHT die an anderer Stelle alphabetisch sortierte "layers"-Liste
+  // (9.8a). COMPASS (reine Hilfsachse, siehe buildToolProfileFromDxfText() oben) wird dabei - wie
+  // dort - stets übersprungen, da er nie die eigentliche Bauteilkontur sein kann.
+  function detectKonturLayerName(geo) {
+    if (!geo || !geo.layerOrder || !geo.layerOrder.length) return null;
+    const candidates = geo.layerOrder.filter(name => name !== 'COMPASS');
+    if (!candidates.length) return null;
+    const matched = candidates.find(name => /kont|cont/i.test(name));
+    return matched || candidates[0];
+  }
+
+  // Baut aus den (bereits auf einen einzelnen Layer gefilterten) Strichzügen einen oder mehrere
+  // geschlossene Punktringe für den Füllkörper (siehe fillRevolutionBody() in app.js). Anders als
+  // buildProfileChainFromStrokes() oben (spezialisiert auf ein halbes, achssymmetrisches
+  // Werkzeugprofil samt Drehachsen-Erkennung) wird hier keine Achse gesucht - eine Bauteilkontur
+  // ist einfach die geschlossene Außenkontur in der XY-Ebene. Bereits als "closed" markierte
+  // Strichzüge (z.B. ein einzelner voller CIRCLE oder eine geschlossene LWPOLYLINE) werden direkt
+  // als eigener Ring übernommen; alle offenen Strichzüge (typischerweise viele einzelne
+  // LINE-Segmente, siehe Sebastians Beispieldateien "Gestemmt Handlauf A (Stabbohrungen).DXF"/
+  // "Stufen 2.DXF") werden per Endpunkt-Matching zu einem oder mehreren Ringen verkettet (gleiche
+  // Grundtechnik wie buildProfileChainFromStrokes() oben, nur ohne dessen Halbprofil-/Achs-
+  // Sonderbehandlung). Liefert ein Array von Punktringen (je ein Array aus {x,y}, OHNE
+  // wiederholten Schlusspunkt) - leer, falls sich keine geschlossene Kontur bilden ließ; der
+  // Aufrufer (drawDxf() in app.js) fällt in diesem Fall auf die bisherige, nicht gefüllte
+  // Darstellung zurück statt einen Fehler zu werfen - anders als beim strikten
+  // Werkzeugprofil-Import ist ein stiller Fallback hier angemessener, da die Kontur-Erkennung
+  // automatisch (ohne Benutzer-Bestätigung) bei jedem DXF-Laden läuft.
+  function buildClosedLoopFromLayerStrokes(strokes) {
+    const KONTUR_CHAIN_TOLERANCE = 0.01; // mm, dieselbe Größenordnung wie CHAIN_MATCH_TOLERANCE unten
+    const loops = [];
+    (strokes || []).filter(s => s.closed && s.points && s.points.length >= 3).forEach(s => {
+      loops.push(s.points.map(p => ({ x: p.x, y: p.y, z: p.z || 0 })));
+    });
+    const segs = (strokes || [])
+      .filter(s => !s.closed && s.points && s.points.length >= 2)
+      .map(s => ({ pts: s.points.map(p => ({ x: p.x, y: p.y, z: p.z || 0 })), used: false }));
+    function samePoint(a, b) {
+      return Math.abs(a.x - b.x) <= KONTUR_CHAIN_TOLERANCE && Math.abs(a.y - b.y) <= KONTUR_CHAIN_TOLERANCE;
+    }
+    let guard = 0;
+    while (guard++ < 10000) {
+      const startIdx = segs.findIndex(s => !s.used);
+      if (startIdx === -1) break;
+      const first = segs[startIdx];
+      first.used = true;
+      const chain = first.pts.slice();
+      let lastPoint = chain[chain.length - 1];
+      for (let safety = 0; safety < segs.length + 1; safety++) {
+        let nextIdx = -1, nextPts = null;
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i];
+          if (s.used) continue;
+          if (samePoint(lastPoint, s.pts[0])) { nextIdx = i; nextPts = s.pts; break; }
+          if (samePoint(lastPoint, s.pts[s.pts.length - 1])) { nextIdx = i; nextPts = s.pts.slice().reverse(); break; }
+        }
+        if (nextIdx === -1) break;
+        segs[nextIdx].used = true;
+        chain.push(...nextPts.slice(1));
+        lastPoint = chain[chain.length - 1];
+      }
+      // Eine übrig bleibende, nicht geschlossene Teilkette (chain[0] != letzter Punkt) wird
+      // stillschweigend verworfen (siehe Funktionskommentar oben) - sie trägt nichts zu einem
+      // füllbaren Ring bei.
+      if (chain.length >= 4 && samePoint(chain[0], chain[chain.length - 1])) {
+        loops.push(chain.slice(0, chain.length - 1));
+      }
+    }
+    return loops;
+  }
+
+  // Wählt aus mehreren gefundenen Ringen (siehe buildClosedLoopFromLayerStrokes() oben) den
+  // flächenmäßig größten als "die" Bauteilaußenkontur aus - der Normalfall (genau ein Ring) ist
+  // davon unberührt, diese Auswahl greift nur, falls der Kontur-Layer mehrere getrennte
+  // Teilkonturen enthält. Reines Shoelace-Flächenmaß, Vorzeichen irrelevant (Math.abs).
+  function pickLargestLoop(loops) {
+    if (!loops || !loops.length) return null;
+    let best = loops[0], bestArea = -1;
+    loops.forEach(loop => {
+      let area = 0;
+      for (let i = 0; i < loop.length; i++) {
+        const a = loop[i], b = loop[(i + 1) % loop.length];
+        area += a.x * b.y - b.x * a.y;
+      }
+      area = Math.abs(area) / 2;
+      if (area > bestArea) { bestArea = area; best = loop; }
+    });
+    return best;
   }
 
   // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
@@ -8013,7 +8155,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop };
 });
 </script>
 <script>
@@ -8725,8 +8867,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 215;
-  const APP_RELEASE_TIMESTAMP = '16.10.2026, 09:00 Uhr';
+  const APP_RELEASE_NUMBER = 219;
+  const APP_RELEASE_TIMESTAMP = '16.10.2026, 13:45 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11520,6 +11662,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const dxfRotateInput = el('dxfRotateInput');
   const dxfThicknessPanel = el('dxfThicknessPanel');
   const dxfThicknessInput = el('dxfThicknessInput');
+  // Release 216, siehe Deklaration von dxfThicknessTransparency/dxfThicknessColor weiter unten
+  // sowie openDxfThicknessPanel()/confirmDxfThickness() ganz unten in dieser Datei.
+  const dxfThicknessTransparencyRow = el('dxfThicknessTransparencyRow');
+  const dxfThicknessTransparencySlider = el('dxfThicknessTransparencySlider');
+  const dxfThicknessTransparencyValue = el('dxfThicknessTransparencyValue');
+  const dxfThicknessColorRow = el('dxfThicknessColorRow');
+  const dxfThicknessColorPicker = el('dxfThicknessColorPicker');
+  const dxfThicknessColorHex = el('dxfThicknessColorHex');
+  const dxfThicknessColorHexWarning = el('dxfThicknessColorHexWarning');
   // "DXF skalieren" (Release 84, siehe Zustandsvariable dxfScale weiter unten sowie
   // dxfTransformPoint()/openDxfScalePanel()).
   const btnDxfScale = el('btnDxfScale');
@@ -11825,6 +11976,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfMirrorY = false;   // Spiegelung an der DXF-eigenen Y-Achse (X-Vorzeichen wird gedreht)
   let dxfRotateDeg = 0;     // Drehung um den DXF-eigenen Ursprung, Grad, mathematisch positiv (CCW)
   let dxfThickness = 0;     // Bauteilstärke in mm, 0 = keine Extrusion/zweite Kontur gezeichnet
+  // "DXF-Bauteilstärke 'ausfüllen'" (Release 216, Sebastian, siehe
+  // Konzept_DXF_Bauteilstaerke_Ausfuellen.md): Transparenz (0=undurchsichtig..100=komplett
+  // durchsichtig) und Füllfarbe für den per Layer-Erkennung (detectKonturLayerName() in
+  // parser.js, siehe dxfKonturLayerName/dxfKonturLoop unten) ermittelten Kontur-Layer, sobald die
+  // Bauteilstärke (dxfThickness oben) ungleich 0 ist. 100 (Default, wie vor dieser Runde) =
+  // unverändertes Altverhalten (reines Drahtgitter, keine Füllung) - erst ab <=99 wird die Farbe
+  // überhaupt sichtbar/der Kontur-Layer als echter 3D-Körper gefüllt, siehe drawDxf(). Dieselbe
+  // Nicht-Persistenz wie dxfThickness/dxfOffset/... oben (gehört zur jeweils geladenen DXF-Datei).
+  let dxfThicknessTransparency = 100;
+  let dxfThicknessColor = '#3399ff';
+  // Kontur-Layer-Erkennung (Release 216, siehe detectKonturLayerName()/
+  // buildClosedLoopFromLayerStrokes()/pickLargestLoop() in parser.js): wird bei jedem neuen
+  // DXF-Import EINMALIG in loadDxfText() ermittelt (nicht bei jedem render(), da sich die
+  // zugrundeliegenden Strichzüge nach dem Laden nicht mehr ändern) - dxfKonturLayerName der Name
+  // des erkannten Kontur-Layers (oder null, falls die Datei gar keine Layer enthält),
+  // dxfKonturLoop der daraus gebildete, GESCHLOSSENE Punktring in DXF-eigenen Rohkoordinaten (vor
+  // dxfTransformPoint(), siehe dort - Spiegeln/Drehen/Verschieben/Skalieren wirken wie bei allen
+  // anderen Konturpunkten erst beim Zeichnen) - oder null, falls sich auf diesem Layer kein
+  // einziger geschlossener Ring bilden ließ (drawDxf() fällt dann für diesen Layer unverändert auf
+  // die bisherige Drahtgitter-Darstellung zurück, exakt wie vor dieser Runde).
+  let dxfKonturLayerName = null;
+  let dxfKonturLoop = null;
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -13307,7 +13480,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfMirrorY = false;
     dxfRotateDeg = 0;
     dxfThickness = 0;
+    dxfThicknessTransparency = 100;
+    dxfThicknessColor = '#3399ff';
     dxfScale = 1;
+    // "DXF-Bauteilstärke 'ausfüllen'" (Release 216): Kontur-Layer EINMALIG pro Import ermitteln
+    // (siehe Deklaration von dxfKonturLayerName/dxfKonturLoop oben) statt bei jedem render() neu -
+    // die zugrundeliegenden Strichzüge (dxfGeometry.strokes) ändern sich nach dem Laden nicht mehr.
+    dxfKonturLayerName = CNCParser.detectKonturLayerName(dxfGeometry);
+    if (dxfKonturLayerName) {
+      const konturStrokes = dxfGeometry.strokes.filter(s => s.layer === dxfKonturLayerName);
+      const loops = CNCParser.buildClosedLoopFromLayerStrokes(konturStrokes);
+      dxfKonturLoop = CNCParser.pickLargestLoop(loops);
+    } else {
+      dxfKonturLoop = null;
+    }
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
     // dxfVisible/dxfOffset/dxfMirror* oben - eine für die vorherige Datei ausgeblendete Layer-Auswahl
     // soll sich nicht auf eine neu geladene Datei übertragen (dieselbe Begründung wie bei
@@ -13342,6 +13528,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfMirrorY = false;
     dxfRotateDeg = 0;
     dxfThickness = 0;
+    dxfThicknessTransparency = 100;
+    dxfThicknessColor = '#3399ff';
+    dxfKonturLayerName = null;
+    dxfKonturLoop = null;
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -15148,7 +15338,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // sonst würde ein Klick auf "Spiegeln"/"Drehen"/eine neue Bauteilstärke den Bake-Cache
       // (56. Runde, siehe unten) nicht als "schmutzig" erkennen und die Änderung bliebe auf dem
       // Offscreen-Canvas unsichtbar, bis ein ohnehin fälliger Rebake aus anderem Grund erfolgt.
+      // Bugfix (Release 218): dxfThicknessTransparency/dxfThicknessColor fehlten hier - Sebastian:
+      // "Enter funktioniert noch nicht. Ich ändere die Transparenz -> Enter. Fenster geht zu,
+      // nichts passiert." bzw. "Die 'neue' Transparenz ist aber schon hinterlegt ... Aber
+      // dargestellt wird noch das 'alte'". Ursache: confirmDxfThickness() aktualisierte die
+      // Zustandsvariablen dxfThicknessTransparency/dxfThicknessColor korrekt (daher stimmte der
+      // Wert beim erneuten Öffnen des Dialogs), aber da diese beiden Werte hier NICHT Teil von
+      // computeBakeParams()/bakeParamsEqual() waren, erkannte der Bake-Cache (56. Runde) eine
+      // reine Transparenz-/Farbänderung (ohne Änderung von Bauteilstärke/Spiegeln/Drehen) nicht
+      // als "schmutzig" - requestRender() lief zwar, aber render() kopierte nur die unveränderte,
+      // alte Bake-Canvas erneut auf den sichtbaren Canvas, statt den gefüllten Körper mit der
+      // neuen Transparenz/Farbe neu zu zeichnen.
       dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfThickness, dxfScale,
+      dxfThicknessTransparency, dxfThicknessColor,
       // "DXF-Layer" (78. Runde): dxfHiddenLayersVersion statt des Set-Inhalts selbst (analog zu
       // hiddenOpsVersion oben) - ein Checkbox-Klick zählt sie hoch, damit ein Umschalten eines
       // einzelnen Layers zuverlässig einen Rebake auslöst, ohne den kompletten Set-Inhalt
@@ -15170,6 +15372,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.bg === b.bg &&
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
+      a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
   }
@@ -16223,13 +16426,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // behandelt werden, als wären sie gar nicht Teil der Datei.
     const transformedStrokes = dxfGeometry.strokes.filter(s => !dxfHiddenLayers.has(s.layer)).map(s => ({
       pts: s.points.map(dxfTransformPoint),
-      color: (showLayerColors && s.color) ? `rgb(${s.color.r}, ${s.color.g}, ${s.color.b})` : defaultColor
+      color: (showLayerColors && s.color) ? `rgb(${s.color.r}, ${s.color.g}, ${s.color.b})` : defaultColor,
+      layer: s.layer
     }));
     // Performance (79. Runde, s. strokeGroupedByColor() oben): statt eines eigenen
     // beginPath()/stroke()-Paars PRO STRICHZUG jetzt gebündelt nach Farbe - bei sehr vielen
     // Entitäten (z.B. dem 16069-3DFACE-Beispiel aus der 78. Runde) ein entscheidender Unterschied
     // für die Framerate während einer Kamera-Drehung.
+    // Release 216 (Sebastian, "ausgefülltes" Bauteil, siehe detectKonturLayerName()/
+    // buildClosedLoopFromLayerStrokes() in parser.js): wird der Kontur-Layer als gefüllter 3D-
+    // Körper dargestellt (Transparenz < 100%, siehe openDxfThicknessPanel()/confirmDxfThickness()
+    // weiter oben), gilt das wörtlich NUR "an der Oberkante" - "Die untere Kontur ist die
+    // Originalkontur erst mal." Die Zeichnung der unteren Ebene (z=0, direkt hier) bleibt deshalb
+    // für ALLE Layer inkl. Kontur-Layer unverändert; erst die obere Ebene weiter unten wird für
+    // den Kontur-Layer durch den gefüllten Körper ersetzt statt als zusätzliche Drahtgitterkopie
+    // gezeichnet.
     strokeGroupedByColor(transformedStrokes, proj, 0);
+    const fillActive = !!(dxfThickness && dxfKonturLayerName && dxfKonturLoop && dxfKonturLoop.length >= 3 && dxfThicknessTransparency < 100);
+    const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
     // Bauteilstärke (67. Runde, Sebastian: "DXF Funktion um Bauteilstärke anzugeben") - Annahme
     // (siehe Dokumentation 9.8a): die DXF-Unterlage stellt die Aufstandsfläche/Oberseite des
     // Werkstücks dar (liegt "unter der gefrästen Kontur", siehe Abschnitt 9.8) - eine angegebene
@@ -16252,7 +16466,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Vorzeichen der Eingabe frei wählbar, ohne zwei getrennte Felder/Schalter einzuführen.
     if (dxfThickness) {
       ctx.globalAlpha = 0.5;
-      strokeGroupedByColor(transformedStrokes, proj, dxfThickness);
+      // Release 216: die obere Drahtgitter-Ebene (zweite Kontur-Kopie bei z=dxfThickness) wird nur
+      // noch für die Strichzüge AUSSERHALB des Kontur-Layers gezeichnet, solange der gefüllte
+      // Körper aktiv ist (fillActive, s.o.) - für den Kontur-Layer selbst übernimmt der gefüllte
+      // Körper weiter unten diese Rolle. Ist fillActive false (Standardfall, z.B. Transparenz noch
+      // auf 100% oder kein Kontur-Layer erkennbar), ist topWireframeStrokes === transformedStrokes
+      // und das Verhalten bleibt exakt wie vor Release 216.
+      strokeGroupedByColor(topWireframeStrokes, proj, dxfThickness);
       ctx.globalAlpha = 0.65;
       ctx.setLineDash(dashed ? [2, 3] : []);
       // Performance (79. Runde): dieselbe Bündelung wie oben, jetzt auch für die senkrechten
@@ -16261,7 +16481,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Kontur selbst), jetzt nach Farbe gruppiert und als unabhängige Teilpfade in je einem
       // gemeinsamen Pfad pro Farbe gezeichnet.
       const byColor = new Map();
-      for (const s of transformedStrokes) {
+      for (const s of topWireframeStrokes) {
         let arr = byColor.get(s.color);
         if (!arr) { arr = []; byColor.set(s.color, arr); }
         arr.push(s);
@@ -16280,6 +16500,61 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         ctx.stroke();
       });
+      // Release 216: der eigentliche gefüllte Körper des Kontur-Layers - derselbe Mechanismus
+      // (fillRevolutionBody(), siehe dort) wie beim Werkzeug-Zylinder/-Profil, hier mit genau
+      // ZWEI Ringen (unten bei der Original-Z, oben bei Original-Z + dxfThickness) statt vieler
+      // Kreisringe. dxfKonturLoop (siehe loadDxfText()/CNCParser.buildClosedLoopFromLayerStrokes()
+      // oben) ist bereits auf den Kontur-Layer beschränkt und liegt in unverformten DXF-
+      // Rohkoordinaten vor - dieselbe dxfTransformPoint()-Transformation wie für alle anderen
+      // Strichzüge wird hier für Konsistenz (Spiegeln/Drehen/Skalieren/Versatz) ebenfalls
+      // angewendet. Die Ring-Punktliste wird am Ende um den Startpunkt ergänzt (geschlossener
+      // Ring), exakt wie bei den Kreisringen in drawToolHolder()/drawTool() oben (dort ist der
+      // Schlusspunkt durch den vollen 360°-Winkel automatisch identisch mit dem Startpunkt).
+      if (fillActive) {
+        const loopClosed = dxfKonturLoop.concat([dxfKonturLoop[0]]);
+        const ptsAtOriginalZ = loopClosed.map(p => dxfTransformPoint({ x: p.x, y: p.y, z: p.z || 0 }));
+        const ptsAtThicknessZ = ptsAtOriginalZ.map(t => ({ x: t.x, y: t.y, z: t.z + dxfThickness }));
+        // Release 216a (Bugfix, Sebastian: "Bei negativen Eingaben der Bauteilstärke wird das
+        // Bauteil halb transparent auf der Oberkante. Sowas gab es schon mal beim
+        // Werkzeugprofil, dass da manche Flächen halbdurchsichtig waren." - mit Vergleichsbild
+        // einer positiven (korrekt) und einer negativen (fehlerhaft, mit sichtbar durchscheinendem
+        // Drahtgitter) Bauteilstärke): fillRevolutionBody() berechnet die Normale jeder
+        // Seitenfläche über das Kreuzprodukt aus der (rein horizontalen) Ringkante und dem
+        // (rein vertikalen) Vektor zwischen den beiden Ringen - dieser Vektor war bislang IMMER
+        // "zweiter Ring minus erster Ring" in der festen Reihenfolge [bottomPts, topPts], deren
+        // Höhendifferenz exakt dxfThickness ist. Bei negativer Bauteilstärke ist topPts dadurch
+        // tatsächlich der TIEFERE der beiden Ringe - die Ringreihenfolge blieb aber gleich, wodurch
+        // sich das Vorzeichen dieses Vektors (und damit die berechnete Normalenrichtung JEDER
+        // einzelnen Seitenfläche) komplett umdreht. Die Stirnflächen-Normalen (startCapNormal/
+        // endCapNormal, feste Werte) wurden zwar schon vorher korrekt ans Vorzeichen angepasst
+        // (capDir) - die Seitenflächen jedoch nicht, wodurch bei negativer Stärke die komplette
+        // Mantelfläche mit nach innen statt nach außen zeigenden Normalen berechnet wurde und das
+        // Backface-Culling in fillRevolutionBody() (siehe dort) sie dadurch größtenteils
+        // fälschlich ausblendete - sichtbar wurde dahinter das Drahtgitter der nicht gefüllten
+        // übrigen Layer, was wie "halb durchsichtig" wirkte (exakt dieselbe Symptomatik/Ursache
+        // wie der frühere Werkzeugprofil-Bug mit negativen Radien, siehe 9.7.7/test_axis_fix_*.js).
+        // Fix: statt der festen Benennung "unten"/"oben" wird jetzt unabhängig vom Vorzeichen
+        // von dxfThickness immer der PHYSISCH tiefere Ring an Indexposition 0 übergeben - die
+        // Höhendifferenz zwischen den beiden Ringen ist dadurch immer positiv (= |dxfThickness|),
+        // die Kantenrichtung der Kontur-Schleife selbst ändert sich durch das Vorzeichen der
+        // Bauteilstärke nicht, also bleibt die berechnete Normalenrichtung jeder Seitenfläche jetzt
+        // für beide Vorzeichen konsistent korrekt nach außen gerichtet.
+        const lowerPts = dxfThickness >= 0 ? ptsAtOriginalZ : ptsAtThicknessZ;
+        const upperPts = dxfThickness >= 0 ? ptsAtThicknessZ : ptsAtOriginalZ;
+        const lowerScreen = lowerPts.map(pt => proj(toRender(pt)));
+        const upperScreen = upperPts.map(pt => proj(toRender(pt)));
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1; // fillRevolutionBody() setzt seine eigene Deckkraft über appearance.transparency (s.u.) - ohne diesen Reset würde die zuletzt gesetzte globalAlpha (0.65, s.o.) zusätzlich mit hineinmultiplizieren.
+        // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfKonturFillInfo in den
+        // instrumentierten Testkopien, siehe make_rNNN_instrumented.py) - ohne Funktion für die
+        // eigentliche Darstellung, analog zu window.__lastToolProfileRenderInfo oben.
+        window.__lastDxfKonturFillInfo = { thickness: dxfThickness, ringPointCount: loopClosed.length, lowerZ: lowerPts[0].z, upperZ: upperPts[0].z };
+        fillRevolutionBody([lowerPts, upperPts], [lowerScreen, upperScreen],
+          { color: dxfThicknessColor, transparency: dxfThicknessTransparency },
+          { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
+          { x: 0, y: 1, z: 0 },
+          { disableSideCull: true }); // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody()
+      }
     }
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
@@ -16756,7 +17031,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Facette gezeichnet, verlässlich per Tiefensortierung unten in der richtigen Reihenfolge
   // übereinandergelegt - in jeder "normalen" Ansicht bleibt das sonstige, bereits getestete
   // Verhalten unverändert.
-  function fillRevolutionBody(worldRings, screenRings, appearance, caps, axis) {
+  function fillRevolutionBody(worldRings, screenRings, appearance, caps, axis, opts) {
     const startCapNormal = caps && caps.startCapNormal;
     const endCapNormal = caps && caps.endCapNormal;
     const faces = [];
@@ -16765,7 +17040,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // "axis" kommt vom Aufrufer bereits in Render-Koordinaten (siehe Kommentar oben) - hier ohne
     // weitere Umrechnung direkt mit "fwd" verrechenbar.
     const axisFacing = axis ? Math.abs(axis.x * fwd.x + axis.y * fwd.y + axis.z * fwd.z) : 0;
-    const skipSideCull = axisFacing > 0.85;
+    // Bugfix (Release 219, Sebastian zur "ausgefülltes Bauteil"-Darstellung mit "Gestemmt
+    // Handlauf A (Stabbohrungen).DXF": "Im Video ist es doch falsch gefüllt. Ab Sekunde 17->18
+    // drehe ich das Bauteil etwas und ich kann seitlich reinschauen, wenn ich es etwas
+    // bewege."): Das bisherige Backface-Culling verwirft jede Seitenfläche rein anhand IHRER
+    // EIGENEN Normale (zeigt sie von der Kamera weg, gilt sie als "Rückseite" und wird
+    // übersprungen) - für einen KONVEXEN Körper (z.B. die kreisrunden Werkzeug-/
+    // Spannfutterprofile unten) korrekt, weil eine solche Rückseiten-Fläche dort immer von der
+    // eigenen Vorderseite verdeckt wird. Die Kontur des Handlaufs ist an der eingerollten Spitze
+    // aber KONKAV (die Kontur läuft dort in einer engen Kehre wieder auf sich selbst zurück) -
+    // beim Blick in genau diese Kehre hinein zeigt ein großes Stück der "inneren" Mantelfläche
+    // (die Rückwand der Kehre) zwar vom Betrachter weg (gilt also als "Rückseite"), liegt aber
+    // NICHT hinter anderem Bauteil-Material, sondern genau in der freien Sichtlinie - das
+    // Culling entfernte sie trotzdem, der Hintergrund (bzw. das Drahtgitter dahinter) wurde
+    // dadurch sichtbar ("seitlich reinschauen"). Ein erster, auf die unmittelbare(n)
+    // Nachbarfläche(n) der scharfen Eckpunkte begrenzter Rettungsversuch griff hier noch zu kurz:
+    // betroffen war am Ende eine ganze, neun Flächen lange Kette der inneren Kehrenwand, nicht
+    // nur die ein, zwei Flächen direkt an der Spitze selbst (bestätigt per Messreihe über eine
+    // volle Umdrehung um Sebastians Handlauf-DXF sowie gezielter Ein-/Ausblend-Versuche
+    // einzelner Flächen).
+    //
+    // Fix: für die DXF-Kontur-Füllung (zwei Ringe, einfache senkrechte Extrusion einer
+    // möglicherweise konkaven 2D-Kontur - anders als die unten weiterhin kreisrunden, konvexen
+    // Werkzeug-/Spannfutterprofile) wird das Backface-Culling der Seitenflächen über
+    // "opts.disableSideCull" (vom Aufrufer in drawDxf() gesetzt) ganz ausgeschaltet; der Maler-
+    // Algorithmus (Tiefensortierung unten) ordnet bei nur zwei Ringen auch ohne Culling zuverlässig
+    // richtig. Für die weiterhin unveränderten Werkzeug-/Spannfutterprofile (drawToolHolder(), kein
+    // "opts" übergeben) bleibt das bisherige Culling exakt erhalten.
+    const skipSideCull = (axisFacing > 0.85) || !!(opts && opts.disableSideCull);
     for (let r = 0; r < worldRings.length - 1; r++) {
       const wA = worldRings[r], wB = worldRings[r + 1];
       const sA = screenRings[r], sB = screenRings[r + 1];
@@ -16800,6 +17102,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     addCap(screenRings[0], startCapNormal);
     addCap(screenRings[screenRings.length - 1], endCapNormal);
+    // Nur für Diagnose/Regressionstests (window.__debug_getLastFillRevolutionBodyFaceCount in den
+    // instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
+    // window.__lastDxfKonturFillInfo/__lastToolProfileRenderInfo.
+    window.__lastFillRevolutionBodyFaceCount = faces.length;
     if (!faces.length) return;
     faces.sort((a, b) => b.depth - a.depth); // fern -> nah (Maler-Algorithmus)
     const rgb = hexToRgb(appearance.color) || { r: 201, g: 202, b: 207 };
@@ -16959,15 +17265,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // (lengthRef auf den beim ersten Einlesen vorbelegten Standardwert = Maximum stehen gelassen,
   // siehe #toolDxfImportLengthRefInput/reparse() im Import-Dialog) fällt dabei auf den zweiten
   // Fall (gedrehtes Vorzeichen).
+  // Bugfix (Release 219, Sebastian zur Spannfutterdarstellung - siehe wortgleiches Problem bei
+  // buildChuckProfileForRender() direkt unterhalb, dort mit vollem Zitat): Hier wurde die
+  // Richtung ("tipNearMin") bislang bei JEDEM Aufruf frisch aus der AKTUELLEN, frei
+  // verschiebbaren `entry.lengthRef` neu hergeleitet (liegt lengthRef näher am Minimum oder
+  // Maximum der rohen "dist"-Werte?). Das war seit der festen Konvention "Werkzeugspitze liegt
+  // IMMER am unteren dist-Extremwert (Minimum)" (siehe reparse() im Importdialog, Kommentar bei
+  // der dortigen Default-Vorbelegung) gar keine offene Frage mehr, die pro Profil unterschiedlich
+  // beantwortet werden könnte - sie ist durch diese Konvention bereits FEST vorgegeben. Die
+  // Neuberechnung bei jedem Aufruf hatte dadurch nur noch einen Effekt: sobald der Benutzer
+  // `lengthRef` (den eigentlich rein verschiebbaren Referenzpunkt) über die Mitte zwischen
+  // Minimum und Maximum hinaus zog, kippte das Ergebnis von "echo" (reine Verschiebung) auf
+  // "gespiegelt" um - das Profil stellte sich dadurch im 3D-Bild unvermittelt auf den Kopf,
+  // obwohl nur der Referenzpunkt verschoben wurde. Fix: Richtung fest gemäß der Konvention
+  // annehmen (keine Spiegelung, nur Verschiebung um lengthRef) statt bei jedem Aufruf neu zu
+  // erraten.
   function buildToolProfileForRender(entry) {
     const raw = getActiveToolDxfRDistProfile(entry);
     if (!raw || raw.length < 2) return null;
-    const distVals = raw.map(p => p.dist);
-    const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-    const tipNearMin = (entry.lengthRef - distMin) <= (distMax - entry.lengthRef);
     return raw.map(p => ({
       r: p.r,
-      dist: tipNearMin ? (p.dist - entry.lengthRef) : (entry.lengthRef - p.dist)
+      dist: p.dist - entry.lengthRef
     }));
   }
 
@@ -16983,15 +17301,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // ist ein für drawToolHolder() verwendbares Profil mit "dist"=0 am Anlagepunkt, wachsend in
   // Richtung Spindel/Maschine (= dieselbe "origin"-Bedeutung wie beim bisherigen, fest
   // programmierten TOOL_HOLDER_HSK63_PROFILE, siehe drawToolHolder()).
+  // Bugfix (Release 219, Sebastian: "Das Profil dreht sich ab einem gewissen Punkt im 3D, wenn
+  // es in Benutzung ist ... [Screenshot] oben ... nicht korrekt ... das Spannfutter sich auf den
+  // Kopf gestellt hat und unten ... korrekt, wenn der Längenreferenzpunkt anders ist. Die
+  // Änderung des Längenreferenzpunktes darf das Profil aber nicht auf den Kopf stellen."):
+  // Dieselbe Ursache wie bei buildToolProfileForRender() direkt oberhalb (siehe dortigen
+  // Kommentar für die volle Herleitung), hier nur mit der spiegelbildlichen Konvention des
+  // Spannfutter-Dialogs ("DXF oben" = Spannfutter-Oberseite = Anlagepunkt des Werkzeugs,
+  // IMMER am oberen dist-Extremwert/Maximum, siehe reparse() im dortigen Importdialog). Auch
+  // hier wurde "tipNearMin" bislang live aus der aktuellen, frei verschiebbaren
+  // `entry.lengthRef` neu geraten statt fest gemäß dieser Konvention angenommen - sobald
+  // Sebastian den Längenreferenzpunkt beim Ausprobieren über die Mitte zog, kippte die
+  // Spannfutter-Darstellung dadurch unvermittelt auf den Kopf. Fix: Richtung fest gemäß der
+  // Konvention annehmen (immer gespiegelt-verschoben, kein Umkippen je nach `lengthRef`-Position).
   function buildChuckProfileForRender(entry) {
     const raw = getActiveChuckDxfRDistProfile(entry);
     if (!raw || raw.length < 2) return null;
-    const distVals = raw.map(p => p.dist);
-    const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-    const tipNearMin = (entry.lengthRef - distMin) <= (distMax - entry.lengthRef);
     return raw.map(p => ({
       r: p.r,
-      dist: tipNearMin ? (p.dist - entry.lengthRef) : (entry.lengthRef - p.dist)
+      dist: entry.lengthRef - p.dist
     }));
   }
 
@@ -22615,9 +22943,33 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // drawDxf()/dxfPointsForBounds() standardmäßig nach OBEN (positives Z) extrudieren (s. dort),
   // ist die Klemmung entfallen: ein negativer Wert ist jetzt die einzige Möglichkeit, weiterhin
   // (wie vor Release 146) nach unten ins negative Z zu extrudieren.
+  // Release 216, siehe Deklaration von dxfThicknessTransparency/dxfThicknessColor weiter oben:
+  // Farbzeile nur sichtbar, solange die Transparenz <=99% ist ("Die Farbe wird erst ab <=99%
+  // sichtbar", Sebastian) - bei 100% (Default, unverändertes Altverhalten) bliebe eine Farbwahl
+  // ohne jede sichtbare Wirkung, daher komplett ausgeblendet statt nur deaktiviert, exakt nach
+  // demselben Muster wie bei #toolAppearanceCutterColorRow u.ä. (updateFilledRowsVisibility()).
+  function updateDxfThicknessColorRowVisibility() {
+    dxfThicknessColorRow.hidden = Number(dxfThicknessTransparencySlider.value) >= 100;
+  }
+  dxfThicknessTransparencySlider.addEventListener('input', () => {
+    dxfThicknessTransparencyValue.textContent = dxfThicknessTransparencySlider.value + '%';
+    updateDxfThicknessColorRowVisibility();
+  });
+  dxfThicknessColorHex.addEventListener('input', () => {
+    const norm = normalizeHex(dxfThicknessColorHex.value);
+    if (norm) dxfThicknessColorPicker.value = norm;
+  });
+  dxfThicknessColorPicker.addEventListener('input', () => { dxfThicknessColorHex.value = dxfThicknessColorPicker.value; });
+
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
     dxfThicknessInput.value = String(dxfThickness);
+    dxfThicknessTransparencySlider.value = String(dxfThicknessTransparency);
+    dxfThicknessTransparencyValue.textContent = dxfThicknessTransparency + '%';
+    dxfThicknessColorPicker.value = dxfThicknessColor;
+    dxfThicknessColorHex.value = dxfThicknessColor;
+    dxfThicknessColorHexWarning.hidden = true;
+    updateDxfThicknessColorRowVisibility();
     dxfThicknessPanel.classList.add('open');
     dxfThicknessInput.focus();
     dxfThicknessInput.select();
@@ -22633,6 +22985,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
+    // Release 216: Transparenz immer übernehmbar (auch bei 100%, dem Default) - nur bei <=99%
+    // (Farbzeile sichtbar) muss die Farbe selbst zusätzlich ein gültiger Hexcode sein.
+    const transparencyVal = Number(dxfThicknessTransparencySlider.value);
+    if (transparencyVal < 100) {
+      const norm = normalizeHex(dxfThicknessColorHex.value);
+      if (!norm) {
+        dxfThicknessColorHexWarning.hidden = false;
+        return;
+      }
+      dxfThicknessColor = norm;
+    }
+    dxfThicknessTransparency = transparencyVal;
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
