@@ -7500,6 +7500,251 @@
     return best;
   }
 
+  // Release 220 ("Schmiege_vorn"/"Schmiege_hinten", Sebastian: "Beim Import von bestimmten
+  // Bauteilen gibt es Layer, die heißen 'Schmiege_vorn' und 'Schmiege_hinten' ... Es soll eine
+  // Erkennung eingebaut werden ... Wenn der Layer 'Schmiege_hinten' heißt, dann ist das die
+  // Kontur, die unten liegt und die Schmiege schräg nach oben auf die Fertigkontur (Layer
+  // 'Kontur') läuft ... Wenn der Layer 'Schmiege_vorn' heißt, die oben liegt und die Schmiege
+  // schräg nach unten auf die Fertigkontur geht."): wie buildClosedLoopFromLayerStrokes() oben,
+  // aber für diese beiden Layer - dort stehen KEINE geschlossenen Ringe, sondern pro Schmiege ein
+  // kurzer OFFENER Linienzug (typischerweise 1-3 LINE-Segmente), der an einem Ende exakt auf
+  // einem Kontur-Eckpunkt beginnt und am anderen Ende irgendwo auf einer Kontur-Kante endet
+  // (siehe buildSchmiegeKonturRings() weiter unten für die eigentliche Verarbeitung). Pro Layer
+  // können beliebig viele, voneinander getrennte Schmiegen vorkommen (Sebastian: "Schmiegen...
+  // können beliebig viele sein pro Wange bzw. Bauteil... z.B. 3 Schmiegen hinten und 4 Schmiegen
+  // vorne") - dieselbe Endpunkt-Verkettung wie bei buildClosedLoopFromLayerStrokes() gruppiert sie
+  // automatisch in getrennte Ketten, da nicht zusammenhängende Segmente nie aneinander
+  // anschließen. Anders als dort werden NICHT geschlossene Ketten hier nicht verworfen, sondern
+  // sind gerade der erwartete Normalfall; anders als dort wird hier zusätzlich auch RÜCKWÄRTS (vom
+  // ersten gewählten Segment aus nach vorne UND nach hinten) verkettet, da eine Schmiege-Kette -
+  // im Gegensatz zu einem am Ende ohnehin wieder auf sich selbst zurücklaufenden geschlossenen
+  // Ring - an BEIDEN Enden offen ist und das zuerst gewählte Segment nicht zwangsläufig selbst an
+  // einem Ende der Kette liegt.
+  function buildOpenChainsFromLayerStrokes(strokes) {
+    const CHAIN_TOLERANCE = 0.01; // mm, dieselbe Toleranz wie buildClosedLoopFromLayerStrokes()
+    const segs = (strokes || [])
+      .filter(s => !s.closed && s.points && s.points.length >= 2)
+      .map(s => ({ pts: s.points.map(p => ({ x: p.x, y: p.y, z: p.z || 0 })), used: false }));
+    function samePoint(a, b) {
+      return Math.abs(a.x - b.x) <= CHAIN_TOLERANCE && Math.abs(a.y - b.y) <= CHAIN_TOLERANCE;
+    }
+    const chains = [];
+    let guard = 0;
+    while (guard++ < 10000) {
+      const startIdx = segs.findIndex(s => !s.used);
+      if (startIdx === -1) break;
+      segs[startIdx].used = true;
+      let chain = segs[startIdx].pts.slice();
+      let lastPoint = chain[chain.length - 1];
+      for (let safety = 0; safety < segs.length + 1; safety++) {
+        let nextIdx = -1, nextPts = null;
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i];
+          if (s.used) continue;
+          if (samePoint(lastPoint, s.pts[0])) { nextIdx = i; nextPts = s.pts; break; }
+          if (samePoint(lastPoint, s.pts[s.pts.length - 1])) { nextIdx = i; nextPts = s.pts.slice().reverse(); break; }
+        }
+        if (nextIdx === -1) break;
+        segs[nextIdx].used = true;
+        chain.push(...nextPts.slice(1));
+        lastPoint = chain[chain.length - 1];
+      }
+      let firstPoint = chain[0];
+      for (let safety = 0; safety < segs.length + 1; safety++) {
+        let prevIdx = -1, prevPts = null;
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i];
+          if (s.used) continue;
+          if (samePoint(firstPoint, s.pts[s.pts.length - 1])) { prevIdx = i; prevPts = s.pts; break; }
+          if (samePoint(firstPoint, s.pts[0])) { prevIdx = i; prevPts = s.pts.slice().reverse(); break; }
+        }
+        if (prevIdx === -1) break;
+        segs[prevIdx].used = true;
+        chain = prevPts.slice(0, prevPts.length - 1).concat(chain);
+        firstPoint = chain[0];
+      }
+      if (chain.length >= 2) chains.push(chain);
+    }
+    return chains;
+  }
+
+  // Release 220: findet die beiden optionalen "Schmiege_vorn"/"Schmiege_hinten"-Layer (siehe
+  // buildOpenChainsFromLayerStrokes() oben) in der Layer-Tabelle einer geladenen DXF-Datei -
+  // Sebastian ausdrücklich: "Das sind die exakten Namen mit '_', die Schreibweise ist aber nicht
+  // case sensitive", anders als bei detectKonturLayerName() oben, das NUR nach "kont"/"cont" als
+  // TEILSTRING sucht und eine völlig unabhängige Erkennung ist. Beide, eines oder keines der
+  // beiden Layer können in einer Datei vorhanden sein; buildSchmiegeKonturRings() (siehe dort)
+  // behandelt alle drei Fälle.
+  function detectSchmiegeLayerNames(geo) {
+    const names = (geo && geo.layerOrder) || [];
+    const vorn = names.find(n => /^schmiege_vorn$/i.test(n)) || null;
+    const hinten = names.find(n => /^schmiege_hinten$/i.test(n)) || null;
+    return { vorn, hinten };
+  }
+
+  // Release 220: baut aus dem Basis-Kontur-Ring (dxfKonturLoop in app.js) sowie den auf
+  // "Schmiege_hinten"/"Schmiege_vorn" gefundenen offenen Linienzügen (buildOpenChainsFromLayerStrokes()
+  // oben) die ZWEI tatsächlich für die Kontur-Füllung zu zeichnenden Ringe. Sebastians Vorgabe
+  // (siehe Funktionskommentar bei buildOpenChainsFromLayerStrokes() oben für den vollen Wortlaut):
+  // "Schmiege_hinten" ersetzt den betroffenen Konturabschnitt NUR auf der UNTEREN Ebene
+  // (Original-Z-Ebene von drawDxf() in app.js - exakt dieselbe "unten"-Ebene, die beim normalen
+  // "ausgefüllten" Bauteil, Release 216, unverändert die Originalkontur zeigt), "Schmiege_vorn"
+  // nur auf der OBEREN Ebene (um die Bauteilstärke versetzte Ebene). Pro Layer können beliebig
+  // viele, voneinander unabhängige Schmiegen (je eine pro betroffener Stufe) vorkommen; eine
+  // einzelne Stufe kann auch BEIDE gleichzeitig haben (Schmiege_vorn UND Schmiege_hinten an
+  // derselben Stelle).
+  //
+  // Jede Schmiege-Kette muss an EINEM Ende exakt auf einem Eckpunkt der Kontur beginnen (dem
+  // "Anker") und am ANDEREN Ende auf einer - in Kontur-Laufrichtung ab dem Anker gesehen -
+  // nachfolgenden Kontur-Kante liegen (dem "Landepunkt"); dazwischen wird der ursprüngliche,
+  // gerade Kontur-Verlauf für GENAU DIESE EINE Ebene durch den Linienzug der Schmiege ersetzt.
+  // Eine Kette, die sich nicht so zuordnen lässt (keines der beiden Enden trifft exakt einen
+  // Kontur-Eckpunkt, das andere Ende liegt auf keiner in Laufrichtung nachfolgenden Kontur-Kante,
+  // oder sie überschneidet sich mit einer bereits verarbeiteten Schmiege), wird - wie an mehreren
+  // Stellen in diesem Parser bei automatisch erkannter, nicht erzwungener Geometrie üblich (siehe
+  // z.B. buildClosedLoopFromLayerStrokes() oben) - still verworfen statt einen Fehler zu werfen.
+  // Bekannte, bewusst in Kauf genommene Einschränkung: eine Schmiege, die über den (willkürlichen,
+  // vom ersten verketteten Strichzug abhängigen) Schlusspunkt des Kontur-Rings selbst
+  // hinwegläuft, wird aus demselben Grund verworfen (kein Rückwärts-/Wraparound-Suchlauf) - in der
+  // Praxis liegt der Ringschluss nie mitten in einer Stufe, betrifft also keinen realistischen Fall.
+  //
+  // Damit beide Ringe (unten/oben) am Ende GLEICH VIELE, 1:1 zueinander passende Punkte haben (von
+  // fillRevolutionBody() in app.js als Voraussetzung für die Bildung der Seitenflächen benötigt -
+  // siehe dort), wird an jeder Schmiege-Stelle die JEWEILS ANDERE (an dieser einen Stelle nicht
+  // betroffene) Ebene auf dieselbe Punktanzahl aufgefüllt: Sie behält ihren ursprünglichen, geraden
+  // Kontur-Verlauf, zusätzliche Punkte werden dafür als reine Duplikate ihres eigenen Lande-Punkts
+  // angehängt - geometrisch wirkungslos (eine entartete Nulllängen-Kante, die fillRevolutionBody()
+  // über die dortige "nlen < 1e-9"-Prüfung ohnehin überspringt), statt eine so nie vorhandene
+  // Zwischengeometrie zu erfinden.
+  function buildSchmiegeKonturRings(konturLoop, hintenChains, vornChains) {
+    const TOL = 0.01; // mm, dieselbe Toleranz wie an den übrigen Stellen dieses Parsers
+    const n = konturLoop.length;
+    if (n < 3) return null;
+    function samePoint(a, b) {
+      return Math.abs(a.x - b.x) <= TOL && Math.abs(a.y - b.y) <= TOL;
+    }
+    function findVertexIndex(p) {
+      for (let i = 0; i < n; i++) { if (samePoint(konturLoop[i], p)) return i; }
+      return -1;
+    }
+    function onSegment(q, p0, p1) {
+      const dx = p1.x - p0.x, dy = p1.y - p0.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-9) return false;
+      const t = ((q.x - p0.x) * dx + (q.y - p0.y) * dy) / (len * len);
+      const cx = p0.x + t * dx, cy = p0.y + t * dy;
+      if (Math.hypot(q.x - cx, q.y - cy) > TOL) return false;
+      return t >= -TOL / len && t <= 1 + TOL / len;
+    }
+    // Sucht NUR vorwärts ab dem Anker (siehe Funktionskommentar oben, Einschränkung zum
+    // Ringschluss) - liefert den Index i, sodass p auf der Kante konturLoop[i]-konturLoop[i+1] liegt.
+    function findLandingSegment(p, anchorIdx) {
+      for (let i = anchorIdx; i < n; i++) {
+        if (onSegment(p, konturLoop[i], konturLoop[(i + 1) % n])) return i;
+      }
+      return -1;
+    }
+    function resolveChain(chain) {
+      const startP = chain[0], endP = chain[chain.length - 1];
+      let anchorIdx = findVertexIndex(startP);
+      if (anchorIdx !== -1) {
+        const landingSeg = findLandingSegment(endP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1), landing: endP };
+      }
+      anchorIdx = findVertexIndex(endP);
+      if (anchorIdx !== -1) {
+        const landingSeg = findLandingSegment(startP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1).reverse(), landing: startP };
+      }
+      return null;
+    }
+    const zonesByKey = new Map();
+    function addChains(chains, key) {
+      (chains || []).forEach(chain => {
+        if (!chain || chain.length < 2) return;
+        const r = resolveChain(chain);
+        if (!r) return; // stiller Fallback, siehe Funktionskommentar oben
+        const zoneKey = r.anchorIdx + '_' + r.landingSeg;
+        let zone = zonesByKey.get(zoneKey);
+        if (!zone) { zone = { anchorIdx: r.anchorIdx, landingSeg: r.landingSeg }; zonesByKey.set(zoneKey, zone); }
+        zone[key] = { inner: r.inner, landing: r.landing };
+      });
+    }
+    addChains(hintenChains, 'hinten');
+    addChains(vornChains, 'vorn');
+    if (!zonesByKey.size) return null;
+    const zonesSorted = Array.from(zonesByKey.values()).sort((a, b) => a.anchorIdx - b.anchorIdx);
+    // Überlappungs-Sicherheitsnetz (siehe Funktionskommentar oben): eine Zone, deren Anker vor dem
+    // Lande-Index der vorherigen Zone liegt, wird verworfen statt eine inkonsistente Geometrie zu
+    // erzeugen. Release 221 (Bugfix noch vor Auslieferung, beim Testen gegen Sebastians eigene
+    // Beispieldatei "Wangen A.DXF" gefunden): Vergleich war "<=" statt "<" - dadurch wurde eine
+    // Zone verworfen, deren Anker GENAU auf dem direkt folgenden Vertex der vorherigen Zone liegt
+    // (unmittelbar ANGRENZEND, aber NICHT überlappend - genau der Fall in Sebastians Datei, wo die
+    // "Schmiege_hinten"-Zone an Vertex 3 endet/landet knapp vor Vertex 5 und die
+    // "Schmiege_vorn"-Zone direkt an Vertex 5 beginnt). Mit "<=" wurde die zweite (spätere) Zone
+    // dadurch fälschlich komplett verworfen, obwohl beide Zonen unabhängig voneinander gültig sind
+    // - nur eine ECHTE Überlappung (Anker LIEGT INNERHALB des von der vorherigen Zone bereits
+    // ersetzten Bereichs, also anchorIdx < consumedUpTo) soll zum Verwerfen führen.
+    const zones = [];
+    let consumedUpTo = -1;
+    zonesSorted.forEach(z => {
+      if (z.anchorIdx < consumedUpTo) return;
+      zones.push(z);
+      consumedUpTo = z.landingSeg + 1;
+    });
+    if (!zones.length) return null;
+    const untenLoop = [], obenLoop = [];
+    let i = 0;
+    for (let zi = 0; zi <= zones.length; zi++) {
+      const zone = zones[zi] || null;
+      const stopAt = zone ? zone.anchorIdx : n;
+      for (; i < stopAt; i++) { untenLoop.push(konturLoop[i]); obenLoop.push(konturLoop[i]); }
+      if (!zone) break;
+      untenLoop.push(konturLoop[zone.anchorIdx]);
+      obenLoop.push(konturLoop[zone.anchorIdx]);
+      const origInner = [];
+      for (let k = zone.anchorIdx + 1; k <= zone.landingSeg; k++) origInner.push(konturLoop[k]);
+      const origLanding = konturLoop[(zone.landingSeg + 1) % n];
+      // Release 222 (Bugfix, Sebastian anhand eines Screen-Recordings zu Wangen A.DXF: "Der Körper
+      // hat wieder Öffnungen, wo man reinschauen kann und ist nicht geschlossen" - bereits im
+      // vorherigen Vorschau-Screenshot selbst andeutungsweise sichtbar): ist nur EINER der beiden
+      // Layer an dieser Zone aktiv (z.B. nur "Schmiege_hinten"), lief die INAKTIVE Ringseite bisher
+      // über origInner bis zum WEIT ENTFERNTEN ORIGINALEN Kontur-Vertex (origLanding) weiter,
+      // während die aktive Seite viel früher an ihrem eigenen (kürzeren) Landepunkt endete. Die
+      // beiden Ringe hatten dadurch über die GESAMTE restliche Zonenbreite hinweg völlig
+      // unterschiedliche (x,y)-Positionen bei identischem Ring-Index - fillRevolutionBody() bildet
+      // daraus aber eine einzelne, direkt zwischen Index i und i+1 verbundene Seitenfläche: das
+      // ergab eine extrem verzerrte, über die gesamte Zonenbreite "tordierte" Fläche statt einer
+      // kurzen Schräge plus einer normalen, flachen Restwand - in der Bildschirmprojektion riss das
+      // bei bestimmten Blickwinkeln sichtbare Lücken auf (Hintergrund statt Körperfarbe).
+      //
+      // Fix: die INAKTIVE Seite landet jetzt beim LANDEPUNKT DER AKTIVEN SEITE (nicht beim weit
+      // entfernten Original-Vertex) - dieser Punkt liegt per Konstruktion (findLandingSegment() s.o.
+      // sucht stets auf der UNVERÄNDERTEN Kontur) immer exakt auf dem letzten, noch unveränderten
+      // Geradenstück der inaktiven Seite (demselben, das auch origInner/origLanding durchläuft),
+      // ist für sie also ein gültiger, exakt auf ihrem eigenen Pfad liegender Punkt. Damit laufen
+      // beide Ringe unmittelbar nach der kurzen Schräge wieder exakt deckungsgleich (identische
+      // (x,y), nur unterschiedliches z) weiter bis zum nächsten echten Kontur-Eckpunkt - wieder eine
+      // normale, flache Seitenwand, genau wie vor dieser Zone. Sind BEIDE Layer an derselben Zone
+      // aktiv, ändert sich nichts (beide Seiten benutzen ohnehin schon ihren jeweils eigenen
+      // Landepunkt).
+      const sharedLandingWhenInactive = zone.hinten ? zone.hinten.landing : (zone.vorn ? zone.vorn.landing : origLanding);
+      const untenInner = zone.hinten ? zone.hinten.inner : origInner;
+      const untenLanding = zone.hinten ? zone.hinten.landing : sharedLandingWhenInactive;
+      const obenInner = zone.vorn ? zone.vorn.inner : origInner;
+      const obenLanding = zone.vorn ? zone.vorn.landing : sharedLandingWhenInactive;
+      const maxLen = Math.max(untenInner.length, obenInner.length);
+      for (let k = 0; k < maxLen; k++) {
+        untenLoop.push(k < untenInner.length ? untenInner[k] : untenLanding);
+        obenLoop.push(k < obenInner.length ? obenInner[k] : obenLanding);
+      }
+      untenLoop.push(untenLanding);
+      obenLoop.push(obenLanding);
+      i = zone.landingSeg + 1;
+    }
+    return { untenLoop, obenLoop, zoneCount: zones.length };
+  }
+
   // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
   // Werkzeug soll dargestellt werden ... Die Werkzeugdaten sind immer achssymmetrisch", siehe
   // Konzept_DXF_Werkzeugdarstellung.md): baut aus einer ungeordneten Menge einzelner, bereits von
@@ -8155,7 +8400,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings };
 });
 </script>
 <script>
@@ -8867,8 +9112,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 219;
-  const APP_RELEASE_TIMESTAMP = '16.10.2026, 13:45 Uhr';
+  const APP_RELEASE_NUMBER = 225;
+  const APP_RELEASE_TIMESTAMP = '16.10.2026, 21:25 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11986,6 +12231,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Nicht-Persistenz wie dxfThickness/dxfOffset/... oben (gehört zur jeweils geladenen DXF-Datei).
   let dxfThicknessTransparency = 100;
   let dxfThicknessColor = '#3399ff';
+  // Release 222 (Sebastian: "Die DXF soll flach dargestellt werden, aber wenn man ins Menü
+  // 'Bauteilstärke' geht, soll da schon 45mm voreingetragen sein, bei 25% Transparenz. Wie gesagt:
+  // Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte drin."): das BAUTEIL selbst
+  // bleibt beim Import unverändert flach (dxfThickness/dxfThicknessTransparency oben weiterhin
+  // 0/100, siehe loadDxfText() - keine Füllung, bis der Dialog tatsächlich bestätigt wurde) - nur
+  // die beim ERSTEN Öffnen des "Bauteilstärke"-Dialogs VORBEFÜLLTEN Eingabefelder weichen jetzt vom
+  // tatsächlich angewendeten Zustand ab. DXF_THICKNESS_PREFILL/DXF_THICKNESS_TRANSPARENCY_PREFILL
+  // sind die neuen Vorbefüllungswerte; dxfThicknessEverConfirmed (siehe loadDxfText()/clearDxf()/
+  // confirmDxfThickness() unten) merkt sich pro Import, ob der Dialog schon mindestens einmal
+  // bestätigt wurde - erst dann zeigt ein erneutes Öffnen wieder die tatsächlich angewendeten,
+  // zuletzt bestätigten Werte (openDxfThicknessPanel() unten) statt der Vorbefüllung.
+  const DXF_THICKNESS_PREFILL = 45;
+  const DXF_THICKNESS_TRANSPARENCY_PREFILL = 25;
+  let dxfThicknessEverConfirmed = false;
   // Kontur-Layer-Erkennung (Release 216, siehe detectKonturLayerName()/
   // buildClosedLoopFromLayerStrokes()/pickLargestLoop() in parser.js): wird bei jedem neuen
   // DXF-Import EINMALIG in loadDxfText() ermittelt (nicht bei jedem render(), da sich die
@@ -11998,6 +12257,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // die bisherige Drahtgitter-Darstellung zurück, exakt wie vor dieser Runde).
   let dxfKonturLayerName = null;
   let dxfKonturLoop = null;
+  // "Schmiege_vorn"/"Schmiege_hinten" (Release 221, Sebastian: "Beim Import von bestimmten
+  // Bauteilen gibt es Layer, die heißen 'Schmiege_vorn' und 'Schmiege_hinten' ... Wenn der Layer
+  // 'Schmiege_hinten' heißt, dann ist das die Kontur, die unten liegt ... Wenn der Layer
+  // 'Schmiege_vorn' heißt, die oben liegt ..."): wie dxfKonturLayerName/dxfKonturLoop oben, aber für
+  // die beiden optionalen Schmiege-Layer, siehe detectSchmiegeLayerNames()/
+  // buildSchmiegeKonturRings() in parser.js. dxfSchmiegeVornLayerName/dxfSchmiegeHintenLayerName:
+  // erkannte Layer-Namen (case-insensitiv) oder null. dxfSchmiegeRings: das Ergebnis von
+  // buildSchmiegeKonturRings() ({untenLoop, obenLoop, zoneCount}) oder null, falls keine der beiden
+  // Layer vorhanden/auswertbar sind - drawDxf() fällt dann unverändert auf den bisherigen,
+  // unmodifizierten dxfKonturLoop für beide Ringe zurück (exakt wie vor dieser Runde).
+  let dxfSchmiegeVornLayerName = null;
+  let dxfSchmiegeHintenLayerName = null;
+  let dxfSchmiegeRings = null;
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -13482,6 +13754,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThickness = 0;
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
+    dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfScale = 1;
     // "DXF-Bauteilstärke 'ausfüllen'" (Release 216): Kontur-Layer EINMALIG pro Import ermitteln
     // (siehe Deklaration von dxfKonturLayerName/dxfKonturLoop oben) statt bei jedem render() neu -
@@ -13493,6 +13766,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfKonturLoop = CNCParser.pickLargestLoop(loops);
     } else {
       dxfKonturLoop = null;
+    }
+    // "Schmiege_vorn"/"Schmiege_hinten" (Release 221): wie Kontur-Layer-Erkennung oben, ebenfalls
+    // EINMALIG pro Import (siehe Deklaration von dxfSchmiegeVornLayerName/.../dxfSchmiegeRings
+    // oben). Die beiden Schmiege-Layer sind optional - fehlen sie, bleibt dxfSchmiegeRings null und
+    // drawDxf() verhält sich exakt wie vor dieser Runde (unmodifizierter dxfKonturLoop).
+    const schmiegeLayerNames = CNCParser.detectSchmiegeLayerNames(dxfGeometry);
+    dxfSchmiegeVornLayerName = schmiegeLayerNames.vorn;
+    dxfSchmiegeHintenLayerName = schmiegeLayerNames.hinten;
+    if (dxfKonturLoop && (dxfSchmiegeVornLayerName || dxfSchmiegeHintenLayerName)) {
+      const hintenStrokes = dxfSchmiegeHintenLayerName ? dxfGeometry.strokes.filter(s => s.layer === dxfSchmiegeHintenLayerName) : [];
+      const vornStrokes = dxfSchmiegeVornLayerName ? dxfGeometry.strokes.filter(s => s.layer === dxfSchmiegeVornLayerName) : [];
+      const hintenChains = CNCParser.buildOpenChainsFromLayerStrokes(hintenStrokes);
+      const vornChains = CNCParser.buildOpenChainsFromLayerStrokes(vornStrokes);
+      dxfSchmiegeRings = CNCParser.buildSchmiegeKonturRings(dxfKonturLoop, hintenChains, vornChains);
+    } else {
+      dxfSchmiegeRings = null;
     }
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
     // dxfVisible/dxfOffset/dxfMirror* oben - eine für die vorherige Datei ausgeblendete Layer-Auswahl
@@ -13530,8 +13819,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThickness = 0;
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
+    dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfKonturLayerName = null;
     dxfKonturLoop = null;
+    dxfSchmiegeVornLayerName = null;
+    dxfSchmiegeHintenLayerName = null;
+    dxfSchmiegeRings = null;
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -16441,8 +16734,39 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // für ALLE Layer inkl. Kontur-Layer unverändert; erst die obere Ebene weiter unten wird für
     // den Kontur-Layer durch den gefüllten Körper ersetzt statt als zusätzliche Drahtgitterkopie
     // gezeichnet.
-    strokeGroupedByColor(transformedStrokes, proj, 0);
     const fillActive = !!(dxfThickness && dxfKonturLayerName && dxfKonturLoop && dxfKonturLoop.length >= 3 && dxfThicknessTransparency < 100);
+    // Release 225 (Nachbesserung zum Release-224-Fix oben, Sebastian: "Bei der Schmiege, die
+    // 'versteckt' ist, also von oben nach 'hinten unten' geht, nicht [perfekt]." - im Gegensatz
+    // zur "offenen"/sichtbaren Seite, die bereits perfekt war): die tatsächliche Ursache dieses
+    // verbleibenden winzigen Lochs lag entgegen der ersten Vermutung GAR NICHT im gefüllten
+    // 3D-Körper selbst (bestätigt durch gezielte Diagnose: Ausblenden sämtlicher Rohlinien-
+    // Layer-Overlays ließ das "Loch" komplett verschwinden, OBWOHL der gefüllte Körper dabei
+    // unverändert weiterbestand) - sondern in der seit Release 216 bewusst UNVERÄNDERT
+    // beibehaltenen flachen "Originalkontur"-Linie des Kontur-Layers bei z=0 (s.o., Sebastians
+    // explizite frühere Vorgabe "Die untere Kontur ist die Originalkontur erst mal"): Diese Linie
+    // zeigt die UNVERÄNDERTE, unbeschrägte Kontur - sobald "Schmiege_hinten" oder "Schmiege_vorn"
+    // die tatsächliche Ringform bei GENAU DIESER Original-Z-Ebene (z=0, vor Release 221 immer
+    // identisch mit der Originalkontur, seither bei aktiver Schmiege nicht mehr) verändert,
+    // weicht die weiterhin flach gezeichnete Originalkontur-Linie an der Übergangsecke leicht vom
+    // tatsächlichen (jetzt schrägen) Rand des gefüllten Körpers ab - dort schimmert die dünne
+    // Linie minimal über die Körperkante hinaus durch, was wie ein winziges Loch aussieht. Bei der
+    // ANDEREN (oberen/versetzten) Ebene trat dasselbe Problem nie auf, weil dort der Kontur-Layer
+    // bereits seit Release 216 komplett von der Drahtgitter-Kopie ausgenommen ist (s.
+    // topWireframeStrokes, dieselbe Zeile weiter unten) - der gefüllte Körper übernimmt diese
+    // Rolle dort bereits vollständig. Fix: GENAU DIESELBE Ausnahme gilt jetzt auch für die
+    // Original-Z-Ebene (z=0, hier), aber NUR wenn tatsächlich eine Schmiege-Zone aktiv ist
+    // (dxfSchmiegeRings.zoneCount > 0) - ohne Schmiege-Layer bleibt die Originalkontur-Linie bei
+    // z=0 exakt wie bisher sichtbar (keine Verhaltensänderung für reine Kontur-Füllungen ohne
+    // Schmiege, siehe Regressionstests test_r216.../test_r217.../test_r218..., die bewusst genau
+    // diese Linie über eine Rotpixel-Zählung prüfen).
+    const schmiegeActive = fillActive && !!(dxfSchmiegeRings && dxfSchmiegeRings.zoneCount > 0);
+    const bottomWireframeStrokes = schmiegeActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
+    // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfBottomWireframeIncludesKontur in
+    // den instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
+    // window.__lastDxfKonturFillInfo/__lastFillRevolutionBodyFaceCount: hält unmittelbar fest, ob
+    // der Kontur-Layer gerade Teil der flachen z=0-Drahtgitter-Kopie ist (Release 225, s.o.).
+    window.__lastDxfBottomWireframeIncludesKontur = bottomWireframeStrokes.some(s => s.layer === dxfKonturLayerName);
+    strokeGroupedByColor(bottomWireframeStrokes, proj, 0);
     const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
     // Bauteilstärke (67. Runde, Sebastian: "DXF Funktion um Bauteilstärke anzugeben") - Annahme
     // (siehe Dokumentation 9.8a): die DXF-Unterlage stellt die Aufstandsfläche/Oberseite des
@@ -16511,9 +16835,42 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Ring), exakt wie bei den Kreisringen in drawToolHolder()/drawTool() oben (dort ist der
       // Schlusspunkt durch den vollen 360°-Winkel automatisch identisch mit dem Startpunkt).
       if (fillActive) {
-        const loopClosed = dxfKonturLoop.concat([dxfKonturLoop[0]]);
-        const ptsAtOriginalZ = loopClosed.map(p => dxfTransformPoint({ x: p.x, y: p.y, z: p.z || 0 }));
-        const ptsAtThicknessZ = ptsAtOriginalZ.map(t => ({ x: t.x, y: t.y, z: t.z + dxfThickness }));
+        // Release 221 ("Schmiege_vorn"/"Schmiege_hinten", siehe Deklaration von dxfSchmiegeRings
+        // oben sowie buildSchmiegeKonturRings() in parser.js): liegen einer oder beide der
+        // optionalen Schmiege-Layer vor, wird nicht mehr für beide Ringe derselbe dxfKonturLoop
+        // verwendet, sondern je ein eigener, an den jeweiligen Schmiege-Layer angepasster Ring -
+        // hintenLoopRaw (von "Schmiege_hinten" modifiziert, falls vorhanden - die VERSTECKTE,
+        // physisch UNTERE Seite) und vornLoopRaw (von "Schmiege_vorn" modifiziert, falls vorhanden
+        // - die SICHTBARE, physisch OBERE Seite). Fehlen beide Schmiege-Layer
+        // (dxfSchmiegeRings === null), sind beide Rohringe weiterhin identisch der unveränderte
+        // dxfKonturLoop - exakt das Altverhalten vor dieser Runde.
+        //
+        // Release 222b (Bugfix, Sebastian: "Bei einer negativen Bauteilstärke wird die Schmiege
+        // gespiegelt. Das Bei einer negativen Bauteilstärke, soll die obere Seite dann einfach nur
+        // auf Z=0mm liegen und die Unterkante (Flächenseite) liegt dann auf -45mm. Vorher war das
+        // nicht relevant, jetzt schon."): die erste Fassung ordnete "hinten" IMMER der Original-Z-
+        // Ebene und "vorn" IMMER der Versatz-Ebene (Original+dxfThickness) zu - bei positiver
+        // Bauteilstärke zufällig richtig (Original-Z ist dann die physisch tiefere Ebene), bei
+        // NEGATIVER Bauteilstärke aber genau verkehrt: die Versatz-Ebene (Original+negativer Wert)
+        // liegt dann physisch TIEFER als die Original-Z-Ebene, wodurch "vorn" auf der physisch
+        // unteren und "hinten" auf der physisch oberen Fläche landete - die Schmiege erschien
+        // gespiegelt. Fix: welche der beiden modifizierten Ringe an der Original-Z-Ebene bzw. an
+        // der Versatz-Ebene ausgewertet wird, richtet sich jetzt nach dem VORZEICHEN von
+        // dxfThickness (genau wie die bereits bestehende lowerPts/upperPts-Zuordnung weiter unten,
+        // Release 216a) - bei positiver Bauteilstärke unverändert "hinten" an Original-Z/"vorn" an
+        // Versatz-Z, bei negativer Bauteilstärke umgekehrt "vorn" an Original-Z (=0, die jetzt
+        // physisch obere Ebene)/"hinten" an Versatz-Z (=dxfThickness, die jetzt physisch untere
+        // Ebene) - "vorn" bleibt dadurch so wie "hinten" immer der jeweils richtigen physischen
+        // Seite zugeordnet, unabhängig vom Vorzeichen.
+        const hintenLoopRaw = dxfSchmiegeRings ? dxfSchmiegeRings.untenLoop : dxfKonturLoop;
+        const vornLoopRaw = dxfSchmiegeRings ? dxfSchmiegeRings.obenLoop : dxfKonturLoop;
+        const originalZLoopRaw = dxfThickness >= 0 ? hintenLoopRaw : vornLoopRaw;
+        const offsetZLoopRaw = dxfThickness >= 0 ? vornLoopRaw : hintenLoopRaw;
+        const originalZLoopClosed = originalZLoopRaw.concat([originalZLoopRaw[0]]);
+        const offsetZLoopClosed = offsetZLoopRaw.concat([offsetZLoopRaw[0]]);
+        const ptsAtOriginalZ = originalZLoopClosed.map(p => dxfTransformPoint({ x: p.x, y: p.y, z: p.z || 0 }));
+        const ptsAtThicknessZOrig = offsetZLoopClosed.map(p => dxfTransformPoint({ x: p.x, y: p.y, z: p.z || 0 }));
+        const ptsAtThicknessZ = ptsAtThicknessZOrig.map(t => ({ x: t.x, y: t.y, z: t.z + dxfThickness }));
         // Release 216a (Bugfix, Sebastian: "Bei negativen Eingaben der Bauteilstärke wird das
         // Bauteil halb transparent auf der Oberkante. Sowas gab es schon mal beim
         // Werkzeugprofil, dass da manche Flächen halbdurchsichtig waren." - mit Vergleichsbild
@@ -16548,7 +16905,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfKonturFillInfo in den
         // instrumentierten Testkopien, siehe make_rNNN_instrumented.py) - ohne Funktion für die
         // eigentliche Darstellung, analog zu window.__lastToolProfileRenderInfo oben.
-        window.__lastDxfKonturFillInfo = { thickness: dxfThickness, ringPointCount: loopClosed.length, lowerZ: lowerPts[0].z, upperZ: upperPts[0].z };
+        // Release 223: lowerPts/upperPts zusätzlich vollständig (x/y/z aller Ring-Punkte) für die
+        // Verifikation der Vorzeichen-Zuordnung von "Schmiege_vorn"/"Schmiege_hinten" bei negativer
+        // Bauteilstärke (siehe Kommentar bei "originalZLoopRaw"/"offsetZLoopRaw" oben) mitgegeben.
+        window.__lastDxfKonturFillInfo = { thickness: dxfThickness, ringPointCount: ptsAtOriginalZ.length, schmiegeZoneCount: dxfSchmiegeRings ? dxfSchmiegeRings.zoneCount : 0, lowerZ: lowerPts[0].z, upperZ: upperPts[0].z, lowerPts: lowerPts.map(p => ({ x: p.x, y: p.y, z: p.z })), upperPts: upperPts.map(p => ({ x: p.x, y: p.y, z: p.z })) };
         fillRevolutionBody([lowerPts, upperPts], [lowerScreen, upperScreen],
           { color: dxfThicknessColor, transparency: dxfThicknessTransparency },
           { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
@@ -17068,6 +17428,56 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // richtig. Für die weiterhin unveränderten Werkzeug-/Spannfutterprofile (drawToolHolder(), kein
     // "opts" übergeben) bleibt das bisherige Culling exakt erhalten.
     const skipSideCull = (axisFacing > 0.85) || !!(opts && opts.disableSideCull);
+    window.__lastFillRevolutionBodyNonPlanarQuadCount = 0;
+    // Release 224 - Bugfix "nicht-ebene Seitenflächen an Schmiege-Übergangsecken":
+    // Sebastian meldete nach dem Gap-Fix aus Release 222/223 per Screenshot, dass bei
+    // bestimmten Blickwinkeln ("120°" und "Freihand") an der gefüllten Schmiege-Kontur
+    // weiterhin winzige, dreieckige Löcher sichtbar sind, genau an den Übergangsecken der
+    // Schräge. Ursache: eine Seitenfläche besteht normalerweise aus vier Punkten (zwei pro
+    // Ring), die exakt in einer gemeinsamen Ebene liegen - das gilt für alle Werkzeug-/
+    // Spannfutterprofile (immer kreisrund) und für die "glatten" Abschnitte der Schmiege-Ringe.
+    // An den von buildSchmiegeKonturRings() eingefügten Übergangsecken entstehen jedoch
+    // Vierecke, deren vier Punkte windschief (nicht-eben) zueinander liegen. Ein solches
+    // Viereck wurde bisher als EIN Canvas-Polygon (ctx.fill() über die vier projizierten
+    // Punkte) gezeichnet; aus bestimmten Blickwinkeln überschneidet sich dessen
+    // Bildschirmprojektion selbst ("Bowtie"), was zu den gemeldeten kleinen Löchern führt.
+    // Fix: vor dem Zeichnen wird die Ebenheit der vier Punkte geprüft (Spatprodukt der drei
+    // von p0 ausgehenden Kantenvektoren, normiert auf deren Längen, damit der Schwellwert
+    // unabhängig von der absoluten Baugröße ist). Liegt das Viereck (wie im Normalfall) in
+    // einer Ebene, wird exakt wie bisher ein einzelnes Viereck erzeugt - keine
+    // Verhaltensänderung für jegliche bestehende Geometrie. Nur bei echter Nicht-Ebenheit wird
+    // in zwei Dreiecke (p0,p1,p2) und (p0,p2,p3) aufgeteilt, jedes mit eigener
+    // Normalenberechnung/Culling/Tiefe - ein Dreieck ist immer eben, das Bowtie-Problem kann
+    // dort grundsätzlich nicht auftreten.
+    function pushSideFace(p0, p1, p2, p3, s0, s1, s2, s3) {
+      const e1x = p1.x - p0.x, e1y = p1.y - p0.y, e1z = p1.z - p0.z;
+      const e2x = p3.x - p0.x, e2y = p3.y - p0.y, e2z = p3.z - p0.z;
+      let nx = e1y * e2z - e1z * e2y;
+      let ny = e1z * e2x - e1x * e2z;
+      let nz = e1x * e2y - e1y * e2x;
+      const nlen = Math.hypot(nx, ny, nz);
+      if (nlen < 1e-9) return; // entarteter Ring (Radius 0 an beiden Enden) - keine Fläche
+      nx /= nlen; ny /= nlen; nz /= nlen;
+      // y/z vertauscht gelesen - siehe Kommentar oben (toRender()-Konvention).
+      const facing = nx * fwd.x + nz * fwd.y + ny * fwd.z;
+      if (!skipSideCull && facing > -0.02) return; // Rückseite, siehe Kommentar oben
+      const depth = (s0.depth + s1.depth + s2.depth + s3.depth) / 4;
+      faces.push({ pts: [s0, s1, s2, s3], depth, shade: Math.max(0, Math.min(1, -facing)) });
+    }
+    function pushSideTriangle(pA, pB, pC, sA_, sB_, sC_) {
+      const e1x = pB.x - pA.x, e1y = pB.y - pA.y, e1z = pB.z - pA.z;
+      const e2x = pC.x - pA.x, e2y = pC.y - pA.y, e2z = pC.z - pA.z;
+      let nx = e1y * e2z - e1z * e2y;
+      let ny = e1z * e2x - e1x * e2z;
+      let nz = e1x * e2y - e1y * e2x;
+      const nlen = Math.hypot(nx, ny, nz);
+      if (nlen < 1e-9) return;
+      nx /= nlen; ny /= nlen; nz /= nlen;
+      const facing = nx * fwd.x + nz * fwd.y + ny * fwd.z;
+      if (!skipSideCull && facing > -0.02) return;
+      const depth = (sA_.depth + sB_.depth + sC_.depth) / 3;
+      faces.push({ pts: [sA_, sB_, sC_], depth, shade: Math.max(0, Math.min(1, -facing)) });
+    }
     for (let r = 0; r < worldRings.length - 1; r++) {
       const wA = worldRings[r], wB = worldRings[r + 1];
       const sA = screenRings[r], sB = screenRings[r + 1];
@@ -17077,17 +17487,58 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!s0 || !s1 || !s2 || !s3) continue;
         const e1x = p1.x - p0.x, e1y = p1.y - p0.y, e1z = p1.z - p0.z;
         const e2x = p3.x - p0.x, e2y = p3.y - p0.y, e2z = p3.z - p0.z;
-        let nx = e1y * e2z - e1z * e2y;
-        let ny = e1z * e2x - e1x * e2z;
-        let nz = e1x * e2y - e1y * e2x;
-        const nlen = Math.hypot(nx, ny, nz);
-        if (nlen < 1e-9) continue; // entarteter Ring (Radius 0 an beiden Enden) - keine Fläche
-        nx /= nlen; ny /= nlen; nz /= nlen;
-        // y/z vertauscht gelesen - siehe Kommentar oben (toRender()-Konvention).
-        const facing = nx * fwd.x + nz * fwd.y + ny * fwd.z;
-        if (!skipSideCull && facing > -0.02) continue; // Rückseite, siehe Kommentar oben
-        const depth = (s0.depth + s1.depth + s2.depth + s3.depth) / 4;
-        faces.push({ pts: [s0, s1, s2, s3], depth, shade: Math.max(0, Math.min(1, -facing)) });
+        const e3x = p2.x - p0.x, e3y = p2.y - p0.y, e3z = p2.z - p0.z;
+        const crossX = e1y * e2z - e1z * e2y;
+        const crossY = e1z * e2x - e1x * e2z;
+        const crossZ = e1x * e2y - e1y * e2x;
+        const tripleProduct = crossX * e3x + crossY * e3y + crossZ * e3z;
+        const scaleLen = (Math.hypot(e1x, e1y, e1z) * Math.hypot(e2x, e2y, e2z) * Math.hypot(e3x, e3y, e3z)) || 1;
+        const planarity = Math.abs(tripleProduct) / scaleLen;
+        if (planarity < 1e-4) {
+          pushSideFace(p0, p1, p2, p3, s0, s1, s2, s3);
+        } else {
+          // Nicht-eben (Schmiege-Übergangsecke) - Aufteilung in zwei garantiert ebene Dreiecke.
+          //
+          // Nachbesserung (noch innerhalb Release 224/225): die erste Fassung dieses Fixes
+          // wählte die Diagonale für die Dreiecks-Aufteilung IMMER fest zwischen p0 und p2.
+          // Sebastian meldete danach, dass die "offene"/sichtbare Schmiege_vorn-Zone dadurch
+          // perfekt wurde, die "versteckte" Schmiege_hinten-Zone an genau dieser Ecke aber
+          // weiterhin ein winziges Loch zeigte. Ursache: welche der beiden Diagonalen (p0-p2
+          // ODER p1-p3) ein nicht-ebenes/"windschiefes" Viereck in der BILDSCHIRM-Projektion
+          // tatsächlich VOLLSTÄNDIG und ÜBERLAPPUNGSFREI in zwei Dreiecke zerlegt, hängt von der
+          // genauen 2D-Projektion ab (die sich je nach Blickwinkel UND je nachdem, an welcher
+          // der vier Ecken sich die "Delle" befindet, unterscheidet) - bei einer konkaven
+          // ("pfeilspitzenförmigen") Projektion liegt nur EINE der beiden Diagonalen tatsächlich
+          // innerhalb der Fläche; wird stattdessen die jeweils falsche Diagonale erzwungen (wie
+          // in der ersten Fassung, immer p0-p2), überlappen sich die beiden Dreiecke in einem
+          // Teil der Fläche UND lassen einen anderen Teil komplett unbedeckt - exakt das winzige,
+          // blickwinkelabhängige Loch, das weiterhin an der Schmiege_hinten-Ecke auftrat (deren
+          // Vierecke zufällig häufiger die "andere" Diagonale brauchen als die der
+          // Schmiege_vorn-Zone, siehe asymmetrische Ring-Konstruktion in
+          // buildSchmiegeKonturRings() - deshalb war nur eine der beiden Zonen betroffen).
+          //
+          // Fix: die GÜLTIGE Diagonale wird jetzt pro Fläche und Blickwinkel per 2D-Kreuzprodukt
+          // in Bildschirmkoordinaten bestimmt, statt fest vorgegeben. Für die Diagonale p0-p2
+          // sind die beiden Teildreiecke (s0,s1,s2) und (s0,s2,s3) GENAU DANN überlappungsfrei
+          // (decken zusammen exakt das ganze Viereck ab), wenn ihre vorzeichenbehafteten Flächen
+          // (2D-Kreuzprodukt) dasselbe Vorzeichen haben - andernfalls liegt die andere Diagonale
+          // (p1-p3) innerhalb, und es wird stattdessen (s1,s2,s3)/(s1,s3,s0) verwendet. Damit wird
+          // das Viereck für JEDEN Blickwinkel korrekt und vollständig ohne Lücke gefüllt.
+          function cross2(a, b, c) { return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); }
+          const areaA02 = cross2(s0, s1, s2), areaB02 = cross2(s0, s2, s3);
+          const diag02Valid = (areaA02 >= 0 && areaB02 >= 0) || (areaA02 <= 0 && areaB02 <= 0);
+          if (diag02Valid) {
+            pushSideTriangle(p0, p1, p2, s0, s1, s2);
+            pushSideTriangle(p0, p2, p3, s0, s2, s3);
+          } else {
+            pushSideTriangle(p1, p2, p3, s1, s2, s3);
+            pushSideTriangle(p1, p3, p0, s1, s3, s0);
+          }
+          // Nur für Diagnose/Regressionstests (window.__debug_getLastFillRevolutionBodyNonPlanarQuadCount
+          // in den instrumentierten Testkopien) - zählt, wie viele Seitenflächen in diesem Aufruf als
+          // nicht-eben erkannt und trianguliert wurden; ohne Funktion für die Darstellung selbst.
+          window.__lastFillRevolutionBodyNonPlanarQuadCount = (window.__lastFillRevolutionBodyNonPlanarQuadCount || 0) + 1;
+        }
       }
     }
     function addCap(screenRing, outward) {
@@ -17111,13 +17562,51 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const rgb = hexToRgb(appearance.color) || { r: 201, g: 202, b: 207 };
     const alpha = Math.max(0, Math.min(1, 1 - appearance.transparency / 100));
     if (alpha <= 0) return; // 100% Transparenz - siehe Kommentar oben, nichts zu zeichnen
+    // Release 224 (Nachbesserung): Sebastian meldete nach dem ersten 224-Fix oben (nicht-ebene
+    // Vierecke -> Dreiecke) weiterhin ein winziges, 2-4 Pixel kleines Loch an GENAU der
+    // Übergangsecke der "versteckten" Schmiege_hinten-Zone (die "offene"/sichtbare
+    // Schmiege_vorn-Zone war bereits einwandfrei) - per gezielter Pixel-Analyse (verbundene
+    // Komponenten-Suche statt der bisherigen groben Silhouetten-Heuristik, die ein derart
+    // kleines Loch nicht zuverlässig erkennt) auch in der eigenen Nachstellung bestätigt. Die
+    // Dreiecks-Aufteilung selbst behebt die Nicht-Ebenheit korrekt (siehe oben), erzeugt aber an
+    // der Stelle, wo mehrere (jetzt mehr als zuvor) schmale, spitzwinklige Dreiecke an einem
+    // einzigen Eckpunkt zusammentreffen, einen klassischen Rasterisierungs-"Riss": jede Fläche
+    // wird als EIGENES, unabhängig kantengeglättetes Canvas-Polygon gefüllt UND gestrichelt -
+    // auch wenn zwei Flächen exakt dieselbe 3D-Kante teilen, kann deren Kantenglättung in der
+    // Bildschirmprojektion einen Bruchteil-Pixel breiten Spalt zwischen ihnen übrig lassen,
+    // besonders dort, wo mehrere Flächen in einem sehr spitzen Winkel aufeinandertreffen (exakt
+    // die gemeldete Stelle). Fix: NUR für die DXF-Kontur-Füllung (erkennbar an
+    // "opts.disableSideCull", wie auch schon beim Culling-Verzicht selbst - die übrigen, bereits
+    // gründlich getesteten Werkzeug-/Spannfutterprofile bleiben unverändert) wird die FÜLLUNG
+    // (nicht der Strich) jeder Fläche minimal (0,6px) vom eigenen Flächen-Mittelpunkt weg nach
+    // außen vergrößert, bevor sie gezeichnet wird - eine im CAD-/Mesh-Rendering gängige Technik
+    // gegen genau solche Nahtrisse zwischen benachbarten, unabhängig gezeichneten Flächen. Der
+    // Strich (ctx.stroke()) verwendet weiterhin die exakten, unveränderten Punkte, bleibt also
+    // optisch scharf; die minimale Übervergrößerung der Füllung ist für sich genommen nicht
+    // sichtbar, deckt aber zuverlässig jeden verbleibenden Sub-Pixel-Spalt zum Nachbarn ab.
+    const fillOverdrawPx = (opts && opts.disableSideCull) ? 0.6 : 0;
     faces.forEach(f => {
       const light = 0.55 + f.shade * 0.45;
+      let fillPts = f.pts;
+      if (fillOverdrawPx > 0 && f.pts.length >= 3) {
+        const cx = f.pts.reduce((s, p) => s + p.x, 0) / f.pts.length;
+        const cy = f.pts.reduce((s, p) => s + p.y, 0) / f.pts.length;
+        fillPts = f.pts.map(p => {
+          const dx = p.x - cx, dy = p.y - cy;
+          const dlen = Math.hypot(dx, dy);
+          if (dlen < 1e-6) return p;
+          const k = fillOverdrawPx / dlen;
+          return { x: p.x + dx * k, y: p.y + dy * k };
+        });
+      }
       ctx.beginPath();
-      f.pts.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+      fillPts.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
       ctx.closePath();
       ctx.fillStyle = `rgba(${Math.round(rgb.r * light)},${Math.round(rgb.g * light)},${Math.round(rgb.b * light)},${alpha})`;
       ctx.fill();
+      ctx.beginPath();
+      f.pts.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+      ctx.closePath();
       ctx.strokeStyle = `rgba(${Math.round(rgb.r * 0.5)},${Math.round(rgb.g * 0.5)},${Math.round(rgb.b * 0.5)},${Math.min(1, alpha + 0.2)})`;
       ctx.lineWidth = 0.8;
       ctx.stroke();
@@ -22963,9 +23452,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
-    dxfThicknessInput.value = String(dxfThickness);
-    dxfThicknessTransparencySlider.value = String(dxfThicknessTransparency);
-    dxfThicknessTransparencyValue.textContent = dxfThicknessTransparency + '%';
+    // Release 222 (Sebastian: "Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte
+    // drin."): solange der Dialog für diesen Import noch nie bestätigt wurde, werden die Felder mit
+    // DXF_THICKNESS_PREFILL/DXF_THICKNESS_TRANSPARENCY_PREFILL vorbefüllt statt mit dem tatsächlich
+    // angewendeten (weiterhin unveränderten) Zustand dxfThickness=0/dxfThicknessTransparency=100 -
+    // das Bauteil selbst bleibt dadurch flach/ungefüllt, bis der Dialog wirklich bestätigt wird.
+    // Nach der ersten Bestätigung (dxfThicknessEverConfirmed, siehe confirmDxfThickness() unten)
+    // zeigt ein erneutes Öffnen wieder die zuletzt tatsächlich bestätigten Werte, exakt wie vor
+    // dieser Runde.
+    const prefillThickness = dxfThicknessEverConfirmed ? dxfThickness : DXF_THICKNESS_PREFILL;
+    const prefillTransparency = dxfThicknessEverConfirmed ? dxfThicknessTransparency : DXF_THICKNESS_TRANSPARENCY_PREFILL;
+    dxfThicknessInput.value = String(prefillThickness);
+    dxfThicknessTransparencySlider.value = String(prefillTransparency);
+    dxfThicknessTransparencyValue.textContent = prefillTransparency + '%';
     dxfThicknessColorPicker.value = dxfThicknessColor;
     dxfThicknessColorHex.value = dxfThicknessColor;
     dxfThicknessColorHexWarning.hidden = true;
@@ -22997,6 +23496,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfThicknessColor = norm;
     }
     dxfThicknessTransparency = transparencyVal;
+    dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
@@ -23138,6 +23638,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Globaler Fallback-Schalter "Werkzeugprofil (DXF-Form)" (Release 200) - ebenfalls schon vor
   // dem ersten Programm-Laden übernehmen, direkt von drawTool() ausgewertet (siehe dort).
   useToolProfileShapes = loadPersistedUseToolProfileShapes();
+  // Bugfix (Release 220, Sebastian: "Wenn ich die Version aktualisiere, verliere ich jedes mal
+  // die Spannfutter. Die Werkzeugprofile bleiben erhalten."): "Spannfutter bearbeiten" (Release
+  // 214, siehe LS_KEY_CHUCK_DXF_PROFILES) legte beim Speichern zwar korrekt in localStorage ab
+  // (persistChuckDxfProfiles()), aber die zugehörige Ladefunktion loadPersistedChuckDxfProfiles()
+  // wurde hier - anders als bei toolDxfProfiles direkt oberhalb, dem offensichtlichen Vorbild -
+  // nie aufgerufen. `chuckDxfProfiles` blieb dadurch bei jedem Neuladen der Seite (insbesondere
+  // nach dem Ersetzen der HTML-Datei bei einem Versions-Update) bei seiner Deklarations-Vorgabe
+  // `[]` stehen, obwohl die eigentlichen Daten in localStorage weiterhin unversehrt vorhanden
+  // waren - rein optisch "verloren", nicht tatsächlich gelöscht (bereits zuvor bestehende
+  // Arbeitsgänge mit einem zugewiesenen chuckProfileId fielen dadurch beim nächsten Laden
+  // scheinbar auf die feste HSK63-Standarddarstellung zurück, siehe 9.7.8). Fix: dieselbe
+  // Lade-Zeile wie bei toolDxfProfiles, nur für chuckDxfProfiles.
+  chuckDxfProfiles = loadPersistedChuckDxfProfiles();
   // "Spannfutter einblenden"/"ausblenden" (Release 192): ebenfalls schon vor dem ersten Programm-
   // Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Werkzeuge" direkt
   // oberhalb - reine Variablenzuweisung statt setShowToolHolder() (genau wie bei gridVisible weiter
