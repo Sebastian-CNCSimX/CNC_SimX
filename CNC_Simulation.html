@@ -2180,10 +2180,25 @@
      einbauen, was rechts neben der eingelesenen DXF-Datei ist") - dritte Spalte rechts neben der
      2D-Vorschau, erklärt unabhängig von einer gerade geladenen Datei, welche DXF-Konturen
      grundsätzlich eingelesen werden können (geschlossene Kontur, halbes oder komplettes Profil
-     inkl. Schaft) - immer sichtbar, auch bevor überhaupt eine Datei ausgewählt wurde. */
+     inkl. Schaft) - immer sichtbar, auch bevor überhaupt eine Datei ausgewählt wurde. Seit
+     Release 215 wiederverwendet für das analoge Hilfebild im "Spannfutter bearbeiten"-Dialog
+     (#chuckDxfImportPanel), siehe dortigen Markup-Kommentar - dieselben Klassennamen gelten für
+     beide Dialoge gemeinsam, kein zweiter, eigener Klassensatz nötig. */
   .tool-dxf-import-help { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
   .tool-dxf-import-help-heading { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.4; }
-  .tool-dxf-import-help-img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; display: block; }
+  /* Release 215 (Sebastian, nach erstem Test von Release 214: "Bei 'Spannfutter bearbeiten' und
+     'Werkzeug DXF einlesen' sicherstellen, dass das Hilfebild nicht via Drag'n Drop in die
+     Simulation geladen werden kann. Das geht aktuell.") - Ursache: Der globale
+     window.addEventListener('drop', ...)-Handler (siehe dort) akzeptiert JEDE über
+     dataTransfer.files abgelegte Datei, auch ein waehrend eines nativen Bild-Drags vom Browser
+     selbst aus einem <img>-Element synthetisiertes File-Objekt - ein serienmaessig in jedem
+     Browser eingebautes Verhalten, das mit einem data:-URI-Bild genauso funktioniert wie mit
+     einem echten Bild von einer Webseite. "-webkit-user-drag: none" UNTERBINDET diesen nativen
+     Bild-Drag bereits auf Browser-Ebene (ergaenzt um das gleichbedeutende draggable="false"-
+     Attribut direkt am <img>-Tag selbst, siehe dort, fuer Browser ohne die WebKit-Eigenschaft) -
+     die Hilfebilder laufen dadurch nie mehr in den Drop-Handler hinein, unabhaengig davon, wie
+     tolerant dieser selbst konfiguriert ist. */
+  .tool-dxf-import-help-img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; display: block; -webkit-user-drag: none; user-select: none; }
   .tool-dxf-profile-select {
     width: 100%; height: 110px; padding: 4px;
     border: 1px solid var(--border); border-radius: 8px;
@@ -2807,6 +2822,12 @@
             <button class="menu-item submenu-trigger" id="submenuToolsTopTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuToolsTopDropdown" hidden>
               <button class="menu-item" id="btnToolDxfImport" type="button" title="Gespeicherte Werkzeugprofile verwalten: DXF-Datei eines echten Schneidwerkzeugs einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-/Radius-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur einfachen Zylinderdarstellung zurückzukehren)" data-i18n-en="Edit tool profile" data-i18n-en-title="Manage saved tool profiles: read in a DXF file of a real cutting tool, automatically convert it into a revolve profile and use it for the 3D display (with length/radius reference point, scale factor, and the option to revert to the plain cylinder display at any time)">Werkzeugprofil bearbeiten</button>
+              <!-- "Spannfutter bearbeiten" (NEU, Release 214, Sebastian, Spannfutter-Spezifikation
+                   Punkt 1: "Einstellungen -> Werkzeuge -> 'Spannfutter bearbeiten' einbauen") -
+                   zweiter flacher Eintrag direkt unter "Werkzeugprofil bearbeiten", exakt
+                   dieselbe Position/Technik wie dieser (ruft #btnChuckDxfImport auf, öffnet
+                   #chuckDxfImportPanel). -->
+              <button class="menu-item" id="btnChuckDxfImport" type="button" title="Gespeicherte Spannfutterprofile verwalten: DXF-Datei eines echten Spannfutters (Werkzeughalters) einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur HSK63-Standardaufnahme zurückzukehren)" data-i18n-en="Edit chuck profile" data-i18n-en-title="Manage saved chuck profiles: read in a DXF file of a real chuck (tool holder), automatically convert it into a revolve profile and use it for the 3D display (with length reference point, scale factor, and the option to revert to the standard HSK63 holder at any time)">Spannfutter bearbeiten</button>
               <div class="menu-submenu" id="submenuToolAppearance">
                 <button class="menu-item submenu-trigger" id="submenuToolAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tool display &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeugdarstellung <span class="submenu-arrow">▸</span></button>
                 <div class="submenu-dropdown" id="submenuToolAppearanceDropdown" hidden>
@@ -3261,6 +3282,12 @@
            bewusst IMMER aktiv (kein disabled-Zustand), da das Bearbeiten gespeicherter
            Werkzeugprofile unabhängig von einem geladenen Programm oder einer AG-Auswahl ist. -->
       <button class="toolbar-btn" id="btnEditToolProfileToolbarIcon" type="button" title="Werkzeugprofil bearbeiten (dieselbe Aktion wie 'Einstellungen' → 'Werkzeuge' → 'Werkzeugprofil bearbeiten')" data-i18n-en-title="Edit tool profile (same action as 'Settings' → 'Tools' → 'Edit tool profile')">✎ <span data-i18n-en="Tool">Werkzeug</span></button>
+      <!-- "Editier Spannfutter"-Button (NEU, Release 214, Sebastian, Spannfutter-Spezifikation
+           Punkt 2: "Im Menüband der Simulation ein 'Editier Spannfutter'-Button einbauen") -
+           zweiter, gleichwertiger Auslöser für #chuckDxfImportPanel, direkt neben
+           #btnEditToolProfileToolbarIcon, exakt nach demselben "✎"-Editiersymbol-Muster. Bewusst
+           IMMER aktiv (kein disabled-Zustand), siehe dortigen Kommentar. -->
+      <button class="toolbar-btn" id="btnEditChuckProfileToolbarIcon" type="button" title="Spannfutter bearbeiten (dieselbe Aktion wie 'Einstellungen' → 'Werkzeuge' → 'Spannfutter bearbeiten')" data-i18n-en-title="Edit chuck profile (same action as 'Settings' → 'Tools' → 'Edit chuck profile')">✎ <span data-i18n-en="Chuck">Spannfutter</span></button>
       <button class="toolbar-btn tool-toggle-btn" id="btnToggleTool" type="button" title="Werkzeug (Zylinder aus Radius/Länge des Programms) in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the tool (cylinder from the program's radius/length) in the 3D view"><span class="eye-glyph">👁</span> <span data-i18n-en="Tools">Werkzeug</span></button>
       <!-- "Spannfutter" (74. Runde, NEU) - blendet den HSK63-Werkzeughalter (samt Sägeblatt-
            Adapterstück, siehe 9.7b) unabhängig vom Werkzeug selbst ein/aus, dieselbe
@@ -3834,10 +3861,43 @@
            btnToggleToolHolder-Klick-Handler weiter unten), und das Bestätigen dieses Dropdowns
            per "Ok" setzt umgekehrt auch den globalen Zustand (siehe confirmInsertToolData()
            weiter unten) - siehe dort jeweils für die genaue Herleitung. -->
-      <label class="tool-data-field"><span data-i18n-en="Tool lengths:">T-Längen:</span>
-        <select id="toolModeSelect" class="filename-input" title="Bestimmt, ob der HSK63-Halter für dieses Werkzeug angezeigt wird - dieselbe Einstellung wie 'Spannzange ausblenden/einblenden' in der Werkzeugleiste" data-i18n-en-title="Determines whether the HSK63 holder is shown for this tool - the same setting as 'Hide/show collet' in the toolbar">
-          <option value="eingespannt" data-i18n-en="Clamped length">Eingespannte Länge</option>
-          <option value="ohnehsk63" data-i18n-en="Without HSK63 sample">Ohne HSK63-Sample</option>
+      <!-- "Spannfuttersichtbarkeit:" (umbenannt aus "T-Längen:", Release 214, Sebastian,
+           Spannfutter-Spezifikation Punkt 10: "Bei 'T-Längen:' kann ausgewählt werden, ob es ein
+           Spannfutter gibt oder nicht: 'Spannfutter ausgeblendet' / 'Spannfutter eingeblendet'.
+           'T-Längen' wird in 'Spannfuttersichtbarkeit:' umbenannt. Darunter ist dann der Punkt
+           'Spannfutter (3D-Form)' in der Höhe angeordnet") - REIN KOSMETISCHE Umbeschriftung
+           (Feldbeschriftung + die beiden Options-Texte), ID (#toolModeSelect), Options-WERTE
+           ("eingespannt"/"ohnehsk63") und die komplette dahinterliegende Logik in app.js
+           (confirmInsertToolData()/btnInsertToolData-Klick-Handler/"; TOOLMODE .."-Marker)
+           bleiben vollständig UNVERÄNDERT bestehen: Das Dropdown bildete schon bisher (seit
+           Release 140, "Spannzange, Änderung") ausschließlich den globalen showToolHolder-
+           Zustand ab (sichtbar = "eingespannt", ausgeblendet = "ohnehsk63") - exakt das, was
+           Sebastian hier mit "Spannfuttersichtbarkeit" meint. Keine Programmtext-Inkompatibilität
+           zu älteren, vor dieser Runde geschriebenen "; TOOLMODE .."-Kommentarzeilen. -->
+      <label class="tool-data-field"><span data-i18n-en="Chuck visibility:">Spannfuttersichtbarkeit:</span>
+        <select id="toolModeSelect" class="filename-input" title="Bestimmt, ob das Spannfutter (Werkzeughalter) für dieses Werkzeug angezeigt wird - dieselbe Einstellung wie 'Spannfutter ausblenden/einblenden' in der Werkzeugleiste" data-i18n-en-title="Determines whether the chuck (tool holder) is shown for this tool - the same setting as 'Hide/show chuck' in the toolbar">
+          <option value="eingespannt" data-i18n-en="Chuck shown">Spannfutter eingeblendet</option>
+          <option value="ohnehsk63" data-i18n-en="Chuck hidden">Spannfutter ausgeblendet</option>
+        </select>
+      </label>
+    </div>
+    <!-- "Spannfutter (3D-Form)" (NEU, Release 214, siehe Konzept_DXF_Werkzeugaufnahmen.md sowie
+         Datenmodell chuckDxfProfiles/saveChuckDxfProfile() weiter oben in app.js) - 1:1 nach dem
+         Vorbild von "Werkzeugprofil (3D-Form):" direkt unterhalb (siehe dortigen Kommentar für
+         alle hier nicht wiederholten Grundprinzipien), aber bewusst DARÜBER angeordnet (Sebastian,
+         Spannfutter-Spezifikation Punkt 8: "Der Menüpunkt 'Spannfutter (3D-Form):' ist in der Höhe
+         über 'Werkzeugprofil (3D-Form)' angeordnet"). Auswahl PRO ARBEITSGANG, schreibt einen
+         sechsten Marker ("; CHUCKPROFILE ..", Spannfutterprofil-id oder "NONE") direkt hinter
+         TOOLPROFILE, siehe insertToolDataComment()/CHUCK_PROFILE_RE in parser.js. "Kein Profil
+         (HSK63-Standard)" ist die erste, voreingestellte Option - fällt bei fehlendem/gelöschtem
+         Profil automatisch auf die bisherige, feste HSK63-Darstellung zurück (siehe drawTool()).
+         Die Optionsliste wird NICHT statisch hier im Markup gepflegt, sondern bei jedem Öffnen des
+         Dialogs sowie nach jedem Speichern/Löschen eines Profils per
+         refreshChuckProfileDropdownOptions() in app.js aus chuckDxfProfiles neu aufgebaut. -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Chuck (3D shape):">Spannfutter (3D-Form):</span>
+        <select id="chuckProfileSelect" class="filename-input" title="Ordnet diesem Arbeitsgang ein per 'Spannfutter bearbeiten' gespeichertes Rotationsprofil für die 3D-Darstellung des Werkzeughalters zu - 'Kein Profil' zeigt wie bisher die feste HSK63-Aufnahme." data-i18n-en-title="Assigns this processing step a revolve profile (saved via 'Edit chuck profile') for the 3D display of the tool holder - 'No profile' shows the fixed standard HSK63 holder as before.">
+          <option value="" data-i18n-en="No profile (standard HSK63)">Kein Profil (HSK63-Standard)</option>
         </select>
       </label>
     </div>
@@ -4915,13 +4975,88 @@
            gleichermassen unterstützt. Bild als Base64-PNG eingebettet, keine externe Datei. -->
       <div class="tool-dxf-import-help">
         <p class="tool-dxf-import-help-heading" data-i18n-en="The DXF file to be imported must have a closed contour. It can be either half of the tool profile or the entire profile, including the shank.">Die einzulesene DXF muss eine geschlossene Kontur haben. Es kann entweder das halbe Werkzeugprofil sein oder das gesamte inkl. Schaft.</p>
-        <img class="tool-dxf-import-help-img" alt="Beispiel: halbes Werkzeugprofil (links) und komplettes Profil inklusive Schaft (rechts), beides jeweils als geschlossene Kontur" data-i18n-en-alt="Example: half tool profile (left) and complete profile including shank (right), both as a closed contour" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWgAAAEOCAIAAAArKhrFAAAjdElEQVR42u2de1CU1/nHz3vbZRdRRG4qIApJhCiIQLQoFLwAEQhqTJppm6iZSWOS1nY6nWk7zUwm6bQz/TdpMlbT2iSdxhoTAqKoeEkIkBhvCKiReImBIEa8AAJ7eS+/P54f72wQjYHdZd99v58/MmAtsuec53ue2zmH0zSN+QZVVekLnucZCGxoGTgcjp6entzc3HPnzvE8z/O8LMuvv/76L37xC0VRrFZrcHxSjuMCdgoYY4H56w1D1I2c5/nTp0/X1tYKgqBp2lgEJTw8/Oc//zkNge+ECYDRqca1a9f+85//cBw37uuTfoGYmJjHHntM/9Z4wvHxxx+Hhobm5OS43W6O40bhKdDPOXHixPbt25944glZlgVBwHoFASUcmzZtKigomDRp0rjvamQvjY2N1dXVjzzyiKIoRnHPRc9vbDbbnDlzUlNTx/hD+/v7T506RfNkFAUF5sHpdGZmZgZO5NXV1XXt2jVj2Ys4TI8HBgY0TZNlWRTFUSuow+HQPzxUAwRaHoHn+YGBAYvFMu6/j6IogiA4HA7d0TCKvYi3B10UpIzuA3BDILUBAhlapQHyaxjRXlDvAABAOAAAEA4AAIQDAADhAABAOAAAAMIBAIBwAAAgHAAACAcAAMIBAAAQDgAAhAMAAOEAAEA4AAAQDgAAgHAAACAcAAAIBwAAwgEAgHAAACAcAAAA4QAAQDgAABAOAACEAwAA4QAAAAgHAADCAQCAcAAAIBwAAAgHAABAOAAAEA4AAIQDAADhAABAOAAAAMIBAIBwAAAgHAAACAcAAMIBAIBwAAAAhAMAAOEAAEA4AAAQDgAAhAMAACAcAAAIBwAAwgEAgHAAACAcAAAA4QAAQDgAABAOAACEAwAA4QAAAAgHAADCAQCAcAAAIBwAAAgHAADCAQAAEA4AAIQDAADhAABAOAAAEA4AAIBwAAAgHAAACAcAAMIBAIBwAAAAhAMAAOEAAEA4AAAQDgAAhAMAACAcAAAIBwAAwgEAgHAAACAcAAAIBwAAQDgAABAOAACEAwAA4QAAQDgAAADCAQCAcAAAIBwAAAgHAADCAQAAEA4AAIQDAADhAABAOAAAEA4AAIQDAAAgHAAACAcAAMIBAIBwAAAgHAAAAOEAAEA4AAAQDgAAhAMAAOEAAAAIBwAAwgEAgHAAACAcAAAIBwAAQDgAABAOAL4fjuMwCBAOAH4wmqYxxlRV1b8GgSIcHMdpmoZZAQGoGrQ4eZ4PHAfEiPbiE+Fwu90hISEcx6mqStIOwLhLhqIogiCoqioIgiAIgWOrLpfLbreTvRhFPrwsHPTh582bd/To0XPnzlmtVkEQ6H8y0KCAoHQ0BEEYHBx8/fXX582bFxYWJsvy+Jsfz2ualpOTs3///suXL1ssFnKFAh/R68LBGIuIiFi1alVDQ0NDQwPP808++aQsy7rYYx0DP6uGpmmDg4OvvvpqX1/fwoULy8rKFEXheX7cQxUKUqKjo1esWPHxxx93dnampqYWFxeTc2Qi4dCdjry8vLy8PIfDsW/fvh07dqxZs4amCusYjAtvvPFGeXl5UlKSxWLRlyJ5IoGgHUVFRYyxr7/++u23387NzbXZbGbMcfA8ryiKoighISEPPvjghQsX9FAF0Qrwv2VyHHf9+vWUlBSLxRIIEcrtv6Esy263OyEhQVEUp9MZ+Fus6KOfS4EJY8zhcEiSNCyWAcDPlimKIm1doiiyoUJs4KxGQRAURQm032ochEP//DzP64UVqAYYxzQHuR4BuxTp1zNpVeVO8oEIBYwjqqo6nU6jOEeG6GDwuXDIshwI6WtgZgRByM/PN8QG5nK5bDZb4P+evhUOVVVjYmIGBgZkWaax0POj8EGAL0IS6jmkZaaqKqVCL1682N3dzXGcoigB/hHuu+++5uZmjuNcLpdnMSHQ7MWHwkEBW1RU1OzZs//73/9aLBaaObfbrQ2BtQ68Kxx6aEySQanQrVu3ZmVlBXIbEcdxlA1csWJFZWVlf3+/bi+6ggSUvfjW46DaSllZ2RdffPHaa69dvXpVFEUaEVVV9TQyAN4SDrfbTUYoSRLP842NjS+//HJERERqamogdG1870YbHR2dkpLyyiuvHDhwoLe3V7cX6m8IHHsR/TAckiT99a9/bW1tbWtr27RpU0ZGRk5OTkREhGceRBAE5EHA6KAARBiCMdbd3V1RUXH16lW73f7UU0/NnDmTmr4CXDtoo33qqaeuXLly5MiR+vr65ubmrKys+fPnB5q9+EM4yLmYM2cOY8xut3/11Vd///vfY2NjeZ4vKCiIi4uzWq1s6KSzZ83MQGVtMF6SwfM8iUVvb29LS8uZM2f6+/t7enry8vKKi4vj4+PJ0kRRDHDV+P8QgOcVRYmJiSktLWWMxcTEnD9/XreXwsLCqVOnUmOUqqr0ccbFXkT/jAWJPWMsIyMjIyNj1apVzc3Nvb2977//vtPpjI+PX7hw4ezZsxljbrcb3ge4ezyiWwgdcj148GBbW9vly5fvu+++Bx98MC4ujvRCVxbKdBhlUekndzmOy8zMzMzMZIwdP358YGDgnXfe4Thu2rRpeXl5s2bNInsRRdH/DSCi3/4lmjZZlskHSUtLY4wtXrzY4XB89tlnO3furKioKCkpSUtLo8wWLQsoCLgdVVVFUZRlef/+/fX19YmJiampqRs2bPB05qkJwKCHKnW/m1K8mqbNnz+f7OXWrVtHjx7dvn27KIplZWUPPPAAefSU2fGbvYh+HhGK4kRRpI+qaZrFYsnPz8/Pzz958uTu3bvr6+vXrVtnt9upqAbhAMMkgzyI9vb2LVu2xMXFvfDCC1OnTtVtjNYYmVAQLB79TLl+ZVloaCjZy7Fjx3bs2DF16tQnn3xSkiTqeAha4dDdS89jPKQR6enp6enpJ06c+Mtf/pKVlVVaWipJkp73gs2YMyphQ+UGCul5nu/o6Kiqqurq6vrVr34VFRXFhpKj+iGUYd3lhka3F89EBkFRTENDw4svvvjss89S5ELZnCAUDs+wZVjYSZqakZExd+7cXbt2vfLKK2vWrElPT9cjVYZEqflUg2ZfP5y2ffv2U6dOLV269Pnnn2ffTY4Oc/KDiTvZi6ZpixYtmjNnzhtvvCGKYklJSWpqqh6m+XQcxMAZHf2KBFEUy8vLly1b9s9//nPXrl0lJSXp6ekul8tiscCczIkoinV1dfv378/JyXn55Zc9sxim3UvIXlRVnTRp0h//+McjR47s27fviy++WL16tS4rvjueH3DH/mkduN1uu92+cePGsrKy2traxsZGun8FJmS2jAb1LGzfvr21tXXjxo10OxZdkIUUGBu6fFBRlOzs7N/85jd9fX1vvfWWH+qygXhfCDkdVHyZO3fu7373u1OnTn3++ed0ZwHMySQRCi0ASZK2bds2adKk559/PjIy0jM2QdHNUz5IT9euXTt79uzNmzfTyPjuoG0gCofuf+rD8cwzzxw8ePDcuXPQjqB3MfSvXS6XJEk7duywWCxFRUV0xEkXC0jGMHuhrllZlhcsWJCRkbF582Y2dLe7L+Qj0G8o0xfKo48+unPnTopsfTQWIEDidkVRZFm2WCyXLl26cOHCww8/LMuyJEkQi++F2lseeuih+fPnb9myhQIZXxyQM8DtwaSa9913X1FR0T/+8Q+q5GOJBLffIYriV1999cEHH2zYsCEkJAT1+Hs3FvI7srOz09LSNm3a5KNeewNYIMmELMupqalLlix54403yO/AydpgXfqSJF28eLGiomL9+vUTJ07EDQw/KGxhQzeYLly4UFGUpqYmckNMJxwUv1GzaUpKytKlS//1r385nU4qOOGxuODLcXR0dFRWVj799NPh4eHkYMLHHEXKQ1XV5557rqGhobm5WdcOb9mLkeZDEAS3252amjpt2rT33nuPvsVCCSaoaLJ58+bHH3980qRJPu1EMImCbNiwQdcOL9qLkWaFyrRut7ukpESW5SNHjlgsFqQ8gkk1JEl6++23CwoKYmNj6TQThmWMJsMYe/bZZ+vr61tbWyVJ8pYWG8nk6MwC5cnWrVv36aeftrS0oEAbNKpBjV5RUVEFBQXYD7xiL/oYPvfcc3v37j1//ry3Ll7lDToWmqatXLmyqqoKm1IQ7Iq0MX777benT58uLi7220ktM2gHbbQcx5WVlVVUVHhLjo0nHGzokaeEhITJkyefPHlSP3QMDLq4qa989+7dy5YtI78S7eRehOzl/vvvt1qtp0+fpm59cwmH52pTFKW0tLSmpobhsQUjQ+flr1692t7evmjRIrp+AqrhC7cuNTX18OHDbOgiApMKh6ZpCQkJkyZNampqgtNh6DUtimJ1dXV+fj6dT6EdEpuBFyEvY+HChd98843L5Rp7Q52BhYPEoqSkpLa2dnBwEA0dBlUNjuO6urquXLmSm5tLPaMsSK/VGF9kWQ4NDU1JSdm7dy+Fh2MxGWMnrhVFSUhI6O/v7+vrG5crW4FX4pTjx4/PmDGD2vn0jQGD412BpmbrlJSUc+fOjX2QeeMOhD4WixcvPnDgAOkIFpyxoMt4WlpaCgoKOI5DMcWn0YqiKKmpqYqinDt3jlqxR11kMXCoQhqhKMqiRYva2tpu3rxJsTGWiIHcDcbY559/Pnny5NjYWPQB+9ReKCpUVbW0tHTXrl1jHG3e0GNB91nbbLbc3Nzdu3fTiXusEqOoBsUp+/bto9vucATWD/aiqurs2bOvXr3qcDjo4KwZcxxs6LKfnJycs2fP3rhxYyxjAfwZaVIe9PDhw7GxsZGRkXTiGSPjU+FgQ1cNZmVlHTp0iI2hLhskUxUSErJ06dLq6mpyxrBKDLH7uVyugwcPrly5klwPTJx/Rl5V1aVLlzY3N1N0b17hIBFNSEhob2/H3Q1G8TgoFdrT0xMZGem5JQI/JDvCwsIYY4ODg6YWDhqOgYEBi8WCxWcU4WCM9fb2hoWF0df+fL4Q2qFpmtPptNvto9+tg2MsZFmOi4vTNK2rqwuXgxlivhhje/bsmT9/vp7wx7D4TTjoOev6+no22pvQ+eAYCFVVJ06cyBi7ceMGcmyGmDJ94jAa4zL4ycnJZ8+eNbVw6N4X7pgz1tpFQmoc40SXyxUSEmLecqznWhwcHAwJCcHKMBBWqxWDMI7R4qgjxGAQDv02tMzMzJMnTzJfPmAFvIIoik6n88yZM0uWLKFz9BgTf0LX2QwMDPT29o7OSQ+eUIUxlpaWduLECYbrOQyydum6QKRF/QzP87Isx8bGDg4O9vT0jK6YwAeNajDGHA6HzWaDahhl1iAZ4zj4+gvN5g1VPIeDehCxMgwRYOopUozGuKi2nhMchckEj3BQRVYQhLE00gI/QGm5mpqaBQsWYDTGRbLpi/vvv3/UFdngyXEoihIZGSmKYkdHB3rAAp/+/n4qqWCmxiu6z8rKamxsNLVwACP6HSimjGOcwsZ28VWQlGOpIjswMKCqKj0diPUR4NtdQkJCV1cXw9m28YtWLl++nJCQwEye4xAEoaOjQ5bl+Ph43CEY4DPFGPvxj3/c3NyMUyrjgqIomqbV1dUVFBQwxkaREwySciwtPpvNJssy3A1D4HQ60cQxXu4GmYzVanU4HKb2ONxut6Zphw4dWrJkieeTmSBgdzybzTZz5szDhw/jqJv/hUMUxba2tokTJ0ZHR4/uErDgqapwHNfR0RETE4OwOfChV5cmTJjQ3d3NUFgZD3sZGBiQZdlqtY5u8IMkOUoJjpCQEFJQCEfgL1zG2KRJkwYHB6Ea42Iyhw8fXrJkCRvtHdFB4nFQScXpdE6YMAELMfChO6ULCwuPHj2qv6gO/ObucRzX3t4+Y8aMUbvnwZML6O/vRyHWQGuXMh0TJkzo7+/HrPnZ3RscHLTb7VRbGeVWHQQDQZWUPXv2lJSUYPsyytpVFEWSpAcffJCeMsWDOH6TbEEQjh8/HhUVNWXKFFM/j8ANgafAjBVmM8YcDgc1ntPz9HA9/IPdbh8cHGRjSEsHg3AIgvDtt9/yPB8dHS3LMjKjhlANQRA0TcvOzj5//rx+FRPwj16fPHmSThiat+Wculna29ttNhvdVwyM4iQqipKcnNzV1eV2uynAhOj7AUVRvvzyy7S0NDaGZzf5IBgFVVVra2vLy8uxcRlIONjQQ5CLFy/euXMnGzpuD3yd4GhsbHzggQesVutYBpw39CjQQDQ3N0+YMCEhIQEdHMbSDkmSOI4rLCxsaWlxOBzIavvaXqiM8tFHHz3yyCM8z5v0BjDydTmOq6qqKi8vZ3ju3JirWRTF7OzsDz/8kO7CxJj4KKJXVVWSpI8++mj69Onh4eFjHGpjexySJH3wwQfZ2dl0IhZHHgyHIAiKohQWFl6/fv3MmTOiKGISfSQcHMddvnz5+PHjjz/+OOm1GYWDksM3btxoamoqLCykZjjEKcaNWQoLCysrK1GR9Z29CIJQVVWVm5vrle5qowoHZTd2795dUFBAhT16xg3aYUThkGU5OTnZbre3trYKgkAdfVAQL6Y2eJ7v6urq7u5+6KGHvPKQjSGFg/yu7u7uCxcu5OXl4UUfowsHpatKS0v37Nmjqwb2AK+ohj7IlZWVRUVF3pJjowoHz/ObNm3asGEDuRtYIoaGLpeeNWtWWlrajh07JElCB7q39le6weDQoUM2my0rK8tblUfjCQctqWPHjkVGRkZFRblcLrgbhoay2oIguFyu/Pz8M2fO9Pb2CoKALOnYXTkSZY7j6urqVq9e7cULog0mHFRV4nm+urp69erVjLExJofBuCMIAt0hKIqi1WpdtGhRVVUVz/MQDq+IMs/ztbW1ycnJEyZM0E91mUs49Fr0nj175s2bFx0dTSKC9RE0AYuqqnl5eRkZGZ2dnXRnB4ZlLAkOyomeOnWqrKzMu8ZiMOHgOK6vr6+urq68vByqEZSEhISEhoZu3bpVURRkOsYuHDt27MjNzaVjXF7MNxvM8Hief/XVV3/729/ijdhgdTpcLldiYmJ4eHhrayv6wcayywqC0N7e3tfXl5mZKcuyd3dZPvA/P/mrFK3V19fHxMRERkaiXBesWCwWRVHWr19fUVFx/fp1il8Qs/xQk6HqSUVFRXFxsS922UAXDo7jKLXBGOvp6Tl69Gh5eTkOswU3HMfZ7fbCwsLq6moKWCAcP1Q1RFGsra2NjY3NyMhQFMXrlUcDeBxUixYEYdu2bZmZmVFRUYhTgj5gkWU5Jyfn5s2bTU1NkiRBOO5dc+ldIbfbXV9fv3z5cirBen0ADeBxkHw2NjZaLJbc3Fy3240SbNBDfRxr1qyprq5mo3pO3bToHV+pqamTJ0/2lbgHvsdBbYW1tbUlJSX0LdwNM+ycmqZNmzYtPz//nXfekSQJ2nGP9sIYczqd9fX1RUVFFKT4wmQCXThIPj/55JPk5OTo6GjKFTPcMWcOp0NRlJycnM7Ozvb2doYH3+5NOARBOHjwYHp6enh4uO+OjAe6cFAl/9SpUzNnzsS6MZsN0BMKISEh3d3d5HhiWL53o1VVtaWlJS0tzaeVx0AXDkEQHA7H4ODg9OnTUYI1odPBGEtLS2tra8No3IvUiqLY2dmpadrMmTPdbrephePWrVs9PT0zZsxAMcWEmQ7GWFZWVktLC1Xl4XR873BJkjQ4OCiKok/7qg3QOWqz2aiSD9UwpyUMDAxYLBZKl+pNPWDEOEXTtNbW1tmzZzMf5wH5AB8Ixtjp06eTkpKgGqY1hgkTJtjt9m+//ZYO0WJM7gQ1Rh45cmT+/PkQDtbQ0JCZmYllYc6gXVGU0NDQiIiIL774gtrPoR13iev7+vosFktoaKivu6sNEKrY7fa+vj6GEqz54hQKTyhaCQ0N1dUEgzOiyNIhepfLNX36dFMLB8dxTqdzcHAwJiYGt9eaUzuosJKUlPT111/r5oGRuRNWq5USgr6uXgf0HAiCcPPmzZs3byYnJ+Ngm2ndb8ZYfn7+559/jtH43rh+7969hYWFfngqxABnVfRb5LDVmBaHw2Gz2TAOdw9VGGPXr1+fMmUK87iPwqTCQRUmkgzU4UyLxWJxuVx+sIcgkA8aH18f6eIDfBSsVqsoin19fXiozcwbaVdXF22kWAZ38c0ZY9HR0VevXvX8EzMKh6IokydPjoiIoAe+sNWYEDqstG/fvkWLFrGhF1gwLCNYMs8zxpYvX75//3593MwbqrChDnyGOpyJEUURFxffC263W5IkPxiLMdKNyG6YPFTRzQA5jnsJWPzh4BjCWcWVX+aUDP1Um94JBu5dQUxdVWGMTZw4cWBgAEvBtKG7qqqyLFM5FsnR743pNE3z6YF6AwgHORqlpaUHDx7EmjDntimK4vXr169evZqRkUH2ANfjTmMly3J8fLzVav3yyy997aQb7CU3rA9ThSp6S4JnjgMex93xzzlAAwgHeadIqptwC6UvnE4nVQp4nsdV1d+LxWKRZZn5uKQQ6MIhy3J4eHhcXNxnn32GBwHNJhw03ZWVlcuWLWM4Hv190LmesrKympoas7ec0w7zyCOPHDx4EKGK2VxuURQvX7587dq1rKwsegMUw3J3qZVlOTEx0WaztbS0UKLUvMIhy3JkZOTUqVMbGhr0A2/ADMJB7kZxcTEFKRiTe7EXxlh5eXlNTY1PoxUDTAY5YKtXrz506BAbugAeSyToEUWxo6Pj2rVr8+bNk2UZcco9Oh1utzshIcFms508eZLepvGF38EbZSwiIiLi4uIaGhrocUAskeCG0ns7d+4sLi7GVaM/yFioELtq1SpyOnyU7DBG5yg5YKtWrTpw4AAVWaAdQQw9R9bR0XHjxg1yNxCn/KDRo4YOu91OTodJQxVaNG63Ozw8PD4+vr6+Hl1AwQ3d9lZdXQ13Yywms3r16pqaGtplTfdaPRu6eJJSxKtWrdq7dy+Ni/7KBkQkmHZLKqZQdiM9PV2WZWjHD1UNKinExcWFhoYeO3aM+hj044Je8dYN4wGScIaHh+fl5b333nt61gfeR/Cte4fD8cEHHzz22GP00jrGZBTQ/TWPPfZYXV3djRs3KDOonxg0kXCwoefLly9fbrPZ/ve//4miKMsyepCDyd1gjDkcjs2bNy9fvvz+++9XVRXCMeqNVtO02NjYn/zkJ1u3bvXUDtMJB31mWZZLS0vtdvuHH35osViQJQ2m1Ibb7d6yZUthYWFKSgpyomP33WRZnjZt2k9/+tN///vfvb29XvTQjTQxVE8RBMHtdpeVlZ08ebKjo8Pzbig8LGpQvWCMOZ1OURRfffXV/Pz82bNny7KMS1jGDnnlsbGx8+bN051003kcunZIkqQoyq9//evt27dfvnyZtMOL8Rvw88bocrmsVmt9fX1UVNTcuXPdbjdUw4vaoShKQUFBVFTUrl27JEmiHhlzCYfnagsPD1+/fv27777b2dkpCILL5cLDokbMa7jdbovF8sknn7S1ta1du5bKKPAcvQglB1euXNnf379r1y49OWhG4aCD9pMnT163bt22bds6OzutVqvvGmyBLySD+jUsFktDQ8O5c+eefvppVVWpHIANwBfa8fjjj/f391dXV4uiSBY0amPhDT0WqqpGRESsXbv2zTfffPPNN69cuUI1f8oeY9cKNKWgGaHWRkpXnT179m9/+1tbW9v69ev1FmFcuuFT7ZBl+c9//nNLSwsZiyzLZC8/SESMHUnS3VBTpkz5/e9/v2/fvtdeey0+Pr6srGzatGl4azYAhYO0g+d5URTPnj1bVVWlqmpRURH1lVNzNGbN13vtypUr09LSqqurd+/e/fDDD6elpTHGdCk3hXCwoXq11WotKysrLi6ura3dunVrXl5ebm4u++4LkliR46UX9IWiKHSRl8Ph2L9/f1NTU3l5+dy5c2maaE3D1/DDXquq6qxZszZu3Hjx4sWdO3fW1NQUFxenp6ezoQrXvdhLMOSuSTvoFYUVK1YUFxdv2rSprq5u2bJlCxYs8Pyb1BpAI4IF6mux0PvH6Q8lSbp161ZNTc2xY8fmzJnz4osv6jNCqxldG/7UDlVVZ86cuXHjxkuXLlVWVtbU1BQVFWVkZHhOoqIod3IDg6TopZ8mpo/6/PPPd3Z2VlRU7NmzJz4+Pj8/X9O0pKQkzyIfDkF4VyZ0+dYv3eE4juf5vr6+7u5uRVHef/99p9M5a9asP/zhD+Hh4TT+um8M1fCzduipwBkzZmzcuLG9vb2ysrKqqio5OflHP/qRqqrJycme9kI1ct1/D7ZqOS1Eaph74YUXOjo6Ll68uH37dlIWjuMWLlwYHx8vCMK0adPY0Jl9yMcYVZuGUX+s88KFC6IoHjt27OLFi3SdiiAIJSUlM2fODA0NZXhkKzBmjZY9OYbx8fG//OUvv/rqq/Pnz3vaS15eXkxMjCRJsbGxnu0OwTl5JI2qqsbFxcXFxVG+45tvvunt7T169OjHH3+saVpUVNQTTzwRFhaGNeSVVUh5irfeequrq4tajLKzs1esWDFjxgx6S0nfuDwdDRAIc0clcFVVExMTExMTly5dyhj7+uuv+/v7P/300ytXrjDGpkyZ8swzzwS5cAwbDmL69OnTp09PSUmhv3DmzJmPPvooLCwsPz8fAbZXePvtt6OiohYvXpyUlOT55/SQEgFHI8DthZo7VFVNSEhgjOn2cuDAgS1btvzsZz+z2WymuACW7vKwWq00KIqiyLIsy3JKSkpqampDQwPDo9beiJkZY62trStWrEhKSqIRVhSFomhJkvQD8mjPC3xv/XZ7cbvdS5cubW9v7+vrC84cx+066vlf3UOmngJZlu12O9aKt7DZbCTBt7sVqGQZ2l5oD5AkSZ9Z3sxjhLtLvQsaMYLbqfTsLg1yj2PEhyM9Wzmwyr0esNCQjnilIxVoMVCByYinNGjKbncYxUD+GLc7t/SHI7oJIybq75S9p74jt9vtcrmwYrw1WYODg7pe3HvdRD/txr77pvSwn+ApQ7evCuoi8fM2MC6H8W63i7tfKHGXvdNz3Oi/I84aZTpEUXQ6nSN7HJ67hJ+TWJ5aoP/TpHae31L/yYgfb9gs0rcHDhzo6enx3AN5nr906dL169fpDv5169b9oFUO7iTE1Lb70ksv8TyvKEpSUlJ4eLg+KRQVJicnp6WlDeuduVOpZdixK/pRtE6GGQn9+XjZMC0q/9gLjcmwEFv/E2poHDZod1/bNG7UNnnx4sUTJ07on4X+e+vWrS+//JJ+fnZ29uTJk+kvi7eH/ZQ1pPYPv83BXT6e56/BcdyNGzfq6+uH/R23293U1OT5gekvz5kzR28i0FV2zZo18fHx47tvBBmSJGmalp+fr9e2jx071t7erj9fSr1hjY2N1FzkuUmGhYWlpKQMu9XOYrEUFRXdHtfcKdIZl8vuNQ/8sIToX7lTuKdb0LDf5NChQz09PbpS0w+5cOFCd3c3DbgufNHR0TNmzNB7Q2lUExMTn3rqqds/4HeEw+Vy0T9gtVr9PAdNTU1dXV360qFftKOj49KlS55yrqrqxIkTk5KShrkhVqv1pZdeuj0Su9N06vMNd8OLJkTbF+1OmZmZmZmZI/om+tKnWe7u7q6rq6N9T59Bh8Px8ssvDwthNE1LS0sLCwvzdGQURZk3bx71AZuEnp6exsbGYa6BLMtHjx4d9jS3pmkPPPCAzWbTb/2igyrl5eUJCQkk8frY3skQaFp1H+f/+3E8DSwuLu7dd9+tra0dMS7yEfRPx8fHT5w40VPYNE3LzMxcu3atpwRSU8C9h3/DriqhH6WHPAwFQq9G3bqR0zW5t9+LSwfqh019VFTUo48+OmJoffvc7d+//+bNm8M2mG3btt28edOf8TWZ34IFC9rb2zs7O/3zFrq+VkNDQxMTE4f9ryEhIX/605+oies7rsEdOu708wH6MI54r49uesOSUKKnn1NaWvrwww+TOPntvRLdZbj3/8uIujbiibW7exNQDe8uaM9v771D9E5XLo04d0VFRSP+EKfT6c8XdvQt2p/3RemmO3ZjGVY1p6/vxfUeueWcxmJcXHfqCvfMjdMOc/dwDgSH7tz7hA57hYu+oE5HUw2ap0N395qIj4xFDJAd+E4aAQD2jBHsdryP/MBWAQAQDgAAhAMAAOEAAAQD/wdYVdNCzUtWwwAAAABJRU5ErkJggg==">
+        <img class="tool-dxf-import-help-img" draggable="false" alt="Beispiel: halbes Werkzeugprofil (links) und komplettes Profil inklusive Schaft (rechts), beides jeweils als geschlossene Kontur" data-i18n-en-alt="Example: half tool profile (left) and complete profile including shank (right), both as a closed contour" src="data:image/png;base64,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">
       </div>
     </div>
 
     <div class="paste-actions">
       <button class="btn ghost" id="btnToolDxfImportCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnToolDxfImportSave" type="button" data-i18n-en="Save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Spannfutter bearbeiten" (NEU, Release 214, Sebastian: "Spannfutter-DXF einlesen" -
+     Mammutaufgabe, siehe CNC_Simulation.md) - 1:1 nach dem Vorbild von #toolDxfImportPanel direkt
+     oberhalb (siehe dessen ausführlichen Kommentar für alle hier nicht wiederholten
+     Grundprinzipien: mehrere benannte Profile parallel speicherbar/ladbar/löschbar, derselbe
+     Skalierungsfaktor-Mechanismus, derselbe zugrundeliegende DXF-Rotationsprofil-Parser
+     (parser.js: buildToolProfileFromDxfText()) - "Spannfutter" bezeichnet hier dasselbe, was die
+     App schon an mehreren Stellen so nennt (Werkzeugleisten-Knopf "Spannfutter", Menüpunkt
+     "Werkzeugdarstellung" -> "Spannfutter"): den Werkzeughalter (bislang immer die feste
+     HSK63-Aufnahme), siehe LS_KEY_CHUCK_DXF_PROFILES in app.js.
+     Unterschiede zu #toolDxfImportPanel (Sebastians Spannfutter-Spezifikation, Punkt 4: "Wir
+     brauchen keinen Radius-Referenzpunkt, aber einen Längenreferenzpunkt"):
+      - KEIN Radius-Referenzpunkt-Feld, KEIN "Andere-Seite"-Hinweis auf einen blauen Marker.
+      - Der einzige Referenzpunkt ("Längenreferenzpunkt", Punkt 5: "ist der Punkt, wo das Werkzeug
+        ... anliegt") markiert den Anlagepunkt zum Werkzeug, nicht die Werkzeugspitze - Default
+        beim erstmaligen Einlesen ist deshalb das dist-MAXIMUM statt das Minimum (Punkt 4:
+        "Die Blickrichtung ist immer so, dass das was im DXF oben ist, die Oberseite im
+        Spannfutter ist" - siehe ausführlichen Kommentar bei LS_KEY_CHUCK_DXF_PROFILES in app.js). -->
+<div class="paste-panel" id="chuckDxfImportPanel">
+  <div class="paste-card wide">
+    <h3 data-i18n-en="Edit chuck profile">Spannfutter bearbeiten</h3>
+    <p class="panel-hint" data-i18n-en="Reads a DXF file of a real, axially symmetric chuck (tool holder), automatically converts its outline into a revolve profile and shows it as a 3D chuck body in place of the fixed standard HSK63 holder - can be hidden again at any time via 'Hide chuck' or by simply not selecting a profile for a processing step. The DXF is read in exactly as the chuck stands in front of you: whatever is at the top of the DXF is the top side of the chuck (the side the tool rests against).">Liest eine DXF-Datei eines echten, achssymmetrischen Spannfutters (Werkzeughalters) ein, wandelt die Kontur automatisch in ein Rotationsprofil um und zeigt sie als 3D-Spannfutterkörper anstelle der festen HSK63-Standardaufnahme an - jederzeit über "Spannfutter ausblenden" oder durch einfaches Nicht-Auswählen bei einem Arbeitsgang wieder ausblendbar. Die DXF wird immer so eingelesen, wie das Spannfutter von vorne vor Ihnen steht: Was im DXF oben ist, ist auch die Oberseite des Spannfutters (die Seite, an der das Werkzeug anliegt).</p>
+
+    <div class="tool-dxf-import-body">
+      <div class="tool-dxf-import-controls">
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="Saved chuck profiles">Gespeicherte Spannfutterprofile</div>
+          <select id="chuckDxfProfileSelect" size="5" class="tool-dxf-profile-select"></select>
+          <div class="tool-dxf-profile-list-actions">
+            <button class="btn ghost small" id="btnChuckDxfProfileNew" type="button" data-i18n-en="New">Neu</button>
+            <button class="btn ghost small" id="btnChuckDxfProfileCopy" type="button" data-i18n-en="Copy">Kopieren</button>
+            <button class="btn ghost small" id="btnChuckDxfProfileDelete" type="button" data-i18n-en="Delete">Löschen</button>
+          </div>
+        </div>
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="DXF file">DXF-Datei</div>
+          <input type="file" id="chuckDxfImportFileInput" hidden accept=".dxf">
+          <button class="btn ghost" id="btnChuckDxfImportChooseFile" type="button" data-i18n-en="Choose file…">Datei auswählen…</button>
+          <span class="tool-dxf-import-filename" id="chuckDxfImportFileName" data-i18n-en="No file selected">Keine Datei ausgewählt</span>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Name">Name</span>
+          <input type="text" id="chuckDxfImportNameInput" class="filename-input" maxlength="60" placeholder="z. B. Spannfutter125">
+        </div>
+        <div class="color-field-row" title="Falls die DXF-Datei in cm statt mm exportiert wurde (zu kleine Werte), hier z. B. 10 eintragen." data-i18n-en-title="If the DXF file was exported in cm instead of mm (values far too small), enter e.g. 10 here.">
+          <span data-i18n-en="Scale factor">Skalierungsfaktor</span>
+          <input type="text" id="chuckDxfImportScaleInput" class="filename-input" value="1" inputmode="decimal">
+        </div>
+        <p class="panel-hint" id="chuckDxfImportScaleWarning" data-i18n-en="Please enter a value greater than 0." hidden>Bitte einen Wert größer 0 eingeben.</p>
+        <div class="scale-group" id="chuckDxfImportAlternateRow" hidden>
+          <label class="scale-option"><input type="checkbox" id="chuckDxfImportUseAlternateCheckbox"> <span data-i18n-en="Use other side">Andere Seite verwenden</span></label>
+          <p class="panel-hint" data-i18n-en="The DXF outline forms a closed loop; choose between the two possible profile sides here.">Die DXF-Kontur bildet eine geschlossene Schleife - hier zwischen den beiden möglichen Profilseiten wählen.</p>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Length reference point">Längen-Referenzpunkt</span>
+          <span class="color-field-inputs"><input type="text" id="chuckDxfImportLengthRefInput" class="filename-input" inputmode="decimal"> mm</span>
+        </div>
+        <p class="panel-hint" id="chuckDxfImportErrorHint" hidden></p>
+      </div>
+      <div class="tool-dxf-import-preview">
+        <canvas id="chuckDxfImportCanvas" width="260" height="420"></canvas>
+        <p class="panel-hint" data-i18n-en="Orange line = length reference (the point the tool rests against). It can be dragged directly in the preview or entered precisely via the number field on the left.">Orange Linie = Längen-Referenz (der Punkt, an dem das Werkzeug anliegt). Der Marker lässt sich direkt in der Vorschau verschieben oder über das Zahlenfeld links eingeben.</p>
+      </div>
+      <div class="tool-dxf-import-help">
+        <p class="tool-dxf-import-help-heading" data-i18n-en="The DXF file to be imported must have a closed contour. It can be either half of the chuck profile or the entire profile.">Die einzulesene DXF muss eine geschlossene Kontur haben. Es kann entweder das halbe Spannfutterprofil sein oder das gesamte.</p>
+        <img class="tool-dxf-import-help-img" draggable="false" alt="Beispiel: halbes Spannfutterprofil (links) und komplettes Spannfutterprofil (rechts), beides jeweils als geschlossene Kontur" data-i18n-en-alt="Example: half chuck profile (left) and complete chuck profile (right), both as a closed contour" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlcAAAFrBAMAAAAORbH8AAAAMFBMVEX////+/v78/Pz4+Pj39/fy8vLx8fHw8PDv7+/m5ubl5eXk5OTZ2dnX19fW1tYAAABgcJkeAAAEVElEQVR42u3dQXKbQBAFUFBpDzmBFrlBbpOL5Vo5w5wgsE/VZOEkjm2lBHK3GcT7G7tcqZF49AyIDqjr2kj/+ev3Wmv9+e3L2LWaUzPv5NMTWt91sG6W1qfx6QesxwgsWLBgwYIlsGDBggULlsCClZPz39+GKWC4/iBYIRs6jTFvqwaMMQbs/Xn8D1ZELjHDDCEVGjDI8GLvt7lmlVbeyHyxwDsawoIFC5bAggULFixYAgsWLFiwYAksWLBgwYIlsGDBggULlsCCBQsWLFgCCxYsWLBgCSxYsGDBgiWwYMGCBQuWwIIFCxYsWAKrCayhwFqcMsaMc5ka4Xm590MfNlajnmI3X1qxGrMqq8Y98W+uDVpFYg2RT0fsW9B6vaqckqb3+7W2X7bqmLLAD7XWqMW9mUX+7aoStMAnPJ90vtTtnns6TNde+9w1m7nvhs1evHcG7+MOLFiwYAksWLBgwYIlsNrAqrVOj48Vc4lm7l9/kUhArl9T+qDU3OtZ0R2ZoWz4jUdzf+1KaeCaFdyRib5MvTpveybn0NEDa6Fu/01ab7Yn9GgY2JGpLXzr2OvtiT11COvIDG18Q9ur7YnFilrkW/kPJvNLrUa/K2zsWtFyBu/jDixYsGAJLFiwYMGCJbBgwYIFC9baPPb9hu9ohQ3T278F9RkurfC8vC/s/I5x8jow1/q185gtc/NF78dKbSr01wo5Wet2q/LuNWsYP3hGZN/duqBVuaOj4TylDr/g2HRKHNupw4ZJnYdLlpVT4tgq688C8miLVknE2uQe03HjsXf12XDaeGwfpF11gAULFiyBBQsWLFiwBBYsWLBgwRJYsGDBggVLYMGCBQsWLIEFCxYsWLAEFixYsGDBEliw2sIqsBpP4q2si242NQ2tWbBgwYIlsGDBgnUArEM+ikZlPSxW4pN7isoyDWHBggVLYMGC9chYBZbAOihWWkt62SUnlWUawoIFC5bAgtUS1jHbhioLFixY65LWki4qyzSEBQsWLIHVBlaBJbBgwYIVmqSW9MKLmSrLNIQFCxYsuQvroG1DlQULFixYsJpIUku6qCzTEBYsWLCSDh6wVJbAggULFixY+0lK/35pT0FlmYawdol11LahyoIFCxYsWAILFqyu65L690VlqazdYRVYAgsWLFiwYAksWLCWJaElvbhbpbJyK+uwbUOVBQsWLFiwBBYsWLBgZSahJV0SsYrKEliwYMGCBUtgwYIF6+hYW7cNw1vSyzdIZZmGsGDBgiWwYMGCBQvW7xRY+0l4S7qYhioLFixYsFbmuDej3IG1/WlW8EX4FXv/tL/CCj7RKnmV1cL5+2WjwlqL1cSKFVpaa/b+Lo+Gl20Kay1WG5+iA0tr1Qad9jcLI0tr3QaddlhYgaW1boPOz7/W2/+6f7BVa+VMecaam5FYUlo1Zph7sfaVTfasD9KwYMGCBUtgwYIFCxas5PyYuq7r6g9Yt1Prvz/azC+FX5b8SFc5NwAAAABJRU5ErkJggg==">
+      </div>
+    </div>
+
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnChuckDxfImportCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnChuckDxfImportSave" type="button" data-i18n-en="Save">Speichern</button>
     </div>
   </div>
 </div>
@@ -5248,6 +5383,13 @@
         <button class="menu-item submenu-trigger" id="ctxToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
         <div class="submenu-dropdown" id="ctxToolsDropdown" hidden>
           <button class="menu-item" id="ctxBtnEditToolProfile" type="button" data-i18n-en="Edit tool profile">Werkzeugprofil bearbeiten</button>
+          <!-- "Spannfutter bearbeiten" im Kontextmenü (NEU, Release 214) - direkt im "Werkzeuge"-
+               Flyout, als zweiter Eintrag direkt nach "Werkzeugprofil bearbeiten" (vor dem
+               Trennstrich zu "Säge"/"Spannfutter"/"Fräser") - spiegelt dieselbe Reihenfolge wie im
+               echten Menüband-Untermenü "Werkzeuge" (#submenuToolsTop). Exakt dieselbe
+               ".click()"-Weiterleitungs-Technik wie "Werkzeugprofil bearbeiten" direkt darüber -
+               ruft #btnChuckDxfImport auf. -->
+          <button class="menu-item" id="ctxBtnEditChuckProfile" type="button" data-i18n-en="Edit chuck profile">Spannfutter bearbeiten</button>
           <div class="context-menu-divider"></div>
           <button class="menu-item" id="ctxBtnToolSaw" type="button" data-i18n-en="Saw">Säge</button>
           <button class="menu-item" id="ctxBtnToolCollet" type="button" data-i18n-en="Collet">Spannfutter</button>
@@ -5391,6 +5533,15 @@
   // für diesen Arbeitsgang bereits bestätigt wurde - exakt dieselbe Begründung wie bei
   // TOOLMODE/TOOLTYPE, die ebenfalls immer geschrieben werden, nie nur bei einem "aktiven" Wert.
   const TOOL_PROFILE_RE = /TOOLPROFILE\s+(\S+)/i;
+  // "CHUCKPROFILE" (NEU, Release 214, Sebastian: "Spannfutter-DXF einlesen" - Mammutaufgabe, siehe
+  // CNC_Simulation.md) - sechster Marker nach demselben "; SCHLÜSSELWORT WERT"-Prinzip wie
+  // TOOLPROFILE oben, ebenfalls rein manuell über den "+Werkzeuge (T)"-Dialog gesetzt (siehe
+  // dortiges neues #chuckProfileSelect-Dropdown sowie insertToolDataComment() in app.js). WERT ist
+  // entweder die id eines per "Spannfutter bearbeiten" gespeicherten Profils (chuckDxfProfiles,
+  // siehe app.js) oder das feste Schlüsselwort NONE - exakt dieselbe Behandlung wie bei
+  // TOOLPROFILE (siehe dortigen Kommentar, "kein Profil" vs. "noch nie gesetzt" wird bewusst nicht
+  // unterschieden).
+  const CHUCK_PROFILE_RE = /CHUCKPROFILE\s+(\S+)/i;
 
   // Durchsucht die übergebenen Zeilen (typischerweise ein einzelner Arbeitsgang-Abschnitt) nach
   // Radius/Länge und liefert {radius, length, isBlade, toolMode, toolType} (radius/length jeweils
@@ -5422,7 +5573,7 @@
   // Testfall), bleibt der BLADE-Wert als Rückfallebene erhalten, statt ersatzlos auf `null` zu
   // fallen.
   function extractToolData(lines) {
-    let radius = null, length = null, blade = null, toolMode = null, toolType = null, toolProfileId = null;
+    let radius = null, length = null, blade = null, toolMode = null, toolType = null, toolProfileId = null, chuckProfileId = null;
     for (let i = 0; i < lines.length && toolType === null; i++) {
       const m = TOOL_TYPE_RE.exec(lines[i]);
       if (m) toolType = m[1].toLowerCase();
@@ -5462,11 +5613,18 @@
       const m = TOOL_PROFILE_RE.exec(lines[i]);
       if (m && m[1].toUpperCase() !== 'NONE') toolProfileId = m[1];
     }
+    // "CHUCKPROFILE" (NEU, Release 214, siehe CHUCK_PROFILE_RE oben) - unabhängig von den übrigen
+    // Markern über alle Zeilen gesucht, erster Treffer gewinnt (exakt dasselbe Muster wie
+    // TOOLPROFILE oben).
+    for (let i = 0; i < lines.length && chuckProfileId === null; i++) {
+      const m = CHUCK_PROFILE_RE.exec(lines[i]);
+      if (m && m[1].toUpperCase() !== 'NONE') chuckProfileId = m[1];
+    }
     // Finaler Zahlenwert: eine tatsächlich gefundene LENGTH-Zeile gewinnt immer (egal ob generische
     // LENGTH-Notation oder die vom Dialog geschriebene, aktuell gültige Länge/Sägeblattstärke); nur
     // wenn gar keine LENGTH-Zeile gefunden wurde, wird auf den BLADE-Wert zurückgegriffen (reine
     // BLADE-Notation ohne LENGTH-Zeile, mit oder ohne TOOLTYPE-Markierung).
-    return { radius, length: length !== null ? length : blade, isBlade, toolMode, toolType, toolProfileId };
+    return { radius, length: length !== null ? length : blade, isBlade, toolMode, toolType, toolProfileId, chuckProfileId };
   }
 
   // Teilt einen durchgehenden Zeilenblock an jeder erkannten Nullpunktverschiebung (siehe
@@ -8567,8 +8725,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 213;
-  const APP_RELEASE_TIMESTAMP = '13.10.2026, 06:00 Uhr';
+  const APP_RELEASE_NUMBER = 215;
+  const APP_RELEASE_TIMESTAMP = '16.10.2026, 09:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -10015,6 +10173,147 @@ CORNERRADIUS=GFIL r=
   }
 
   // ============================================================
+  // "Spannfutter bearbeiten" (NEU, Release 214, Sebastian: "Spannfutter-DXF einlesen" -
+  // Mammutaufgabe) - Datenmodell für gespeicherte Spannfutter-(Werkzeughalter-)Profile,
+  // 1:1 nach dem Vorbild von toolDxfProfiles direkt oberhalb (siehe dessen ausführliche
+  // Herleitung für alle hier NICHT erneut wiederholten Grundprinzipien: Persistenz über einen
+  // einzigen "cncsim."-Schlüssel, automatisch vom generischen "otherSettings"-Sicherheitsnetz
+  // (collectOtherCncsimSettings()) mitexportiert/-importiert, Normalisierung beim Laden,
+  // id-basiertes Speichern/Aktualisieren, "Kopieren" mit automatischer "_1"/"_2"/...-Namensgebung
+  // bei Kollision).
+  //
+  // "Spannfutter" bezeichnet hier - WICHTIG, keine neue Begriffsbedeutung - exakt dasselbe, was
+  // die App schon bisher an mehreren Stellen so nennt (Werkzeugleisten-Knopf
+  // #btnToggleToolHolder "Spannfutter", Menüpunkt "Werkzeugdarstellung" -> "Spannfutter", siehe
+  // TOOL_HOLDER_HSK63_PROFILE weiter unten): den Werkzeughalter (HSK63-Aufnahme samt eventuellem
+  // Sägeblatt-Adapterstück), der bislang IMMER eine fest programmierte Profilgeometrie war. Dieses
+  // neue Datenmodell erlaubt es, diese feste Geometrie - genau wie schon beim Werkzeug selbst
+  // (toolDxfProfiles) - durch eine per DXF eingelesene, eigene Kontur zu ersetzen.
+  //
+  // Unterschiede zu toolDxfProfiles (bestätigte Antworten auf Sebastians Vorgaben, Punkt 4+5 der
+  // Spannfutter-Spezifikation):
+  //  - KEIN radiusRef - das Spannfutter ist für keine Radius-/Längen-Berechnung (G41/G42 usw.)
+  //    relevant, rein optische Darstellung, siehe buildChuckProfileForRender() weiter unten.
+  //  - Der Default-Referenzpunkt beim erstmaligen Einlesen einer DXF-Datei ist das MAXIMUM der
+  //    "dist"-Werte, nicht das Minimum wie bei toolDxfProfiles (siehe dortige Herleitung zur
+  //    "Werkzeugspitze immer unten"-Konvention, Release 207): Sebastian wörtlich zur
+  //    Spannfutter-Konvention: "Die Blickrichtung ist immer so, dass das was im DXF oben ist, die
+  //    Oberseite im Spannfutter ist" - "oben" in der DXF entspricht dabei demselben "dist wächst
+  //    nach oben"-Bild wie in der 2D-Vorschau (siehe draw() im Dialog-IIFE weiter unten) - die
+  //    "Oberseite" (Punkt, an dem das Werkzeug anliegt) ist deshalb das dist-MAXIMUM, nicht das
+  //    Minimum. Der Längenreferenzpunkt selbst ("Längenreferenzpunkt ist der Punkt, wo das
+  //    Werkzeug ... anliegt", Punkt 5 der Spezifikation) wird dadurch beim erstmaligen Einlesen
+  //    direkt sinnvoll auf diese Oberseite vorbelegt, bleibt aber wie beim Werkzeugprofil jederzeit
+  //    manuell verschiebbar.
+  const LS_KEY_CHUCK_DXF_PROFILES = 'cncsim.chuckDxfProfiles';
+  function normalizeChuckDxfProfile(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
+    const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+    const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
+    const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
+    if (!id || !name || !dxfText || !mainProfile) return null;
+    const alternateProfile = normalizeDxfRDistArray(raw.alternateProfile);
+    const usedAlternate = !!raw.usedAlternate && !!alternateProfile;
+    let scale = Number(raw.scale);
+    if (!Number.isFinite(scale) || scale <= 0) scale = 1;
+    const activeProfile = usedAlternate ? alternateProfile : mainProfile;
+    const distValues = activeProfile.map(function (p) { return p.dist; });
+    const minDist = Math.min.apply(null, distValues);
+    const maxDist = Math.max.apply(null, distValues);
+    let lengthRef = Number(raw.lengthRef);
+    // Default MAXIMUM statt Minimum - siehe ausführlichen Kommentar oberhalb bei
+    // LS_KEY_CHUCK_DXF_PROFILES ("DXF oben" = Spannfutter-Oberseite = Anlagepunkt des Werkzeugs).
+    const defaultRef = maxDist;
+    if (!Number.isFinite(lengthRef)) lengthRef = defaultRef;
+    lengthRef = Math.max(minDist, Math.min(maxDist, lengthRef));
+    const now = Date.now();
+    const createdAt = Number(raw.createdAt);
+    const updatedAt = Number(raw.updatedAt);
+    return {
+      id: id, name: name, dxfText: dxfText,
+      mainProfile: mainProfile, alternateProfile: alternateProfile,
+      wasClosedLoop: !!raw.wasClosedLoop,
+      usedAlternate: usedAlternate,
+      scale: scale,
+      lengthRef: lengthRef,
+      createdAt: Number.isFinite(createdAt) ? createdAt : now,
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : now
+    };
+  }
+  function loadPersistedChuckDxfProfiles() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_CHUCK_DXF_PROFILES);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data.map(normalizeChuckDxfProfile).filter(Boolean);
+    } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
+    return [];
+  }
+  function persistChuckDxfProfiles(list) {
+    try { window.localStorage.setItem(LS_KEY_CHUCK_DXF_PROFILES, JSON.stringify(list)); } catch (e) { /* s.o. */ }
+  }
+  let chuckDxfProfiles = [];
+  function generateChuckDxfProfileId() {
+    return 'cdp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+  function getChuckDxfProfileById(id) {
+    for (let i = 0; i < chuckDxfProfiles.length; i++) { if (chuckDxfProfiles[i].id === id) return chuckDxfProfiles[i]; }
+    return null;
+  }
+  function getActiveChuckDxfRDistProfile(p) {
+    if (!p) return null;
+    return (p.usedAlternate && p.alternateProfile) ? p.alternateProfile : p.mainProfile;
+  }
+  function saveChuckDxfProfile(data) {
+    const now = Date.now();
+    const incoming = Object.assign({}, data, {
+      updatedAt: now,
+      createdAt: (data && Number.isFinite(Number(data.createdAt))) ? Number(data.createdAt) : now
+    });
+    if (!incoming.id) incoming.id = generateChuckDxfProfileId();
+    const normalized = normalizeChuckDxfProfile(incoming);
+    if (!normalized) return null;
+    const idx = chuckDxfProfiles.findIndex(function (p) { return p.id === normalized.id; });
+    if (idx === -1) chuckDxfProfiles.push(normalized);
+    else chuckDxfProfiles[idx] = normalized;
+    persistChuckDxfProfiles(chuckDxfProfiles);
+    return normalized;
+  }
+  function deleteChuckDxfProfile(id) {
+    const idx = chuckDxfProfiles.findIndex(function (p) { return p.id === id; });
+    if (idx === -1) return false;
+    chuckDxfProfiles.splice(idx, 1);
+    persistChuckDxfProfiles(chuckDxfProfiles);
+    return true;
+  }
+  function uniqueChuckDxfProfileCopyName(baseName) {
+    const existing = new Set(chuckDxfProfiles.map(function (p) { return p.name; }));
+    let n = 1;
+    let candidate = baseName + '_' + n;
+    while (existing.has(candidate)) { n++; candidate = baseName + '_' + n; }
+    return candidate;
+  }
+  function copyChuckDxfProfile(id) {
+    const p = getChuckDxfProfileById(id);
+    if (!p) return null;
+    const cloneProfileArray = function (arr) { return arr ? arr.map(function (pt) { return { r: pt.r, dist: pt.dist }; }) : arr; };
+    return saveChuckDxfProfile({
+      name: uniqueChuckDxfProfileCopyName(p.name),
+      dxfText: p.dxfText,
+      mainProfile: cloneProfileArray(p.mainProfile),
+      alternateProfile: cloneProfileArray(p.alternateProfile),
+      wasClosedLoop: p.wasClosedLoop,
+      usedAlternate: p.usedAlternate,
+      scale: p.scale,
+      lengthRef: p.lengthRef
+      // Bewusst OHNE id/createdAt/updatedAt - siehe copyToolDxfProfile() oben für die volle
+      // Begründung.
+    });
+  }
+
+  // ============================================================
   // "Buttonfarbe einstellen" ("Ansicht" -> "Buttonfarbe einstellen", 53. Runde, Sebastian:
   // "Highlight-Farbe für 'Datei', 'Bearbeiten' und 'Ansicht', wenn aktiv. Standard bleibt Rot.
   // Schrift- und Hintergrundfarbe dürfen nicht identisch sein. Eine gewählte Farbe gilt für alle
@@ -11326,6 +11625,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // #toolProfileSelect in template_top.html sowie refreshToolProfileDropdownOptions()/
   // btnInsertToolData-Klick-Handler/confirmInsertToolData() weiter unten.
   const toolProfileSelect = el('toolProfileSelect');
+  // "Spannfutter bearbeiten" (NEU, Release 214) - siehe ausführlichen HTML-Kommentar bei
+  // #chuckProfileSelect in template_top.html sowie refreshChuckProfileDropdownOptions()/
+  // btnInsertToolData-Klick-Handler/confirmInsertToolData() weiter unten.
+  const chuckProfileSelect = el('chuckProfileSelect');
   // Arbeitsgang-Abschnitt, für den der "+Werkzeuge (T)"-Dialog gerade geöffnet ist (siehe
   // applyToolTypeUI() weiter unten) - null, solange der Dialog geschlossen ist.
   let toolDataActiveSec = null;
@@ -13139,6 +13442,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // sec.toolLength selbst (bestätigte Antwort auf die Vorrang-Klärungsfrage: Programmtext/
         // Dialog-Zahlenwerte haben bei Konflikt immer Vorrang vor dem DXF-Profil).
         sec.toolProfileId = toolData.toolProfileId;
+        // "CHUCKPROFILE" (NEU, Release 214) - 1:1 dasselbe Prinzip wie sec.toolProfileId oben, nur
+        // für ein gespeichertes Spannfutter-(Werkzeughalter-)Profil (chuckDxfProfiles), siehe
+        // CHUCK_PROFILE_RE/extractToolData() in parser.js.
+        sec.chuckProfileId = toolData.chuckProfileId;
       });
     }
     // ALLE Leerzeilen werden in der Programm-Ansicht ausgeblendet (Benutzer, 20. Runde: "Wenn
@@ -14153,7 +14460,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             // colorCursor wird zusätzlich am Segment gemerkt (Release 100, Arbeitsgangfarbe) -
             // erlaubt recolorOpSegmentsAndPoints() ein reines Neueinfärben ohne kompletten
             // setScope()-Neuaufbau, siehe dort.
-            segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId });
+            segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId });
           });
         } else if (current.sections.length) {
           // Kein Arbeitsgang-Schema erkannt: Das Programm ist trotzdem gültig und wird als
@@ -14183,7 +14490,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
             title: sec.title, opIndex: sec.index, points: pts, context: !isActive,
-            toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId
+            toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId
           });
         });
       }
@@ -14202,7 +14509,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     points = [];
     segments.filter(seg => !seg.context).forEach(seg => {
       seg.rangeStart = points.length;
-      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, colorCursor: seg.colorCursor, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode, toolProfileId: seg.toolProfileId }, p)));
+      seg.points.forEach(p => points.push(Object.assign({ color: seg.color, colorCursor: seg.colorCursor, opTitle: seg.title, opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolMode: seg.toolMode, toolProfileId: seg.toolProfileId, chuckProfileId: seg.chuckProfileId }, p)));
     });
 
     // Sichtbare Punkte fürs Kamera-Framing/Raster: inklusive gedimmtem Kontext.
@@ -16664,6 +16971,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }));
   }
 
+  // "Spannfutter bearbeiten" (NEU, Release 214) - 1:1 dasselbe Prinzip wie
+  // buildToolProfileForRender() direkt oberhalb, nur für ein gespeichertes Spannfutter-
+  // (Werkzeughalter-)Profil (chuckDxfProfiles) statt ein Werkzeugprofil. Die Vorzeichen-Heuristik
+  // selbst ist bewusst UNVERÄNDERT dieselbe generische "lengthRef näher an Minimum oder Maximum"-
+  // Berechnung - sie bildet ohnehin nur ab, dass das Profil an SEINEM eigenen Referenzpunkt (hier:
+  // dem Anlagepunkt zum Werkzeug, siehe Kommentar bei LS_KEY_CHUCK_DXF_PROFILES) auf dist=0
+  // abgebildet wird und von dort aus monoton in EINE konsistente Richtung weiterläuft - unabhängig
+  // davon, ob dieser Referenzpunkt (wie beim Werkzeug üblich) näher am Minimum oder (wie beim
+  // Spannfutter per Konvention) näher am Maximum der DXF-eigenen "dist"-Werte liegt. Rückgabewert
+  // ist ein für drawToolHolder() verwendbares Profil mit "dist"=0 am Anlagepunkt, wachsend in
+  // Richtung Spindel/Maschine (= dieselbe "origin"-Bedeutung wie beim bisherigen, fest
+  // programmierten TOOL_HOLDER_HSK63_PROFILE, siehe drawToolHolder()).
+  function buildChuckProfileForRender(entry) {
+    const raw = getActiveChuckDxfRDistProfile(entry);
+    if (!raw || raw.length < 2) return null;
+    const distVals = raw.map(p => p.dist);
+    const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+    const tipNearMin = (entry.lengthRef - distMin) <= (distMax - entry.lengthRef);
+    return raw.map(p => ({
+      r: p.r,
+      dist: tipNearMin ? (p.dist - entry.lengthRef) : (entry.lengthRef - p.dist)
+    }));
+  }
+
   function drawTool(proj) {
     // Werkzeug (Zylinder) und Spannfutter (HSK63-Halter, s.u.) sind seit der 74. Runde zwei
     // UNABHÄNGIG voneinander aus-/einblendbare Baugruppen (siehe showTool/showToolHolder oben,
@@ -16903,6 +17234,43 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // bietet seitdem nur noch "Eingespannte Länge" (= Halter sichtbar) und "Ohne HSK63-Sample"
     // (= dasselbe wie hier ausgeblendet), keine eigenständige Darstellungsvariante mehr.
     if (showToolHolder) {
+      // "Spannfutter bearbeiten" (NEU, Release 214, siehe LS_KEY_CHUCK_DXF_PROFILES/
+      // buildChuckProfileForRender() weiter oben sowie Konzept_DXF_Werkzeugaufnahmen.md) - ein
+      // per Arbeitsgang zugewiesenes Spannfutter-Profil (sec.chuckProfileId, siehe
+      // extractToolData() in parser.js) ersetzt, wenn vorhanden, die KOMPLETTE übrige
+      // Halter-Baugruppe (Sägeblatt-Adapterstück UND HSK63-Profil, siehe "else"-Zweig weiter
+      // unten) durch die eigene DXF-Kontur - exakt dasselbe "nur verwenden, wenn (a) überhaupt
+      // zugewiesen UND (b) das Profil tatsächlich noch existiert"-Prinzip wie beim Werkzeugprofil
+      // oben (ein seitdem gelöschtes Profil fällt automatisch auf die bisherige HSK63-Darstellung
+      // zurück, siehe getChuckDxfProfileById()). Bewusst OHNE einen eigenen globalen
+      // "immer ignorieren"-Fallback-Schalter (anders als useToolProfileShapes beim Werkzeugprofil):
+      // showToolHolder selbst (dieser komplette if-Block) ist für das Spannfutter bereits exakt
+      // diese Ausblend-Garantie ("Über 'Spannfutter ausblenden' wird das Spannfutter wie gewohnt
+      // ausgeblendet", Sebastians Spezifikation Punkt 9) - ein zusätzlicher zweiter Schalter wäre
+      // hier redundant.
+      // origin = "top" (das vom Werkstück abgewandte Ende des Werkzeugzylinders selbst, OHNE
+      // HSK63_CLAMP_INSET-Versatz) - entspricht exakt Sebastians Definition des
+      // Längenreferenzpunkts ("der Punkt, wo das Werkzeug ... anliegt", Punkt 5 der
+      // Spezifikation): das eigene lengthRef des Spannfutter-Profils bildet bereits GENAU diesen
+      // Anlagepunkt auf dist=0 ab (siehe buildChuckProfileForRender()), ein zusätzlicher
+      // Insert-Versatz wie beim festen HSK63-Profil ist hier weder nötig noch sinnvoll (der
+      // Benutzer kann den Anlagepunkt im Editier-Dialog ohnehin frei auf die gewünschte Stelle der
+      // eigenen DXF-Kontur legen).
+      const chuckProfileEntry = p.chuckProfileId ? getChuckDxfProfileById(p.chuckProfileId) : null;
+      const chuckRenderProfile = chuckProfileEntry ? buildChuckProfileForRender(chuckProfileEntry) : null;
+      // Nur für Diagnose/Regressionstests (window.__debug_getChuckProfileRenderInfo in den
+      // instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, siehe
+      // window.__lastToolProfileRenderInfo oben für dasselbe Prinzip beim Werkzeugprofil.
+      window.__lastChuckProfileRenderInfo = {
+        chuckProfileId: p.chuckProfileId || null,
+        hasEntry: !!chuckProfileEntry,
+        hasRenderProfile: !!chuckRenderProfile,
+        pointCount: chuckRenderProfile ? chuckRenderProfile.length : 0
+      };
+      if (chuckRenderProfile) {
+        drawToolHolder(top, axis, u, v, proj, chuckRenderProfile, colletAppearance);
+        return;
+      }
       // "T-Längen" (60. Runde, siehe HSK63_CLAMP_INSET oben): verschiebt NUR den Ansatzpunkt der
       // kompletten Halter-Baugruppe (Adapter+Halter bzw. Halter direkt) um HSK63_CLAMP_INSET
       // entlang der Achse ZURÜCK (Richtung Werkstück) - der Zylinder selbst (tip->top, s.o.)
@@ -17350,6 +17718,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // deaktiviert/dynamisch umbeschriftet), die eigentliche Verdrahtung steht bei den übrigen
     // ctxItems-Klick-Listenern weiter unten.
     editToolProfile: el('ctxBtnEditToolProfile'),
+    editChuckProfile: el('ctxBtnEditChuckProfile'), // NEU, Release 214
     toolSaw: el('ctxBtnToolSaw'),
     toolCollet: el('ctxBtnToolCollet'),
     toolCutter: el('ctxBtnToolCutter')
@@ -17477,6 +17846,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   ctxItems.columnScale.addEventListener('click', () => el('btnColumnScale').click());
   ctxItems.area3dSettings.addEventListener('click', () => el('btnArea3dSettings').click());
   ctxItems.editToolProfile.addEventListener('click', () => el('btnToolDxfImport').click());
+  ctxItems.editChuckProfile.addEventListener('click', () => el('btnChuckDxfImport').click()); // NEU, Release 214
   ctxItems.toolSaw.addEventListener('click', () => el('btnToolAppearanceSaw').click());
   ctxItems.toolCollet.addEventListener('click', () => el('btnToolAppearanceCollet').click());
   ctxItems.toolCutter.addEventListener('click', () => el('btnToolAppearanceCutter').click());
@@ -19894,6 +20264,356 @@ Sebastian Bäcker (Anschrift wie oben)`,
     draw();
   })();
 
+  // ============================================================
+  // "Spannfutter bearbeiten" (NEU, Release 214, #chuckDxfImportPanel) - UI-Verdrahtung, 1:1 nach
+  // dem Vorbild des "Werkzeug-DXF einlesen"-IIFE direkt oberhalb (siehe dessen ausführliche
+  // Kommentare für alle hier NICHT erneut wiederholten Grundprinzipien). Das Datenmodell selbst
+  // (chuckDxfProfiles/saveChuckDxfProfile() usw.) sitzt weiter oben neben toolDxfProfiles.
+  // Unterschiede zum Werkzeugprofil-Dialog (siehe dortigen Datenmodell-Kommentar bei
+  // LS_KEY_CHUCK_DXF_PROFILES für die volle Begründung):
+  //  - KEIN Radius-Referenzpunkt (kein radiusRefInput, kein blauer "R"-Marker in der Vorschau).
+  //  - Default-Referenzpunkt beim erstmaligen Einlesen ist das MAXIMUM statt das Minimum.
+  // ============================================================
+  (function () {
+    const panel = el('chuckDxfImportPanel');
+    const profileSelect = el('chuckDxfProfileSelect');
+    const fileInput = el('chuckDxfImportFileInput');
+    const fileNameLabel = el('chuckDxfImportFileName');
+    const nameInput = el('chuckDxfImportNameInput');
+    const scaleInput = el('chuckDxfImportScaleInput');
+    const scaleWarning = el('chuckDxfImportScaleWarning');
+    const alternateRow = el('chuckDxfImportAlternateRow');
+    const alternateCheckbox = el('chuckDxfImportUseAlternateCheckbox');
+    const lengthRefInput = el('chuckDxfImportLengthRefInput');
+    const errorHint = el('chuckDxfImportErrorHint');
+    const canvas = el('chuckDxfImportCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentId = null;
+    let dxfText = null;
+    let parsedMain = null;
+    let parsedAlternate = null;
+    let wasClosedLoop = false;
+    let lengthRef = 0;
+    let refsInitialized = false;
+    let lastScale = 1;
+    let dragTarget = null; // 'length' | null, während eines Canvas-Drags
+
+    function activeProfile() {
+      return (alternateCheckbox.checked && parsedAlternate) ? parsedAlternate : parsedMain;
+    }
+    function distRange() {
+      const prof = activeProfile();
+      if (!prof || !prof.length) return { min: 0, max: 0 };
+      const vals = prof.map(p => p.dist);
+      return { min: Math.min.apply(null, vals), max: Math.max.apply(null, vals) };
+    }
+    function clampRefs() {
+      const { min, max } = distRange();
+      lengthRef = Math.max(min, Math.min(max, lengthRef));
+    }
+    function fmtNum(n) { return (Math.round(n * 1000) / 1000).toString().replace('.', ','); }
+    function parseNum(s) {
+      const n = parseFloat(String(s == null ? '' : s).trim().replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    }
+    function syncRefInputsFromState() {
+      lengthRefInput.value = fmtNum(lengthRef);
+    }
+
+    // Zeichnet die 2D-Vorschau - 1:1 dieselbe Technik wie beim Werkzeugprofil-Dialog oben, nur mit
+    // genau einem Referenzmarker (orange "L", der Anlagepunkt zum Werkzeug) statt zweien.
+    function draw() {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const prof = activeProfile();
+      if (!prof || prof.length < 2) {
+        ctx.fillStyle = '#8a93a6';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(T('Keine DXF-Datei geladen', 'No DXF file loaded'), w / 2, h / 2);
+        return;
+      }
+      const distVals = prof.map(p => p.dist);
+      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
+      const padding = 24;
+      const drawableH = h - padding * 2;
+      const drawableW = w - padding * 2;
+      const distSpan = (distMax - distMin) || 1;
+      function yOf(dist) { return padding + drawableH * (1 - (dist - distMin) / distSpan); }
+      function xOf(r) { return w / 2 + (r / rMax) * (drawableW / 2) * 0.9; }
+
+      const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
+      ctx.beginPath();
+      ordered.forEach((p, i) => {
+        const x = xOf(p.r), y = yOf(p.dist);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      for (let i = ordered.length - 1; i >= 0; i--) {
+        ctx.lineTo(xOf(-ordered[i].r), yOf(ordered[i].dist));
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(120,140,170,0.35)';
+      ctx.fill();
+      ctx.strokeStyle = '#5b6b85';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(w / 2, padding);
+      ctx.lineTo(w / 2, h - padding);
+      ctx.strokeStyle = '#8a93a6';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      function drawMarker(dist, color, label) {
+        const y = yOf(dist);
+        ctx.beginPath();
+        ctx.moveTo(padding * 0.4, y);
+        ctx.lineTo(w - padding * 0.4, y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(w - padding * 0.4, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, 4, y - 4);
+      }
+      drawMarker(lengthRef, '#e0792f', 'L');
+    }
+
+    function yToDistHelpers() {
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = canvas.height / rect.height;
+      const padding = 24;
+      const drawableH = canvas.height - padding * 2;
+      const { min, max } = distRange();
+      const span = (max - min) || 1;
+      return {
+        canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
+        distOf: (canvasY) => min + (1 - (canvasY - padding) / drawableH) * span,
+        yOf: (dist) => padding + drawableH * (1 - (dist - min) / span)
+      };
+    }
+    function hitTestMarker(clientYOffsetInRect) {
+      const helpers = yToDistHelpers();
+      const canvasY = helpers.canvasY(clientYOffsetInRect);
+      const tol = 8;
+      if (Math.abs(helpers.yOf(lengthRef) - canvasY) <= tol) return 'length';
+      return null;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const target = hitTestMarker(e.clientY - rect.top);
+      if (target) { dragTarget = target; e.preventDefault(); }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragTarget || !panel.classList.contains('open')) return;
+      const rect = canvas.getBoundingClientRect();
+      const helpers = yToDistHelpers();
+      const dist = helpers.distOf(helpers.canvasY(e.clientY - rect.top));
+      lengthRef = dist;
+      clampRefs();
+      syncRefInputsFromState();
+      draw();
+    });
+    window.addEventListener('mouseup', () => { dragTarget = null; });
+
+    lengthRefInput.addEventListener('change', () => {
+      const n = parseNum(lengthRefInput.value);
+      if (n !== null) lengthRef = n;
+      clampRefs();
+      syncRefInputsFromState();
+      draw();
+    });
+
+    function showError(msg) {
+      errorHint.textContent = msg;
+      errorHint.hidden = !msg;
+    }
+
+    function reparse() {
+      if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      scaleWarning.hidden = true;
+      try {
+        const result = window.CNCParser.buildToolProfileFromDxfText(dxfText, { scale });
+        parsedMain = result.profile;
+        parsedAlternate = result.alternateProfile;
+        wasClosedLoop = result.wasClosedLoop;
+        alternateRow.hidden = !wasClosedLoop;
+        if (!wasClosedLoop) alternateCheckbox.checked = false;
+        if (!refsInitialized) {
+          // Default MAXIMUM statt Minimum (anders als beim Werkzeugprofil-Dialog) - siehe
+          // ausführlichen Kommentar bei LS_KEY_CHUCK_DXF_PROFILES ("DXF oben" = Spannfutter-
+          // Oberseite = Anlagepunkt des Werkzeugs).
+          const { max } = distRange();
+          lengthRef = max;
+          refsInitialized = true;
+        } else if (scale !== lastScale && lastScale > 0) {
+          const ratio = scale / lastScale;
+          lengthRef *= ratio;
+        }
+        lastScale = scale;
+        clampRefs();
+        syncRefInputsFromState();
+        showError('');
+      } catch (err) {
+        parsedMain = null; parsedAlternate = null; wasClosedLoop = false;
+        alternateRow.hidden = true;
+        showError(err && err.message ? err.message : String(err));
+      }
+      draw();
+    }
+    scaleInput.addEventListener('change', reparse);
+    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); draw(); });
+
+    function stripDxfExtension(filename) { return filename.replace(/\.dxf$/i, ''); }
+
+    el('btnChuckDxfImportChooseFile').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      readFileAsText(file, (text) => {
+        dxfText = text;
+        fileNameLabel.textContent = file.name;
+        if (!nameInput.value.trim()) nameInput.value = stripDxfExtension(file.name);
+        refsInitialized = false;
+        lastScale = parseNum(scaleInput.value) || 1;
+        reparse();
+      }, () => {
+        showError(T('Die Datei konnte nicht gelesen werden.', 'The file could not be read.'));
+      });
+      fileInput.value = '';
+    });
+
+    function populateProfileSelect(selectId) {
+      profileSelect.innerHTML = '';
+      chuckDxfProfiles.slice().sort((a, b) => a.name.localeCompare(b.name, 'de')).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === selectId) opt.selected = true;
+        profileSelect.appendChild(opt);
+      });
+    }
+
+    function resetForm() {
+      currentId = null;
+      dxfText = null;
+      parsedMain = null; parsedAlternate = null; wasClosedLoop = false;
+      lengthRef = 0; refsInitialized = false; lastScale = 1;
+      nameInput.value = '';
+      scaleInput.value = '1';
+      scaleWarning.hidden = true;
+      alternateRow.hidden = true;
+      alternateCheckbox.checked = false;
+      fileNameLabel.textContent = T('Keine Datei ausgewählt', 'No file selected');
+      lengthRefInput.value = '';
+      showError('');
+      profileSelect.selectedIndex = -1;
+      draw();
+    }
+
+    function loadProfileIntoForm(p) {
+      currentId = p.id;
+      dxfText = p.dxfText;
+      parsedMain = p.mainProfile;
+      parsedAlternate = p.alternateProfile;
+      wasClosedLoop = p.wasClosedLoop;
+      nameInput.value = p.name;
+      scaleInput.value = fmtNum(p.scale);
+      lastScale = p.scale;
+      scaleWarning.hidden = true;
+      alternateRow.hidden = !wasClosedLoop;
+      alternateCheckbox.checked = !!p.usedAlternate;
+      fileNameLabel.textContent = T('Aus gespeichertem Profil geladen', 'Loaded from saved profile');
+      lengthRef = p.lengthRef;
+      refsInitialized = true;
+      syncRefInputsFromState();
+      showError('');
+      draw();
+    }
+
+    profileSelect.addEventListener('change', () => {
+      const p = getChuckDxfProfileById(profileSelect.value);
+      if (p) loadProfileIntoForm(p);
+    });
+    el('btnChuckDxfProfileNew').addEventListener('click', resetForm);
+    el('btnChuckDxfProfileCopy').addEventListener('click', () => {
+      const id = profileSelect.value;
+      if (!id || !getChuckDxfProfileById(id)) return;
+      const copy = copyChuckDxfProfile(id);
+      if (!copy) return;
+      populateProfileSelect(copy.id);
+      loadProfileIntoForm(copy);
+      if (typeof refreshChuckProfileDropdownOptions === 'function') refreshChuckProfileDropdownOptions();
+    });
+    el('btnChuckDxfProfileDelete').addEventListener('click', () => {
+      const id = profileSelect.value;
+      const p = id && getChuckDxfProfileById(id);
+      if (!p) return;
+      if (!window.confirm(T('Spannfutterprofil "' + p.name + '" wirklich löschen?', 'Really delete the "' + p.name + '" chuck profile?'))) return;
+      deleteChuckDxfProfile(id);
+      populateProfileSelect(null);
+      if (currentId === id) resetForm();
+      if (typeof refreshChuckProfileDropdownOptions === 'function') refreshChuckProfileDropdownOptions();
+    });
+
+    function openChuckDxfImportPanel() {
+      resetForm();
+      populateProfileSelect(null);
+      panel.classList.add('open');
+    }
+    el('btnChuckDxfImport').addEventListener('click', openChuckDxfImportPanel);
+    const btnEditChuckProfileToolbarIcon = el('btnEditChuckProfileToolbarIcon');
+    if (btnEditChuckProfileToolbarIcon) {
+      btnEditChuckProfileToolbarIcon.addEventListener('click', openChuckDxfImportPanel);
+    }
+    el('btnChuckDxfImportCancel').addEventListener('click', () => panel.classList.remove('open'));
+    el('btnChuckDxfImportSave').addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) { showError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+      if (!dxfText || !parsedMain) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      // Enter-Bugfix (Release 207, hier analog übernommen) - siehe ausführlichen Kommentar im
+      // Werkzeugprofil-Dialog oben für die volle Herleitung.
+      const typedLengthRef = parseNum(lengthRefInput.value);
+      if (typedLengthRef !== null) lengthRef = typedLengthRef;
+      clampRefs();
+      syncRefInputsFromState();
+      const saved = saveChuckDxfProfile({
+        id: currentId,
+        name: name,
+        dxfText: dxfText,
+        mainProfile: parsedMain,
+        alternateProfile: parsedAlternate,
+        wasClosedLoop: wasClosedLoop,
+        usedAlternate: alternateCheckbox.checked,
+        scale: scale,
+        lengthRef: lengthRef
+      });
+      if (!saved) { showError(T('Das Profil konnte nicht gespeichert werden.', 'The profile could not be saved.')); return; }
+      currentId = saved.id;
+      populateProfileSelect(saved.id);
+      if (typeof refreshChuckProfileDropdownOptions === 'function') refreshChuckProfileDropdownOptions();
+      bakeParams = null;
+      requestRender();
+      panel.classList.remove('open');
+    });
+
+    draw();
+  })();
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -20643,7 +21363,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // wurden) werden dadurch beim nächsten "Ok" automatisch um die fehlenden Marker ergänzt,
   // ohne vorhandene Werte zu duplizieren - exakt dasselbe Prinzip wie beim seinerzeitigen
   // Übergang von zwei auf vier Zeilen (60. Runde, siehe historischer Kommentar oben).
-  function insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId) {
+  // "CHUCKPROFILE" (NEU, Release 214) - sechster, optionaler Parameter/sechste Kommentarzeile,
+  // nach TOOLPROFILE angefügt (gleiche Reihenfolge wie die Felder im Dialog selbst, siehe neues
+  // #chuckProfileSelect-Dropdown im "+Werkzeuge (T)"-Dialog). Nutzt dieselbe fortlaufende
+  // "cursor"-Upsert-Technik wie TOOLPROFILE direkt davor - ältere Fünf-Zeilen-Blöcke (aus
+  // Programmen, die noch nie mit dieser Runde bearbeitet wurden) werden dadurch beim nächsten
+  // "Ok" automatisch um den fehlenden Marker ergänzt.
+  function insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId, chuckProfileId) {
     const eol = rawProgramText.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
     const lines = rawProgramText.split(/\r\n|\n/);
     const insertAt = sec.headerEndIdx + 1;
@@ -20652,6 +21378,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const modeLine = '; TOOLMODE ' + toolMode.toUpperCase();
     const typeLine = '; TOOLTYPE ' + toolType.toUpperCase();
     const profileLine = '; TOOLPROFILE ' + (toolProfileId || 'NONE');
+    const chuckProfileLine = '; CHUCKPROFILE ' + (chuckProfileId || 'NONE');
     const alreadyPresent = /^;\s*RADIUS\s/i.test(lines[insertAt] || '') && /^;\s*LENGTH\s/i.test(lines[insertAt + 1] || '');
     if (alreadyPresent) {
       lines[insertAt] = radiusLine;
@@ -20664,8 +21391,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       upsertMarker(/^;\s*TOOLMODE\s/i, modeLine);
       upsertMarker(/^;\s*TOOLTYPE\s/i, typeLine);
       upsertMarker(/^;\s*TOOLPROFILE\s/i, profileLine);
+      upsertMarker(/^;\s*CHUCKPROFILE\s/i, chuckProfileLine);
     } else {
-      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine, profileLine);
+      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine, profileLine, chuckProfileLine);
     }
     rawProgramText = lines.join(eol);
   }
@@ -20747,6 +21475,31 @@ Sebastian Bäcker (Anschrift wie oben)`,
     toolProfileSelect.value = (selectedId && getToolDxfProfileById(selectedId)) ? selectedId : '';
   }
 
+  // "Spannfutter (3D-Form)" (NEU, Release 214, #chuckProfileSelect) - 1:1 dasselbe Prinzip wie
+  // refreshToolProfileDropdownOptions() direkt oberhalb, nur aus chuckDxfProfiles statt
+  // toolDxfProfiles aufgebaut. Wird sowohl beim ÖFFNEN des "+Werkzeuge (T)"-Dialogs (siehe
+  // Klick-Handler unten) als auch vom "Spannfutter bearbeiten"-Dialog nach jedem
+  // Speichern/Löschen eines Profils aufgerufen (siehe dortige
+  // btnChuckDxfImportSave/btnChuckDxfProfileDelete-Handler).
+  function refreshChuckProfileDropdownOptions(selectedId) {
+    const noneOption = chuckProfileSelect.querySelector('option[value=""]');
+    chuckProfileSelect.innerHTML = '';
+    if (noneOption) chuckProfileSelect.appendChild(noneOption);
+    else {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = T('Kein Profil (HSK63-Standard)', 'No profile (standard HSK63)');
+      chuckProfileSelect.appendChild(opt);
+    }
+    chuckDxfProfiles.slice().sort((a, b) => a.name.localeCompare(b.name, 'de')).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      chuckProfileSelect.appendChild(opt);
+    });
+    chuckProfileSelect.value = (selectedId && getChuckDxfProfileById(selectedId)) ? selectedId : '';
+  }
+
   btnInsertToolData.addEventListener('click', () => {
     if (btnInsertToolData.disabled || scopeMode.type !== 'op' || !current) return;
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
@@ -20757,6 +21510,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // gesetzten Profil (sec.toolProfileId, siehe extractToolData()/TOOL_PROFILE_RE in parser.js) -
     // exakt dasselbe Vorbelegungs-Prinzip wie bei Radius/Länge/Werkzeugtyp direkt darunter.
     refreshToolProfileDropdownOptions(sec.toolProfileId);
+    // "Spannfutter (3D-Form)" (NEU, Release 214): Vorbelegung mit dem zuletzt für DIESEN
+    // Arbeitsgang gesetzten Spannfutter-Profil (sec.chuckProfileId, siehe extractToolData()/
+    // CHUCK_PROFILE_RE in parser.js) - exakt dasselbe Vorbelegungs-Prinzip wie beim
+    // Werkzeugprofil direkt oberhalb.
+    refreshChuckProfileDropdownOptions(sec.chuckProfileId);
     // Vorbelegung der beiden Dropdowns (60. Runde) mit den zuletzt für diesen Arbeitsgang
     // erkannten/gesetzten Werten (siehe extractToolData()/sec.toolMode/sec.toolType oben) -
     // fehlender Marker (null, z.B. bei noch nie über diesen Dialog gesetzten Werkzeugdaten oder
@@ -20815,7 +21573,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // null übergeben - insertToolDataComment() schreibt dafür bewusst explizit "; TOOLPROFILE
     // NONE" statt den Marker wegzulassen (siehe dortiger Kommentar).
     const toolProfileId = toolProfileSelect.value || null;
-    insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId);
+    // "Spannfutter (3D-Form)" (NEU, Release 214): leerer Wert ("Kein Profil (HSK63-Standard)")
+    // wird als null übergeben - insertToolDataComment() schreibt dafür bewusst explizit
+    // "; CHUCKPROFILE NONE" statt den Marker wegzulassen (siehe dortiger Kommentar, exakt
+    // dasselbe Prinzip wie bei TOOLPROFILE).
+    const chuckProfileId = chuckProfileSelect.value || null;
+    insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId, chuckProfileId);
     // "Spannzange, Änderung" (Release 140, Sebastian: "'Ohne HSK63-Sample' ist quasi wie
     // 'Spannzange ausgeblendet'"): die Dropdown-Auswahl wirkt beim Bestätigen NICHT nur auf den
     // für diesen Arbeitsgang geschriebenen Kommentar-Marker (oben), sondern auch direkt auf den
