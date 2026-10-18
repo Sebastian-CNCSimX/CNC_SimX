@@ -2222,6 +2222,23 @@
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
     cursor: default;
   }
+  /* Kleine Messfunktion in der DXF-Vorschau von "Werkzeug bearbeiten"/"Spannfutter bearbeiten"
+     (Release 229, Sebastian: "Die Messfunktion ist nur anklickbar und oberhalb der Vorschau im
+     Bearbeitungsfenster.") - Knopfzeile direkt über dem Vorschau-Canvas (".toolbar-btn" bereits
+     bestehende Klasse, siehe dortige Definition), Ergebnis-Kästchen direkt darunter (gleiche
+     Zeilenbausteine ".readout-row"/".readout-sep"/".measure-hint" wie beim 3D-Messwerkzeug, siehe
+     dort - hier zusätzlich mit eigenem Rahmen/Hintergrund, da es (anders als #measurePanel im
+     freistehenden #infoPanel) inmitten der übrigen Dialogfelder sitzt und sich optisch davon
+     abheben soll). */
+  .dxf-measure-toolrow { display: flex; gap: 6px; }
+  .dxf-measure-panel {
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 9px;
+  }
   @media (max-width: 720px) {
     .tool-dxf-import-body { flex-direction: column; }
     .tool-dxf-import-preview { width: 100%; }
@@ -3700,6 +3717,18 @@
     <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
     <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
+    <!-- Release 227 (Sebastian: "Tastenkürzel erweitern, auch in der Shortcutliste anzeigen: Strg +
+         O -> CNC Programm laden, Shift + O -> DXF laden, Shift + B -> DXF Bauteilstärke
+         einstellen.") - drei neue Zeilen, genau nach demselben Muster wie "Strg + L" direkt
+         oberhalb (fester deutscher Haupttext + data-i18n-en für die EN-Fassung). -->
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Set DXF part thickness">DXF Bauteilstärke einstellen</span></div>
+    <!-- Release 228 (Sebastian: "Strg + Alt + W -> Werkzeugprofil editieren, Strg + Alt + S ->
+         Spannfutter editieren. Bitte einbauen und in den Shortcuts ergänzen!") - zwei weitere
+         Zeilen nach demselben Muster wie die bestehenden Strg-/Shift-Kombinationen oben. -->
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
     <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
     <div class="paste-actions">
@@ -4010,7 +4039,7 @@
         <input type="range" id="dxfThicknessTransparencySlider" min="0" max="100" step="1" value="100">
         <span class="slider-pct-label">100%</span>
       </div>
-      <p class="panel-hint" data-i18n-en="Only affects the automatically detected contour layer (layer name containing &quot;Kont&quot;/&quot;Cont&quot;, otherwise the first layer in the file). 0% = opaque, shown as a filled solid body. 100% (default, unchanged behavior) = fully transparent, pure wireframe as before.">Wirkt nur auf den automatisch erkannten Kontur-Layer (Layername mit "Kont"/"Cont", sonst der erste Layer der Datei). 0% = undurchsichtig, als gefüllter Körper dargestellt. 100% (Standard, unverändertes Verhalten) = komplett durchsichtig, reines Drahtgitter wie bisher.</p>
+      <p class="panel-hint" data-i18n-en="Only affects the automatically detected contour layer (layer name contains &quot;*Kont*&quot;/&quot;*Cont*&quot; anywhere, case-insensitive; otherwise the first layer in the file). 0% = opaque, shown as a filled solid body. 100% (default, unchanged behavior) = fully transparent, pure wireframe as before.">Wirkt nur auf den automatisch erkannten Kontur-Layer (Layername enthält "*Kont*"/"*Cont*" irgendwo im Namen, unabhängig von Groß-/Kleinschreibung; sonst der erste Layer der Datei). 0% = undurchsichtig, als gefüllter Körper dargestellt. 100% (Standard, unverändertes Verhalten) = komplett durchsichtig, reines Drahtgitter wie bisher.</p>
     </div>
     <div class="color-field-row" id="dxfThicknessColorRow" hidden>
       <span data-i18n-en="Fill color">Füllfarbe</span>
@@ -4020,6 +4049,20 @@
       </span>
     </div>
     <p class="panel-hint" id="dxfThicknessColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <!-- Release 227 (Sebastian: "Bau mal bitte bei der DXF Bauteilstärke ein, dass die Farbe der
+         Outline einstellbar ist. Aktuell ist sie schwarz, aber die soll doch besser einstellbar
+         sein."): zweites Farbfeld für die in Release 226 eingeführte schwarze Umrisslinie (siehe
+         CNC_Simulation.md 9.8t/9.8u) - dieselbe Sichtbarkeits-Bedingung wie #dxfThicknessColorRow
+         oben (updateDxfThicknessColorRowVisibility() in app.js), da die Outline genau wie die
+         Füllung nur bei aktivem fillActive (Transparenz < 100%) überhaupt gezeichnet wird. -->
+    <div class="color-field-row" id="dxfOutlineColorRow" hidden>
+      <span data-i18n-en="Outline color">Outline-Farbe</span>
+      <span class="color-field-inputs">
+        <input type="color" id="dxfOutlineColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+        <input type="text" id="dxfOutlineColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#000000">
+      </span>
+    </div>
+    <p class="panel-hint" id="dxfOutlineColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnDxfThicknessCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnDxfThicknessConfirm" type="button">Ok</button>
@@ -4992,7 +5035,15 @@
         <p class="panel-hint" id="toolDxfImportErrorHint" hidden></p>
       </div>
       <div class="tool-dxf-import-preview">
+        <!-- Messfunktion (NEU, Release 229, siehe ausführlichen Kommentar bei
+             createDxfPreviewMeasureTool() in app.js) - zwei Knöpfe nach demselben Icon-Muster wie
+             die beiden Mess-Knöpfe der 3D-Ansicht (📏/∠, siehe #btnMeasure/#btnMeasureAngle). -->
+        <div class="dxf-measure-toolrow">
+          <button class="toolbar-btn" id="toolDxfMeasureLengthBtn" type="button" title="Messwerkzeug: Abstand zwischen zwei angeklickten Fangpunkten in der Vorschau messen (Direkt, ΔX, ΔY)" data-i18n-en-title="Measurement tool: measure the distance between two clicked snap points in the preview (direct, ΔX, ΔY)">📏</button>
+          <button class="toolbar-btn" id="toolDxfMeasureAngleBtn" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Fangpunkte in der Vorschau messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked snap points in the preview (second click = vertex) - shows angle and counter-angle">∠</button>
+        </div>
         <canvas id="toolDxfImportCanvas" width="260" height="420"></canvas>
+        <div class="dxf-measure-panel" id="toolDxfMeasurePanel" hidden></div>
         <p class="panel-hint" data-i18n-en="Orange line = length reference (tool tip), blue line = radius reference. Both markers can be dragged directly in the preview or entered precisely via the number fields on the left.">Orange Linie = Längen-Referenz (Werkzeugspitze), blaue Linie = Radius-Referenz. Beide Marker lassen sich direkt in der Vorschau verschieben oder über die Zahlenfelder links eingeben.</p>
       </div>
       <!-- Hilfebild (Release 202, Sebastian: "In der 'Werkzeugprofil bearbeiten'-Funktion ein
@@ -5075,7 +5126,15 @@
         <p class="panel-hint" id="chuckDxfImportErrorHint" hidden></p>
       </div>
       <div class="tool-dxf-import-preview">
+        <!-- Messfunktion (NEU, Release 229) - 1:1 dasselbe Prinzip wie im Werkzeugprofil-Dialog
+             oberhalb (siehe dessen ausführlichen Kommentar sowie createDxfPreviewMeasureTool()
+             in app.js), nur mit eigenen Element-ids für dieses Dialog. -->
+        <div class="dxf-measure-toolrow">
+          <button class="toolbar-btn" id="chuckDxfMeasureLengthBtn" type="button" title="Messwerkzeug: Abstand zwischen zwei angeklickten Fangpunkten in der Vorschau messen (Direkt, ΔX, ΔY)" data-i18n-en-title="Measurement tool: measure the distance between two clicked snap points in the preview (direct, ΔX, ΔY)">📏</button>
+          <button class="toolbar-btn" id="chuckDxfMeasureAngleBtn" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Fangpunkte in der Vorschau messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked snap points in the preview (second click = vertex) - shows angle and counter-angle">∠</button>
+        </div>
         <canvas id="chuckDxfImportCanvas" width="260" height="420"></canvas>
+        <div class="dxf-measure-panel" id="chuckDxfMeasurePanel" hidden></div>
         <p class="panel-hint" data-i18n-en="Orange line = length reference (the point the tool rests against). It can be dragged directly in the preview or entered precisely via the number field on the left.">Orange Linie = Längen-Referenz (der Punkt, an dem das Werkzeug anliegt). Der Marker lässt sich direkt in der Vorschau verschieben oder über das Zahlenfeld links eingeben.</p>
       </div>
       <div class="tool-dxf-import-help">
@@ -7636,25 +7695,55 @@
       if (Math.hypot(q.x - cx, q.y - cy) > TOL) return false;
       return t >= -TOL / len && t <= 1 + TOL / len;
     }
-    // Sucht NUR vorwärts ab dem Anker (siehe Funktionskommentar oben, Einschränkung zum
-    // Ringschluss) - liefert den Index i, sodass p auf der Kante konturLoop[i]-konturLoop[i+1] liegt.
-    function findLandingSegment(p, anchorIdx) {
+    // Sucht ab dem Anker VORWÄRTS (steigender Index) - liefert den Index i, sodass p auf der Kante
+    // konturLoop[i]-konturLoop[i+1] liegt. Wie bisher KEIN Wraparound über das Ringende hinweg
+    // (siehe Funktionskommentar oben, Einschränkung zum Ringschluss).
+    function findLandingSegmentForward(p, anchorIdx) {
       for (let i = anchorIdx; i < n; i++) {
         if (onSegment(p, konturLoop[i], konturLoop[(i + 1) % n])) return i;
       }
       return -1;
     }
+    // Release 231 (Sebastian anhand "Wange B.DXF": "Hier werden die Schmiegen (Schmiege vorn)
+    // nicht richtig erkannt?!"): Gegenstück zu findLandingSegmentForward() - sucht ab dem Anker
+    // RÜCKWÄRTS (fallender Index, ebenfalls ohne Wraparound). Grund: resolveChain() ging bisher
+    // IMMER davon aus, dass der Landepunkt (das NICHT exakt auf einem Kontur-Eckpunkt liegende
+    // Ende der Schmiege-Kette) in Kontur-Laufrichtung HINTER dem Anker (dem exakt auf einem
+    // Eckpunkt liegenden Ende) liegt - in "Wange B.DXF" liegt er bei allen drei Schmiege_vorn-
+    // Ketten jedoch DAVOR (Anker auf dem jeweils SPÄTEREN Eckpunkt, Landepunkt auf der FRÜHEREN
+    // Kante) - geometrisch genauso gültig, nur spiegelverkehrt zum bisher einzig unterstützten
+    // Fall. Da findLandingSegmentForward() in diesem Fall nichts findet (der Landepunkt liegt vor,
+    // nicht hinter dem Anker), wurde die komplette Kette bisher - wie bei nicht auflösbarer
+    // Geometrie üblich - still verworfen (siehe Funktionskommentar oben); die Schmiege_vorn-Layer-
+    // Erkennung selbst (detectSchmiegeLayerNames()) lief zwar durch, aber ohne jede der drei Ketten
+    // aufzulösen blieb zonesByKey leer und buildSchmiegeKonturRings() gab komplett null zurück -
+    // die Datei sah für den Benutzer dadurch so aus, als würde "Schmiege_vorn" gar nicht erkannt.
+    function findLandingSegmentBackward(p, anchorIdx) {
+      for (let i = anchorIdx - 1; i >= 0; i--) {
+        if (onSegment(p, konturLoop[i], konturLoop[i + 1])) return i;
+      }
+      return -1;
+    }
+    // resolveChain() liefert jetzt zusätzlich "forward" (true = Anker vor dem Landepunkt, der
+    // bisherige und weiterhin häufigste Fall; false = NEU, Release 231 - Anker NACH dem
+    // Landepunkt). "inner"/"landing" bleiben wie bisher IMMER anker-seitig zuerst sortiert
+    // (chain.slice(1,-1) ggf. reverse()), unabhängig von "forward" - die Richtungs-Behandlung
+    // passiert ausschließlich beim Ring-Aufbau weiter unten.
     function resolveChain(chain) {
       const startP = chain[0], endP = chain[chain.length - 1];
       let anchorIdx = findVertexIndex(startP);
       if (anchorIdx !== -1) {
-        const landingSeg = findLandingSegment(endP, anchorIdx);
-        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1), landing: endP };
+        let landingSeg = findLandingSegmentForward(endP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1), landing: endP, forward: true };
+        landingSeg = findLandingSegmentBackward(endP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1), landing: endP, forward: false };
       }
       anchorIdx = findVertexIndex(endP);
       if (anchorIdx !== -1) {
-        const landingSeg = findLandingSegment(startP, anchorIdx);
-        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1).reverse(), landing: startP };
+        let landingSeg = findLandingSegmentForward(startP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1).reverse(), landing: startP, forward: true };
+        landingSeg = findLandingSegmentBackward(startP, anchorIdx);
+        if (landingSeg !== -1) return { anchorIdx, landingSeg, inner: chain.slice(1, -1).reverse(), landing: startP, forward: false };
       }
       return null;
     }
@@ -7664,83 +7753,143 @@
         if (!chain || chain.length < 2) return;
         const r = resolveChain(chain);
         if (!r) return; // stiller Fallback, siehe Funktionskommentar oben
-        const zoneKey = r.anchorIdx + '_' + r.landingSeg;
+        // Release 231: Zonen-Schlüssel jetzt aus dem SORTIERTEN (niedriger_höher) Indexpaar
+        // gebildet, nicht mehr aus anchorIdx/landingSeg direkt - eine "forward"- und eine
+        // "backward"-Kette an derselben Stelle (kommt in der Praxis nicht vor, da Richtung eine
+        // reine Eigenschaft der Kontur-Geometrie an dieser Stelle ist, nicht des Layers) würden
+        // sonst fälschlich als zwei verschiedene Zonen gezählt.
+        const loIdx = Math.min(r.anchorIdx, r.landingSeg), hiIdx = Math.max(r.anchorIdx, r.landingSeg);
+        const zoneKey = loIdx + '_' + hiIdx;
         let zone = zonesByKey.get(zoneKey);
-        if (!zone) { zone = { anchorIdx: r.anchorIdx, landingSeg: r.landingSeg }; zonesByKey.set(zoneKey, zone); }
+        if (!zone) { zone = { anchorIdx: r.anchorIdx, landingSeg: r.landingSeg, forward: r.forward, loIdx, hiIdx }; zonesByKey.set(zoneKey, zone); }
         zone[key] = { inner: r.inner, landing: r.landing };
       });
     }
     addChains(hintenChains, 'hinten');
     addChains(vornChains, 'vorn');
     if (!zonesByKey.size) return null;
-    const zonesSorted = Array.from(zonesByKey.values()).sort((a, b) => a.anchorIdx - b.anchorIdx);
-    // Überlappungs-Sicherheitsnetz (siehe Funktionskommentar oben): eine Zone, deren Anker vor dem
-    // Lande-Index der vorherigen Zone liegt, wird verworfen statt eine inkonsistente Geometrie zu
-    // erzeugen. Release 221 (Bugfix noch vor Auslieferung, beim Testen gegen Sebastians eigene
-    // Beispieldatei "Wangen A.DXF" gefunden): Vergleich war "<=" statt "<" - dadurch wurde eine
-    // Zone verworfen, deren Anker GENAU auf dem direkt folgenden Vertex der vorherigen Zone liegt
-    // (unmittelbar ANGRENZEND, aber NICHT überlappend - genau der Fall in Sebastians Datei, wo die
-    // "Schmiege_hinten"-Zone an Vertex 3 endet/landet knapp vor Vertex 5 und die
-    // "Schmiege_vorn"-Zone direkt an Vertex 5 beginnt). Mit "<=" wurde die zweite (spätere) Zone
-    // dadurch fälschlich komplett verworfen, obwohl beide Zonen unabhängig voneinander gültig sind
-    // - nur eine ECHTE Überlappung (Anker LIEGT INNERHALB des von der vorherigen Zone bereits
-    // ersetzten Bereichs, also anchorIdx < consumedUpTo) soll zum Verwerfen führen.
+    const zonesSorted = Array.from(zonesByKey.values()).sort((a, b) => a.loIdx - b.loIdx);
+    // Überlappungs-Sicherheitsnetz (siehe Funktionskommentar oben): eine Zone, deren NIEDRIGERER
+    // Grenz-Index vor dem HÖHEREN Grenz-Index der vorherigen Zone liegt, wird verworfen statt eine
+    // inkonsistente Geometrie zu erzeugen. Release 221 (Bugfix noch vor Auslieferung, beim Testen
+    // gegen Sebastians eigene Beispieldatei "Wangen A.DXF" gefunden): Vergleich war "<=" statt "<"
+    // - dadurch wurde eine Zone verworfen, deren Anker GENAU auf dem direkt folgenden Vertex der
+    // vorherigen Zone liegt (unmittelbar ANGRENZEND, aber NICHT überlappend - genau der Fall in
+    // Sebastians Datei, wo die "Schmiege_hinten"-Zone an Vertex 3 endet/landet knapp vor Vertex 5
+    // und die "Schmiege_vorn"-Zone direkt an Vertex 5 beginnt). Mit "<=" wurde die zweite (spätere)
+    // Zone dadurch fälschlich komplett verworfen, obwohl beide Zonen unabhängig voneinander gültig
+    // sind - nur eine ECHTE Überlappung (niedrigerer Grenz-Index LIEGT INNERHALB des von der
+    // vorherigen Zone bereits ersetzten Bereichs, also loIdx < consumedUpTo) soll zum Verwerfen
+    // führen. Release 231: anchorIdx/landingSeg hier zu loIdx/hiIdx verallgemeinert, damit das
+    // auch für "backward"-Zonen (s.o.) korrekt funktioniert - ACHTUNG, hier NICHT symmetrisch:
+    // beim "forward"-Fall (Anker=loIdx) ist der tatsächlich ersetzte Originalbereich [loIdx+1,
+    // hiIdx] (der Vertex AN hiIdx selbst gehört noch dazu, da der Landepunkt auf der Kante
+    // DANACH liegt), beim "backward"-Fall (Anker=hiIdx) dagegen nur [loIdx+1, hiIdx-1] (der Vertex
+    // AN hiIdx ist hier der Anker selbst, bleibt unverändert) - der Vertex AN loIdx bleibt in
+    // BEIDEN Fällen unverändert (Landepunkt liegt immer AUF der Kante danach, nie am Vertex
+    // davor). consumedUpTo ist deshalb der erste NICHT mehr ersetzte Index danach: hiIdx+1 beim
+    // forward-, hiIdx beim backward-Fall.
     const zones = [];
     let consumedUpTo = -1;
     zonesSorted.forEach(z => {
-      if (z.anchorIdx < consumedUpTo) return;
+      if (z.loIdx < consumedUpTo) return;
       zones.push(z);
-      consumedUpTo = z.landingSeg + 1;
+      consumedUpTo = z.forward ? (z.hiIdx + 1) : z.hiIdx;
     });
     if (!zones.length) return null;
     const untenLoop = [], obenLoop = [];
     let i = 0;
     for (let zi = 0; zi <= zones.length; zi++) {
       const zone = zones[zi] || null;
-      const stopAt = zone ? zone.anchorIdx : n;
+      // Release 231: wie bei consumedUpTo oben (s. dort) ist der Vertex AN loIdx beim
+      // "backward"-Fall selbst noch unverändert (Landepunkt liegt auf der Kante DANACH) - er muss
+      // von DIESER Schleife noch normal mitgeschrieben werden, anders als beim "forward"-Fall, wo
+      // der Vertex AN loIdx bereits der Anker ist und separat (s.u.) behandelt wird.
+      const stopAt = zone ? (zone.forward ? zone.loIdx : zone.loIdx + 1) : n;
       for (; i < stopAt; i++) { untenLoop.push(konturLoop[i]); obenLoop.push(konturLoop[i]); }
       if (!zone) break;
-      untenLoop.push(konturLoop[zone.anchorIdx]);
-      obenLoop.push(konturLoop[zone.anchorIdx]);
-      const origInner = [];
-      for (let k = zone.anchorIdx + 1; k <= zone.landingSeg; k++) origInner.push(konturLoop[k]);
-      const origLanding = konturLoop[(zone.landingSeg + 1) % n];
       // Release 222 (Bugfix, Sebastian anhand eines Screen-Recordings zu Wangen A.DXF: "Der Körper
       // hat wieder Öffnungen, wo man reinschauen kann und ist nicht geschlossen" - bereits im
       // vorherigen Vorschau-Screenshot selbst andeutungsweise sichtbar): ist nur EINER der beiden
       // Layer an dieser Zone aktiv (z.B. nur "Schmiege_hinten"), lief die INAKTIVE Ringseite bisher
-      // über origInner bis zum WEIT ENTFERNTEN ORIGINALEN Kontur-Vertex (origLanding) weiter,
-      // während die aktive Seite viel früher an ihrem eigenen (kürzeren) Landepunkt endete. Die
-      // beiden Ringe hatten dadurch über die GESAMTE restliche Zonenbreite hinweg völlig
-      // unterschiedliche (x,y)-Positionen bei identischem Ring-Index - fillRevolutionBody() bildet
-      // daraus aber eine einzelne, direkt zwischen Index i und i+1 verbundene Seitenfläche: das
-      // ergab eine extrem verzerrte, über die gesamte Zonenbreite "tordierte" Fläche statt einer
-      // kurzen Schräge plus einer normalen, flachen Restwand - in der Bildschirmprojektion riss das
-      // bei bestimmten Blickwinkeln sichtbare Lücken auf (Hintergrund statt Körperfarbe).
+      // über origInner bis zum WEIT ENTFERNTEN ORIGINALEN Kontur-Vertex weiter, während die aktive
+      // Seite viel früher an ihrem eigenen (kürzeren) Landepunkt endete. Die beiden Ringe hatten
+      // dadurch über die GESAMTE restliche Zonenbreite hinweg völlig unterschiedliche (x,y)-
+      // Positionen bei identischem Ring-Index - fillRevolutionBody() bildet daraus aber eine
+      // einzelne, direkt zwischen Index i und i+1 verbundene Seitenfläche: das ergab eine extrem
+      // verzerrte, über die gesamte Zonenbreite "tordierte" Fläche statt einer kurzen Schräge plus
+      // einer normalen, flachen Restwand - in der Bildschirmprojektion riss das bei bestimmten
+      // Blickwinkeln sichtbare Lücken auf (Hintergrund statt Körperfarbe).
       //
       // Fix: die INAKTIVE Seite landet jetzt beim LANDEPUNKT DER AKTIVEN SEITE (nicht beim weit
-      // entfernten Original-Vertex) - dieser Punkt liegt per Konstruktion (findLandingSegment() s.o.
-      // sucht stets auf der UNVERÄNDERTEN Kontur) immer exakt auf dem letzten, noch unveränderten
-      // Geradenstück der inaktiven Seite (demselben, das auch origInner/origLanding durchläuft),
-      // ist für sie also ein gültiger, exakt auf ihrem eigenen Pfad liegender Punkt. Damit laufen
-      // beide Ringe unmittelbar nach der kurzen Schräge wieder exakt deckungsgleich (identische
-      // (x,y), nur unterschiedliches z) weiter bis zum nächsten echten Kontur-Eckpunkt - wieder eine
-      // normale, flache Seitenwand, genau wie vor dieser Zone. Sind BEIDE Layer an derselben Zone
-      // aktiv, ändert sich nichts (beide Seiten benutzen ohnehin schon ihren jeweils eigenen
-      // Landepunkt).
-      const sharedLandingWhenInactive = zone.hinten ? zone.hinten.landing : (zone.vorn ? zone.vorn.landing : origLanding);
-      const untenInner = zone.hinten ? zone.hinten.inner : origInner;
-      const untenLanding = zone.hinten ? zone.hinten.landing : sharedLandingWhenInactive;
-      const obenInner = zone.vorn ? zone.vorn.inner : origInner;
-      const obenLanding = zone.vorn ? zone.vorn.landing : sharedLandingWhenInactive;
-      const maxLen = Math.max(untenInner.length, obenInner.length);
-      for (let k = 0; k < maxLen; k++) {
-        untenLoop.push(k < untenInner.length ? untenInner[k] : untenLanding);
-        obenLoop.push(k < obenInner.length ? obenInner[k] : obenLanding);
+      // entfernten Original-Vertex) - dieser Punkt liegt per Konstruktion (findLandingSegment*()
+      // s.o. sucht stets auf der UNVERÄNDERTEN Kontur) immer exakt auf dem letzten, noch
+      // unveränderten Geradenstück der inaktiven Seite, ist für sie also ein gültiger, exakt auf
+      // ihrem eigenen Pfad liegender Punkt. Damit laufen beide Ringe unmittelbar nach der kurzen
+      // Schräge wieder exakt deckungsgleich (identische (x,y), nur unterschiedliches z) weiter bis
+      // zum nächsten echten Kontur-Eckpunkt - wieder eine normale, flache Seitenwand, genau wie vor
+      // dieser Zone. Sind BEIDE Layer an derselben Zone aktiv, ändert sich nichts (beide Seiten
+      // benutzen ohnehin schon ihren jeweils eigenen Landepunkt).
+      //
+      // Release 231: beide Fälle ("forward": Anker=niedrigerer, "backward": Anker=höherer
+      // Grenz-Index, s.o.) werden hier nach demselben Prinzip behandelt, nur spiegelverkehrt -
+      // "anchorFirst"/"entryFirst" bezeichnet jeweils, welches Zonen-Ende zuerst in den Ring
+      // geschrieben wird. padAnchorFirst() hängt reale Kettenpunkte (anker-seitig zuerst sortiert,
+      // s.o.) ggf. mit Wiederholungen des eigenen Landepunkts auf maxLen auf - IMMER am
+      // landepunkt-seitigen (nicht anker-seitigen) Ende, exakt wie im Release-222-Fix.
+      function padAnchorFirst(innerAnchorFirst, landingPt, maxLen) {
+        const out = innerAnchorFirst.slice();
+        while (out.length < maxLen) out.push(landingPt);
+        return out;
       }
-      untenLoop.push(untenLanding);
-      obenLoop.push(obenLanding);
-      i = zone.landingSeg + 1;
+      if (zone.forward) {
+        // Anker = niedrigerer Grenz-Index: wie bisher - Anker-Vertex zuerst (für unten/oben
+        // identisch), dann je Seite deren eigene (ggf. aufgefüllte) Innenpunkte + eigener
+        // Landepunkt, danach weiter bei landingSeg+1.
+        untenLoop.push(konturLoop[zone.anchorIdx]);
+        obenLoop.push(konturLoop[zone.anchorIdx]);
+        const origInner = [];
+        for (let k = zone.anchorIdx + 1; k <= zone.landingSeg; k++) origInner.push(konturLoop[k]);
+        const origLanding = konturLoop[(zone.landingSeg + 1) % n];
+        const sharedLandingWhenInactive = zone.hinten ? zone.hinten.landing : (zone.vorn ? zone.vorn.landing : origLanding);
+        const untenLanding = zone.hinten ? zone.hinten.landing : sharedLandingWhenInactive;
+        const obenLanding = zone.vorn ? zone.vorn.landing : sharedLandingWhenInactive;
+        const untenInner = zone.hinten ? zone.hinten.inner : origInner;
+        const obenInner = zone.vorn ? zone.vorn.inner : origInner;
+        const maxLen = Math.max(untenInner.length, obenInner.length);
+        const untenSeq = padAnchorFirst(untenInner, untenLanding, maxLen);
+        const obenSeq = padAnchorFirst(obenInner, obenLanding, maxLen);
+        for (let k = 0; k < maxLen; k++) { untenLoop.push(untenSeq[k]); obenLoop.push(obenSeq[k]); }
+        untenLoop.push(untenLanding);
+        obenLoop.push(obenLanding);
+        i = zone.landingSeg + 1;
+      } else {
+        // NEU, Release 231. Anker = höherer Grenz-Index (loIdx = landingSeg, hiIdx = anchorIdx):
+        // der VOR dem Anker liegende Kontur-Vertex (konturLoop[landingSeg]) ist unverändert und
+        // bereits durch die stopAt-Schleife oben mitgeschrieben - hier kommt zuerst je Seite deren
+        // eigener (ggf. aufgefüllter) Eintrittspunkt + Innenpunkte, dann GEMEINSAM der Anker-Vertex,
+        // danach weiter bei anchorIdx+1. Die Ketten-"inner" sind anker-seitig zuerst sortiert (s.o.
+        // resolveChain) - hier wird daher in Eintrittspunkt-Richtung benötigt, also reverse(), und
+        // das Auffüllen (weiterhin landepunkt-/eintrittspunkt-seitig, nicht anker-seitig) erfolgt
+        // VOR dem finalen reverse() genauso wie im forward-Fall, nur am jeweils anderen Ring-Ende.
+        const origInnerAnchorFirst = [];
+        for (let k = zone.anchorIdx - 1; k > zone.landingSeg; k--) origInnerAnchorFirst.push(konturLoop[k]);
+        const origEntry = konturLoop[zone.landingSeg];
+        const sharedEntryWhenInactive = zone.hinten ? zone.hinten.landing : (zone.vorn ? zone.vorn.landing : origEntry);
+        const untenEntry = zone.hinten ? zone.hinten.landing : sharedEntryWhenInactive;
+        const obenEntry = zone.vorn ? zone.vorn.landing : sharedEntryWhenInactive;
+        const untenInnerAnchorFirst = zone.hinten ? zone.hinten.inner : origInnerAnchorFirst;
+        const obenInnerAnchorFirst = zone.vorn ? zone.vorn.inner : origInnerAnchorFirst;
+        const maxLen = Math.max(untenInnerAnchorFirst.length, obenInnerAnchorFirst.length);
+        const untenSeq = padAnchorFirst(untenInnerAnchorFirst, untenEntry, maxLen).reverse();
+        const obenSeq = padAnchorFirst(obenInnerAnchorFirst, obenEntry, maxLen).reverse();
+        untenLoop.push(untenEntry);
+        obenLoop.push(obenEntry);
+        for (let k = 0; k < maxLen; k++) { untenLoop.push(untenSeq[k]); obenLoop.push(obenSeq[k]); }
+        untenLoop.push(konturLoop[zone.anchorIdx]);
+        obenLoop.push(konturLoop[zone.anchorIdx]);
+        i = zone.anchorIdx + 1;
+      }
     }
     return { untenLoop, obenLoop, zoneCount: zones.length };
   }
@@ -9112,8 +9261,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 225;
-  const APP_RELEASE_TIMESTAMP = '16.10.2026, 21:25 Uhr';
+  const APP_RELEASE_NUMBER = 231;
+  const APP_RELEASE_TIMESTAMP = '18.10.2026, 14:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11916,6 +12065,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const dxfThicknessColorPicker = el('dxfThicknessColorPicker');
   const dxfThicknessColorHex = el('dxfThicknessColorHex');
   const dxfThicknessColorHexWarning = el('dxfThicknessColorHexWarning');
+  // Release 227, siehe Deklaration von dxfOutlineColor weiter oben.
+  const dxfOutlineColorRow = el('dxfOutlineColorRow');
+  const dxfOutlineColorPicker = el('dxfOutlineColorPicker');
+  const dxfOutlineColorHex = el('dxfOutlineColorHex');
+  const dxfOutlineColorHexWarning = el('dxfOutlineColorHexWarning');
   // "DXF skalieren" (Release 84, siehe Zustandsvariable dxfScale weiter unten sowie
   // dxfTransformPoint()/openDxfScalePanel()).
   const btnDxfScale = el('btnDxfScale');
@@ -12227,10 +12381,29 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // parser.js, siehe dxfKonturLayerName/dxfKonturLoop unten) ermittelten Kontur-Layer, sobald die
   // Bauteilstärke (dxfThickness oben) ungleich 0 ist. 100 (Default, wie vor dieser Runde) =
   // unverändertes Altverhalten (reines Drahtgitter, keine Füllung) - erst ab <=99 wird die Farbe
-  // überhaupt sichtbar/der Kontur-Layer als echter 3D-Körper gefüllt, siehe drawDxf(). Dieselbe
-  // Nicht-Persistenz wie dxfThickness/dxfOffset/... oben (gehört zur jeweils geladenen DXF-Datei).
+  // überhaupt sichtbar/der Kontur-Layer als echter 3D-Körper gefüllt, siehe drawDxf().
+  // Release 227 (Sebastian: "Die ganzen Einstellungen sollen auch bitte beim Einstellungsexport
+  // mitfliessen"): abweichend vom obigen Kommentar bei dxfMirrorX/dxfRotateDeg/dxfThickness ("NICHT
+  // über ... 'Einstellungen exportieren' gespeichert") fließen dxfThickness/dxfThicknessTransparency/
+  // dxfThicknessColor sowie das neue dxfOutlineColor (siehe unten) seit diesem Release zusätzlich in
+  // buildSettingsExport()/den Einstellungsimport mit ein (siehe dort) - exportiert/importiert wird
+  // dabei immer nur der gerade AKTUELLE Stand, die bestehende Rücksetzung dieser vier Werte auf die
+  // jeweiligen Vorgabewerte bei jedem NEUEN DXF-Import (loadDxfText()/clearDxf()) bleibt davon
+  // unberührt - unverändert dieselbe Nicht-Persistenz wie dxfMirrorX/dxfOffset/... oben (gehören zur
+  // jeweils geladenen DXF-Datei, ein Reload ohne erneuten DXF-Import und ohne Einstellungsimport
+  // verliert sie weiterhin, siehe "Bekannte Einschränkungen" Punkt 12).
   let dxfThicknessTransparency = 100;
   let dxfThicknessColor = '#3399ff';
+  // Release 227 (Sebastian: "Bau mal bitte bei der DXF Bauteilstärke ein, dass die Farbe der
+  // Outline einstellbar ist. Aktuell ist sie schwarz, aber die soll doch besser einstellbar
+  // sein."): Farbe der in Release 226 (siehe 9.8t) eingeführten schwarzen Umrisslinie (zeichnet
+  // lowerScreen/upperScreen aus drawDxf() nach, siehe dort) - bislang fest auf '#000000'
+  // verdrahtet, jetzt über dieselbe Farbfeld-UI wie dxfThicknessColor oben einstellbar (siehe
+  // #dxfOutlineColorRow im "Bauteilstärke"-Dialog). Die Outline wird wie der gefüllte Körper
+  // selbst nur gezeichnet, solange fillActive gilt (also u.a. Transparenz < 100%, siehe
+  // drawDxf()) - die neue Farbzeile teilt sich deshalb dieselbe Sichtbarkeits-Bedingung wie
+  // #dxfThicknessColorRow (updateDxfThicknessColorRowVisibility() unten).
+  let dxfOutlineColor = '#000000';
   // Release 222 (Sebastian: "Die DXF soll flach dargestellt werden, aber wenn man ins Menü
   // 'Bauteilstärke' geht, soll da schon 45mm voreingetragen sein, bei 25% Transparenz. Wie gesagt:
   // Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte drin."): das BAUTEIL selbst
@@ -13754,6 +13927,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThickness = 0;
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
+    dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben - dieselbe Nicht-Persistenz/Rücksetzung pro Import wie dxfThicknessColor direkt oberhalb
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfScale = 1;
     // "DXF-Bauteilstärke 'ausfüllen'" (Release 216): Kontur-Layer EINMALIG pro Import ermitteln
@@ -13819,6 +13993,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThickness = 0;
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
+    dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfKonturLayerName = null;
     dxfKonturLoop = null;
@@ -15644,6 +15819,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // neuen Transparenz/Farbe neu zu zeichnen.
       dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfThickness, dxfScale,
       dxfThicknessTransparency, dxfThicknessColor,
+      // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
+      // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
+      // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
+      // Bauteilstärke/Transparenz/Füllfarbe/Spiegeln/Drehen) würde sonst nicht als "schmutzig"
+      // erkannt und die neue Farbe bliebe auf dem Bake-Canvas unsichtbar, bis ein ohnehin fälliger
+      // Rebake aus anderem Grund erfolgt.
+      dxfOutlineColor,
       // "DXF-Layer" (78. Runde): dxfHiddenLayersVersion statt des Set-Inhalts selbst (analog zu
       // hiddenOpsVersion oben) - ein Checkbox-Klick zählt sie hoch, damit ein Umschalten eines
       // einzelnen Layers zuverlässig einen Rebake auslöst, ohne den kompletten Set-Inhalt
@@ -15666,6 +15848,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
+      a.dxfOutlineColor === b.dxfOutlineColor &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
   }
@@ -16914,6 +17097,60 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
           { x: 0, y: 1, z: 0 },
           { disableSideCull: true }); // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody()
+        // Release 226 (Sebastian, nach 9.8s: "Was zur Erkennung für den Bediener helfen würde ist
+        // eine schwarze 'Outline' der Konturen vom Bauteil oben und unten. Da dann natürlich die
+        // Kontur jeweils so wie die Schmiege ist, also das was man sieht. ... Wenn es keine
+        // Schmiegen gibt, ist die Outline ja umso einfacher darzustellen: einfach zwei mal die
+        // Kontur."): eine klar erkennbare schwarze Umrisslinie für BEIDE Ebenen - "unten"
+        // (lowerScreen, physisch tiefere Ebene, bei aktiver Schmiege die "Schmiege_hinten"-Form)
+        // und "oben" (upperScreen, physisch obere Ebene, bei aktiver Schmiege die
+        // "Schmiege_vorn"-Form) - verwendet dieselben bereits berechneten, garantiert korrekten
+        // (Schmiege-/Vorzeichen-bewussten, siehe lowerPts/upperPts-Herleitung oben) Ring-Punkte,
+        // die auch der gefüllte Körper selbst verwendet - ausdrücklich NICHT die rohen,
+        // unbeschrägten DXF-Linien (genau deren Abweichung von der tatsächlichen Körperkante war
+        // die Ursache des in 9.8s behobenen Lochs). Ohne Schmiege-Layer sind "unten" und "oben"
+        // ohnehin identisch die einfache Kontur (hintenLoopRaw/vornLoopRaw === dxfKonturLoop,
+        // s.o.) - exakt Sebastians "einfacherer Fall": zwei Mal dieselbe Kontur, je einmal pro
+        // Ebene.
+        //
+        // Bewusst ERST NACH fillRevolutionBody() gezeichnet (nicht wie die bisherige Drahtgitter-
+        // Unterlage davor) und mit voller Deckkraft: eine erste Fassung zeichnete die Outline VOR
+        // dem Körper, wodurch sie von dessen teiltransparenter Füllung (z.B. 25% Transparenz =
+        // 75% Deckkraft) fast vollständig überdeckt und von der ohnehin schon dunkleren
+        // Seitenflächen-Schattierung kaum noch zu unterscheiden war - als Erkennungshilfe für den
+        // Bediener damit untauglich. Jetzt wird die Outline IMMER vollständig sichtbar obenauf
+        // gezeichnet (unabhängig von der eingestellten Transparenz) - ein bewusster Unterschied zur
+        // sonst üblichen Verdeckungs-Konvention der DXF-Unterlage, weil die Outline hier
+        // ausdrücklich eine jederzeit klar ablesbare Referenz sein soll, keine physikalisch
+        // korrekte Verdeckung. Respektiert weiterhin dieselbe Sichtbarkeits-Checkbox wie der
+        // Kontur-Layer selbst (dxfHiddenLayers), da die Outline konzeptionell dessen korrekte
+        // Darstellung ist.
+        // Diagnose/Regressionstests (window.__debug_getLastDxfOutlineDrawInfo in den
+        // instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
+        // window.__lastDxfKonturFillInfo oben.
+        window.__lastDxfOutlineDrawInfo = {
+          drawn: !dxfHiddenLayers.has(dxfKonturLayerName),
+          lowerPointCount: lowerScreen.filter(Boolean).length,
+          upperPointCount: upperScreen.filter(Boolean).length,
+          schmiegeActive: schmiegeActive,
+          // Release 227 (Sebastian: "Bau mal bitte bei der DXF Bauteilstärke ein, dass die Farbe
+          // der Outline einstellbar ist."): Outline-Farbe jetzt über dxfOutlineColor einstellbar
+          // statt fest '#000000' - mit im Diagnose-Objekt, damit test_r227_... den tatsächlich
+          // verwendeten Farbwert direkt prüfen kann, statt ihn aus Pixeln zurückrechnen zu müssen.
+          color: dxfOutlineColor
+        };
+        if (!dxfHiddenLayers.has(dxfKonturLayerName)) {
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = dxfOutlineColor;
+          ctx.lineWidth = 1.5;
+          [lowerScreen, upperScreen].forEach(screenRing => {
+            if (!screenRing.every(Boolean)) return;
+            ctx.beginPath();
+            screenRing.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+            ctx.stroke();
+          });
+        }
       }
     }
     ctx.setLineDash([]);
@@ -17924,6 +18161,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       top = { x: tip.x + axis.x * p.toolLength, y: tip.y + axis.y * p.toolLength, z: tip.z + axis.z * p.toolLength };
     }
 
+    // "Werkzeug-DXF einlesen" (Release 200) - ab Release 229 bewusst HIER, UNABHÄNGIG von
+    // showTool, ermittelt (vorher stand dieselbe Berechnung erst innerhalb des weiter unten
+    // folgenden "if (showTool)"-Blocks) - siehe Kommentar beim Spannfutter-Anlagepunkt
+    // (chuckRenderProfile weiter unten) für den Grund: der Anlagepunkt des Spannfutters muss auch
+    // dann auf der tatsächlichen Werkzeuggeometrie beruhen, wenn der Werkzeugkörper selbst gerade
+    // ausgeblendet ist (showTool=false, aber showToolHolder=true) - sonst würde das Ein-/Ausblenden
+    // des Werkzeugkörpers unsinnigerweise die Spannfutter-Position verändern.
+    const toolProfileEntry = (p.toolProfileId && useToolProfileShapes) ? getToolDxfProfileById(p.toolProfileId) : null;
+    const renderProfile = toolProfileEntry ? buildToolProfileForRender(toolProfileEntry) : null;
+
     // Zwei zur Achse senkrechte Einheitsvektoren für den Kreisquerschnitt (beliebige, aber stabile
     // Wahl: Kreuzprodukt mit einer nicht-parallelen Hilfsachse).
     const helper = Math.abs(axis.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
@@ -17942,19 +18189,6 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // direkt vor dessen eigener Füllungs-Prüfung).
       const activeToolAppearance = p.toolIsBlade ? sawAppearance : cutterAppearance;
 
-      // "Werkzeug-DXF einlesen" (NEU, Release 200, siehe Konzept_DXF_Werkzeugdarstellung.md) -
-      // ein per Arbeitsgang zugewiesenes Profil (sec.toolProfileId, siehe extractToolData() in
-      // parser.js) wird NUR verwendet, wenn (a) überhaupt eines zugewiesen ist UND (b) das
-      // tatsächlich noch existierende, gespeicherte Profil dahinter gefunden wird (ein seitdem
-      // gelöschtes Profil fällt automatisch auf den Zylinder zurück, siehe getToolDxfProfileById())
-      // UND (c) der globale Fallback-Schalter useToolProfileShapes (siehe oben,
-      // #toolAppearanceCutterProfileChoice) nicht auf "immer ignorieren" steht - fehlt irgendeine
-      // dieser drei Bedingungen, zeichnet der unveränderte "else"-Zweig unten exakt denselben
-      // Zylinder wie vor dieser Runde, GENAU die von Sebastian verlangte Ausblend-Garantie
-      // ("Immer natürlich mit der Möglichkeit, falls es nicht so wie erhofft läuft, das
-      // auszublenden").
-      const toolProfileEntry = (p.toolProfileId && useToolProfileShapes) ? getToolDxfProfileById(p.toolProfileId) : null;
-      const renderProfile = toolProfileEntry ? buildToolProfileForRender(toolProfileEntry) : null;
       // Nur für Diagnose/Regressionstests (window.__debug_getToolProfileRenderInfo in den
       // instrumentierten Testkopien, siehe make_rNNN_instrumented.py) - ohne Funktion für die
       // eigentliche Darstellung, bewusst ungeprüft auf Objektgröße etc., da nur bei Bedarf gelesen.
@@ -18075,6 +18309,33 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // eigenen DXF-Kontur legen).
       const chuckProfileEntry = p.chuckProfileId ? getChuckDxfProfileById(p.chuckProfileId) : null;
       const chuckRenderProfile = chuckProfileEntry ? buildChuckProfileForRender(chuckProfileEntry) : null;
+      // Bugfix (Release 229, Sebastian: "Das ist der Punkt an dem das Werkzeug (egal ob Zylinder
+      // oder mit Profil) 'eingespannt' ist, heißt das obere Ende liegt da an und das Werkzeug geht
+      // von da an nach unten. Das war meine ich noch nicht korrekt."): Bislang wurde hier IMMER
+      // das pauschal aus `p.toolLength` (der im Programmtext per TOOLDATA-Kommentar hinterlegten
+      // RADIUS/LENGTH-Angabe) berechnete `top` als Anlagepunkt verwendet. Für ein Werkzeug OHNE
+      // eigenes DXF-Profil (reiner Zylinder) ist das korrekt, denn dessen tatsächliches oberes Ende
+      // IST per Definition bereits `tip + axis*p.toolLength` = `top`. Für ein Werkzeug MIT eigenem
+      // DXF-Profil (renderProfile, oben jetzt bewusst unabhängig von showTool ermittelt) trifft das
+      // aber nicht zu: Die Werkzeug-DXF wird bewusst UNSKALIERT, nur verschoben übernommen (siehe
+      // buildToolProfileForRender(), "Darstellen Werkzeug bleibt aber gleich, nur das DXF wird
+      // verschoben") - ihr eigenes, tatsächlich gezeichnetes oberes Ende kann dadurch an einer ganz
+      // anderen Stelle liegen als der von `p.toolLength` vorgegebene Wert (zwei unabhängige Werte:
+      // der eine kommt aus dem Programmtext, der andere aus der frei gezeichneten DXF-Kontur). Der
+      // Anlagepunkt des Spannfutters muss sich nach der TATSÄCHLICHEN Werkzeuggeometrie richten,
+      // sonst "schwebt" das Spannfutter frei im Raum oder überlappt mit dem Werkzeugkörper. Fix:
+      // bei vorhandenem renderProfile den Anlagepunkt stattdessen aus dessen eigenem, größten
+      // "dist"-Wert (= sein tatsächliches oberes Ende, da "dist" per Konvention in Richtung
+      // Halter/Spindel wächst, siehe buildToolProfileForRender()) neu herleiten.
+      const toolProfileTopPoint = (function () {
+        if (!renderProfile || !renderProfile.length) return top;
+        const profileTopDist = Math.max.apply(null, renderProfile.map(function (pt) { return pt.dist; }));
+        return {
+          x: tip.x + axis.x * profileTopDist,
+          y: tip.y + axis.y * profileTopDist,
+          z: tip.z + axis.z * profileTopDist
+        };
+      })();
       // Nur für Diagnose/Regressionstests (window.__debug_getChuckProfileRenderInfo in den
       // instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, siehe
       // window.__lastToolProfileRenderInfo oben für dasselbe Prinzip beim Werkzeugprofil.
@@ -18082,10 +18343,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         chuckProfileId: p.chuckProfileId || null,
         hasEntry: !!chuckProfileEntry,
         hasRenderProfile: !!chuckRenderProfile,
-        pointCount: chuckRenderProfile ? chuckRenderProfile.length : 0
+        pointCount: chuckRenderProfile ? chuckRenderProfile.length : 0,
+        usesToolProfileTop: !!(renderProfile && renderProfile.length), // NEU (Release 229)
+        attachPoint: { x: toolProfileTopPoint.x, y: toolProfileTopPoint.y, z: toolProfileTopPoint.z }, // NEU (Release 229)
+        toolTopFromLength: { x: top.x, y: top.y, z: top.z } // NEU (Release 229), zum Vergleich
       };
       if (chuckRenderProfile) {
-        drawToolHolder(top, axis, u, v, proj, chuckRenderProfile, colletAppearance);
+        drawToolHolder(toolProfileTopPoint, axis, u, v, proj, chuckRenderProfile, colletAppearance);
         return;
       }
       // "T-Längen" (60. Runde, siehe HSK63_CLAMP_INSET oben): verschiebt NUR den Ansatzpunkt der
@@ -18723,6 +18987,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Klick auf #btnCodeJump/den Kontextmenü-Eintrag - Cursor kehrt zum Normalzustand zurück, die
       // "[]"-Markierung wird entfernt, Info-Fenster blendet sich ggf. aus.
       if (codeJumpActive) toggleCodeJump();
+      // Release 230 (Sebastian: "Wenn das messen bei Spannfutter bzw. Werkzeugprofil bearbeiten
+      // aktiv ist (Winkel oder Länge), verlässt Esc drücken nicht das Fenster, sondern beendet
+      // erst mal das messen.") - dieselbe Priorität wie bei den drei Werkzeug-Umschaltern direkt
+      // oberhalb (3D-Längen-/Winkelmessung/Codesprung): ist eines der beiden DXF-Vorschau-
+      // Messwerkzeuge (Werkzeugprofil- ODER Spannfutter-Dialog, siehe dxfPreviewMeasureHandlers)
+      // aktiv, schaltet dieser Escape-Druck es nur ab (Fangpunkt-Marker/Ergebnis-Kästchen
+      // verschwinden, Dialog bleibt offen) - der darunterliegende "openPanel"-Schließmechanismus
+      // wird in genau diesem Tastendruck noch NICHT erreicht (return). Erst ein zweiter,
+      // nachfolgender Escape-Druck (jetzt ohne aktives Messwerkzeug) schließt wie gewohnt den
+      // Dialog.
+      let dxfMeasureWasActive = false;
+      dxfPreviewMeasureHandlers.forEach(function (h) {
+        if (h.isActive()) { h.deactivate(); dxfMeasureWasActive = true; }
+      });
+      if (dxfMeasureWasActive) return;
       const openPanel = document.querySelector('.paste-panel.open');
       if (openPanel) {
         const cancelBtn = openPanel.querySelector(".paste-actions button[id$='Cancel'], .paste-actions button[id$='Close']");
@@ -19566,6 +19845,21 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Einstellungen exportiert.") - einfacher Bool-Wert, exakt dieselbe Behandlung wie
       // "gridVisible"/"invertTilt" oben.
       showToolHolder,
+      // "DXF Bauteilstärke" (Release 227, Sebastian: "Die ganzen Einstellungen sollen auch bitte
+      // beim Einstellungsexport mitfliessen" - im Anschluss an die Bitte, die Outline-Farbe
+      // einstellbar zu machen): bislang bewusst NICHT exportiert (siehe historischer Kommentar bei
+      // der Deklaration von dxfThicknessTransparency/dxfThicknessColor weiter oben, "gehört zur
+      // jeweils geladenen DXF-Datei") - diese vier Felder sind jetzt zusätzlich Teil des
+      // Einstellungsexports, exportiert wird dabei einfach der gerade aktuelle Stand (wie bei
+      // "gridStep"/"feedScaleFactor" oben, kein eigenes Unterobjekt nötig, da es sich um vier
+      // einfache Werte handelt). Die bestehende Rücksetzung auf die jeweiligen Vorgabewerte bei
+      // jedem NEUEN DXF-Import (loadDxfText()/clearDxf()) bleibt davon unberührt - ein Import
+      // dieser Datei wirkt sich nur auf den gerade aktiven Zustand aus (bzw. auf eine bereits
+      // geladene DXF-Datei, siehe Import weiter unten), nicht auf künftige Importe.
+      dxfThickness,
+      dxfThicknessTransparency,
+      dxfThicknessColor,
+      dxfOutlineColor,
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -19787,6 +20081,38 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (data.showToolHolder !== undefined) {
         setShowToolHolder(data.showToolHolder === true || data.showToolHolder === '1' || data.showToolHolder === 1);
         syncColletVisiblePanelFromActive();
+      }
+      // "DXF Bauteilstärke" (Release 227, siehe buildSettingsExport() oben): fehlt eines der vier
+      // Felder (ältere Datei vor diesem Release), bleibt der jeweils aktuell aktive Wert
+      // unangetastet - dieselbe Regel wie bei den übrigen Einstellungsteilen oben. dxfThickness/
+      // dxfThicknessTransparency sind einfache Zahlen (Transparenz zusätzlich auf 0..100
+      // begrenzt), dxfThicknessColor/dxfOutlineColor müssen zusätzlich ein gültiger Hexcode sein
+      // (normalizeHex()) - ein jeweils ungültiger Eintrag lässt nur das betroffene Einzelfeld
+      // unangetastet, statt den ganzen Import abzubrechen. Wirkt sich sofort auf eine evtl. bereits
+      // geladene DXF-Datei aus (updateDxfUI()/requestRender() unten) - ein künftiger NEUER
+      // DXF-Import setzt diese vier Werte wie bisher unverändert auf die jeweiligen Vorgabewerte
+      // zurück (loadDxfText(), siehe dort), das ändert diese Runde nicht.
+      let dxfThicknessSettingsChanged = false;
+      if (typeof data.dxfThickness === 'number' && isFinite(data.dxfThickness)) {
+        dxfThickness = data.dxfThickness;
+        dxfThicknessSettingsChanged = true;
+      }
+      if (typeof data.dxfThicknessTransparency === 'number' && data.dxfThicknessTransparency >= 0 && data.dxfThicknessTransparency <= 100) {
+        dxfThicknessTransparency = data.dxfThicknessTransparency;
+        dxfThicknessSettingsChanged = true;
+      }
+      if (typeof data.dxfThicknessColor === 'string') {
+        const normThicknessColor = normalizeHex(data.dxfThicknessColor);
+        if (normThicknessColor) { dxfThicknessColor = normThicknessColor; dxfThicknessSettingsChanged = true; }
+      }
+      if (typeof data.dxfOutlineColor === 'string') {
+        const normOutlineColor = normalizeHex(data.dxfOutlineColor);
+        if (normOutlineColor) { dxfOutlineColor = normOutlineColor; dxfThicknessSettingsChanged = true; }
+      }
+      if (dxfThicknessSettingsChanged) {
+        dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben - importierte Werte gelten als "bestätigt", ein erneutes Öffnen des Dialogs zeigt sie direkt statt der Vorbefüllung
+        if (dxfThicknessPanel.classList.contains('open')) openDxfThicknessPanel();
+        if (dxfGeometry) { updateDxfUI(); requestRender(); }
       }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
@@ -20608,6 +20934,234 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
 
   // ============================================================
+  // 2D-Vorschau-Messwerkzeug für "Werkzeug bearbeiten"/"Spannfutter bearbeiten" (NEU, Release
+  // 229, Sebastian: "Darüber hinaus brauchen wir eine kleine Messfunktion beim Spannfutter und
+  // Werkzeugbearbeiten. In der DXF Vorschau sollte gemessen werden können. Die Messfunktion ist
+  // nur anklickbar und oberhalb der Vorschau im Bearbeitungsfenster. Die Ausgabe braucht nur:
+  // Abstand direkt, Delta X, Delta Y. Das sollte langen für alle relevanten Daten. Die Fangpunkte
+  // fallen automatisch an das Ende vom Linien und sind mit [] markiert, so wie in der 3D Sim. Die
+  // Winkelmessfunktion soll Innen- und Außenwinkel ausgeben, so wie in der 3D Sim.") - EIN
+  // gemeinsamer, parametrisierter Baustein für beide 2D-Vorschau-Dialoge (Werkzeug- UND
+  // Spannfutter-Profil, siehe deren jeweilige IIFE weiter unten), da beide exakt dieselbe
+  // Grundtechnik brauchen (Silhouette aus einem r/dist-Profil, Klick -> nächstgelegener
+  // Fangpunkt). Bewusst EIGENSTÄNDIG von der 3D-Mess-Logik (hitTest3D()/updateMeasureOutput()
+  // weiter oben) - dort geht es um echte 3D-Weltkoordinaten samt Kamera-Projektion, hier um ein
+  // rein 2D-Profil in eigenen mm-Koordinaten (r=X, dist=Y), ganz ohne Projektion. "Die Fangpunkte
+  // fallen automatisch an das Ende vom Linien" ist dabei bewusst EINFACHER als die 3D-Messfunktion
+  // (die zusätzlich auch auf Linien-Schnittpunkte und Lot-Fußpunkte auf einer nahen Linie snappen
+  // kann, siehe hitTest3D()) - hier snappt es NUR auf echte Profil-Eckpunkte (beide Seiten der
+  // gespiegelten Silhouette, da beide sichtbar/anklickbar sind), keine Schnittpunkt-/
+  // Lot-Fußpunkt-Logik - für ein einfaches Rotationsprofil genügt das bereits vollständig.
+  // "Innen- und Außenwinkel" entspricht dabei exakt "Winkel"/"Gegenwinkel" der 3D-Sim
+  // (Gegenwinkel = Explementärwinkel = 360° - Winkel, siehe updateMeasureOutput() weiter oben).
+  //
+  // opts:
+  //  - lengthBtn/angleBtn: die beiden Umschalt-Knöpfe (toggle, gegenseitig exklusiv, erneuter
+  //    Klick auf den bereits aktiven Knopf schaltet wieder aus - exakt dieselbe Technik wie
+  //    toggleMeasure()/toggleMeasureAngle() weiter oben).
+  //  - panelEl: das Ergebnis-Kästchen (siehe #toolDxfMeasurePanel/#chuckDxfMeasurePanel).
+  //  - canvas: das jeweilige Vorschau-Canvas (für den Cursor-Stil und als Bezug für
+  //    Klick-Koordinaten).
+  //  - getMapping(): MUSS bei JEDEM Aufruf frisch die aktuelle Zuordnung liefern (Profil und
+  //    Canvas-Größe können sich jederzeit ändern) - { toScreen(rMm,distMm)->{x,y}|null,
+  //    points: [{r,dist}, ...] (ALLE Fangpunkte, beide Seiten der gespiegelten Silhouette) }.
+  // Release 230 (Sebastian: "Wenn das messen bei Spannfutter bzw. Werkzeugprofil bearbeiten aktiv
+  // ist (Winkel oder Länge), verlässt Esc drücken nicht das Fenster, sondern beendet erst mal das
+  // messen.") - Sammelstelle für den globalen Escape-Handler (siehe dort): jedes der beiden
+  // createDxfPreviewMeasureTool()-Dialoge (Werkzeug-/Spannfutterprofil) trägt sich hier mit seinem
+  // eigenen isActive()/deactivate() ein, damit der Escape-Handler - ohne Kenntnis der jeweiligen
+  // dialog-lokalen measureTool-/draw()-Variablen - ein aktives Messwerkzeug zuerst abschalten kann,
+  // bevor er (im selben Tastendruck NICHT, erst beim nächsten) den Dialog selbst schließt.
+  const dxfPreviewMeasureHandlers = [];
+
+  function createDxfPreviewMeasureTool(opts) {
+    const lengthBtn = opts.lengthBtn, angleBtn = opts.angleBtn, panelEl = opts.panelEl,
+      canvas = opts.canvas, getMapping = opts.getMapping;
+    const PICK_PX = 12;
+    let mode = null; // 'length' | 'angle' | null
+    let lengthPts = []; // bis zu 2 {r,dist}
+    let anglePts = [];  // bis zu 3 {r,dist}
+    let hoverPt = null;
+
+    function nearestSnap(canvasX, canvasY) {
+      const map = getMapping();
+      let best = null, bestDist = PICK_PX;
+      map.points.forEach(function (pt) {
+        const s = map.toScreen(pt.r, pt.dist);
+        if (!s) return;
+        const d = Math.hypot(s.x - canvasX, s.y - canvasY);
+        if (d < bestDist) { bestDist = d; best = pt; }
+      });
+      return best;
+    }
+
+    function legRows(from, to, prefix) {
+      const dx = Math.abs(to.r - from.r), dy = Math.abs(to.dist - from.dist);
+      const direct = Math.hypot(dx, dy);
+      const p = prefix ? prefix + ' · ' : '';
+      return '<div class="readout-row"><span class="k">' + p + 'ΔX</span><span class="v">' + fmt(dx) + ' mm</span></div>' +
+        '<div class="readout-row"><span class="k">' + p + 'ΔY</span><span class="v">' + fmt(dy) + ' mm</span></div>' +
+        '<div class="readout-row"><span class="k">' + p + T('Direkt', 'Direct') + '</span><span class="v">' + fmt(direct) + ' mm</span></div>';
+    }
+
+    function updateReadout() {
+      if (mode === null) { panelEl.hidden = true; return; }
+      panelEl.hidden = false;
+      if (mode === 'length') {
+        if (lengthPts.length === 0) {
+          panelEl.innerHTML = '<div class="measure-hint">' + T('Messwerkzeug aktiv: ersten Fangpunkt anklicken.', 'Measurement tool active: click the first snap point.') + '</div>';
+        } else if (lengthPts.length === 1) {
+          panelEl.innerHTML = '<div class="measure-hint">' + T('Startpunkt gesetzt – zweiten Fangpunkt anklicken.', 'Start point set – click the second snap point.') + '</div>';
+        } else {
+          panelEl.innerHTML = legRows(lengthPts[0], lengthPts[1], '') +
+            '<div class="measure-hint">' + T('Erneut klicken für eine neue Messung.', 'Click again for a new measurement.') + '</div>';
+        }
+        return;
+      }
+      if (anglePts.length === 0) {
+        panelEl.innerHTML = '<div class="measure-hint">' + T('Winkelmessung aktiv: ersten Fangpunkt anklicken.', 'Angle measurement active: click the first snap point.') + '</div>';
+      } else if (anglePts.length === 1) {
+        panelEl.innerHTML = '<div class="measure-hint">' + T('Erster Punkt gesetzt – Scheitelpunkt (zweiten Punkt) anklicken.', 'First point set – click the vertex (second point).') + '</div>';
+      } else if (anglePts.length === 2) {
+        panelEl.innerHTML = '<div class="measure-hint">' + T('Scheitelpunkt gesetzt – dritten Punkt anklicken.', 'Vertex set – click the third point.') + '</div>';
+      } else {
+        const p1 = anglePts[0], vertex = anglePts[1], p3 = anglePts[2];
+        const v1 = { x: p1.r - vertex.r, y: p1.dist - vertex.dist };
+        const v2 = { x: p3.r - vertex.r, y: p3.dist - vertex.dist };
+        const len1 = Math.hypot(v1.x, v1.y), len2 = Math.hypot(v2.x, v2.y);
+        let angleDeg = 0;
+        if (len1 > 1e-9 && len2 > 1e-9) {
+          const dot = v1.x * v2.x + v1.y * v2.y;
+          const cosA = Math.max(-1, Math.min(1, dot / (len1 * len2)));
+          angleDeg = Math.acos(cosA) * 180 / Math.PI;
+        }
+        const counterAngle = 360 - angleDeg;
+        panelEl.innerHTML =
+          legRows(vertex, p1, T('Schenkel 1', 'Leg 1')) +
+          '<div class="readout-sep"></div>' +
+          legRows(vertex, p3, T('Schenkel 2', 'Leg 2')) +
+          '<div class="readout-sep"></div>' +
+          '<div class="readout-row"><span class="k">' + T('Winkel', 'Angle') + '</span><span class="v">' + fmt(angleDeg) + '°</span></div>' +
+          '<div class="readout-row"><span class="k">' + T('Gegenwinkel', 'Counter-angle') + '</span><span class="v">' + fmt(counterAngle) + '°</span></div>';
+      }
+    }
+
+    function setMode(next) {
+      mode = (mode === next) ? null : next;
+      lengthPts = []; anglePts = []; hoverPt = null;
+      lengthBtn.classList.toggle('active', mode === 'length');
+      angleBtn.classList.toggle('active', mode === 'angle');
+      canvas.style.cursor = mode ? 'crosshair' : '';
+      updateReadout();
+    }
+
+    function handleClick(canvasX, canvasY) {
+      if (!mode) return;
+      const hit = nearestSnap(canvasX, canvasY);
+      if (!hit) return;
+      if (mode === 'length') {
+        lengthPts = (lengthPts.length >= 2) ? [hit] : lengthPts.concat([hit]);
+      } else {
+        anglePts = (anglePts.length >= 3) ? [hit] : anglePts.concat([hit]);
+      }
+      updateReadout();
+    }
+
+    function handleHover(canvasX, canvasY) {
+      hoverPt = mode ? nearestSnap(canvasX, canvasY) : null;
+    }
+
+    // Zeichnet "[]"-Fangpunkt-Marker an JEDEM Profil-Eckpunkt (Sebastian: "Die Fangpunkte fallen
+    // automatisch an das Ende vom Linien und sind mit [] markiert, so wie in der 3D Sim" - dort
+    // über denselben Textglyph-Ansatz wie bei der Codesprung-Linienmarkierung, siehe
+    // drawLineSelection() weiter oben), dazu Hover-Ring und bereits gesetzte Mess-Punkte/-Linien -
+    // wird vom jeweiligen draw() der beiden Dialoge direkt im Anschluss an die Silhouette
+    // aufgerufen, nur solange ein Messwerkzeug aktiv ist.
+    function drawOverlay(ctx) {
+      if (!mode) return;
+      const map = getMapping();
+      ctx.save();
+      ctx.fillStyle = cssVar('--accent');
+      ctx.font = '600 13px "Open Sans", ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      map.points.forEach(function (pt) {
+        const s = map.toScreen(pt.r, pt.dist);
+        if (s) ctx.fillText('[]', s.x, s.y);
+      });
+      ctx.restore();
+
+      if (hoverPt) {
+        const s = map.toScreen(hoverPt.r, hoverPt.dist);
+        if (s) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 9, 0, Math.PI * 2);
+          ctx.fillStyle = cssVar('--accent') + '33';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = cssVar('--accent');
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      const activePts = mode === 'length' ? lengthPts : anglePts;
+      activePts.forEach(function (pt) {
+        const s = map.toScreen(pt.r, pt.dist);
+        if (!s) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = cssVar('--accent');
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = cssVar('--panel-2');
+        ctx.stroke();
+        ctx.restore();
+      });
+      if (mode === 'length' && lengthPts.length === 2) {
+        const a = map.toScreen(lengthPts[0].r, lengthPts[0].dist);
+        const b = map.toScreen(lengthPts[1].r, lengthPts[1].dist);
+        if (a && b) {
+          ctx.save();
+          ctx.strokeStyle = cssVar('--accent');
+          ctx.lineWidth = 1.4;
+          ctx.setLineDash([5, 4]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.restore();
+        }
+      } else if (mode === 'angle' && anglePts.length === 3) {
+        const sv = map.toScreen(anglePts[1].r, anglePts[1].dist);
+        const s1 = map.toScreen(anglePts[0].r, anglePts[0].dist);
+        const s2 = map.toScreen(anglePts[2].r, anglePts[2].dist);
+        ctx.save();
+        ctx.strokeStyle = cssVar('--accent');
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([5, 4]);
+        if (sv && s1) { ctx.beginPath(); ctx.moveTo(sv.x, sv.y); ctx.lineTo(s1.x, s1.y); ctx.stroke(); }
+        if (sv && s2) { ctx.beginPath(); ctx.moveTo(sv.x, sv.y); ctx.lineTo(s2.x, s2.y); ctx.stroke(); }
+        ctx.restore();
+      }
+    }
+
+    // Beim Schließen/Neuöffnen des jeweiligen Dialogs aufgerufen (siehe beide IIFEs weiter
+    // unten), damit eine noch laufende Messung nicht unsichtbar für das nächste geöffnete Profil
+    // "mitgenommen" wird.
+    function reset() {
+      mode = null; lengthPts = []; anglePts = []; hoverPt = null;
+      lengthBtn.classList.remove('active'); angleBtn.classList.remove('active');
+      canvas.style.cursor = '';
+      panelEl.hidden = true;
+    }
+
+    lengthBtn.addEventListener('click', function () { setMode('length'); });
+    angleBtn.addEventListener('click', function () { setMode('angle'); });
+
+    return { handleClick: handleClick, handleHover: handleHover, drawOverlay: drawOverlay, reset: reset, isActive: function () { return !!mode; } };
+  }
+
+  // ============================================================
   // "Werkzeug-DXF einlesen" (Release 200, #toolDxfImportPanel) - UI-Verdrahtung. Das
   // Datenmodell selbst (toolDxfProfiles/saveToolDxfProfile() usw.) sitzt weiter oben neben den
   // übrigen "Werkzeuge"-Einstellungen (siehe dortigen ausführlichen Kommentar sowie
@@ -20631,6 +21185,48 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const errorHint = el('toolDxfImportErrorHint');
     const canvas = el('toolDxfImportCanvas');
     const ctx = canvas.getContext('2d');
+
+    // Messfunktion (NEU, Release 229, siehe createDxfPreviewMeasureTool() oben). buildMapping()
+    // liefert dieselbe r/dist->Bildschirm-Zuordnung wie draw() weiter unten (bewusst separat
+    // gehalten statt draw() selbst umzubauen, um dessen bestehende, unveränderte Zeichenreihenfolge
+    // nicht anzufassen) sowie die Liste aller Fangpunkte: jeder Profil-Eckpunkt UND sein
+    // gespiegeltes Gegenstück (beide Seiten der Silhouette sind sichtbar/anklickbar).
+    function buildMapping() {
+      const w = canvas.width, h = canvas.height;
+      const prof = activeProfile();
+      if (!prof || prof.length < 2) return { toScreen: () => null, points: [] };
+      const distVals = prof.map(p => p.dist);
+      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
+      const padding = 24;
+      const drawableH = h - padding * 2;
+      const drawableW = w - padding * 2;
+      const distSpan = (distMax - distMin) || 1;
+      const yOf = (dist) => padding + drawableH * (1 - (dist - distMin) / distSpan);
+      const xOf = (r) => w / 2 + (r / rMax) * (drawableW / 2) * 0.9;
+      const points = [];
+      prof.forEach(p => {
+        points.push({ r: p.r, dist: p.dist });
+        if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
+      });
+      return { toScreen: (r, dist) => ({ x: xOf(r), y: yOf(dist) }), points: points };
+    }
+    const measureTool = createDxfPreviewMeasureTool({
+      lengthBtn: el('toolDxfMeasureLengthBtn'),
+      angleBtn: el('toolDxfMeasureAngleBtn'),
+      panelEl: el('toolDxfMeasurePanel'),
+      canvas: canvas,
+      getMapping: buildMapping
+    });
+    // Release 230 - siehe Kommentar bei dxfPreviewMeasureHandlers oben: trägt dieses Dialogs
+    // Messwerkzeug in die globale Escape-Sammelstelle ein. deactivate() nutzt bewusst das
+    // bereits vorhandene reset() (identische Abschalt-Logik wie beim erneuten Knopfklick), nur
+    // zusätzlich mit anschließendem draw(), damit die "[]"-Marker/Messpunkte sofort aus der
+    // Vorschau verschwinden statt erst beim nächsten Mausereignis.
+    dxfPreviewMeasureHandlers.push({
+      isActive: measureTool.isActive,
+      deactivate: function () { measureTool.reset(); draw(); }
+    });
 
     // Bearbeitungszustand des Dialogs - unabhängig vom globalen toolDxfProfiles-Array, erst
     // "Speichern" schreibt zurück (siehe unten). currentId===null bedeutet "neues Profil",
@@ -20767,6 +21363,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // fachliche Bedeutung.
       drawMarker(radiusRef, '#2f7bd6', 'R');
       drawMarker(lengthRef, '#e0792f', 'L');
+      // Messfunktion (NEU, Release 229) - zeichnet nur, solange ein Messwerkzeug aktiv ist (siehe
+      // createDxfPreviewMeasureTool()).
+      measureTool.drawOverlay(ctx);
     }
 
     function yToDistHelpers() {
@@ -20791,10 +21390,39 @@ Sebastian Bäcker (Anschrift wie oben)`,
       return null;
     }
 
+    // Koordinaten-Helfer für die Messfunktion (NEU, Release 229) - wandelt eine Mausposition
+    // (clientX/Y) in echte Canvas-interne Pixel um, inkl. eventueller CSS-Skalierung (die
+    // bestehende yToDistHelpers() oben deckt dieselbe Skalierung bereits für die Y-Achse der
+    // Referenzpunkt-Marker ab, hier zusätzlich auch X, da die Messfunktion zweidimensional ist).
+    function canvasXYFromClient(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
     canvas.addEventListener('mousedown', (e) => {
+      if (measureTool.isActive()) {
+        const p = canvasXYFromClient(e.clientX, e.clientY);
+        measureTool.handleClick(p.x, p.y);
+        draw();
+        e.preventDefault();
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       const target = hitTestMarker(e.clientY - rect.top);
       if (target) { dragTarget = target; e.preventDefault(); }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!measureTool.isActive()) return;
+      const p = canvasXYFromClient(e.clientX, e.clientY);
+      measureTool.handleHover(p.x, p.y);
+      draw();
+    });
+    canvas.addEventListener('mouseleave', () => {
+      if (!measureTool.isActive()) return;
+      measureTool.handleHover(-9999, -9999);
+      draw();
     });
     window.addEventListener('mousemove', (e) => {
       if (!dragTarget || !panel.classList.contains('open')) return;
@@ -20840,6 +21468,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Skalierungskorrektur stehen bleibt, statt auf einen jetzt falschen alten mm-Wert
     // "einzufrieren".
     function reparse() {
+      // Release 229 - ein neu eingelesenes/umskaliertes Profil macht eine laufende Messung
+      // gegenstandslos (die Fangpunkte gehören zum ALTEN Profil) - siehe Kommentar in resetForm().
+      measureTool.reset();
       if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -20900,7 +21531,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       draw();
     }
     scaleInput.addEventListener('change', reparse);
-    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); draw(); });
+    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); measureTool.reset(); draw(); });
 
     function stripDxfExtension(filename) { return filename.replace(/\.dxf$/i, ''); }
 
@@ -20947,6 +21578,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       radiusRefInput.value = '';
       showError('');
       profileSelect.selectedIndex = -1;
+      measureTool.reset(); // Release 229 - eine laufende Messung darf nicht ins nächste Profil "mitwandern"
       draw();
     }
 
@@ -20968,6 +21600,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       refsInitialized = true;
       syncRefInputsFromState();
       showError('');
+      measureTool.reset(); // Release 229 - siehe Kommentar in resetForm()
       draw();
     }
 
@@ -21106,6 +21739,42 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const canvas = el('chuckDxfImportCanvas');
     const ctx = canvas.getContext('2d');
 
+    // Messfunktion (NEU, Release 229) - 1:1 dasselbe Prinzip wie im Werkzeugprofil-Dialog oben,
+    // siehe dessen ausführlichen Kommentar.
+    function buildMapping() {
+      const w = canvas.width, h = canvas.height;
+      const prof = activeProfile();
+      if (!prof || prof.length < 2) return { toScreen: () => null, points: [] };
+      const distVals = prof.map(p => p.dist);
+      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
+      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
+      const padding = 24;
+      const drawableH = h - padding * 2;
+      const drawableW = w - padding * 2;
+      const distSpan = (distMax - distMin) || 1;
+      const yOf = (dist) => padding + drawableH * (1 - (dist - distMin) / distSpan);
+      const xOf = (r) => w / 2 + (r / rMax) * (drawableW / 2) * 0.9;
+      const points = [];
+      prof.forEach(p => {
+        points.push({ r: p.r, dist: p.dist });
+        if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
+      });
+      return { toScreen: (r, dist) => ({ x: xOf(r), y: yOf(dist) }), points: points };
+    }
+    const measureTool = createDxfPreviewMeasureTool({
+      lengthBtn: el('chuckDxfMeasureLengthBtn'),
+      angleBtn: el('chuckDxfMeasureAngleBtn'),
+      panelEl: el('chuckDxfMeasurePanel'),
+      canvas: canvas,
+      getMapping: buildMapping
+    });
+    // Release 230 - siehe Kommentar bei dxfPreviewMeasureHandlers oben sowie die identische
+    // Eintragung im Werkzeugprofil-Dialog weiter oben.
+    dxfPreviewMeasureHandlers.push({
+      isActive: measureTool.isActive,
+      deactivate: function () { measureTool.reset(); draw(); }
+    });
+
     let currentId = null;
     let dxfText = null;
     let parsedMain = null;
@@ -21203,6 +21872,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
         ctx.fillText(label, 4, y - 4);
       }
       drawMarker(lengthRef, '#e0792f', 'L');
+      // Messfunktion (NEU, Release 229) - siehe createDxfPreviewMeasureTool().
+      measureTool.drawOverlay(ctx);
     }
 
     function yToDistHelpers() {
@@ -21226,10 +21897,37 @@ Sebastian Bäcker (Anschrift wie oben)`,
       return null;
     }
 
+    // Koordinaten-Helfer für die Messfunktion (NEU, Release 229) - siehe ausführlichen Kommentar
+    // beim Werkzeugprofil-Dialog oben.
+    function canvasXYFromClient(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
     canvas.addEventListener('mousedown', (e) => {
+      if (measureTool.isActive()) {
+        const p = canvasXYFromClient(e.clientX, e.clientY);
+        measureTool.handleClick(p.x, p.y);
+        draw();
+        e.preventDefault();
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       const target = hitTestMarker(e.clientY - rect.top);
       if (target) { dragTarget = target; e.preventDefault(); }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!measureTool.isActive()) return;
+      const p = canvasXYFromClient(e.clientX, e.clientY);
+      measureTool.handleHover(p.x, p.y);
+      draw();
+    });
+    canvas.addEventListener('mouseleave', () => {
+      if (!measureTool.isActive()) return;
+      measureTool.handleHover(-9999, -9999);
+      draw();
     });
     window.addEventListener('mousemove', (e) => {
       if (!dragTarget || !panel.classList.contains('open')) return;
@@ -21257,6 +21955,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
 
     function reparse() {
+      // Release 229 - ein neu eingelesenes/umskaliertes Profil macht eine laufende Messung
+      // gegenstandslos (die Fangpunkte gehören zum ALTEN Profil) - siehe Kommentar in resetForm().
+      measureTool.reset();
       if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -21291,7 +21992,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       draw();
     }
     scaleInput.addEventListener('change', reparse);
-    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); draw(); });
+    alternateCheckbox.addEventListener('change', () => { clampRefs(); syncRefInputsFromState(); measureTool.reset(); draw(); });
 
     function stripDxfExtension(filename) { return filename.replace(/\.dxf$/i, ''); }
 
@@ -21337,6 +22038,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       lengthRefInput.value = '';
       showError('');
       profileSelect.selectedIndex = -1;
+      measureTool.reset(); // Release 229 - eine laufende Messung darf nicht ins nächste Profil "mitwandern"
       draw();
     }
 
@@ -21357,6 +22059,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       refsInitialized = true;
       syncRefInputsFromState();
       showError('');
+      measureTool.reset(); // Release 229 - siehe Kommentar in resetForm()
       draw();
     }
 
@@ -22680,6 +23383,28 @@ Sebastian Bäcker (Anschrift wie oben)`,
       toggleMeasureAngle();
       return;
     }
+    // Release 227 (Sebastian: "Tastenkürzel erweitern, auch in der Shortcutliste anzeigen: Strg +
+    // O -> CNC Programm laden, Shift + O -> DXF laden, Shift + B -> DXF Bauteilstärke
+    // einstellen."): Shift + O/B hier (dieselbe Eingabefeld-Ausnahme wie Shift+L/Shift+W oben nötig,
+    // da Shift+Buchstabe beim Tippen in einem Textfeld normalerweise einen Großbuchstaben erzeugt);
+    // Strg + O steht dagegen unten beim bestehenden Strg+L-Handler (dort bewusst OHNE
+    // Eingabefeld-Ausnahme, siehe dessen Kommentar - dieselbe Begründung gilt für Strg+O).
+    // "Shift + O -> DXF laden" ruft denselben Dateiauswahl-Dialog auf wie ein Klick auf
+    // #btnDxfImport/#btnDxfImportIcon (siehe deren Handler weiter unten, el('dxfFileInput').click()).
+    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyO') {
+      e.preventDefault();
+      el('dxfFileInput').click();
+      return;
+    }
+    // "Shift + B -> DXF Bauteilstärke einstellen" ruft dieselbe, unveränderte
+    // openDxfThicknessPanel()-Funktion auf wie #btnDxfThickness/#btnDxfThicknessMenu (siehe dort) -
+    // deren eigener Guard (kein DXF geladen -> kein Dialog) greift dadurch automatisch auch hier
+    // mit, ganz ohne eigene Prüfung an dieser Stelle.
+    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyB') {
+      e.preventDefault();
+      openDxfThicknessPanel();
+      return;
+    }
     // Release 185 (Sebastian: "Shift + Pfeiltaste rechts -> Nächster Arbeitsgang, Shift +
     // Pfeiltaste links -> Letzter Arbeitsgang" [mit "letzter" ist hier derselbe "vorheriger
     // Arbeitsgang" gemeint wie bei #btnOpPrev - exakt dieselbe Rechts=weiter/Links=zurück-Zuordnung
@@ -22731,6 +23456,31 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyL') {
       e.preventDefault();
       applyLanguage(currentLang === 'en' ? 'de' : 'en');
+    }
+    // Release 227 (Sebastian: "Strg + O -> CNC Programm laden"): ruft denselben Dateiauswahl-Dialog
+    // auf wie ein Klick auf #btnLoadFile/#btnLoadFileIcon (siehe deren Handler weiter oben,
+    // el('fileInput').click()). Bewusst OHNE Eingabefeld-Ausnahme, aus demselben Grund wie bei
+    // Strg+L direkt oberhalb (Strg+Buchstabe hat beim Tippen keine erwartbare Standardbedeutung).
+    // e.preventDefault() unterdrückt zusätzlich die übliche Browser-Standardwirkung von Strg+O
+    // ("Datei öffnen"-Dialog des Browsers selbst) - dieselbe Vorsichtsmaßnahme wie bei Strg+L.
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyO') {
+      e.preventDefault();
+      el('fileInput').click();
+    }
+    // Release 228 (Sebastian: "Strg + Alt + W -> Werkzeugprofil editieren, Strg + Alt + S ->
+    // Spannfutter editieren."): rufen denselben Dialog auf wie ein Klick auf #btnToolDxfImport/
+    // #btnChuckDxfImport (siehe deren Handler weiter unten bzw. "Werkzeugprofil bearbeiten"/
+    // "Spannfutter bearbeiten" im Menü "Einstellungen" -> "Werkzeuge", 10.1) - beide Knöpfe sind
+    // ohne Vorbedingung immer aktiv (kein disabled-Zustand), ein zusätzlicher Guard ist hier daher
+    // nicht nötig. Bewusst OHNE Eingabefeld-Ausnahme, aus demselben Grund wie bei Strg+L/Strg+O
+    // oben (Strg+Alt+Buchstabe hat beim Tippen keine erwartbare Standardbedeutung).
+    if (e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && e.code === 'KeyW') {
+      e.preventDefault();
+      el('btnToolDxfImport').click();
+    }
+    if (e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && e.code === 'KeyS') {
+      e.preventDefault();
+      el('btnChuckDxfImport').click();
     }
   });
 
@@ -23437,8 +24187,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // sichtbar", Sebastian) - bei 100% (Default, unverändertes Altverhalten) bliebe eine Farbwahl
   // ohne jede sichtbare Wirkung, daher komplett ausgeblendet statt nur deaktiviert, exakt nach
   // demselben Muster wie bei #toolAppearanceCutterColorRow u.ä. (updateFilledRowsVisibility()).
+  // Release 227, siehe Deklaration von dxfOutlineColor weiter oben: #dxfOutlineColorRow teilt sich
+  // dieselbe Sichtbarkeits-Bedingung wie #dxfThicknessColorRow (die Outline wird wie die Füllung
+  // selbst nur gezeichnet, solange fillActive gilt, siehe drawDxf()).
   function updateDxfThicknessColorRowVisibility() {
-    dxfThicknessColorRow.hidden = Number(dxfThicknessTransparencySlider.value) >= 100;
+    const hide = Number(dxfThicknessTransparencySlider.value) >= 100;
+    dxfThicknessColorRow.hidden = hide;
+    dxfOutlineColorRow.hidden = hide;
   }
   dxfThicknessTransparencySlider.addEventListener('input', () => {
     dxfThicknessTransparencyValue.textContent = dxfThicknessTransparencySlider.value + '%';
@@ -23449,6 +24204,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (norm) dxfThicknessColorPicker.value = norm;
   });
   dxfThicknessColorPicker.addEventListener('input', () => { dxfThicknessColorHex.value = dxfThicknessColorPicker.value; });
+  // Release 227: dieselbe Hex<->Picker-Synchronisation wie bei dxfThicknessColorHex/-Picker oben,
+  // nur für die neue Outline-Farbe.
+  dxfOutlineColorHex.addEventListener('input', () => {
+    const norm = normalizeHex(dxfOutlineColorHex.value);
+    if (norm) dxfOutlineColorPicker.value = norm;
+  });
+  dxfOutlineColorPicker.addEventListener('input', () => { dxfOutlineColorHex.value = dxfOutlineColorPicker.value; });
 
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
@@ -23468,6 +24230,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfThicknessColorPicker.value = dxfThicknessColor;
     dxfThicknessColorHex.value = dxfThicknessColor;
     dxfThicknessColorHexWarning.hidden = true;
+    // Release 227, siehe Deklaration von dxfOutlineColor weiter oben.
+    dxfOutlineColorPicker.value = dxfOutlineColor;
+    dxfOutlineColorHex.value = dxfOutlineColor;
+    dxfOutlineColorHexWarning.hidden = true;
     updateDxfThicknessColorRowVisibility();
     dxfThicknessPanel.classList.add('open');
     dxfThicknessInput.focus();
@@ -23488,12 +24254,24 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // (Farbzeile sichtbar) muss die Farbe selbst zusätzlich ein gültiger Hexcode sein.
     const transparencyVal = Number(dxfThicknessTransparencySlider.value);
     if (transparencyVal < 100) {
+      // Release 227: beide Farbfelder (Füllfarbe + die neue Outline-Farbe) teilen sich dieselbe
+      // Sichtbarkeits-Bedingung (transparencyVal < 100, siehe updateDxfThicknessColorRowVisibility())
+      // und müssen deshalb hier auch beide geprüft werden. Bewusst ERST beide validieren und erst
+      // danach beide übernehmen - sonst würde bei ungültiger Outline-Farbe eine zuvor bereits
+      // geprüfte, gültige Füllfarbe trotz des abgebrochenen Confirm schon in dxfThicknessColor
+      // stehen (inkonsistenter Teil-Zustand).
       const norm = normalizeHex(dxfThicknessColorHex.value);
+      const outlineNorm = normalizeHex(dxfOutlineColorHex.value);
       if (!norm) {
         dxfThicknessColorHexWarning.hidden = false;
         return;
       }
+      if (!outlineNorm) {
+        dxfOutlineColorHexWarning.hidden = false;
+        return;
+      }
       dxfThicknessColor = norm;
+      dxfOutlineColor = outlineNorm;
     }
     dxfThicknessTransparency = transparencyVal;
     dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
