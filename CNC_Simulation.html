@@ -2101,6 +2101,11 @@
      eigene Klasse statt Wiederverwendung, da ".panel-hint .k" für kurze Erwähnungen INNERHALB
      eines Fließtexts gedacht ist, nicht für eine ganze, rechtsbündige Beschreibungs-Spalte
      daneben) + Beschreibung rechts, siehe #shortcutsPanel in template_top.html. */
+  /* Release 237: Kopfzeile der Shortcuts-Liste - Titel links, Link zur Knowledge Base rechts oben. */
+  .shortcuts-head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; }
+  .shortcuts-kb-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-size: 13px; color: var(--accent); text-decoration: underline; cursor: pointer; }
+  .shortcuts-kb-link:hover { filter: brightness(1.15); }
+  .shortcuts-kb-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
   .shortcut-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 5px 0; }
   .shortcut-row + .shortcut-row { border-top: 1px solid var(--border-soft); }
   .shortcut-key { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; white-space: nowrap; }
@@ -3708,7 +3713,13 @@
      "3D-Ansicht Top" / "3D from top", nicht mehr die alte Iso-Ansichts-Beschreibung. -->
 <div class="paste-panel" id="shortcutsPanel">
   <div class="paste-card">
-    <h3 data-i18n-en="Shortcuts">Shortcuts</h3>
+    <!-- Release 237 (Sebastian: "2 In der Shortcuts-Liste ist eine Verlinkung zur "Knowledge Base"
+         rechts oben im Fenster"): Kopfzeile mit Titel links und einem Link-Knopf rechts, der die Liste
+         schließt und die Knowledge Base öffnet (siehe #btnShortcutsOpenKnowledgeBase in app.js). -->
+    <div class="shortcuts-head">
+      <h3 data-i18n-en="Shortcuts">Shortcuts</h3>
+      <button class="shortcuts-kb-link" id="btnShortcutsOpenKnowledgeBase" type="button" title="Knowledge Base öffnen" data-i18n-en="Knowledge Base" data-i18n-en-title="Open the Knowledge Base">Knowledge Base</button>
+    </div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
@@ -3729,6 +3740,8 @@
          Zeilen nach demselben Muster wie die bestehenden Strg-/Shift-Kombinationen oben. -->
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
+    <!-- Release 237 (Sebastian: "Taste F1 öffnet Shortcuts-Liste") -->
+    <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open this shortcuts list">Diese Shortcuts-Liste öffnen</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
     <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
     <div class="paste-actions">
@@ -5621,7 +5634,13 @@
   // geschrieben (statt den Marker einfach wegzulassen), damit erkennbar bleibt, dass der Dialog
   // für diesen Arbeitsgang bereits bestätigt wurde - exakt dieselbe Begründung wie bei
   // TOOLMODE/TOOLTYPE, die ebenfalls immer geschrieben werden, nie nur bei einem "aktiven" Wert.
-  const TOOL_PROFILE_RE = /TOOLPROFILE\s+(\S+)/i;
+  // Release 238 (Sebastian: "Beim Werkzeugprofil bzw. für die Spannzange steht aktuell ein
+  // "verschlüsselter" Name ... Das sollte bitte im Klarnamen stehen"): der Marker enthält jetzt den
+  // KLARNAMEN des Profils (z. B. "; TOOLPROFILE Minizinkenfraeser"), nicht mehr die interne id
+  // (z. B. "tdp_mv6r1mo7_sp0u4j"). Da Namen Leerzeichen enthalten können, gilt als Wert alles bis
+  // zum Zeilenende (statt nur das erste Wort). Ältere Programme mit id im Marker funktionieren
+  // weiter - app.js löst den Wert erst als id, dann als Name auf (resolveProfileMarker()).
+  const TOOL_PROFILE_RE = /(?:^|[^A-Za-z0-9_])TOOLPROFILE\s+(.+?)\s*$/i;
   // "CHUCKPROFILE" (NEU, Release 214, Sebastian: "Spannfutter-DXF einlesen" - Mammutaufgabe, siehe
   // CNC_Simulation.md) - sechster Marker nach demselben "; SCHLÜSSELWORT WERT"-Prinzip wie
   // TOOLPROFILE oben, ebenfalls rein manuell über den "+Werkzeuge (T)"-Dialog gesetzt (siehe
@@ -5630,7 +5649,33 @@
   // siehe app.js) oder das feste Schlüsselwort NONE - exakt dieselbe Behandlung wie bei
   // TOOLPROFILE (siehe dortigen Kommentar, "kein Profil" vs. "noch nie gesetzt" wird bewusst nicht
   // unterschieden).
-  const CHUCK_PROFILE_RE = /CHUCKPROFILE\s+(\S+)/i;
+  const CHUCK_PROFILE_RE = /(?:^|[^A-Za-z0-9_])CHUCKPROFILE\s+(.+?)\s*$/i; // Release 238: Klarname bis Zeilenende, siehe TOOL_PROFILE_RE
+  // Release 239 (Sebastian: "Ich würde gerne im Werkzeugwechsel CHUCKPROFILE und TOOLPROFILE in einer
+  // Zeile ausgeben können ... ';ChPro HSKF63_75 // ;TPro Minizinkenfraeser' ... Dahinter kann in
+  // Klammern auch noch was stehen, getrennt von einem '//' und das wird von der Sim ignoriert"):
+  // kombinierte Einzeiler-Notation. Die Zeile wird an '//' geteilt; NUR die ersten beiden Teile werden
+  // ausgewertet (Teil 3 ff. = realer Werkzeugname o. ä., wird ignoriert). Ein Teil gilt als Treffer,
+  // wenn das Schlüsselwort ChPro (Spannfutter) bzw. TPro (Werkzeug) dort steht - davor darf ein
+  // beliebiges Kommentarzeichen stehen (';', '(', '#', ...), der Wert reicht bis zum Teilende. Beginnt
+  // der Teil mit '(' und der Wert endet auf ')', wird die schließende Klammer entfernt. Die alten
+  // Einzelmarker (TOOLPROFILE/CHUCKPROFILE, auch händisch geschrieben) gelten weiterhin (der Einzeiler wird
+  // zuerst geprüft, damit Namen wie "MeinChuckProfile" nicht als Altmarker missverstanden werden). Ein einzelnes '/' im Namen ist erlaubt, '//' ist in Profilnamen verboten.
+  function matchProfileMarker(line, kind) {
+    // Einzeiler zuerst: Profilnamen wie "MeinChuckProfile" dürfen den Altmarker-Treffer nicht verfälschen.
+    if (line.indexOf('//') !== -1 || /(^|[^A-Za-z0-9_])(ChPro|TPro)\s/i.test(line)) {
+      const segs = line.split('//');
+      const re = new RegExp('(^|[^A-Za-z0-9_])' + (kind === 'chuck' ? 'ChPro' : 'TPro') + '\\s+(.+?)\\s*$', 'i');
+      for (let k = 0; k < Math.min(2, segs.length); k++) {
+        const m = re.exec(segs[k]);
+        if (!m) continue;
+        let v = m[2];
+        if (/^\s*\(/.test(segs[k]) && /\)$/.test(v) && v.indexOf('(') === -1) v = v.slice(0, -1).trim();
+        if (v) return v;
+      }
+    }
+    const legacy = (kind === 'chuck' ? CHUCK_PROFILE_RE : TOOL_PROFILE_RE).exec(line);
+    return legacy ? legacy[1] : null;
+  }
 
   // Durchsucht die übergebenen Zeilen (typischerweise ein einzelner Arbeitsgang-Abschnitt) nach
   // Radius/Länge und liefert {radius, length, isBlade, toolMode, toolType} (radius/length jeweils
@@ -5699,15 +5744,15 @@
     // "kein Profil" (null) zurückgegeben - app.js/drawTool() unterscheiden diese beiden Fälle
     // bewusst nicht (siehe Kommentar oben bei TOOL_PROFILE_RE).
     for (let i = 0; i < lines.length && toolProfileId === null; i++) {
-      const m = TOOL_PROFILE_RE.exec(lines[i]);
-      if (m && m[1].toUpperCase() !== 'NONE') toolProfileId = m[1];
+      const v = matchProfileMarker(lines[i], 'tool'); // Release 239: auch '; TPro ..' (Einzeiler)
+      if (v !== null && v.toUpperCase() !== 'NONE') toolProfileId = v;
     }
     // "CHUCKPROFILE" (NEU, Release 214, siehe CHUCK_PROFILE_RE oben) - unabhängig von den übrigen
     // Markern über alle Zeilen gesucht, erster Treffer gewinnt (exakt dasselbe Muster wie
     // TOOLPROFILE oben).
     for (let i = 0; i < lines.length && chuckProfileId === null; i++) {
-      const m = CHUCK_PROFILE_RE.exec(lines[i]);
-      if (m && m[1].toUpperCase() !== 'NONE') chuckProfileId = m[1];
+      const v = matchProfileMarker(lines[i], 'chuck'); // Release 239: auch '; ChPro ..' (Einzeiler)
+      if (v !== null && v.toUpperCase() !== 'NONE') chuckProfileId = v;
     }
     // Finaler Zahlenwert: eine tatsächlich gefundene LENGTH-Zeile gewinnt immer (egal ob generische
     // LENGTH-Notation oder die vom Dialog geschriebene, aktuell gültige Länge/Sägeblattstärke); nur
@@ -9415,8 +9460,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 236;
-  const APP_RELEASE_TIMESTAMP = '19.10.2026, 09:00 Uhr';
+  const APP_RELEASE_NUMBER = 239;
+  const APP_RELEASE_TIMESTAMP = '19.10.2026, 13:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -10739,7 +10784,7 @@ CORNERRADIUS=GFIL r=
   function normalizeToolDxfProfile(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
-    const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+    const name = typeof raw.name === 'string' ? raw.name.replace(/\/{2,}/g, '/').trim() : ''; // Release 239: '//' im Namen verboten
     const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
     const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
     if (!id || !name || !dxfText || !mainProfile) return null;
@@ -10821,7 +10866,11 @@ CORNERRADIUS=GFIL r=
     if (!normalized) return null;
     const idx = toolDxfProfiles.findIndex(function (p) { return p.id === normalized.id; });
     if (idx === -1) toolDxfProfiles.push(normalized);
-    else toolDxfProfiles[idx] = normalized;
+    else {
+      const oldName = toolDxfProfiles[idx].name;
+      toolDxfProfiles[idx] = normalized;
+      updateProfileMarkersForRename('tool', oldName, normalized.name); // Release 238
+    }
     persistToolDxfProfiles(toolDxfProfiles);
     return normalized;
   }
@@ -10830,8 +10879,10 @@ CORNERRADIUS=GFIL r=
     if (!p) return false;
     const name = String(newName == null ? '' : newName).trim();
     if (!name) return false;
+    const oldName = p.name;
     p.name = name;
     p.updatedAt = Date.now();
+    updateProfileMarkersForRename('tool', oldName, name); // Release 238
     persistToolDxfProfiles(toolDxfProfiles);
     return true;
   }
@@ -10934,7 +10985,7 @@ CORNERRADIUS=GFIL r=
   function normalizeChuckDxfProfile(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
-    const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+    const name = typeof raw.name === 'string' ? raw.name.replace(/\/{2,}/g, '/').trim() : ''; // Release 239: '//' im Namen verboten
     const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
     const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
     if (!id || !name || !dxfText || !mainProfile) return null;
@@ -11004,7 +11055,11 @@ CORNERRADIUS=GFIL r=
     if (!normalized) return null;
     const idx = chuckDxfProfiles.findIndex(function (p) { return p.id === normalized.id; });
     if (idx === -1) chuckDxfProfiles.push(normalized);
-    else chuckDxfProfiles[idx] = normalized;
+    else {
+      const oldName = chuckDxfProfiles[idx].name;
+      chuckDxfProfiles[idx] = normalized;
+      updateProfileMarkersForRename('chuck', oldName, normalized.name); // Release 238
+    }
     persistChuckDxfProfiles(chuckDxfProfiles);
     return normalized;
   }
@@ -14313,11 +14368,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // relevant (siehe drawTool() weiter unten) - beeinflusst NIEMALS sec.toolRadius/
         // sec.toolLength selbst (bestätigte Antwort auf die Vorrang-Klärungsfrage: Programmtext/
         // Dialog-Zahlenwerte haben bei Konflikt immer Vorrang vor dem DXF-Profil).
-        sec.toolProfileId = toolData.toolProfileId;
+        sec.toolProfileId = resolveProfileMarker('tool', toolData.toolProfileId);
         // "CHUCKPROFILE" (NEU, Release 214) - 1:1 dasselbe Prinzip wie sec.toolProfileId oben, nur
         // für ein gespeichertes Spannfutter-(Werkzeughalter-)Profil (chuckDxfProfiles), siehe
         // CHUCK_PROFILE_RE/extractToolData() in parser.js.
-        sec.chuckProfileId = toolData.chuckProfileId;
+        sec.chuckProfileId = resolveProfileMarker('chuck', toolData.chuckProfileId);
       });
     }
     // ALLE Leerzeilen werden in der Programm-Ansicht ausgeblendet (Benutzer, 20. Runde: "Wenn
@@ -21889,9 +21944,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       btnEditToolProfileToolbarIcon.addEventListener('click', openToolDxfImportPanel);
     }
     el('btnToolDxfImportCancel').addEventListener('click', () => panel.classList.remove('open'));
+    nameInput.addEventListener('input', () => { // Release 239: '//' im Profilnamen sofort anzeigen
+      if (nameInput.value.indexOf('//') !== -1) showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).'));
+      else if (errorHint.textContent && /\/\//.test(errorHint.textContent)) showError('');
+    });
+
     el('btnToolDxfImportSave').addEventListener('click', () => {
       const name = nameInput.value.trim();
       if (!name) { showError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+      if (name.indexOf('//') !== -1) { showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).')); return; }
       if (!dxfText || !parsedMain) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -22333,9 +22394,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       btnEditChuckProfileToolbarIcon.addEventListener('click', openChuckDxfImportPanel);
     }
     el('btnChuckDxfImportCancel').addEventListener('click', () => panel.classList.remove('open'));
+    nameInput.addEventListener('input', () => { // Release 239: '//' im Profilnamen sofort anzeigen
+      if (nameInput.value.indexOf('//') !== -1) showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).'));
+      else if (errorHint.textContent && /\/\//.test(errorHint.textContent)) showError('');
+    });
+
     el('btnChuckDxfImportSave').addEventListener('click', () => {
       const name = nameInput.value.trim();
       if (!name) { showError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+      if (name.indexOf('//') !== -1) { showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).')); return; }
       if (!dxfText || !parsedMain) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -22708,6 +22775,24 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // applyLanguage()).
   btnOpenShortcuts.addEventListener('click', () => shortcutsPanel.classList.add('open'));
   el('btnShortcutsClose').addEventListener('click', () => shortcutsPanel.classList.remove('open'));
+  // Release 237 (Sebastian: "Taste F1 öffnet Shortcuts-Liste"): F1 öffnet dieselbe Liste wie
+  // #btnOpenShortcuts. Auch aus Eingabefeldern heraus nutzbar (F1 erzeugt beim Tippen keinen Text).
+  // preventDefault() unterdrückt die Hilfe-Funktion des Browsers/WebView2. Ist bereits ein anderer
+  // Dialog offen, passiert nichts (keine gestapelten Dialoge - der Escape-Handler schließt immer den
+  // ersten offenen .paste-panel). Strg/Alt/Shift + F1 sind bewusst nicht belegt.
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'F1' || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+    e.preventDefault();
+    if (document.querySelector('.paste-panel.open')) return;
+    shortcutsPanel.classList.add('open');
+  });
+  // Release 237 (Sebastian: "In der Shortcuts-Liste ist eine Verlinkung zur "Knowledge Base" rechts
+  // oben im Fenster"): schließt die Liste und löst denselben Klick wie der Menüpunkt "Knowledge Base"
+  // aus (befüllt den Editor in der aktuellen Sprache, siehe btnOpenKnowledgeBase-Handler).
+  el('btnShortcutsOpenKnowledgeBase').addEventListener('click', () => {
+    shortcutsPanel.classList.remove('open');
+    btnOpenKnowledgeBase.click();
+  });
 
   btnOpenKnowledgeBase.addEventListener('click', () => {
     knowledgeBaseEditArea.value = currentLang === 'en' ? knowledgeBaseTextEn : knowledgeBaseText;
@@ -23123,6 +23208,59 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // "cursor"-Upsert-Technik wie TOOLPROFILE direkt davor - ältere Fünf-Zeilen-Blöcke (aus
   // Programmen, die noch nie mit dieser Runde bearbeitet wurden) werden dadurch beim nächsten
   // "Ok" automatisch um den fehlenden Marker ergänzt.
+  // Release 238 (Klarname im Marker, siehe TOOL_PROFILE_RE in parser.js).
+  // profileMarkerText(): Text hinter "; TOOLPROFILE "/"; CHUCKPROFILE " - "NONE" ohne Profil, sonst der
+  // Klarname des Profils. Fallback auf die id, wenn (a) das Profil nicht (mehr) gefunden wird, (b) sein
+  // Name leer oder "NONE" ist oder (c) mehrere Profile denselben Namen tragen (dann wäre der Name nicht
+  // eindeutig - die id bleibt in diesen Fällen die verlässliche Referenz).
+  function profileListFor(kind) { return kind === 'chuck' ? chuckDxfProfiles : toolDxfProfiles; }
+  function profileMarkerText(kind, id) {
+    if (!id) return 'NONE';
+    const list = profileListFor(kind);
+    const prof = list.find(p => p.id === id);
+    if (!prof) return id;
+    const name = String(prof.name || '').replace(/[\r\n]+/g, ' ').trim();
+    if (!name || name.toUpperCase() === 'NONE' || name.indexOf('//') !== -1) return id; // '//' trennt im Einzeiler (Release 239)
+    const lower = name.toLowerCase();
+    if (list.filter(p => String(p.name || '').trim().toLowerCase() === lower).length > 1) return id;
+    return name;
+  }
+  // resolveProfileMarker(): Marker-Wert -> id des gespeicherten Profils. Erst als id (ältere
+  // Programme), dann als Klarname (Groß-/Kleinschreibung egal, erster Treffer). Nicht auffindbar:
+  // Wert unverändert zurück (verhält sich dann wie bisher eine unbekannte id - Zylinder/Standard).
+  function resolveProfileMarker(kind, value) {
+    if (!value) return value;
+    const list = profileListFor(kind);
+    if (list.some(p => p.id === value)) return value;
+    const lower = String(value).trim().toLowerCase();
+    const byName = list.find(p => String(p.name || '').trim().toLowerCase() === lower);
+    return byName ? byName.id : value;
+  }
+  // Wird ein Profil umbenannt, ziehen die Marker im geladenen Programm und in der Programmliste mit,
+  // sonst würde die Zuordnung beim nächsten Neuaufbau verloren gehen (der Marker enthält den Namen).
+  function updateProfileMarkersForRename(kind, oldName, newName) {
+    const o = String(oldName || '').trim(), n = String(newName || '').trim();
+    if (!o || !n || o === n) return;
+    const re = new RegExp('^(\\s*;\\s*' + (kind === 'chuck' ? 'CHUCKPROFILE' : 'TOOLPROFILE') + '\\s+)(.+?)(\\s*)$', 'i');
+    // Release 239: Einzeiler ';ChPro A // ;TPro B [// ..]' - nur die ersten beiden '//'-Teile prüfen.
+    const reShort = new RegExp('^(.*?(?:^|[^A-Za-z0-9_])' + (kind === 'chuck' ? 'ChPro' : 'TPro') + '\\s+)(.+?)(\\s*)$', 'i');
+    const fixPair = (part) => {
+      if (part.indexOf('//') === -1) return part;
+      const segs = part.split('//');
+      for (let k = 0; k < Math.min(2, segs.length); k++) {
+        const m = reShort.exec(segs[k]);
+        if (m && m[2].toLowerCase() === o.toLowerCase()) { segs[k] = m[1] + n + m[3]; return segs.join('//'); }
+      }
+      return part;
+    };
+    const fix = (text) => text.split(/(\r\n|\n)/).map(part => {
+      const m = re.exec(part);
+      if (m) return (m[2].toLowerCase() === o.toLowerCase()) ? m[1] + n + m[3] : part;
+      return fixPair(part);
+    }).join('');
+    if (typeof rawProgramText === 'string') rawProgramText = fix(rawProgramText);
+    if (Array.isArray(programList)) programList.forEach(entry => { if (entry && typeof entry.text === 'string') entry.text = fix(entry.text); });
+  }
   function insertToolDataComment(sec, radiusStr, lengthStr, toolMode, toolType, toolProfileId, chuckProfileId) {
     const eol = rawProgramText.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
     const lines = rawProgramText.split(/\r\n|\n/);
@@ -23131,8 +23269,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const lengthLine = '; LENGTH ' + lengthStr;
     const modeLine = '; TOOLMODE ' + toolMode.toUpperCase();
     const typeLine = '; TOOLTYPE ' + toolType.toUpperCase();
-    const profileLine = '; TOOLPROFILE ' + (toolProfileId || 'NONE');
-    const chuckProfileLine = '; CHUCKPROFILE ' + (chuckProfileId || 'NONE');
+    // Release 239: beide Profile in EINER Zeile (Sebastian: ";ChPro HSKF63_75 // ;TPro Minizinkenfraeser").
+    // Das zweite ';' hinter dem '//' bleibt bewusst stehen: die Zeile ist damit auch für die Maschine
+    // ein reiner Kommentar. Ältere Einzelzeilen (TOOLPROFILE/CHUCKPROFILE) werden dabei ersetzt.
+    const profilePairLine = '; ChPro ' + profileMarkerText('chuck', chuckProfileId) + ' // ; TPro ' + profileMarkerText('tool', toolProfileId);
     const alreadyPresent = /^;\s*RADIUS\s/i.test(lines[insertAt] || '') && /^;\s*LENGTH\s/i.test(lines[insertAt + 1] || '');
     if (alreadyPresent) {
       lines[insertAt] = radiusLine;
@@ -23144,10 +23284,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
       }
       upsertMarker(/^;\s*TOOLMODE\s/i, modeLine);
       upsertMarker(/^;\s*TOOLTYPE\s/i, typeLine);
-      upsertMarker(/^;\s*TOOLPROFILE\s/i, profileLine);
-      upsertMarker(/^;\s*CHUCKPROFILE\s/i, chuckProfileLine);
+      // Profil-Zeile(n) ab cursor (kombinierte Zeile oder bis zu zwei alte Einzelzeilen) durch die
+      // kombinierte Zeile ersetzen.
+      let oldCount = 0;
+      while (oldCount < 2 && /^;\s*(TOOLPROFILE|CHUCKPROFILE|ChPro|TPro)\s/i.test(lines[cursor + oldCount] || '')) oldCount++;
+      lines.splice(cursor, oldCount, profilePairLine);
     } else {
-      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine, profileLine, chuckProfileLine);
+      lines.splice(insertAt, 0, radiusLine, lengthLine, modeLine, typeLine, profilePairLine);
     }
     rawProgramText = lines.join(eol);
   }
