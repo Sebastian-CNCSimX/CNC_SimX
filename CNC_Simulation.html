@@ -5087,7 +5087,7 @@
 <div class="paste-panel" id="chuckDxfImportPanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit chuck profile">Spannfutter bearbeiten</h3>
-    <p class="panel-hint" data-i18n-en="Reads a DXF file of a real, axially symmetric chuck (tool holder), automatically converts its outline into a revolve profile and shows it as a 3D chuck body in place of the fixed standard HSK63 holder - can be hidden again at any time via 'Hide chuck' or by simply not selecting a profile for a processing step. The DXF is read in exactly as the chuck stands in front of you: whatever is at the top of the DXF is the top side of the chuck (the side the tool rests against).">Liest eine DXF-Datei eines echten, achssymmetrischen Spannfutters (Werkzeughalters) ein, wandelt die Kontur automatisch in ein Rotationsprofil um und zeigt sie als 3D-Spannfutterkörper anstelle der festen HSK63-Standardaufnahme an - jederzeit über "Spannfutter ausblenden" oder durch einfaches Nicht-Auswählen bei einem Arbeitsgang wieder ausblendbar. Die DXF wird immer so eingelesen, wie das Spannfutter von vorne vor Ihnen steht: Was im DXF oben ist, ist auch die Oberseite des Spannfutters (die Seite, an der das Werkzeug anliegt).</p>
+    <p class="panel-hint" data-i18n-en="Reads a DXF file of a real, axially symmetric chuck (tool holder), automatically converts its outline into a revolve profile and shows it as a 3D chuck body in place of the fixed standard HSK63 holder - can be hidden again at any time via 'Hide chuck' or by simply not selecting a profile for a processing step. The 3D view looks exactly like the DXF preview: whatever is at the top of the DXF points towards the spindle, whatever is at the bottom points towards the tool. The length reference point marks where the upper end of the tool rests inside the chuck.">Liest eine DXF-Datei eines echten, achssymmetrischen Spannfutters (Werkzeughalters) ein, wandelt die Kontur automatisch in ein Rotationsprofil um und zeigt sie als 3D-Spannfutterkörper anstelle der festen HSK63-Standardaufnahme an - jederzeit über "Spannfutter ausblenden" oder durch einfaches Nicht-Auswählen bei einem Arbeitsgang wieder ausblendbar. Die 3D-Ansicht sieht genauso aus wie die DXF-Vorschau: Was im DXF oben ist, zeigt Richtung Spindel, was unten ist, Richtung Werkzeug. Der Längenreferenzpunkt markiert die Stelle, an der das obere Ende des Werkzeugs im Spannfutter anliegt.</p>
 
     <div class="tool-dxf-import-body">
       <div class="tool-dxf-import-controls">
@@ -5771,6 +5771,11 @@
     // anschlagen könnte.
     if (lines.length && /\.CIX/i.test(lines[0])) return 'CIX';
     const header = lines.slice(0, Math.min(HEADER_SCAN_LINES, lines.length)).join('\n');
+    // Release 234: Albatros/EDICAD-Programme ("~CncEdit.Txt:" / "TPA\ALBATROS\EDICAD\01.00:...") -
+    // bewusst VOR den übrigen Kopftext-Prüfungen, weil deren Kopfzeilen frei beschriebene Texte
+    // enthalten ("$= ... PROFIT H500 HOLZUNION") und ein Treffer wie "SCM"/"FORMAT" darin sonst
+    // fälschlich gewinnen würde.
+    if (/\bALBATROS\b|\bEDICAD\b/i.test(header)) return 'ALBATROS';
     if (/SCM/i.test(header)) return 'SCM';
     if (/HOMAG/i.test(header)) return 'HOMAG';
     if (/FORMAT/i.test(header)) return 'FORMAT4';
@@ -5879,6 +5884,51 @@
       const limit = nextStartIdx === -1 ? lines.length : nextStartIdx;
       for (let i = afterBlockIdx; i < limit; i++) {
         if (/^G60\b/.test(lines[i].trim())) return i;
+      }
+      return limit - 1;
+    }
+  };
+
+  // --- Albatros / EDICAD (Release 234) ---
+  // Sebastian: Programmdatei mit Kopf "~CncEdit.Txt:" / "TPA\ALBATROS\EDICAD\01.00:64:r0w0", jede
+  // Zeile ein Datensatz "W#2201 { ::WTl #1=99 #2=307 }W" bzw. Kommentar "$=<Text> }W". Arbeitsgänge
+  // sind (wie bei FORMAT4/SCM) 3-zeilige Blöcke aus Trennzeile / Titel / Trennzeile:
+  //     $=_______ }W
+  //     $=~s~aegen }W
+  //     $=_______ }W
+  // Das abschließende " }W" fehlt in manchen Kommentarzeilen (die ersten Kopfzeilen), deshalb
+  // optional. Titel-Kodierung: "~" + Buchstabe = Großbuchstabe (~stufe -> Stufe), "~ae"/"~oe"/"~ue"
+  // = ä/ö/ü (f~uer -> für); siehe decodeAlbatrosTitle(). Ende eines Arbeitsgangs: unmittelbar vor
+  // dem nächsten Arbeitsgang bzw. vor der schließenden "}SIDE"-Zeile.
+  const ALBATROS_SEP_RE = /^\$=\s*_{3,}\s*(?:\}W)?\s*$/;
+  const ALBATROS_TITLE_RE = /^\$=\s*(.*?)\s*(?:\}W)?\s*$/;
+  function decodeAlbatrosTitle(raw) {
+    return String(raw)
+      .replace(/~([aou])e/gi, (m, c) => ({ a: 'ä', o: 'ö', u: 'ü' })[c.toLowerCase()])
+      .replace(/~([A-Za-z])/g, (m, c) => c.toUpperCase())
+      .replace(/\s+/g, ' ').trim();
+  }
+  MACHINES.ALBATROS = {
+    label: 'Albatros / EDICAD',
+    findStart(lines, fromIdx) {
+      for (let i = fromIdx; i < lines.length - 2; i++) {
+        const l0 = lines[i].trim();
+        if (!ALBATROS_SEP_RE.test(l0)) continue;
+        const l1 = lines[i + 1].trim();
+        if (ALBATROS_SEP_RE.test(l1)) continue;
+        const m1 = ALBATROS_TITLE_RE.exec(l1);
+        if (!m1) continue;
+        const l2 = lines[i + 2].trim();
+        if (!ALBATROS_SEP_RE.test(l2)) continue;
+        const title = decodeAlbatrosTitle(m1[1]);
+        return { startIdx: i, blockEndIdx: i + 2, title: title || '(ohne Titel)' };
+      }
+      return null;
+    },
+    findEnd(lines, afterBlockIdx, nextStartIdx) {
+      const limit = nextStartIdx === -1 ? lines.length : nextStartIdx;
+      for (let i = afterBlockIdx; i < limit; i++) {
+        if (/^\}SIDE\b/.test(lines[i].trim())) return i - 1 >= afterBlockIdx ? i - 1 : afterBlockIdx;
       }
       return limit - 1;
     }
@@ -7509,6 +7559,19 @@
     function samePoint(a, b) {
       return Math.abs(a.x - b.x) <= KONTUR_CHAIN_TOLERANCE && Math.abs(a.y - b.y) <= KONTUR_CHAIN_TOLERANCE;
     }
+    // Raster-Index aller Segment-Endpunkte (Zellgröße 2x Toleranz, damit ein Treffer innerhalb der
+    // Toleranz garantiert in einer der 3x3 Nachbarzellen liegt) - siehe Release-233-Kommentar unten.
+    const GRID_CELL = KONTUR_CHAIN_TOLERANCE * 2;
+    const endpointGrid = new Map();
+    segs.forEach((sg, i) => {
+      [0, 1].forEach(end => {
+        const pt = end === 0 ? sg.pts[0] : sg.pts[sg.pts.length - 1];
+        const key = Math.floor(pt.x / GRID_CELL) + ',' + Math.floor(pt.y / GRID_CELL);
+        let bucket = endpointGrid.get(key);
+        if (!bucket) { bucket = []; endpointGrid.set(key, bucket); }
+        bucket.push({ i, end });
+      });
+    });
     let guard = 0;
     while (guard++ < 10000) {
       const startIdx = segs.findIndex(s => !s.used);
@@ -7518,13 +7581,29 @@
       const chain = first.pts.slice();
       let lastPoint = chain[chain.length - 1];
       for (let safety = 0; safety < segs.length + 1; safety++) {
-        let nextIdx = -1, nextPts = null;
-        for (let i = 0; i < segs.length; i++) {
-          const s = segs[i];
-          if (s.used) continue;
-          if (samePoint(lastPoint, s.pts[0])) { nextIdx = i; nextPts = s.pts; break; }
-          if (samePoint(lastPoint, s.pts[s.pts.length - 1])) { nextIdx = i; nextPts = s.pts.slice().reverse(); break; }
+        // Release 233 (Sebastian: "Das Laden einer DXF dauert aktuell sehr lange"): statt bei jedem
+        // Kettenschritt ALLE Segmente linear zu durchsuchen (O(n²), bei mehreren Zehntausend
+        // Segmenten über eine Sekunde), werden nur die Segmente in den 3x3 Nachbarzellen des
+        // Raster-Index (siehe endpointGrid oben) geprüft. Ergebnis identisch zur linearen Suche:
+        // unter allen passenden Segmenten gewinnt der niedrigste Index, bei demselben Segment der
+        // Anfangs- vor dem Endpunkt.
+        let nextIdx = -1, nextPts = null, nextEnd = 0;
+        const cx = Math.floor(lastPoint.x / GRID_CELL), cy = Math.floor(lastPoint.y / GRID_CELL);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const bucket = endpointGrid.get((cx + dx) + ',' + (cy + dy));
+            if (!bucket) continue;
+            for (let b = 0; b < bucket.length; b++) {
+              const ref = bucket[b];
+              const sg = segs[ref.i];
+              if (sg.used) continue;
+              if (nextIdx !== -1 && (ref.i > nextIdx || (ref.i === nextIdx && ref.end >= nextEnd))) continue;
+              const pt = ref.end === 0 ? sg.pts[0] : sg.pts[sg.pts.length - 1];
+              if (samePoint(lastPoint, pt)) { nextIdx = ref.i; nextEnd = ref.end; }
+            }
+          }
         }
+        if (nextIdx !== -1) nextPts = nextEnd === 0 ? segs[nextIdx].pts : segs[nextIdx].pts.slice().reverse();
         if (nextIdx === -1) break;
         segs[nextIdx].used = true;
         chain.push(...nextPts.slice(1));
@@ -7639,6 +7718,47 @@
     const vorn = names.find(n => /^schmiege_vorn$/i.test(n)) || null;
     const hinten = names.find(n => /^schmiege_hinten$/i.test(n)) || null;
     return { vorn, hinten };
+  }
+
+  // Release 233 (Sebastian: "Beim Import der DXF soll entweder der Layer mit dem Namen 'Layer1' an
+  // X0, Y0 anliegen, egal ob es andere Bohrungen etc. gibt. Bei einer DXF wo der Layer 'Kontur'
+  // (oder die Varianten mit *Cont* oder *Kont*) gefunden wird, soll der an X0, Y0 anliegen. Dann
+  // liegt die Simulation immer deckungsgleich mit der DXF Datei"): ermittelt den Ankerlayer und die
+  // Verschiebung, die dessen Begrenzungsrahmen (kleinstes X und kleinstes Y aller Punkte dieses
+  // Layers) auf X0/Y0 legt. Auswahl: zuerst ein Layer, dessen Name "kont" oder "cont" enthält (nicht
+  // case-sensitiv, dasselbe Muster wie detectKonturLayerName() - aber OHNE dessen "erster Layer"-
+  // Rückfall), sonst ein Layer namens "Layer1" (auch "Layer 1"/"Layer_1"). Sind beide vorhanden,
+  // gewinnt der Kontur-Layer (spezifischer). Layer ohne Geometrie werden übersprungen, COMPASS nie
+  // gewählt. Alle anderen Layer (Bohrungen usw.) beeinflussen die Lage nicht, wandern aber um
+  // dieselbe Verschiebung mit. Liefert null, wenn keiner der Layer vorhanden ist (dann bleibt die
+  // DXF unverändert) oder die Verschiebung 0 ist.
+  // Release 234 (Sebastian, zwei DXF-Dateien mit "LAYER1" bzw. "Kontur" exakt bei 0/0, die trotzdem
+  // nicht an X0/Y0 anlagen): Der Ankerlayer muss auch dann bekannt sein, wenn er bereits bei 0/0
+  // liegt (dann gibt es keine Verschiebung, aber app.js braucht den Namen trotzdem, siehe
+  // recomputeDxfAnchorCorrection()). Deshalb getrennt von computeDxfAnchorShift(): liefert
+  // { layer, reason, minX, minY } des bevorzugten Ankerlayers (Kontur-Varianten vor Layer1,
+  // "COMPASS" nie) oder null.
+  function findDxfAnchorLayer(geo) {
+    if (!geo || !geo.strokes || !geo.layerOrder) return null;
+    const names = geo.layerOrder.filter(n => n !== 'COMPASS');
+    const candidates = [];
+    names.filter(n => /kont|cont/i.test(n)).forEach(n => candidates.push({ name: n, reason: 'kontur' }));
+    names.filter(n => /^layer[ _-]?1$/i.test(n)).forEach(n => candidates.push({ name: n, reason: 'layer1' }));
+    for (const c of candidates) {
+      let minX = Infinity, minY = Infinity;
+      geo.strokes.forEach(st => {
+        if (st.layer !== c.name || !st.points) return;
+        st.points.forEach(pt => { if (pt.x < minX) minX = pt.x; if (pt.y < minY) minY = pt.y; });
+      });
+      if (!isFinite(minX) || !isFinite(minY)) continue;
+      return { layer: c.name, reason: c.reason, minX, minY };
+    }
+    return null;
+  }
+  function computeDxfAnchorShift(geo) {
+    const a = findDxfAnchorLayer(geo);
+    if (!a || (a.minX === 0 && a.minY === 0)) return null;
+    return { layer: a.layer, reason: a.reason, dx: -a.minX, dy: -a.minY };
   }
 
   // Release 220: baut aus dem Basis-Kontur-Ring (dxfKonturLoop in app.js) sowie den auf
@@ -8549,7 +8669,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings };
+  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -8613,7 +8733,9 @@
   //   1) ";" bis zum Zeilenende (Sinumerik/WinPPZ-Standard, z. B. SCM/HOMAG/Houfek) - auch
   //      MITTEN in einer Zeile (Inline-Kommentar), nicht nur am Zeilenanfang.
   //   2) 'KM="…"' inkl. der Anführungszeichen (HOMAG-Kommentar-/Struktur-Tag).
-  //   3) "{…}" (Moroff-Stil, nicht verschachtelt).
+  //   3) "{…}" (Moroff-Stil, nicht verschachtelt) - seit Release 234 für Maschinentypen mit
+  //      Klammer-Befehlen abschaltbar, siehe unten.
+  //   4) "$=…}W" (Albatros/EDICAD, Release 234), ohne abschließendes "}W" bis Zeilenende.
   // BEWUSST NICHT runde Klammern "(…)": mehrere Standard-Maschinentypen nutzen runde Klammern
   // nicht als reinen Kommentar, sondern als Teil des echten Zielmusters - z. B. HolzHer
   // ("CALL _DINISO ( VAL CODE:='…')", ein funktionaler Unterprogrammaufruf) und Biesse (vier
@@ -8625,7 +8747,17 @@
   // Kommentar-Maskierung regelbasiert bis zum Zeilenende, auch über dessen eigentliches Ende
   // hinaus (keine echte Verschachtelungs-/Klammerbalance-Prüfung) - ein bewusst in Kauf
   // genommener Sonderfall analog zu anderen bereits dokumentierten Restrisiken dieses Projekts.
-  function computeCommentMask(text) {
+  //
+  // Release 234 (Sebastian: eigener Maschinentyp "FORMAT4 #" für das Albatros/EDICAD-Format, dessen
+  // Befehle selbst in geschweiften Klammern stehen: "W#2201 { ::WTl #1=99 #2=307 }W"): Der dritte
+  // Kommentar-Typ "{…}" ist für diesen Dialekt KEIN Kommentar, sondern der Code selbst - die Maske
+  // verdeckte dadurch die komplette Zeile, und KEINE einzige Austauschregel griff. `braceIsComment`
+  // (Standard true = bisheriges Verhalten für alle übrigen Maschinentypen) schaltet nur diesen einen
+  // Kommentar-Typ ab; ";", KM="…" und "$=…}W" bleiben immer Kommentar. Wer es setzt: applySwapRules() erkennt
+  // das automatisch (siehe rulesUseBracesAsCode()), die App reicht denselben Wert an applyAxisCalc()
+  // und die Bewegungs-Extraktion weiter.
+  function computeCommentMask(text, braceIsComment) {
+    if (braceIsComment === undefined) braceIsComment = true;
     const n = text.length;
     const mask = new Uint8Array(n);
     const markRange = (start, end) => {
@@ -8637,9 +8769,31 @@
     while ((m = semiRe.exec(text))) markRange(m.index, m.index + m[0].length);
     const kmRe = /KM="[^"]*"/g;
     while ((m = kmRe.exec(text))) markRange(m.index, m.index + m[0].length);
-    const braceRe = /\{[^{}]*\}/g;
-    while ((m = braceRe.exec(text))) markRange(m.index, m.index + m[0].length);
+    // Release 234 (Sebastian: "Könntest du eine neue Kommentarerkennungsregel einbauen? ... in dem
+    // Fall ist das Kommentarzeichen "$=" und endet mit "}W""): vierter Kommentar-Typ des
+    // Albatros/EDICAD-Formats, "$=<Text> }W" - gilt immer, auch bei den übrigen Maschinentypen
+    // (dort kommt "$=" praktisch nie vor). Ohne abschließendes "}W" (die ersten Kopfzeilen der
+    // Datei) reicht der Kommentar bis zum Zeilenende. Sie müssen ausgenommen werden, weil
+    // Kommentartexte sonst von Austauschregeln ("#1=" -> "X") oder der Bewegungs-Extraktion
+    // ("X500" im Text) angefasst würden. Die Arbeitsgang-Titel in den "$=____" / "$=Titel }W" /
+    // "$=____"-Blöcken sind davon unberührt: die Struktur-Erkennung läuft auf dem Rohtext.
+    const dollarRe = /\$=[^\n]*?(?:\}W|(?=\n)|$)/g;
+    while ((m = dollarRe.exec(text))) {
+      markRange(m.index, m.index + m[0].length);
+      if (m[0].length === 0) dollarRe.lastIndex++;
+    }
+    if (braceIsComment) {
+      const braceRe = /\{[^{}]*\}/g;
+      while ((m = braceRe.exec(text))) markRange(m.index, m.index + m[0].length);
+    }
     return mask;
+  }
+  // Release 234: true, wenn mindestens eine Austauschregel selbst eine geschweifte Klammer im
+  // SUCHtext hat (z. B. "W#2201 { ::WTl->G1") - dann sind "{…}" in diesem Maschinentyp Code und
+  // kein Kommentar (siehe computeCommentMask()). Eine Regel mit Klammer im Suchtext könnte sonst
+  // nie greifen, weil ihr Treffer per Definition (auch nur teilweise) in einem "{…}"-Bereich liegt.
+  function rulesUseBracesAsCode(rules) {
+    return !!(rules && rules.some(r => r.search.indexOf('{') !== -1 || r.search.indexOf('}') !== -1));
   }
   // true, wenn JEDE Position in [start, start+len) unmaskiert (= kein Kommentar) ist - ein
   // Treffer wird nur dann ersetzt, wenn er VOLLSTÄNDIG außerhalb eines Kommentarbereichs liegt.
@@ -8668,7 +8822,7 @@
       if (!byFirstChar.has(c)) byFirstChar.set(c, []);
       byFirstChar.get(c).push(r);
     });
-    const mask = computeCommentMask(text);
+    const mask = computeCommentMask(text, !rulesUseBracesAsCode(rules));
 
     let out = '';
     let i = 0;
@@ -8838,7 +8992,7 @@
     });
     return derived;
   }
-  function applyAxisCalc(text, calcRules) {
+  function applyAxisCalc(text, calcRules, braceIsComment) {
     if (!calcRules || !calcRules.length) return text;
     const effectiveRules = calcRules.concat(deriveArcLetterRules(calcRules));
     let out = text;
@@ -8847,7 +9001,7 @@
       if (!isOffsetRule && rule.factor === 1) return; // No-op: Achse bleibt unangetastet, keine Regex-Anwendung nötig
       if (isOffsetRule && (!rule.offset || rule.offset === 0)) return; // No-op: Offset 0
       const re = makeAxisValueRe(rule.axis);
-      const mask = computeCommentMask(out);
+      const mask = computeCommentMask(out, braceIsComment);
       out = out.replace(re, (full, axis, ws, num, matchOffset) => {
         if (!isRangeUncommented(mask, matchOffset, full.length)) return full;
         return axis + ws + (isOffsetRule ? offsetNumberText(num, rule.offset) : scaleNumberText(num, rule.factor));
@@ -9177,7 +9331,7 @@
     return dupes;
   }
 
-  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode, parseCornerRadiusMarker };
+  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, rulesUseBracesAsCode, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode, parseCornerRadiusMarker };
 });
 </script>
 <script>
@@ -9261,8 +9415,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 231;
-  const APP_RELEASE_TIMESTAMP = '18.10.2026, 14:20 Uhr';
+  const APP_RELEASE_NUMBER = 236;
+  const APP_RELEASE_TIMESTAMP = '19.10.2026, 09:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -9543,6 +9697,35 @@ Z*1
 [/CALCMACHINE]
 CORNERRADIUS=E
 [/MACHINETYPE Name="FORMAT4"]
+
+[MACHINETYPE Name="FORMAT4 {}#"]
+[SWITCHCASEMACHINE]
+#1=->X
+#2=->Y
+#3=->Z
+#4=->C
+#8519=->C
+#8507=->Z
+#8521=->A
+W#2129 { ::WTa->R
+W#89 { ::WTs->G0
+W#2201 { ::WTl->G1
+W#2101 { ::WTa #34=0->G2
+W#2101 { ::WTa #34=1->G3
+#40=1->G41
+#40=2->G42
+#8017=->R
+#2008=->F
+#31=->I
+#32=->J
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*1
+Z*1
+[/CALCMACHINE]
+CORNERRADIUS=R
+[/MACHINETYPE Name="FORMAT4 {}#"]
 
 [MACHINETYPE Name="HolzHer"]
 [SWITCHCASEMACHINE]
@@ -10741,6 +10924,12 @@ CORNERRADIUS=GFIL r=
   //    Werkzeug ... anliegt", Punkt 5 der Spezifikation) wird dadurch beim erstmaligen Einlesen
   //    direkt sinnvoll auf diese Oberseite vorbelegt, bleibt aber wie beim Werkzeugprofil jederzeit
   //    manuell verschiebbar.
+  // ACHTUNG, Release 232: Die oben beschriebene Konvention ("DXF oben = Anlagepunkt des Werkzeugs",
+  // Default-Referenzpunkt = Maximum, gespiegelte Abbildung) wurde ersetzt - Sebastian: "Das
+  // Spannfutter ist verkehrt herum". Seither gilt: DXF oben = Spindelseite, DXF unten =
+  // Werkzeugseite, Abbildung dist = p.dist - lengthRef (siehe buildChuckProfileForRender()), neuer
+  // Default-Referenzpunkt = Minimum. Bereits gespeicherte lengthRef-Werte bleiben unverändert und
+  // markieren weiterhin dieselbe Stelle der DXF-Kontur.
   const LS_KEY_CHUCK_DXF_PROFILES = 'cncsim.chuckDxfProfiles';
   function normalizeChuckDxfProfile(raw) {
     if (!raw || typeof raw !== 'object') return null;
@@ -10758,9 +10947,11 @@ CORNERRADIUS=GFIL r=
     const minDist = Math.min.apply(null, distValues);
     const maxDist = Math.max.apply(null, distValues);
     let lengthRef = Number(raw.lengthRef);
-    // Default MAXIMUM statt Minimum - siehe ausführlichen Kommentar oberhalb bei
-    // LS_KEY_CHUCK_DXF_PROFILES ("DXF oben" = Spannfutter-Oberseite = Anlagepunkt des Werkzeugs).
-    const defaultRef = maxDist;
+    // Release 232: Default wieder MINIMUM (wie beim Werkzeugprofil) - die DXF wird jetzt exakt so
+    // dargestellt, wie sie im Dialog aussieht (DXF oben = Spindelseite, siehe
+    // buildChuckProfileForRender()); das Werkzeug-zugewandte Ende (Spannfutter-Nase) liegt damit
+    // unten, am dist-MINIMUM.
+    const defaultRef = minDist;
     if (!Number.isFinite(lengthRef)) lengthRef = defaultRef;
     lengthRef = Math.max(minDist, Math.min(maxDist, lengthRef));
     const now = Date.now();
@@ -11764,7 +11955,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Kommentar-Arten: ";" bis Zeilenende, KM="...", {...}); ein Achswort-Treffer wird nur noch
       // als echte Bewegung gewertet, wenn er VOLLSTÄNDIG außerhalb jedes erkannten Kommentarbereichs
       // liegt - exakt dieselbe "vollständig unkommentiert"-Regel wie beim Maschinentyp-Austausch.
-      const commentMask = CNCSwap.computeCommentMask(line);
+      const commentMask = CNCSwap.computeCommentMask(line, !braceCommentsOff);
       AXIS_RE.lastIndex = 0;
       let m, found = false;
       while ((m = AXIS_RE.exec(line))) {
@@ -12487,6 +12678,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // VOR der eigentlichen (vom Benutzer per "DXF Verschieben" gewählten) dxfOffset addiert, sodass
   // dxfOffset unverändert eine reine, zusätzliche Verschiebung AB dieser 0/0-Anker-Position bleibt.
   let dxfAnchorCorrection = { x: 0, y: 0 };
+  let dxfAnchorLayerName = null; // Release 234, siehe loadDxfText()/recomputeDxfAnchorCorrection()
 
   // "DXF-Layer"-Anzeige (78. Runde, Sebastian, drei zusammenhängende Punkte): "Wenn kein CNC
   // Programm geladen ist soll dort wo 'CNC Programmcode' steht 'DXF-Layer' stehen. Das soll die
@@ -12920,7 +13112,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // der beim Fallback "(Struktur erkannt)" verwendet wird, wenn NUR die Kommentarstruktur
   // (nicht der Kopftext) auf den SCM-Stil hindeutet - das ist ein anderer Fall.
   const MACHINE_LABELS = {
-    SCM: 'SCM', HOMAG: 'HOMAG', FORMAT4: 'FORMAT4 / Felder',
+    SCM: 'SCM', HOMAG: 'HOMAG', FORMAT4: 'FORMAT4 / Felder', ALBATROS: 'Albatros / EDICAD',
     MOROFF: 'Moroff und Baierl', KRC: 'KRC', UNKNOWN: 'Unbekannte Maschine'
   };
 
@@ -13912,6 +14104,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Sichtbarkeit, die für die neue Datei wieder auf den Ausgangszustand zurückgesetzt werden).
   function loadDxfText(text, filename) {
     dxfGeometry = CNCParser.parseDXF(text);
+    // Release 233 (Sebastian, siehe computeDxfAnchorShift() in parser.js): Kontur-Layer (sonst
+    // "Layer1") an X0/Y0 anlegen, damit die Simulation deckungsgleich mit der DXF-Datei liegt. Die
+    // Verschiebung wirkt auf ALLE Striche, bevor irgendetwas anderes (Kontur-Ring, Schmiegen,
+    // Zeichnen, Kamera) darauf aufbaut. Die rohen Entitäten (dxfEntities, nur für "DXF speichern"/
+    // "Polylinien auflösen") bleiben bewusst in den Originalkoordinaten der Datei.
+    const dxfAnchorShift = CNCParser.computeDxfAnchorShift(dxfGeometry);
+    if (dxfAnchorShift) {
+      const shifted = new Set(); // ein Punktobjekt, das in mehreren Strichen vorkommt, darf nur EINMAL verschoben werden
+      dxfGeometry.strokes.forEach(st => { (st.points || []).forEach(pt => { if (shifted.has(pt)) return; shifted.add(pt); pt.x += dxfAnchorShift.dx; pt.y += dxfAnchorShift.dy; }); });
+    }
+    window.__lastDxfAnchorShift = dxfAnchorShift;
+    // Release 234: Name des Ankerlayers merken (auch wenn er schon bei 0/0 lag und nichts verschoben
+    // wurde) - recomputeDxfAnchorCorrection() verankert NUR diesen Layer an 0/0 statt der Bounding
+    // Box aller Layer (sonst schob z. B. eine Bohrung bei x=-20 die ganze Kontur nach x=+20).
+    const dxfAnchorInfo = CNCParser.findDxfAnchorLayer(dxfGeometry);
+    dxfAnchorLayerName = dxfAnchorInfo ? dxfAnchorInfo.layer : null;
     // Release 208: parallel zur bestehenden Tessellierung (dxfGeometry) auch die rohen, nicht
     // tessellierten Entitäten einlesen - siehe parseDxfEntitiesRaw() in parser.js sowie den
     // ausführlichen Kommentar bei der Deklaration von dxfEntities weiter oben.
@@ -13995,6 +14203,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThicknessColor = '#3399ff';
     dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
+    dxfAnchorLayerName = null; // Release 234
     dxfKonturLayerName = null;
     dxfKonturLoop = null;
     dxfSchmiegeVornLayerName = null;
@@ -14018,6 +14227,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Laden eines Programms (siehe loadText), bis der Benutzer explizit "Ok" klickt. Wird außerdem
   // aufgerufen, wenn die Maschinentyp-Konfiguration nachträglich bearbeitet/geladen wird, damit
   // ein bereits geladenes Programm sofort mit den neuen Regeln neu angezeigt wird.
+  let braceCommentsOff = false; // Release 234, siehe displayCurrentProgram()
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
     // Aktiver Maschinentyp (31. Runde, ersetzt die frühere einzelne Austauschdatei): erst
@@ -14028,9 +14238,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ? machineTypes.find(mt => mt.name.toLowerCase() === activeMachineTypeName.toLowerCase())
       : null;
     let text = rawProgramText;
+    // Release 234: "{…}" ist bei Maschinentypen, deren Austauschregeln selbst Klammern enthalten
+    // (Albatros/EDICAD), Code statt Kommentar - siehe computeCommentMask() in swap.js. Der Wert
+    // gilt auch für die spätere Bewegungs-Extraktion (extractMotion).
+    braceCommentsOff = !!(activeMt && CNCSwap.rulesUseBracesAsCode(activeMt.switchRules));
     if (activeMt) {
       if (activeMt.switchRules.length) text = applySwapRules(text, activeMt.switchRules);
-      if (activeMt.calcRules.length) text = applyAxisCalc(text, activeMt.calcRules);
+      if (activeMt.calcRules.length) text = applyAxisCalc(text, activeMt.calcRules, !braceCommentsOff);
     }
     // Bugfix 17. Runde (Benutzer: "die Arbeitsgänge werden nicht mehr erkannt -> alle
     // gefrästen Konturen sind rot", wenn eine Austauschdatei zusammen mit einer Biesse/CIX-
@@ -14844,7 +15058,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     opsResizerEl.classList.toggle('inert', opsCollapsed);
     btnOpsToggle.textContent = opsCollapsed ? '«' : '»';
     const opsSpaceAfter = opsColSpacePx();
-    setSidebarWidth(sidebarWidth - (opsSpaceBefore - opsSpaceAfter));
+    // Release 234: war die Spalte per Hand breiter als die automatische Obergrenze gezogen, darf
+    // das Ein-/Ausklappen der Arbeitsgänge-Spalte sie nicht wieder auf 900px zurückstutzen.
+    setSidebarWidth(sidebarWidth - (opsSpaceBefore - opsSpaceAfter), undefined, sidebarWidth > SIDEBAR_AUTO_MAX);
   });
 
   // Hebt die aktuell simulierte Zeile (points[scrubIdx].lineIdx) in der linken Programmansicht
@@ -15394,7 +15610,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let minx = Infinity, miny = Infinity;
     const rad = dxfRotateDeg * Math.PI / 180;
     const cos = Math.cos(rad), sin = Math.sin(rad);
-    dxfGeometry.strokes.forEach(s => s.points.forEach(p => {
+    // Release 234: Gibt es einen Ankerlayer (Kontur-Variante bzw. Layer1, siehe
+    // CNCParser.findDxfAnchorLayer()), bestimmt NUR dessen Bounding Box die Verankerung an 0/0 -
+    // andere Layer (Bohrungen, Verbinder) dürfen auch links/unterhalb davon liegen. Ohne Ankerlayer
+    // unverändert die Bounding Box aller Striche wie seit Release 70.
+    const anchorStrokes = dxfAnchorLayerName
+      ? dxfGeometry.strokes.filter(s => s.layer === dxfAnchorLayerName)
+      : dxfGeometry.strokes;
+    (anchorStrokes.length ? anchorStrokes : dxfGeometry.strokes).forEach(s => s.points.forEach(p => {
       // dxfScale (Release 84) zuerst, dieselbe Reihenfolge wie in dxfTransformPoint() oben.
       let x = p.x * dxfScale, y = p.y * dxfScale;
       if (dxfMirrorX) y = -y;
@@ -18040,12 +18263,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Sebastian den Längenreferenzpunkt beim Ausprobieren über die Mitte zog, kippte die
   // Spannfutter-Darstellung dadurch unvermittelt auf den Kopf. Fix: Richtung fest gemäß der
   // Konvention annehmen (immer gespiegelt-verschoben, kein Umkippen je nach `lengthRef`-Position).
+  // Release 232 (Sebastian, Screenshot mit weißen Rechtecken um Spannfutter-Dialog UND 3D-Simulation:
+  // "Das Spannfutter ist verkehrt herum: Wenn ich im Programm bei einem Arbeitsgang ein Werkzeug mit
+  // Profil einfüge ist das verkehrt herum"): Die bisherige Abbildung dist = lengthRef - p.dist
+  // SPIEGELTE die DXF an der Achse - was in der Vorschau oben (z. B. der Bund) stand, erschien in
+  // der 3D-Ansicht unten, zum Werkzeug hin, und umgekehrt (Dialog und Simulation zeigten dasselbe
+  // Spannfutter also auf dem Kopf zueinander). Maßgeblich ist, wie schon bei der Korrektur des
+  // eingebauten HSK63-Halters in Release 135 ("Das muss so herum dargestellt werden wie in dem
+  // PNG"): die 3D-Darstellung sieht aus wie die DXF-Vorschau - DXF oben = Spindelseite (+axis),
+  // DXF unten = Werkzeugseite. Gleiche Abbildung wie beim Werkzeugprofil (reine Verschiebung,
+  // dist = p.dist - lengthRef). Der Längenreferenzpunkt ist der Punkt des Spannfutters, an dem das
+  // obere Ende des Werkzeugs anliegt; Teile unterhalb davon (negatives dist) umschließen das
+  // Werkzeug (typisch: die Nase einer Spannzange), Teile darüber ragen Richtung Spindel.
   function buildChuckProfileForRender(entry) {
     const raw = getActiveChuckDxfRDistProfile(entry);
     if (!raw || raw.length < 2) return null;
     return raw.map(p => ({
       r: p.r,
-      dist: entry.lengthRef - p.dist
+      dist: p.dist - entry.lengthRef
     }));
   }
 
@@ -21970,11 +22205,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
         alternateRow.hidden = !wasClosedLoop;
         if (!wasClosedLoop) alternateCheckbox.checked = false;
         if (!refsInitialized) {
-          // Default MAXIMUM statt Minimum (anders als beim Werkzeugprofil-Dialog) - siehe
-          // ausführlichen Kommentar bei LS_KEY_CHUCK_DXF_PROFILES ("DXF oben" = Spannfutter-
-          // Oberseite = Anlagepunkt des Werkzeugs).
-          const { max } = distRange();
-          lengthRef = max;
+          // Release 232: Default MINIMUM (wie beim Werkzeugprofil-Dialog) - siehe Kommentar bei
+          // normalizeChuckDxfProfile(): das Werkzeug-zugewandte Ende liegt in der DXF unten.
+          const { min } = distRange();
+          lengthRef = min;
           refsInitialized = true;
         } else if (scale !== lastScale && lastScale > 0) {
           const ratio = scale / lastScale;
@@ -23892,7 +24126,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Wege bleiben danach nahtlos kombinierbar (automatisch beim Laden, danach optional von Hand
   // nachjustierbar).
   let sidebarWidth = 340;
-  function sidebarMaxWidth() {
+  // Release 234 (Sebastian: "Ich kann das Fenster für den CNC-Programmcode nicht breiter machen. Ich
+  // seh da aktuell nicht alles"): Die feste Obergrenze von 900px galt bisher auch für den manuellen
+  // Ziehgriff - bei sehr langen Programmzeilen (z. B. Albatros/EDICAD mit 150-200 Zeichen je Zeile)
+  // ließ sich die Spalte dadurch nicht breiter ziehen. Jetzt gibt es zwei Obergrenzen: die
+  // AUTOMATISCHE (Auto-Fit beim Laden, Ein-/Ausklappstufen) bleibt unverändert bei max. 900px, damit
+  // der 3D-Bereich nicht von selbst verdrängt wird; der MANUELLE Ziehgriff darf bis auf 260px
+  // Restbreite für den 3D-Bereich aufziehen (manual=true).
+  const SIDEBAR_AUTO_MAX = 900;
+  function sidebarMaxWidth(manual) {
+    if (manual) return Math.max(360, window.innerWidth - 260);
     // Obergrenze bewusst breiter als vorher (statt fest 640px) und an die Fensterbreite
     // gekoppelt, damit auch sehr lange einzelne Code-Zeilen ohne horizontales Scrollen im
     // Arbeitsgang-Panel Platz finden, ohne dass der 3D-Viewer komplett verdrängt wird.
@@ -23904,8 +24147,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // die Programm-Spalte bei fehlender/eingeklappter Arbeitsgänge-Spalte wirklich (nahezu) auf 0
   // schrumpfen kann, statt an diesem für die Handbedienung gedachten Mindestmaß hängen zu
   // bleiben - siehe applyProgCollapseStage weiter oben.
-  function setSidebarWidth(px, minPx) {
-    sidebarWidth = Math.max(minPx == null ? 220 : minPx, Math.min(sidebarMaxWidth(), px));
+  function setSidebarWidth(px, minPx, manual) {
+    sidebarWidth = Math.max(minPx == null ? 220 : minPx, Math.min(sidebarMaxWidth(manual), px));
     mainEl.style.setProperty('--sidebar-w', sidebarWidth + 'px');
   }
   (function initResizer() {
@@ -23918,7 +24161,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     resizerEl.addEventListener('pointermove', (e) => {
       if (!resizing) return;
       const rect = mainEl.getBoundingClientRect();
-      setSidebarWidth(e.clientX - rect.left);
+      setSidebarWidth(e.clientX - rect.left, undefined, true);
     });
     ['pointerup', 'pointercancel'].forEach(evt => resizerEl.addEventListener(evt, () => {
       resizing = false;
@@ -23964,7 +24207,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     opsResizerEl.addEventListener('pointermove', (e) => {
       if (!resizing) return;
       const rect = sidebarCol.getBoundingClientRect();
-      setSidebarWidth((e.clientX - rect.left) + opsColSpacePx());
+      setSidebarWidth((e.clientX - rect.left) + opsColSpacePx(), undefined, true);
     });
     ['pointerup', 'pointercancel'].forEach(evt => opsResizerEl.addEventListener(evt, () => {
       resizing = false;
