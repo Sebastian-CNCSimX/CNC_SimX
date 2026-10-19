@@ -2107,7 +2107,8 @@
   .shortcuts-kb-link:hover { filter: brightness(1.15); }
   .shortcuts-kb-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
   .shortcut-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 5px 0; }
-  .shortcut-row + .shortcut-row { border-top: 1px solid var(--border-soft); }
+  /* Release 242: statt Linien zwischen jeder Zeile jetzt Trennlinien nur zwischen den Gruppen. */
+  .shortcut-sep { border-top: 1px solid var(--border); margin: 6px 0; }
   .shortcut-key { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; white-space: nowrap; }
   .shortcut-desc { color: var(--ink-muted); font-size: 13px; text-align: right; }
   /* Warnung bei doppelt vergebenen Maschinentyp-Namen (DropdownMachinetype.txt Punkt 5) - nicht
@@ -3720,30 +3721,32 @@
       <h3 data-i18n-en="Shortcuts">Shortcuts</h3>
       <button class="shortcuts-kb-link" id="btnShortcutsOpenKnowledgeBase" type="button" title="Knowledge Base öffnen" data-i18n-en="Knowledge Base" data-i18n-en-title="Open the Knowledge Base">Knowledge Base</button>
     </div>
+    <!-- Release 242 (Sebastian: "Bitte die Shortcuts-Liste umordnen ... Bitte auch Trennlinien einbauen!"):
+         thematisch gruppiert - Hilfe/Sprache | Simulation/Navigation | 3D-Ansicht | Messen | CNC laden |
+         DXF | Profile | Dialoge; zwischen den Gruppen je eine Trennlinie (.shortcut-sep). -->
+    <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open shortcuts list">Shortcuts-Liste öffnen</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow left">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Home">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
     <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
-    <!-- Release 227 (Sebastian: "Tastenkürzel erweitern, auch in der Shortcutliste anzeigen: Strg +
-         O -> CNC Programm laden, Shift + O -> DXF laden, Shift + B -> DXF Bauteilstärke
-         einstellen.") - drei neue Zeilen, genau nach demselben Muster wie "Strg + L" direkt
-         oberhalb (fester deutscher Haupttext + data-i18n-en für die EN-Fassung). -->
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Set DXF part thickness">DXF Bauteilstärke einstellen</span></div>
-    <!-- Release 228 (Sebastian: "Strg + Alt + W -> Werkzeugprofil editieren, Strg + Alt + S ->
-         Spannfutter editieren. Bitte einbauen und in den Shortcuts ergänzen!") - zwei weitere
-         Zeilen nach demselben Muster wie die bestehenden Strg-/Shift-Kombinationen oben. -->
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
-    <!-- Release 237 (Sebastian: "Taste F1 öffnet Shortcuts-Liste") -->
-    <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open this shortcuts list">Diese Shortcuts-Liste öffnen</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
+    <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnShortcutsClose" type="button" data-i18n-en="Close">Schließen</button>
     </div>
@@ -4044,6 +4047,17 @@
       <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
+    </div>
+    <!-- Release 243 (Sebastian: "Bei der DXF-Bauteilstärke Einstellung gibt es eine neue Auswahl
+         '[] Schmiegenerkennung', der aktiv gesetzt werden kann sobald es den 'Layer2' ... gibt ...
+         Es muss dann ausgewählt werden welcher Layer mit der Schmiegenberechnung erfolgen soll."):
+         Checkbox (Standard aus, nur aktivierbar wenn Layer2 oder folgende vorhanden) + Liste der
+         Kandidaten-Layer mit Auswahlkästchen, siehe refreshDxfSchmiegeUI()/confirmDxfThickness() in
+         app.js und Konzept_DXF_Schmiegenerkennung_Layer2_3.md. -->
+    <div class="scale-group" id="dxfSchmiegeRow">
+      <label class="scale-option"><input type="checkbox" id="dxfSchmiegeCheckbox"> <span data-i18n-en="Bevel detection">Schmiegenerkennung</span></label>
+      <div id="dxfSchmiegeLayerList" hidden></div>
+      <p class="panel-hint" id="dxfSchmiegeHint"></p>
     </div>
     <div class="scale-group" id="dxfThicknessTransparencyRow">
       <div class="scale-group-title"><span data-i18n-en="Fill transparency">Füll-Transparenz</span>: <span id="dxfThicknessTransparencyValue">100%</span></div>
@@ -8064,6 +8078,241 @@
     return { untenLoop, obenLoop, zoneCount: zones.length };
   }
 
+  // Release 243 (Sebastian: "Manche Bauteile haben Schmiegen, die auf dem Layer2 und 3 liegen. Es gibt
+  // dafür keinen 'named' Layer mit 'Schmiege' im Namen ... durchgehende Linie = oberer, sichtbarer
+  // Endpunkt der Schmiege ... gestrichelte Linie = untere, nicht sichtbare Linie ..."; Konzept siehe
+  // claude/Konzept_DXF_Schmiegenerkennung_Layer2_3.md). Drei Bausteine, unabhängig von der
+  // Schmiege_vorn/Schmiege_hinten-Erkennung oben (deren Code bleibt unverändert):
+  //
+  // listLayerSchmiegeCandidates(geo, konturLayerName): die Layer, die der Benutzer als Schmiege-Layer
+  // wählen kann - "Layer2 und folgende" (LayerN mit N >= 2, auch "Layer 2"/"Layer_2", nicht case-
+  // sensitiv). Der Kontur-/Ankerlayer, COMPASS und die benannten Schmiege_*-Layer sind nie dabei.
+  function listLayerSchmiegeCandidates(geo, konturLayerName) {
+    const names = (geo && geo.layerOrder) || [];
+    return names.filter(n => {
+      if (n === 'COMPASS' || n === konturLayerName) return false;
+      if (/^schmiege_(vorn|hinten)$/i.test(n)) return false;
+      const m = /^layer[ _-]?(\d+)$/i.exec(n);
+      return !!(m && parseInt(m[1], 10) >= 2);
+    });
+  }
+
+  // detectLayerSchmiegeChords(strokes, konturLoop): analysiert die Linien EINES Layers. Kollineare
+  // Einzelstriche werden zu Linien-Gruppen zusammengefasst. Pro Gruppe: Abdeckung = Summe der
+  // (vereinigten) Strichlängen / Spannweite. Eine einzelne, durchgehende Linie gilt als "durchgezogen"
+  // -> oberer, sichtbarer Endpunkt der Schmiege (type 'oben'); drei oder mehr Einzelstriche mit
+  // regelmäßigen Lücken (Abdeckung <= 90 %, Lücken höchstens um den Faktor 1,5 verschieden) gelten
+  // als "gestrichelt" -> unterer, verdeckter Endpunkt (type 'unten'). Alles andere wird ignoriert.
+  // Die Linie wird unendlich verlängert und mit der Kontur geschnitten ("Sehne"); die Linie muss
+  // beidseitig bis an die Kontur reichen (durchgezogen: 1 mm Toleranz, gestrichelt: bis zu einer
+  // Lückenlänge Abstand, da der letzte Strich nicht zwingend bis an den Rand geht) - sonst wird sie
+  // ignoriert (Sebastian, Frage 5: "Genau so machen"). Liefert { chords, groups } - groups enthält
+  // je Linie Art/Abdeckung/Ergebnis, nur für die Anzeige im Dialog und für Tests.
+  function detectLayerSchmiegeChords(strokes, konturLoop) {
+    const out = { chords: [], groups: [] };
+    if (!konturLoop || konturLoop.length < 3) return out;
+    const segs = [];
+    (strokes || []).forEach(st => {
+      const pts = (st && st.points) || [];
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1];
+        if (Math.hypot(b.x - a.x, b.y - a.y) > 1e-6) segs.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } });
+      }
+    });
+    if (!segs.length || segs.length > 5000) return out;
+    const TOL = 0.05;
+    const groups = [];
+    segs.forEach(s => {
+      let dx = s.b.x - s.a.x, dy = s.b.y - s.a.y;
+      const len = Math.hypot(dx, dy);
+      dx /= len; dy /= len;
+      if (dx < -1e-12 || (Math.abs(dx) <= 1e-12 && dy < 0)) { dx = -dx; dy = -dy; }
+      const c = -dy * s.a.x + dx * s.a.y;
+      let g = groups.find(q => Math.abs(q.dx * dy - q.dy * dx) < 1e-4 && Math.abs(q.c - c) < TOL);
+      if (!g) { g = { dx, dy, c, ox: s.a.x, oy: s.a.y, iv: [] }; groups.push(g); }
+      const t0 = dx * (s.a.x - g.ox) + dy * (s.a.y - g.oy), t1 = dx * (s.b.x - g.ox) + dy * (s.b.y - g.oy);
+      g.iv.push([Math.min(t0, t1), Math.max(t0, t1)]);
+    });
+    const n = konturLoop.length;
+    function pointInPoly(px, py) {
+      let inside = false;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const xi = konturLoop[i].x, yi = konturLoop[i].y, xj = konturLoop[j].x, yj = konturLoop[j].y;
+        if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside;
+      }
+      return inside;
+    }
+    groups.forEach(g => {
+      g.iv.sort((p, q) => p[0] - q[0]);
+      const merged = [];
+      g.iv.forEach(v => {
+        const last = merged[merged.length - 1];
+        if (last && v[0] <= last[1] + TOL) last[1] = Math.max(last[1], v[1]); else merged.push([v[0], v[1]]);
+      });
+      const tmin = merged[0][0], tmax = merged[merged.length - 1][1];
+      const span = tmax - tmin;
+      const covered = merged.reduce((s, v) => s + (v[1] - v[0]), 0);
+      const coverage = span > 0 ? covered / span : 0;
+      const gaps = [];
+      for (let i = 1; i < merged.length; i++) gaps.push(merged[i][0] - merged[i - 1][1]);
+      const maxGap = gaps.length ? Math.max.apply(null, gaps) : 0;
+      const minGap = gaps.length ? Math.min.apply(null, gaps) : 0;
+      let type = null;
+      if (merged.length === 1) type = 'oben';
+      else if (merged.length >= 3 && coverage <= 0.9 && minGap > TOL && maxGap / minGap <= 1.5) type = 'unten';
+      const info = { type, coverage, span, dashCount: merged.length, chord: null, reason: '' };
+      out.groups.push(info);
+      if (!type) { info.reason = 'weder durchgezogen noch regelmäßig gestrichelt'; return; }
+      // Linie mit der Kontur schneiden
+      const ts = [];
+      for (let i = 0; i < n; i++) {
+        const u = konturLoop[i], v = konturLoop[(i + 1) % n];
+        const ex = v.x - u.x, ey = v.y - u.y;
+        const den = g.dx * ey - g.dy * ex;
+        if (Math.abs(den) < 1e-9 * Math.max(1, Math.hypot(ex, ey))) continue;
+        const wx = u.x - g.ox, wy = u.y - g.oy;
+        const t = (wx * ey - wy * ex) / den;
+        const s = (wx * g.dy - wy * g.dx) / den;
+        if (s >= -1e-6 && s <= 1 + 1e-6) ts.push(t);
+      }
+      ts.sort((p, q) => p - q);
+      const uniq = [];
+      ts.forEach(t => { if (!uniq.length || t - uniq[uniq.length - 1] > 1e-6) uniq.push(t); });
+      const tmid = (tmin + tmax) / 2;
+      let chord = null;
+      for (let k = 0; k + 1 < uniq.length; k++) {
+        if (tmid < uniq[k] - 1e-6 || tmid > uniq[k + 1] + 1e-6) continue;
+        const mx = g.ox + g.dx * (uniq[k] + uniq[k + 1]) / 2, my = g.oy + g.dy * (uniq[k] + uniq[k + 1]) / 2;
+        if (!pointInPoly(mx, my)) continue;
+        // Linie liegt selbst auf einer Konturkante (z. B. Randlinien auf x=0/x=Breite): keine Sehne durchs Innere
+        let onEdge = false;
+        for (let i = 0; i < n && !onEdge; i++) {
+          const u = konturLoop[i], v = konturLoop[(i + 1) % n];
+          const ex = v.x - u.x, ey = v.y - u.y, el2 = ex * ex + ey * ey;
+          if (el2 < 1e-12) continue;
+          let tt = ((mx - u.x) * ex + (my - u.y) * ey) / el2; tt = Math.max(0, Math.min(1, tt));
+          if (Math.hypot(mx - (u.x + ex * tt), my - (u.y + ey * tt)) < 0.05) onEdge = true;
+        }
+        if (onEdge) continue;
+        chord = { t0: uniq[k], t1: uniq[k + 1] };
+        break;
+      }
+      if (!chord || chord.t1 - chord.t0 < 1e-3) { info.reason = 'liegt nicht innerhalb der Kontur (oder auf einer Konturkante)'; return; }
+      const allow = (type === 'oben' ? 0 : maxGap) + 1;
+      if (tmin - chord.t0 > allow || chord.t1 - tmax > allow || tmin < chord.t0 - 1 || tmax > chord.t1 + 1) {
+        info.reason = 'erreicht die Kontur nicht'; return;
+      }
+      info.chord = {
+        type,
+        A: { x: g.ox + g.dx * chord.t0, y: g.oy + g.dy * chord.t0 },
+        B: { x: g.ox + g.dx * chord.t1, y: g.oy + g.dy * chord.t1 }
+      };
+      out.chords.push(info.chord);
+    });
+    return out;
+  }
+
+  // buildLayerSchmiegeRings(konturLoop, chords): baut aus dem Kontur-Ring und den Sehnen
+  // (detectLayerSchmiegeChords) die zwei Ringe für die Kontur-Füllung, im selben Format wie
+  // buildSchmiegeKonturRings() ({untenLoop, obenLoop, zoneCount}; untenLoop = "hinten"-Ring =
+  // physisch untere Ebene, obenLoop = "vorn"-Ring = physisch obere Ebene). Eine Sehne teilt die Kontur
+  // in zwei Teilzüge; abgeschrägt wird der Teilzug mit der KLEINEREN Fläche (= "nächstgelegener
+  // Kontur-Rand", die Schmiege läuft von der Linie nach außen weg, Sebastian: "Der Bereich zwischen
+  // Layer2 und 3 hat die volle Stärke und dann geht von den Layern 2 und 3 die Schmiege nach außen
+  // weg"). Bei einer 'oben'-Sehne (durchgezogene Linie) verläuft der obere Ring über die Sehne
+  // statt über den abgeschnittenen Teilzug, der untere Ring bleibt voll; bei 'unten' (gestrichelt)
+  // umgekehrt. Beide Ringe haben gleich viele Punkte (Voraussetzung von fillRevolutionBody()). Der
+  // Teilzug wird im aktiven Ring durch Wiederholung der Sehnen-Endpunkte aufgefüllt, und zwar so, dass
+  // die Sehne genau der LÄNGSTEN Teilkante gegenüberliegt - dadurch sind die Schrägfläche (ebenes
+  // Viereck) und die beiden Stirn-Dreiecke an den Enden exakt eben. Die entarteten Kanten der Auffüllung
+  // zeichnet fillRevolutionBody() mit opts.triangulateDegenerate als Dreiecke. Überlappende
+  // Teilzüge werden verworfen, ebenso Sehnen ohne Teilzug (Linie auf einer Konturkante).
+  function buildLayerSchmiegeRings(konturLoop, chords) {
+    const TOL = 0.01;
+    const n0 = konturLoop ? konturLoop.length : 0;
+    if (n0 < 3 || !chords || !chords.length) return null;
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+    const edgeIns = konturLoop.map(() => []);
+    function locate(p) {
+      for (let i = 0; i < n0; i++) if (dist(p, konturLoop[i]) <= TOL) return { v: i };
+      for (let i = 0; i < n0; i++) {
+        const a = konturLoop[i], b = konturLoop[(i + 1) % n0];
+        const ex = b.x - a.x, ey = b.y - a.y, len = Math.hypot(ex, ey);
+        if (len < 1e-9) continue;
+        const t = ((p.x - a.x) * ex + (p.y - a.y) * ey) / (len * len);
+        if (t < 0 || t > 1) continue;
+        if (Math.hypot(p.x - (a.x + t * ex), p.y - (a.y + t * ey)) > TOL) continue;
+        let hit = edgeIns[i].find(q => Math.abs(q.t - t) * len <= TOL);
+        if (!hit) { hit = { t, p: { x: a.x + t * ex, y: a.y + t * ey } }; edgeIns[i].push(hit); }
+        return { e: i, ref: hit };
+      }
+      return null;
+    }
+    const located = chords.map(c => ({ c, a: locate(c.A), b: locate(c.B) }));
+    const loop = [];
+    const vIndex = [];
+    for (let i = 0; i < n0; i++) {
+      vIndex[i] = loop.length;
+      loop.push({ x: konturLoop[i].x, y: konturLoop[i].y, z: konturLoop[i].z || 0 });
+      edgeIns[i].sort((p, q) => p.t - q.t).forEach(q => { q.idx = loop.length; loop.push({ x: q.p.x, y: q.p.y, z: konturLoop[i].z || 0 }); });
+    }
+    const n = loop.length;
+    const idxOf = L => (L.v !== undefined ? vIndex[L.v] : L.ref.idx);
+    function polyArea(from, to) {
+      const pts = [];
+      for (let i = from; ; i = (i + 1) % n) { pts.push(loop[i]); if (i === to) break; }
+      let s = 0;
+      for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; s += p.x * q.y - q.x * p.y; }
+      return Math.abs(s) / 2;
+    }
+    let arcs = [];
+    located.forEach(L => {
+      if (!L.a || !L.b) return;
+      const ia = idxOf(L.a), ib = idxOf(L.b);
+      if (ia === ib) return;
+      const a1 = polyArea(ia, ib), a2 = polyArea(ib, ia);
+      const s = a1 <= a2 ? ia : ib, e = a1 <= a2 ? ib : ia;
+      const k = ((e - s - 1) % n + n) % n;
+      if (k < 1 || Math.min(a1, a2) < 1e-6) return;
+      arcs.push({ s, e, k, type: L.c.type });
+    });
+    if (!arcs.length) return null;
+    const used = new Set();
+    arcs = arcs.filter(a => {
+      const steps = [];
+      for (let m = 0; m <= a.k; m++) steps.push((a.s + m) % n);
+      if (steps.some(x => used.has(x))) return false;
+      steps.forEach(x => used.add(x));
+      return true;
+    });
+    if (!arcs.length) return null;
+    arcs.sort((p, q) => p.s - q.s);
+    const rot = arcs[0].s;
+    const L = [];
+    for (let j = 0; j < n; j++) L.push(loop[(j + rot) % n]);
+    arcs.forEach(a => { a.s = ((a.s - rot) % n + n) % n; });
+    arcs.sort((p, q) => p.s - q.s);
+    const unten = [], oben = [];
+    let j = 0;
+    arcs.forEach(a => {
+      for (; j < a.s; j++) { unten.push(L[j]); oben.push(L[j]); }
+      const A = L[a.s], B = L[(a.s + a.k + 1) % n];
+      let c = 0, best = -1;
+      for (let m = 0; m <= a.k; m++) {
+        const d = dist(L[(a.s + m) % n], L[(a.s + m + 1) % n]);
+        if (d > best + 1e-9) { best = d; c = m; }
+      }
+      for (let m = 0; m <= a.k; m++) {
+        const orig = L[a.s + m];
+        const act = m <= c ? A : B;
+        if (a.type === 'oben') { unten.push(orig); oben.push(act); } else { unten.push(act); oben.push(orig); }
+      }
+      j = a.s + a.k + 1;
+    });
+    for (; j < n; j++) { unten.push(L[j]); oben.push(L[j]); }
+    return { untenLoop: unten, obenLoop: oben, zoneCount: arcs.length };
+  }
+
   // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
   // Werkzeug soll dargestellt werden ... Die Werkzeugdaten sind immer achssymmetrisch", siehe
   // Konzept_DXF_Werkzeugdarstellung.md): baut aus einer ungeordneten Menge einzelner, bereits von
@@ -8719,7 +8968,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -9465,8 +9714,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 241;
-  const APP_RELEASE_TIMESTAMP = '19.10.2026, 15:20 Uhr';
+  const APP_RELEASE_NUMBER = 243;
+  const APP_RELEASE_TIMESTAMP = '19.10.2026, 15:36 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12702,6 +12951,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfSchmiegeVornLayerName = null;
   let dxfSchmiegeHintenLayerName = null;
   let dxfSchmiegeRings = null;
+  // Release 243 ("Schmiegenerkennung" über Layer2/Layer3 ..., siehe CNCParser.detectLayerSchmiegeChords()/
+  // buildLayerSchmiegeRings() in parser.js sowie Konzept_DXF_Schmiegenerkennung_Layer2_3.md):
+  // dxfLayerSchmiegeEnabled - Checkbox "Schmiegenerkennung" im Bauteilstärke-Dialog (Standard aus,
+  // gilt pro importierter DXF), dxfLayerSchmiegeLayers - die vom Benutzer gewählten Layer (Set),
+  // dxfLayerSchmiegeInfo - einmalig pro Import ermittelte Kandidaten-Layer samt erkannten Linien
+  // ({candidates, perLayer}), dxfLayerSchmiegeRings - das daraus berechnete Ringpaar (oder null).
+  // Hat Vorrang vor dxfSchmiegeRings (benannte Schmiege_vorn/hinten-Layer), siehe getActiveSchmiegeRings().
+  let dxfLayerSchmiegeEnabled = false;
+  let dxfLayerSchmiegeLayers = new Set();
+  let dxfLayerSchmiegeInfo = null;
+  let dxfLayerSchmiegeRings = null;
+  function getActiveSchmiegeRings() { return dxfLayerSchmiegeRings || dxfSchmiegeRings; }
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -14170,6 +14431,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Parst den übergebenen DXF-Text (parseDXF, siehe parser.js) und übernimmt ihn als neue,
   // eigenständige DXF-Unterlage - ersetzt ein zuvor geladenes DXF vollständig (inkl. Verschiebung/
   // Sichtbarkeit, die für die neue Datei wieder auf den Ausgangszustand zurückgesetzt werden).
+  // Release 243: Kandidaten-Layer (Layer2 und folgende) samt der dort erkannten Schmiege-Linien.
+  function computeLayerSchmiegeInfo() {
+    const info = { candidates: [], perLayer: {} };
+    if (!dxfGeometry || !dxfKonturLoop) return info;
+    info.candidates = CNCParser.listLayerSchmiegeCandidates(dxfGeometry, dxfKonturLayerName);
+    info.candidates.forEach(name => {
+      info.perLayer[name] = CNCParser.detectLayerSchmiegeChords(dxfGeometry.strokes.filter(s => s.layer === name), dxfKonturLoop);
+    });
+    return info;
+  }
+  function recomputeLayerSchmiegeRings() {
+    dxfLayerSchmiegeRings = null;
+    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo) return;
+    const chords = [];
+    dxfLayerSchmiegeLayers.forEach(name => {
+      const r = dxfLayerSchmiegeInfo.perLayer[name];
+      if (r) r.chords.forEach(c => chords.push(c));
+    });
+    dxfLayerSchmiegeRings = chords.length ? CNCParser.buildLayerSchmiegeRings(dxfKonturLoop, chords) : null;
+  }
   function loadDxfText(text, filename) {
     dxfGeometry = CNCParser.parseDXF(text);
     // Release 233 (Sebastian, siehe computeDxfAnchorShift() in parser.js): Kontur-Layer (sonst
@@ -14233,6 +14514,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     } else {
       dxfSchmiegeRings = null;
     }
+    // Release 243: Schmiegenerkennung über Layer2 und folgende - startet pro Import immer aus.
+    dxfLayerSchmiegeEnabled = false;
+    dxfLayerSchmiegeLayers = new Set();
+    dxfLayerSchmiegeRings = null;
+    dxfLayerSchmiegeInfo = computeLayerSchmiegeInfo();
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
     // dxfVisible/dxfOffset/dxfMirror* oben - eine für die vorherige Datei ausgeblendete Layer-Auswahl
     // soll sich nicht auf eine neu geladene Datei übertragen (dieselbe Begründung wie bei
@@ -14277,6 +14563,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfSchmiegeVornLayerName = null;
     dxfSchmiegeHintenLayerName = null;
     dxfSchmiegeRings = null;
+    dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Set(); dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -16110,6 +16397,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // neuen Transparenz/Farbe neu zu zeichnen.
       dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfThickness, dxfScale,
       dxfThicknessTransparency, dxfThicknessColor,
+      // Release 243: Layer-Schmiegen (Ringe werden bei jeder Änderung neu erzeugt -> Objektidentität reicht)
+      dxfLayerSchmiegeRings,
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
       // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
@@ -16139,6 +16428,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
+      a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings &&
       a.dxfOutlineColor === b.dxfOutlineColor &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
@@ -17233,7 +17523,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // z=0 exakt wie bisher sichtbar (keine Verhaltensänderung für reine Kontur-Füllungen ohne
     // Schmiege, siehe Regressionstests test_r216.../test_r217.../test_r218..., die bewusst genau
     // diese Linie über eine Rotpixel-Zählung prüfen).
-    const schmiegeActive = fillActive && !!(dxfSchmiegeRings && dxfSchmiegeRings.zoneCount > 0);
+    const schmiegeActive = fillActive && !!(getActiveSchmiegeRings() && getActiveSchmiegeRings().zoneCount > 0);
     const bottomWireframeStrokes = schmiegeActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
     // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfBottomWireframeIncludesKontur in
     // den instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
@@ -17336,8 +17626,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // physisch obere Ebene)/"hinten" an Versatz-Z (=dxfThickness, die jetzt physisch untere
         // Ebene) - "vorn" bleibt dadurch so wie "hinten" immer der jeweils richtigen physischen
         // Seite zugeordnet, unabhängig vom Vorzeichen.
-        const hintenLoopRaw = dxfSchmiegeRings ? dxfSchmiegeRings.untenLoop : dxfKonturLoop;
-        const vornLoopRaw = dxfSchmiegeRings ? dxfSchmiegeRings.obenLoop : dxfKonturLoop;
+        const activeSchmiegeRings = getActiveSchmiegeRings(); // Release 243: Layer-Schmiegen (Layer2/3) vor benannten Schmiege-Layern
+        const hintenLoopRaw = activeSchmiegeRings ? activeSchmiegeRings.untenLoop : dxfKonturLoop;
+        const vornLoopRaw = activeSchmiegeRings ? activeSchmiegeRings.obenLoop : dxfKonturLoop;
         const originalZLoopRaw = dxfThickness >= 0 ? hintenLoopRaw : vornLoopRaw;
         const offsetZLoopRaw = dxfThickness >= 0 ? vornLoopRaw : hintenLoopRaw;
         const originalZLoopClosed = originalZLoopRaw.concat([originalZLoopRaw[0]]);
@@ -17382,12 +17673,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Release 223: lowerPts/upperPts zusätzlich vollständig (x/y/z aller Ring-Punkte) für die
         // Verifikation der Vorzeichen-Zuordnung von "Schmiege_vorn"/"Schmiege_hinten" bei negativer
         // Bauteilstärke (siehe Kommentar bei "originalZLoopRaw"/"offsetZLoopRaw" oben) mitgegeben.
-        window.__lastDxfKonturFillInfo = { thickness: dxfThickness, ringPointCount: ptsAtOriginalZ.length, schmiegeZoneCount: dxfSchmiegeRings ? dxfSchmiegeRings.zoneCount : 0, lowerZ: lowerPts[0].z, upperZ: upperPts[0].z, lowerPts: lowerPts.map(p => ({ x: p.x, y: p.y, z: p.z })), upperPts: upperPts.map(p => ({ x: p.x, y: p.y, z: p.z })) };
+        window.__lastDxfKonturFillInfo = { thickness: dxfThickness, ringPointCount: ptsAtOriginalZ.length, schmiegeZoneCount: activeSchmiegeRings ? activeSchmiegeRings.zoneCount : 0, lowerZ: lowerPts[0].z, upperZ: upperPts[0].z, lowerPts: lowerPts.map(p => ({ x: p.x, y: p.y, z: p.z })), upperPts: upperPts.map(p => ({ x: p.x, y: p.y, z: p.z })) };
         fillRevolutionBody([lowerPts, upperPts], [lowerScreen, upperScreen],
           { color: dxfThicknessColor, transparency: dxfThicknessTransparency },
           { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
           { x: 0, y: 1, z: 0 },
-          { disableSideCull: true }); // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody()
+          { disableSideCull: true, triangulateDegenerate: !!dxfLayerSchmiegeRings }); // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody(); triangulateDegenerate: Release 243
         // Release 226 (Sebastian, nach 9.8s: "Was zur Erkennung für den Bediener helfen würde ist
         // eine schwarze 'Outline' der Konturen vom Bauteil oben und unten. Da dann natürlich die
         // Kontur jeweils so wie die Schmiege ist, also das was man sieht. ... Wenn es keine
@@ -18016,6 +18307,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const e1x = p1.x - p0.x, e1y = p1.y - p0.y, e1z = p1.z - p0.z;
         const e2x = p3.x - p0.x, e2y = p3.y - p0.y, e2z = p3.z - p0.z;
         const e3x = p2.x - p0.x, e3y = p2.y - p0.y, e3z = p2.z - p0.z;
+        // Release 243 (Layer-Schmiegen, buildLayerSchmiegeRings()): die Auffüllung des Teilzugs erzeugt
+        // Viereck-Streifen, bei denen die untere ODER obere Kante die Länge 0 hat - das ist in Wahrheit
+        // ein Dreieck und wird hier als solches gezeichnet (statt wie sonst als Nullfläche übersprungen).
+        if (opts && opts.triangulateDegenerate) {
+          const lowEdge = Math.hypot(e1x, e1y, e1z), upEdge = Math.hypot(p2.x - p3.x, p2.y - p3.y, p2.z - p3.z);
+          if (lowEdge < 1e-9 && upEdge < 1e-9) continue;
+          if (lowEdge < 1e-9) { pushSideTriangle(p1, p2, p3, s1, s2, s3); continue; }
+          if (upEdge < 1e-9) { pushSideTriangle(p0, p1, p2, s0, s1, s2); continue; }
+        }
         const crossX = e1y * e2z - e1z * e2y;
         const crossY = e1z * e2x - e1x * e2z;
         const crossZ = e1x * e2y - e1y * e2x;
@@ -24611,8 +24911,62 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
   dxfOutlineColorPicker.addEventListener('input', () => { dxfOutlineColorHex.value = dxfOutlineColorPicker.value; });
 
+  // Release 243: "Schmiegenerkennung" im Bauteilstärke-Dialog. Baut die Layer-Liste aus
+  // dxfLayerSchmiegeInfo neu auf und setzt Checkbox/Auswahl auf den zuletzt bestätigten Stand.
+  const dxfSchmiegeCheckbox = el('dxfSchmiegeCheckbox');
+  const dxfSchmiegeLayerList = el('dxfSchmiegeLayerList');
+  const dxfSchmiegeHint = el('dxfSchmiegeHint');
+  function describeLayerSchmiege(name) {
+    const r = dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.perLayer[name];
+    if (!r || !r.groups.length) return T('keine Linien', 'no lines');
+    const ok = r.groups.filter(g => g.chord);
+    if (!ok.length) {
+      const why = (r.groups.find(g => g.reason) || {}).reason || '';
+      return T('keine Schmiege-Linie erkannt', 'no bevel line detected') + (why ? ' (' + why + ')' : '');
+    }
+    return ok.map(g => g.type === 'oben'
+      ? T('durchgezogen → obere Kante', 'solid → upper edge')
+      : T('gestrichelt → untere Kante', 'dashed → lower edge')).join(', ');
+  }
+  function refreshDxfSchmiegeUI() {
+    const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
+    dxfSchmiegeCheckbox.disabled = !cands.length;
+    dxfSchmiegeCheckbox.checked = !!(cands.length && dxfLayerSchmiegeEnabled);
+    dxfSchmiegeLayerList.innerHTML = '';
+    cands.forEach(name => {
+      const lab = document.createElement('label');
+      lab.className = 'scale-option';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.layer = name;
+      cb.checked = dxfLayerSchmiegeLayers.has(name);
+      cb.addEventListener('change', updateDxfSchmiegeHint);
+      const sp = document.createElement('span');
+      sp.textContent = ' ' + name + ' – ' + describeLayerSchmiege(name);
+      lab.appendChild(cb);
+      lab.appendChild(sp);
+      dxfSchmiegeLayerList.appendChild(lab);
+    });
+    updateDxfSchmiegeHint();
+  }
+  function updateDxfSchmiegeHint() {
+    const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
+    dxfSchmiegeLayerList.hidden = !(dxfSchmiegeCheckbox.checked && cands.length);
+    if (!cands.length) {
+      dxfSchmiegeHint.textContent = T('Nur wählbar, wenn die DXF einen Layer 2 oder folgende enthält.', 'Only available if the DXF contains a Layer 2 or higher.');
+    } else if (!dxfSchmiegeCheckbox.checked) {
+      dxfSchmiegeHint.textContent = T('Aus: das Bauteil wird einfach mit der eingegebenen Stärke dargestellt.', 'Off: the part is simply shown with the entered thickness.');
+    } else if (!dxfSchmiegeLayerList.querySelector('input:checked')) {
+      dxfSchmiegeHint.textContent = T('Bitte die Layer wählen, die Schmiegen enthalten.', 'Please select the layers that contain bevels.');
+    } else {
+      dxfSchmiegeHint.textContent = T('Durchgezogene Linie = obere, sichtbare Kante, gestrichelte Linie = untere, verdeckte Kante; von dort läuft die Schmiege nach außen zur Kontur. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'Solid line = upper, visible edge, dashed line = lower, hidden edge; the bevel runs from there outwards to the contour. Shown in the filled view (transparency below 100%).');
+    }
+  }
+  dxfSchmiegeCheckbox.addEventListener('change', updateDxfSchmiegeHint);
+
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
+    refreshDxfSchmiegeUI(); // Release 243
     // Release 222 (Sebastian: "Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte
     // drin."): solange der Dialog für diesen Import noch nie bestätigt wurde, werden die Felder mit
     // DXF_THICKNESS_PREFILL/DXF_THICKNESS_TRANSPARENCY_PREFILL vorbefüllt statt mit dem tatsächlich
@@ -24649,6 +25003,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
+    // Release 243: Schmiegenerkennung übernehmen (erst nach erfolgreicher Validierung unten wirksam
+    // wäre ein Teil-Zustand möglich - deshalb hier vorab nur die Auswahl merken, die Ringe werden am
+    // Ende berechnet).
+    const pendingSchmiegeEnabled = !dxfSchmiegeCheckbox.disabled && dxfSchmiegeCheckbox.checked;
+    const pendingSchmiegeLayers = new Set(Array.from(dxfSchmiegeLayerList.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.dataset.layer));
     // Release 216: Transparenz immer übernehmbar (auch bei 100%, dem Default) - nur bei <=99%
     // (Farbzeile sichtbar) muss die Farbe selbst zusätzlich ein gültiger Hexcode sein.
     const transparencyVal = Number(dxfThicknessTransparencySlider.value);
@@ -24674,6 +25033,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     dxfThicknessTransparency = transparencyVal;
     dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
+    dxfLayerSchmiegeEnabled = pendingSchmiegeEnabled; // Release 243
+    dxfLayerSchmiegeLayers = pendingSchmiegeLayers;
+    recomputeLayerSchmiegeRings();
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
