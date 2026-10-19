@@ -5743,16 +5743,21 @@
     // TOOLMODE/TOOLTYPE oben). Der feste Wert "NONE" wird genauso wie ein fehlender Marker als
     // "kein Profil" (null) zurückgegeben - app.js/drawTool() unterscheiden diese beiden Fälle
     // bewusst nicht (siehe Kommentar oben bei TOOL_PROFILE_RE).
-    for (let i = 0; i < lines.length && toolProfileId === null; i++) {
+    // Release 241 (Sebastian: "Wenn ich ein Werkzeugprofil ausgewählt habe, kann ich nicht mehr auf
+    // 'Kein Profil (Zylinder)' zurückstellen ... Dargestellt wird aber trotzdem das letzte profilierte
+    // Werkzeug"): der ERSTE Marker im Abschnitt entscheidet - auch ein ausdrückliches NONE. Vorher wurde
+    // NONE übersprungen und weitergesucht, sodass eine weiter unten stehende (z. B. vom CAM/Werkzeugwechsel
+    // geschriebene) Zeile "TPro Minizinkenfraeser" die Dialogwahl "Kein Profil" überstimmte.
+    for (let i = 0; i < lines.length; i++) {
       const v = matchProfileMarker(lines[i], 'tool'); // Release 239: auch '; TPro ..' (Einzeiler)
-      if (v !== null && v.toUpperCase() !== 'NONE') toolProfileId = v;
+      if (v !== null) { toolProfileId = v.toUpperCase() !== 'NONE' ? v : null; break; }
     }
     // "CHUCKPROFILE" (NEU, Release 214, siehe CHUCK_PROFILE_RE oben) - unabhängig von den übrigen
     // Markern über alle Zeilen gesucht, erster Treffer gewinnt (exakt dasselbe Muster wie
     // TOOLPROFILE oben).
-    for (let i = 0; i < lines.length && chuckProfileId === null; i++) {
+    for (let i = 0; i < lines.length; i++) { // Release 241: erster Marker gewinnt, auch NONE (siehe oben)
       const v = matchProfileMarker(lines[i], 'chuck'); // Release 239: auch '; ChPro ..' (Einzeiler)
-      if (v !== null && v.toUpperCase() !== 'NONE') chuckProfileId = v;
+      if (v !== null) { chuckProfileId = v.toUpperCase() !== 'NONE' ? v : null; break; }
     }
     // Finaler Zahlenwert: eine tatsächlich gefundene LENGTH-Zeile gewinnt immer (egal ob generische
     // LENGTH-Notation oder die vom Dialog geschriebene, aktuell gültige Länge/Sägeblattstärke); nur
@@ -9460,8 +9465,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 239;
-  const APP_RELEASE_TIMESTAMP = '19.10.2026, 13:05 Uhr';
+  const APP_RELEASE_NUMBER = 241;
+  const APP_RELEASE_TIMESTAMP = '19.10.2026, 15:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -10781,10 +10786,18 @@ CORNERRADIUS=GFIL r=
     }
     return out.length >= 2 ? out : null;
   }
+  // Release 240 (Sebastian: "Bei Spannfutter- und Werkzeugprofilen sollen Leerzeichen im Namen nicht
+  // möglich sein bzw. 'im Hinterkopf' gegen '_' ausgetauscht werden beim Speichern: 'Stufenprofil R6' wird
+  // beim Speichervorgang zu 'Stufenprofil_R6'"): einheitliche Namensnormalisierung für Werkzeug- und
+  // Spannfutterprofile - Leerraum (Leerzeichen/Tab/…) wird zu '_', '//' zu '/' (Release 239, trennt im
+  // ChPro/TPro-Einzeiler). Wird beim Speichern, Umbenennen, Laden und Marker-Vergleichen verwendet.
+  function normalizeProfileName(name) {
+    return String(name == null ? '' : name).trim().replace(/\/{2,}/g, '/').replace(/\s+/g, '_');
+  }
   function normalizeToolDxfProfile(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
-    const name = typeof raw.name === 'string' ? raw.name.replace(/\/{2,}/g, '/').trim() : ''; // Release 239: '//' im Namen verboten
+    const name = typeof raw.name === 'string' ? normalizeProfileName(raw.name) : ''; // Release 239/240: kein '//' und keine Leerzeichen im Namen
     const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
     const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
     if (!id || !name || !dxfText || !mainProfile) return null;
@@ -10877,7 +10890,7 @@ CORNERRADIUS=GFIL r=
   function renameToolDxfProfile(id, newName) {
     const p = getToolDxfProfileById(id);
     if (!p) return false;
-    const name = String(newName == null ? '' : newName).trim();
+    const name = normalizeProfileName(newName);
     if (!name) return false;
     const oldName = p.name;
     p.name = name;
@@ -10985,7 +10998,7 @@ CORNERRADIUS=GFIL r=
   function normalizeChuckDxfProfile(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
-    const name = typeof raw.name === 'string' ? raw.name.replace(/\/{2,}/g, '/').trim() : ''; // Release 239: '//' im Namen verboten
+    const name = typeof raw.name === 'string' ? normalizeProfileName(raw.name) : ''; // Release 239/240: kein '//' und keine Leerzeichen im Namen
     const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
     const mainProfile = normalizeDxfRDistArray(raw.mainProfile);
     if (!id || !name || !dxfText || !mainProfile) return null;
@@ -23219,10 +23232,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const list = profileListFor(kind);
     const prof = list.find(p => p.id === id);
     if (!prof) return id;
-    const name = String(prof.name || '').replace(/[\r\n]+/g, ' ').trim();
+    const name = normalizeProfileName(prof.name);
     if (!name || name.toUpperCase() === 'NONE' || name.indexOf('//') !== -1) return id; // '//' trennt im Einzeiler (Release 239)
     const lower = name.toLowerCase();
-    if (list.filter(p => String(p.name || '').trim().toLowerCase() === lower).length > 1) return id;
+    if (list.filter(p => normalizeProfileName(p.name).toLowerCase() === lower).length > 1) return id;
     return name;
   }
   // resolveProfileMarker(): Marker-Wert -> id des gespeicherten Profils. Erst als id (ältere
@@ -23232,14 +23245,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!value) return value;
     const list = profileListFor(kind);
     if (list.some(p => p.id === value)) return value;
-    const lower = String(value).trim().toLowerCase();
-    const byName = list.find(p => String(p.name || '').trim().toLowerCase() === lower);
+    const lower = normalizeProfileName(value).toLowerCase(); // Release 240: ältere Marker mit Leerzeichen im Namen
+    const byName = list.find(p => normalizeProfileName(p.name).toLowerCase() === lower);
     return byName ? byName.id : value;
   }
   // Wird ein Profil umbenannt, ziehen die Marker im geladenen Programm und in der Programmliste mit,
   // sonst würde die Zuordnung beim nächsten Neuaufbau verloren gehen (der Marker enthält den Namen).
   function updateProfileMarkersForRename(kind, oldName, newName) {
-    const o = String(oldName || '').trim(), n = String(newName || '').trim();
+    const o = normalizeProfileName(oldName), n = normalizeProfileName(newName);
     if (!o || !n || o === n) return;
     const re = new RegExp('^(\\s*;\\s*' + (kind === 'chuck' ? 'CHUCKPROFILE' : 'TOOLPROFILE') + '\\s+)(.+?)(\\s*)$', 'i');
     // Release 239: Einzeiler ';ChPro A // ;TPro B [// ..]' - nur die ersten beiden '//'-Teile prüfen.
@@ -23249,13 +23262,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const segs = part.split('//');
       for (let k = 0; k < Math.min(2, segs.length); k++) {
         const m = reShort.exec(segs[k]);
-        if (m && m[2].toLowerCase() === o.toLowerCase()) { segs[k] = m[1] + n + m[3]; return segs.join('//'); }
+        if (m && normalizeProfileName(m[2]).toLowerCase() === o.toLowerCase()) { segs[k] = m[1] + n + m[3]; return segs.join('//'); }
       }
       return part;
     };
     const fix = (text) => text.split(/(\r\n|\n)/).map(part => {
       const m = re.exec(part);
-      if (m) return (m[2].toLowerCase() === o.toLowerCase()) ? m[1] + n + m[3] : part;
+      if (m) return (normalizeProfileName(m[2]).toLowerCase() === o.toLowerCase()) ? m[1] + n + m[3] : part;
       return fixPair(part);
     }).join('');
     if (typeof rawProgramText === 'string') rawProgramText = fix(rawProgramText);
