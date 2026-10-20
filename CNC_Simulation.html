@@ -7674,6 +7674,10 @@
         segs[nextIdx].used = true;
         chain.push(...nextPts.slice(1));
         lastPoint = chain[chain.length - 1];
+        // Release 247: ist der Ring geschlossen, wird nicht weitergelaufen - sonst hängte sich eine
+        // doppelt gezeichnete Kante (z. B. zwei identische LINE-Elemente auf Layer1 in der Stufe 7)
+        // hinten an, die Kette endete nicht mehr am Startpunkt und der ganze Ring ging verloren.
+        if (chain.length >= 4 && samePoint(chain[0], lastPoint)) break;
       }
       // Eine übrig bleibende, nicht geschlossene Teilkette (chain[0] != letzter Punkt) wird
       // stillschweigend verworfen (siehe Funktionskommentar oben) - sie trägt nichts zu einem
@@ -8094,8 +8098,10 @@
     return names.filter(n => {
       if (n === 'COMPASS' || n === konturLayerName) return false;
       if (/^schmiege_(vorn|hinten)$/i.test(n)) return false;
-      const m = /^layer[ _-]?(\d+)$/i.exec(n);
-      return !!(m && parseInt(m[1], 10) >= 2);
+      // Release 247 (Sebastian: "Die Layererkennung sollte aktiv sein, sobald es mehrere Layer gibt.
+      // Dann wählt der Benutzer die gewünschten Layer aus."): jeder weitere Layer ist wählbar, nicht
+      // nur "Layer2 und folgende".
+      return true;
     });
   }
 
@@ -8164,7 +8170,8 @@
       else if (merged.length >= 3 && coverage <= 0.9 && minGap > TOL && maxGap / minGap <= 1.5) type = 'unten';
       const info = { type, coverage, span, dashCount: merged.length, chord: null, reason: '' };
       out.groups.push(info);
-      if (!type) { info.reason = 'weder durchgezogen noch regelmäßig gestrichelt'; return; }
+      // Release 247: die Art (durchgezogen/gestrichelt) ist nur noch ein VORSCHLAG für die Auswahl
+      // "sichtbar/nicht sichtbar" im Dialog; berechnet wird für jede Linie, die die Kontur erreicht.
       // Linie mit der Kontur schneiden
       const ts = [];
       for (let i = 0; i < n; i++) {
@@ -8180,10 +8187,13 @@
       ts.sort((p, q) => p - q);
       const uniq = [];
       ts.forEach(t => { if (!uniq.length || t - uniq[uniq.length - 1] > 1e-6) uniq.push(t); });
-      const tmid = (tmin + tmax) / 2;
-      let chord = null;
+      let chord = null, bestOverlap = 0;
       for (let k = 0; k + 1 < uniq.length; k++) {
-        if (tmid < uniq[k] - 1e-6 || tmid > uniq[k + 1] + 1e-6) continue;
+        // Release 247: unter den Sehnen-Stücken im Inneren gewinnt das mit der größten Überdeckung der Linie
+        // (statt nur das, in dem die Linienmitte liegt - eine weit über die Kontur hinausragende Linie
+        // hat ihre Mitte nicht zwingend im Bauteil).
+        const overlap = Math.min(tmax, uniq[k + 1]) - Math.max(tmin, uniq[k]);
+        if (overlap <= 1e-6 || overlap <= bestOverlap) continue;
         const mx = g.ox + g.dx * (uniq[k] + uniq[k + 1]) / 2, my = g.oy + g.dy * (uniq[k] + uniq[k + 1]) / 2;
         if (!pointInPoly(mx, my)) continue;
         // Linie liegt selbst auf einer Konturkante (z. B. Randlinien auf x=0/x=Breite): keine Sehne durchs Innere
@@ -8196,16 +8206,17 @@
           if (Math.hypot(mx - (u.x + ex * tt), my - (u.y + ey * tt)) < 0.05) onEdge = true;
         }
         if (onEdge) continue;
-        chord = { t0: uniq[k], t1: uniq[k + 1] };
-        break;
+        chord = { t0: uniq[k], t1: uniq[k + 1] }; bestOverlap = overlap;
       }
       if (!chord || chord.t1 - chord.t0 < 1e-3) { info.reason = 'liegt nicht innerhalb der Kontur (oder auf einer Konturkante)'; return; }
       const allow = (type === 'oben' ? 0 : maxGap) + 1;
-      if (tmin - chord.t0 > allow || chord.t1 - tmax > allow || tmin < chord.t0 - 1 || tmax > chord.t1 + 1) {
+      // Ein Überstand der Linie über die Kontur hinaus ist beliebig erlaubt (die Sehne endet an der
+      // Kontur); die Linie muss nur beidseitig bis an die Kontur reichen.
+      if (tmin - chord.t0 > allow || chord.t1 - tmax > allow) {
         info.reason = 'erreicht die Kontur nicht'; return;
       }
       info.chord = {
-        type,
+        type: type || 'oben',
         A: { x: g.ox + g.dx * chord.t0, y: g.oy + g.dy * chord.t0 },
         B: { x: g.ox + g.dx * chord.t1, y: g.oy + g.dy * chord.t1 }
       };
@@ -8276,43 +8287,83 @@
       const s = a1 <= a2 ? ia : ib, e = a1 <= a2 ? ib : ia;
       const k = ((e - s - 1) % n + n) % n;
       if (k < 1 || Math.min(a1, a2) < 1e-6) return;
-      arcs.push({ s, e, k, type: L.c.type });
+      arcs.push({ s, e, k, type: L.c.type, chord: L.c });
     });
-    if (!arcs.length) return null;
-    const used = new Set();
-    arcs = arcs.filter(a => {
-      const steps = [];
-      for (let m = 0; m <= a.k; m++) steps.push((a.s + m) % n);
-      if (steps.some(x => used.has(x))) return false;
-      steps.forEach(x => used.add(x));
-      return true;
-    });
-    if (!arcs.length) return null;
-    arcs.sort((p, q) => p.s - q.s);
-    const rot = arcs[0].s;
-    const L = [];
-    for (let j = 0; j < n; j++) L.push(loop[(j + rot) % n]);
-    arcs.forEach(a => { a.s = ((a.s - rot) % n + n) % n; });
-    arcs.sort((p, q) => p.s - q.s);
-    const unten = [], oben = [];
-    let j = 0;
-    arcs.forEach(a => {
-      for (; j < a.s; j++) { unten.push(L[j]); oben.push(L[j]); }
-      const A = L[a.s], B = L[(a.s + a.k + 1) % n];
-      let c = 0, best = -1;
-      for (let m = 0; m <= a.k; m++) {
-        const d = dist(L[(a.s + m) % n], L[(a.s + m + 1) % n]);
-        if (d > best + 1e-9) { best = d; c = m; }
-      }
-      for (let m = 0; m <= a.k; m++) {
-        const orig = L[a.s + m];
-        const act = m <= c ? A : B;
-        if (a.type === 'oben') { unten.push(orig); oben.push(act); } else { unten.push(act); oben.push(orig); }
-      }
-      j = a.s + a.k + 1;
-    });
-    for (; j < n; j++) { unten.push(L[j]); oben.push(L[j]); }
-    return { untenLoop: unten, obenLoop: oben, zoneCount: arcs.length };
+    if (!arcs.length) return { untenLoop: null, obenLoop: null, zoneCount: 0, skipped: chords.slice() };
+
+    // Release 246 (Sebastian: "Bei der Setzstufe gibt es den Layer 2 und Layer 3, aber es gibt mehrere
+    // Schmiegen, jeweils pro Layer seitlich und Richtung vordere bzw. hintere Kante."): Pro Ring
+    // (oben = durchgezogene Linien, unten = gestrichelte Linien) werden die Sehnen getrennt
+    // abgebildet, beide Ringe teilen sich dieselbe Punktliste `loop` (alle Sehnen-Endpunkte
+    // eingefügt). Überlappen sich die abgeschnittenen Teilzüge zweier Sehnen desselben Typs an einer
+    // Ecke (z. B. vordere und seitliche Schmiege), werden sie zu einer Kette zusammengefasst: der
+    // Eckpunkt rutscht auf den Schnittpunkt der beiden Sehnen-Geraden (die Schrägflächen bleiben
+    // eben und stoßen sauber in einer Kante zusammen). Verschachtelte Teilzüge (eine Sehne liegt
+    // hinter einer anderen) entfallen, die weiter außen liegende Sehne gewinnt.
+    function lineIntersect(p1, p2, p3, p4) {
+      const d1x = p2.x - p1.x, d1y = p2.y - p1.y, d2x = p4.x - p3.x, d2y = p4.y - p3.y;
+      const den = d1x * d2y - d1y * d2x;
+      if (Math.abs(den) < 1e-9 * Math.max(1, Math.hypot(d1x, d1y) * Math.hypot(d2x, d2y))) return null;
+      const t = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / den;
+      return { x: p1.x + d1x * t, y: p1.y + d1y * t, z: p1.z || 0 };
+    }
+    let zoneCount = 0;
+    const usedChords = new Set();
+    function mapRing(type) {
+      const pos = loop.slice();
+      const list = arcs.filter(a => a.type === type);
+      if (!list.length) return pos;
+      const covered = new Array(n).fill(false);
+      list.forEach(a => { for (let m = 0; m <= a.k + 1; m++) covered[(a.s + m) % n] = true; });
+      const rot = covered.findIndex(c => !c);
+      if (rot < 0) return pos; // Teilzüge decken die ganze Kontur ab: nicht abbildbar
+      const Lr = [];
+      for (let j = 0; j < n; j++) Lr.push(loop[(j + rot) % n]);
+      let rl = list.map(a => { const s2 = ((a.s - rot) % n + n) % n; return { s: s2, e: s2 + a.k + 1, k: a.k, chord: a.chord }; });
+      rl = rl.filter((a, i) => !rl.some((b, j) => j !== i && b.s <= a.s && a.e <= b.e && (b.s < a.s || a.e < b.e || j < i)));
+      rl.sort((p, q) => p.s - q.s);
+      const clusters = [];
+      rl.forEach(a => {
+        const cur = clusters[clusters.length - 1];
+        if (cur && a.s <= cur[cur.length - 1].e) cur.push(a); else clusters.push([a]);
+      });
+      clusters.forEach(cl => {
+        // Umschaltkante je Teilzug = längste Kante (dort liegt die Sehne gegenüber), streng aufsteigend
+        let lastC = cl[0].s - 1;
+        const usable = [];
+        cl.forEach(a => {
+          let c = -1, best = -1;
+          for (let x = Math.max(a.s, lastC + 1); x < a.e; x++) {
+            const d = dist(Lr[x], Lr[x + 1]);
+            if (d > best + 1e-9) { best = d; c = x; }
+          }
+          if (c < 0) return;
+          a.c = c; lastC = c; usable.push(a);
+        });
+        if (!usable.length) return;
+        const T = [];
+        for (let i = 0; i + 1 < usable.length; i++) {
+          const q = lineIntersect(Lr[usable[i].s], Lr[usable[i].e], Lr[usable[i + 1].s], Lr[usable[i + 1].e]);
+          T.push(q || Lr[usable[i].e]);
+        }
+        const first = Lr[usable[0].s], last = Lr[usable[usable.length - 1].e];
+        const from = usable[0].s, to = usable[usable.length - 1].e;
+        for (let x = from; x <= to; x++) {
+          let r = 0;
+          while (r < usable.length && usable[r].c < x) r++;
+          const target = r === 0 ? first : (r === usable.length ? last : T[r - 1]);
+          pos[(x + rot) % n] = target;
+        }
+        zoneCount += usable.length;
+        usable.forEach(a => usedChords.add(a.chord));
+      });
+      return pos;
+    }
+    const unten = mapRing('unten');
+    const oben = mapRing('oben');
+    const skipped = chords.filter(c => !usedChords.has(c));
+    if (!zoneCount) return { untenLoop: null, obenLoop: null, zoneCount: 0, skipped };
+    return { untenLoop: unten, obenLoop: oben, zoneCount, skipped };
   }
 
   // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
@@ -9716,8 +9767,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 245;
-  const APP_RELEASE_TIMESTAMP = '20.10.2026, 08:30 Uhr';
+  const APP_RELEASE_NUMBER = 247;
+  const APP_RELEASE_TIMESTAMP = '20.10.2026, 09:12 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12959,9 +13010,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // gilt pro importierter DXF), dxfLayerSchmiegeLayers - die vom Benutzer gewählten Layer (Set),
   // dxfLayerSchmiegeInfo - einmalig pro Import ermittelte Kandidaten-Layer samt erkannten Linien
   // ({candidates, perLayer}), dxfLayerSchmiegeRings - das daraus berechnete Ringpaar (oder null).
+  // Release 247: dxfLayerSchmiegeLayers ist eine Map Layername -> 'oben' (Schmiege sichtbar, Linie =
+  // obere Kante) | 'unten' (Schmiege nicht sichtbar, Linie = untere Kante), vom Benutzer gewählt;
+  // dxfLayerSchmiegeProblems - Meldungen zu nicht berechenbaren Schmiegen (Hinweis beim Verlassen).
   // Hat Vorrang vor dxfSchmiegeRings (benannte Schmiege_vorn/hinten-Layer), siehe getActiveSchmiegeRings().
   let dxfLayerSchmiegeEnabled = false;
-  let dxfLayerSchmiegeLayers = new Set();
+  let dxfLayerSchmiegeLayers = new Map();
+  let dxfLayerSchmiegeProblems = [];
   let dxfLayerSchmiegeInfo = null;
   let dxfLayerSchmiegeRings = null;
   function getActiveSchmiegeRings() { return dxfLayerSchmiegeRings || dxfSchmiegeRings; }
@@ -14443,15 +14498,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     return info;
   }
+  // Release 247 (Sebastian: "Wenn die Schmiege nicht berechenbar ist -> Meldung beim Verlassen des
+  // Dialogs ... Das was berechenbar ist, wird dargestellt."): rechnet für jeden vom Benutzer gewählten
+  // Layer mit der gewählten Art (sichtbar = 'oben', nicht sichtbar = 'unten'), speichert nur
+  // berechenbare Ringe und sammelt Meldungen zu allem, was nicht berechenbar war.
   function recomputeLayerSchmiegeRings() {
     dxfLayerSchmiegeRings = null;
+    dxfLayerSchmiegeProblems = [];
     if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo) return;
     const chords = [];
-    dxfLayerSchmiegeLayers.forEach(name => {
+    const problems = dxfLayerSchmiegeProblems;
+    dxfLayerSchmiegeLayers.forEach((type, name) => {
       const r = dxfLayerSchmiegeInfo.perLayer[name];
-      if (r) r.chords.forEach(c => chords.push(c));
+      if (!r || !r.groups.length) { problems.push(name + ': ' + T('keine Linien auf diesem Layer', 'no lines on this layer')); return; }
+      r.groups.forEach(g => {
+        if (!g.chord) problems.push(name + ': ' + T('Linie nicht berechenbar', 'line not computable') + (g.reason ? ' (' + g.reason + ')' : ''));
+      });
+      r.chords.forEach(c => chords.push({ A: c.A, B: c.B, type: type === 'unten' ? 'unten' : 'oben', layer: name }));
     });
-    dxfLayerSchmiegeRings = chords.length ? CNCParser.buildLayerSchmiegeRings(dxfKonturLoop, chords) : null;
+    // gleiche Meldungen (z. B. mehrere Pfeil-Linien desselben Layers) zusammenfassen
+    const counts = new Map();
+    problems.forEach(m => counts.set(m, (counts.get(m) || 0) + 1));
+    problems.length = 0;
+    counts.forEach((c, m) => problems.push(c > 1 ? c + '× ' + m : m));
+    if (chords.length) {
+      const res = CNCParser.buildLayerSchmiegeRings(dxfKonturLoop, chords);
+      if (res && res.zoneCount > 0) dxfLayerSchmiegeRings = res;
+      ((res && res.skipped) || []).forEach(c => problems.push(c.layer + ': ' + T('Schmiege nicht berechenbar (Linie liegt auf einer Konturkante, überlappt mit einer anderen Schmiege oder umschließt die ganze Kontur)', 'bevel not computable (line lies on a contour edge, overlaps another bevel or encloses the whole contour)')));
+    }
   }
   function loadDxfText(text, filename) {
     dxfGeometry = CNCParser.parseDXF(text);
@@ -14518,7 +14592,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     // Release 243: Schmiegenerkennung über Layer2 und folgende - startet pro Import immer aus.
     dxfLayerSchmiegeEnabled = false;
-    dxfLayerSchmiegeLayers = new Set();
+    dxfLayerSchmiegeLayers = new Map();
+    dxfLayerSchmiegeProblems = [];
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeInfo = computeLayerSchmiegeInfo();
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
@@ -14565,7 +14640,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfSchmiegeVornLayerName = null;
     dxfSchmiegeHintenLayerName = null;
     dxfSchmiegeRings = null;
-    dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Set(); dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
+    dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Map(); dxfLayerSchmiegeProblems = []; dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -25129,13 +25204,24 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const r = dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.perLayer[name];
     if (!r || !r.groups.length) return T('keine Linien', 'no lines');
     const ok = r.groups.filter(g => g.chord);
+    const bad = r.groups.length - ok.length;
     if (!ok.length) {
       const why = (r.groups.find(g => g.reason) || {}).reason || '';
-      return T('keine Schmiege-Linie erkannt', 'no bevel line detected') + (why ? ' (' + why + ')' : '');
+      return T('keine berechenbare Linie', 'no computable line') + (why ? ' (' + why + ')' : '');
     }
-    return ok.map(g => g.type === 'oben'
-      ? T('durchgezogen → obere Kante', 'solid → upper edge')
-      : T('gestrichelt → untere Kante', 'dashed → lower edge')).join(', ');
+    const nTop = ok.filter(g => g.type === 'oben').length, nBot = ok.length - nTop;
+    const parts = [];
+    if (nTop) parts.push((nTop > 1 ? nTop + '× ' : '') + T('durchgezogen', 'solid'));
+    if (nBot) parts.push((nBot > 1 ? nBot + '× ' : '') + T('gestrichelt', 'dashed'));
+    let txt = ok.length + ' ' + T(ok.length > 1 ? 'Linien' : 'Linie', ok.length > 1 ? 'lines' : 'line') + ' (' + parts.join(', ') + ')';
+    if (bad) txt += ', ' + bad + ' ' + T('nicht berechenbar', 'not computable');
+    return txt;
+  }
+  // Vorschlag für "sichtbar/nicht sichtbar": durchgezogene Linie = sichtbar (obere Kante), gestrichelt = nicht sichtbar.
+  function defaultLayerSchmiegeType(name) {
+    const r = dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.perLayer[name];
+    const g = r && r.groups.find(q => q.chord);
+    return g && g.type === 'unten' ? 'unten' : 'oben';
   }
   function refreshDxfSchmiegeUI() {
     const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
@@ -25149,11 +25235,22 @@ Sebastian Bäcker (Anschrift wie oben)`,
       cb.type = 'checkbox';
       cb.dataset.layer = name;
       cb.checked = dxfLayerSchmiegeLayers.has(name);
-      cb.addEventListener('change', updateDxfSchmiegeHint);
       const sp = document.createElement('span');
-      sp.textContent = ' ' + name + ' – ' + describeLayerSchmiege(name);
+      sp.textContent = ' ' + name + ' – ' + describeLayerSchmiege(name) + ' ';
+      const sel = document.createElement('select');
+      sel.className = 'dxf-schmiege-type';
+      sel.dataset.layer = name;
+      [['oben', T('Schmiege sichtbar', 'bevel visible')], ['unten', T('Schmiege nicht sichtbar', 'bevel not visible')]].forEach(o => {
+        const op = document.createElement('option');
+        op.value = o[0]; op.textContent = o[1];
+        sel.appendChild(op);
+      });
+      sel.value = dxfLayerSchmiegeLayers.get(name) || defaultLayerSchmiegeType(name);
+      sel.hidden = !cb.checked;
+      cb.addEventListener('change', () => { sel.hidden = !cb.checked; updateDxfSchmiegeHint(); });
       lab.appendChild(cb);
       lab.appendChild(sp);
+      lab.appendChild(sel);
       dxfSchmiegeLayerList.appendChild(lab);
     });
     updateDxfSchmiegeHint();
@@ -25162,13 +25259,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
     dxfSchmiegeLayerList.hidden = !(dxfSchmiegeCheckbox.checked && cands.length);
     if (!cands.length) {
-      dxfSchmiegeHint.textContent = T('Nur wählbar, wenn die DXF einen Layer 2 oder folgende enthält.', 'Only available if the DXF contains a Layer 2 or higher.');
+      dxfSchmiegeHint.textContent = T('Nur wählbar, wenn die DXF mehrere Layer enthält.', 'Only available if the DXF contains several layers.');
     } else if (!dxfSchmiegeCheckbox.checked) {
       dxfSchmiegeHint.textContent = T('Aus: das Bauteil wird einfach mit der eingegebenen Stärke dargestellt.', 'Off: the part is simply shown with the entered thickness.');
     } else if (!dxfSchmiegeLayerList.querySelector('input:checked')) {
-      dxfSchmiegeHint.textContent = T('Bitte die Layer wählen, die Schmiegen enthalten.', 'Please select the layers that contain bevels.');
+      dxfSchmiegeHint.textContent = T('Bitte die Layer wählen, die Schmiegen enthalten, und je Layer angeben, ob die Schmiege sichtbar oder nicht sichtbar ist.', 'Please select the layers that contain bevels and state for each whether the bevel is visible or not visible.');
     } else {
-      dxfSchmiegeHint.textContent = T('Durchgezogene Linie = obere, sichtbare Kante, gestrichelte Linie = untere, verdeckte Kante; von dort läuft die Schmiege nach außen zur Kontur. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'Solid line = upper, visible edge, dashed line = lower, hidden edge; the bevel runs from there outwards to the contour. Shown in the filled view (transparency below 100%).');
+      dxfSchmiegeHint.textContent = T('Schmiege sichtbar = die Linie ist die obere Kante, nicht sichtbar = die Linie ist die untere (verdeckte) Kante; von dort läuft die Schmiege nach außen zur Kontur. Was nicht berechenbar ist, wird beim Schließen des Dialogs gemeldet. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'Bevel visible = the line is the upper edge, not visible = the line is the lower (hidden) edge; the bevel runs from there outwards to the contour. Anything that cannot be computed is reported when the dialog is closed. Shown in the filled view (transparency below 100%).');
     }
   }
   dxfSchmiegeCheckbox.addEventListener('change', updateDxfSchmiegeHint);
@@ -25216,7 +25313,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // wäre ein Teil-Zustand möglich - deshalb hier vorab nur die Auswahl merken, die Ringe werden am
     // Ende berechnet).
     const pendingSchmiegeEnabled = !dxfSchmiegeCheckbox.disabled && dxfSchmiegeCheckbox.checked;
-    const pendingSchmiegeLayers = new Set(Array.from(dxfSchmiegeLayerList.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.dataset.layer));
+    const pendingSchmiegeLayers = new Map();
+    Array.from(dxfSchmiegeLayerList.querySelectorAll('input[type=checkbox]:checked')).forEach(cb => {
+      const sel = dxfSchmiegeLayerList.querySelector('select[data-layer="' + cb.dataset.layer.replace(/"/g, '\\"') + '"]');
+      pendingSchmiegeLayers.set(cb.dataset.layer, sel && sel.value === 'unten' ? 'unten' : 'oben');
+    });
     // Release 216: Transparenz immer übernehmbar (auch bei 100%, dem Default) - nur bei <=99%
     // (Farbzeile sichtbar) muss die Farbe selbst zusätzlich ein gültiger Hexcode sein.
     const transparencyVal = Number(dxfThicknessTransparencySlider.value);
@@ -25248,6 +25349,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
+    // Release 247: Meldung beim Verlassen des Dialogs, wenn eine gewählte Schmiege nicht berechenbar war.
+    if (dxfLayerSchmiegeProblems.length) {
+      const msg = T('Schmiege nicht berechenbar:\n', 'Bevel could not be computed:\n') + dxfLayerSchmiegeProblems.join('\n') + (dxfLayerSchmiegeRings ? T('\n\nWas berechenbar war, wird dargestellt.', '\n\nWhat could be computed is shown.') : T('\n\nDas Bauteil wird ohne Schmiege dargestellt.', '\n\nThe part is shown without a bevel.'));
+      setTimeout(() => alert(msg), 0);
+    }
   }
   el('btnDxfThicknessConfirm').addEventListener('click', confirmDxfThickness);
   dxfThicknessInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfThickness(); } });
