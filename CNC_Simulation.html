@@ -3990,7 +3990,7 @@
 <div class="paste-panel" id="dxfMovePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Move DXF">DXF verschieben</h3>
-    <p class="panel-hint" data-i18n-en="Moves the imported DXF geometry by the specified values in X, Y and Z (comma is accepted as the decimal separator). The camera view stays unchanged, so the move can be judged well against the existing contour.">Verschiebt die importierte DXF-Geometrie um die angegebenen Werte in X, Y und Z (Komma wird als Dezimaltrennzeichen akzeptiert). Die Kameraansicht bleibt dabei unverändert, damit sich die Verschiebung gut gegen die vorhandene Kontur beurteilen lässt.</p>
+    <p class="panel-hint" data-i18n-en="Moves the imported DXF geometry by the specified values in X, Y and Z (comma is accepted as the decimal separator). The fields can calculate, e.g. 80-5,53. The camera view stays unchanged, so the move can be judged well against the existing contour.">Verschiebt die importierte DXF-Geometrie um die angegebenen Werte in X, Y und Z (Komma wird als Dezimaltrennzeichen akzeptiert). Die Felder können rechnen, z. B. 80-5,53. Die Kameraansicht bleibt dabei unverändert, damit sich die Verschiebung gut gegen die vorhandene Kontur beurteilen lässt.</p>
     <div class="tool-data-row">
       <label class="tool-data-field">X
         <input type="text" id="dxfOffsetXInput" class="filename-input" inputmode="decimal" spellcheck="false">
@@ -5053,7 +5053,7 @@
         </div>
         <div class="color-field-row">
           <span data-i18n-en="Length reference point">Längen-Referenzpunkt</span>
-          <span class="color-field-inputs"><input type="text" id="toolDxfImportLengthRefInput" class="filename-input" inputmode="decimal"> mm</span>
+          <span class="color-field-inputs"><input type="text" id="toolDxfImportLengthRefInput" class="filename-input" inputmode="decimal" title="Rechnen erlaubt, z. B. 80-5,53 (wird bei Enter/Verlassen des Feldes ausgerechnet)" data-i18n-en-title="Calculation allowed, e.g. 80-5.53 (evaluated on Enter or when leaving the field)"> mm</span>
         </div>
         <div class="color-field-row">
           <span data-i18n-en="Radius reference point">Radius-Referenzpunkt</span>
@@ -5149,7 +5149,7 @@
         </div>
         <div class="color-field-row">
           <span data-i18n-en="Length reference point">Längen-Referenzpunkt</span>
-          <span class="color-field-inputs"><input type="text" id="chuckDxfImportLengthRefInput" class="filename-input" inputmode="decimal"> mm</span>
+          <span class="color-field-inputs"><input type="text" id="chuckDxfImportLengthRefInput" class="filename-input" inputmode="decimal" title="Rechnen erlaubt, z. B. 80-5,53 (wird bei Enter/Verlassen des Feldes ausgerechnet)" data-i18n-en-title="Calculation allowed, e.g. 80-5.53 (evaluated on Enter or when leaving the field)"> mm</span>
         </div>
         <p class="panel-hint" id="chuckDxfImportErrorHint" hidden></p>
       </div>
@@ -9716,8 +9716,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 244;
-  const APP_RELEASE_TIMESTAMP = '20.10.2026, 07:39 Uhr';
+  const APP_RELEASE_NUMBER = 245;
+  const APP_RELEASE_TIMESTAMP = '20.10.2026, 08:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -21636,6 +21636,70 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // bevor er (im selben Tastendruck NICHT, erst beim nächsten) den Dialog selbst schließt.
   const dxfPreviewMeasureHandlers = [];
 
+  // Release 245 (Sebastian: "Kannst du einbauen, dass man bei "Längen-Referenzpunkt" (Spannfutter
+  // bearbeiten und Werkzeug-DXF einlesen) bzw. bei "DXF verschieben"-Funktion (bei X, Y und Z)
+  // rechnen kann? Also der Startwert ist z.B. 80. Ich gebe dann 80-5,53 ein und das Programm
+  // rechnet dann den neuen Wert aus, wenn ich entweder mit "Ok"/Enter rausgehe oder das Fenster
+  // geöffnet lasse und irgendwo anders hinklicke? Dann muss ich keinen Taschenrechner benutzen
+  // oder im Kopf rechnen. Das ist auch nur wirklich bei den drei genannten Menüpunkten relevant."):
+  // kleiner, sicherer Ausdrucksrechner (KEIN eval) für Eingabefelder. Erlaubt Zahlen (Komma oder
+  // Punkt als Dezimaltrenner), + - * / (auch × ÷ −), Klammern und Vorzeichen. Liefert die Zahl
+  // (auf 9 Nachkommastellen gerundet, damit z. B. 80-5,53 sauber 74.47 ergibt) oder null bei
+  // leerer/ungültiger Eingabe bzw. Division durch 0. Eine einfache Zahl ("12,5", "-3") ergibt
+  // exakt denselben Wert wie bisher.
+  function evalCalcExpression(raw) {
+    const src = String(raw == null ? '' : raw).replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\s+/g, '');
+    if (!src) return null;
+    let i = 0;
+    function peek() { return src.charAt(i); }
+    function parseNumber() {
+      const m = /^(\d+([.,]\d*)?|[.,]\d+)/.exec(src.slice(i));
+      if (!m) return null;
+      i += m[0].length;
+      const v = parseFloat(m[0].replace(',', '.'));
+      return Number.isFinite(v) ? v : null;
+    }
+    function parsePrimary() {
+      if (peek() === '(') {
+        i++;
+        const v = parseExpr();
+        if (v === null || peek() !== ')') return null;
+        i++;
+        return v;
+      }
+      return parseNumber();
+    }
+    function parseUnary() {
+      const c = peek();
+      if (c === '-') { i++; const v = parseUnary(); return v === null ? null : -v; }
+      if (c === '+') { i++; return parseUnary(); }
+      return parsePrimary();
+    }
+    function parseTerm() {
+      let v = parseUnary();
+      while (v !== null && (peek() === '*' || peek() === '/')) {
+        const op = src.charAt(i++);
+        const r = parseUnary();
+        if (r === null) return null;
+        if (op === '*') v = v * r; else { if (r === 0) return null; v = v / r; }
+      }
+      return v;
+    }
+    function parseExpr() {
+      let v = parseTerm();
+      while (v !== null && (peek() === '+' || peek() === '-')) {
+        const op = src.charAt(i++);
+        const r = parseTerm();
+        if (r === null) return null;
+        v = op === '+' ? v + r : v - r;
+      }
+      return v;
+    }
+    const result = parseExpr();
+    if (result === null || i !== src.length || !Number.isFinite(result)) return null;
+    return Math.round(result * 1e9) / 1e9;
+  }
+
   // Release 244 (Sebastian: "Zoomen beim 'Spannfutter bearbeiten' und 'Werkzeug bearbeiten' im
   // DXF-Bereich (in dem man auch messen kann) einbauen. Dadurch trifft man eventuell zu messende
   // Punkte einfacher. Zoomverhalten ist wie bei der 3D Sim (also dahin wo der Cursor zeigt, wird
@@ -22167,7 +22231,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     window.addEventListener('mouseup', () => { dragTarget = null; });
 
     lengthRefInput.addEventListener('change', () => {
-      const n = parseNum(lengthRefInput.value);
+      const n = evalCalcExpression(lengthRefInput.value); // Release 245: rechnen erlaubt
       if (n !== null) lengthRef = n;
       clampRefs();
       syncRefInputsFromState();
@@ -22418,7 +22482,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // übersprungenes 'change' ab, ohne an der bestehenden Drag-/Zahlenfeld-Logik selbst (noch
       // am globalen Enter-Shortcut-Mechanismus, der von vielen anderen Dialogen unverändert so
       // gebraucht wird) etwas zu ändern.
-      const typedLengthRef = parseNum(lengthRefInput.value);
+      const typedLengthRef = evalCalcExpression(lengthRefInput.value); // Release 245
       if (typedLengthRef !== null) lengthRef = typedLengthRef;
       const typedRadiusRef = parseNum(radiusRefInput.value);
       if (typedRadiusRef !== null) radiusRef = typedRadiusRef;
@@ -22685,7 +22749,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     window.addEventListener('mouseup', () => { dragTarget = null; });
 
     lengthRefInput.addEventListener('change', () => {
-      const n = parseNum(lengthRefInput.value);
+      const n = evalCalcExpression(lengthRefInput.value); // Release 245: rechnen erlaubt
       if (n !== null) lengthRef = n;
       clampRefs();
       syncRefInputsFromState();
@@ -22858,7 +22922,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
       // Enter-Bugfix (Release 207, hier analog übernommen) - siehe ausführlichen Kommentar im
       // Werkzeugprofil-Dialog oben für die volle Herleitung.
-      const typedLengthRef = parseNum(lengthRefInput.value);
+      const typedLengthRef = evalCalcExpression(lengthRefInput.value); // Release 245
       if (typedLengthRef !== null) lengthRef = typedLengthRef;
       clampRefs();
       syncRefInputsFromState();
@@ -24923,11 +24987,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('btnDxfMoveCancel').addEventListener('click', () => dxfMovePanel.classList.remove('open'));
   function confirmDxfMove() {
     if (!dxfGeometry) { dxfMovePanel.classList.remove('open'); return; }
-    dxfOffset = {
-      x: parseFloat(normalizeToolValue(dxfOffsetXInput.value, 0)),
-      y: parseFloat(normalizeToolValue(dxfOffsetYInput.value, 0)),
-      z: parseFloat(normalizeToolValue(dxfOffsetZInput.value, 0)),
-    };
+    // Release 245: X/Y/Z dürfen Rechenausdrücke sein (z. B. 80-5,53), siehe evalCalcExpression()
+    function offsetValue(inp) {
+      const v = evalCalcExpression(inp.value);
+      const out = v === null ? 0 : v;
+      inp.value = String(out);
+      return out;
+    }
+    dxfOffset = { x: offsetValue(dxfOffsetXInput), y: offsetValue(dxfOffsetYInput), z: offsetValue(dxfOffsetZInput) };
     updateDxfUI();
     requestRender();
     dxfMovePanel.classList.remove('open');
@@ -24935,6 +25002,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('btnDxfMoveConfirm').addEventListener('click', confirmDxfMove);
   [dxfOffsetXInput, dxfOffsetYInput, dxfOffsetZInput].forEach(inp => {
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfMove(); } });
+    // Release 245: beim Verlassen des Feldes (Tab/Klick woanders) den Ausdruck sofort ausrechnen
+    inp.addEventListener('change', () => {
+      const v = evalCalcExpression(inp.value);
+      if (v !== null) inp.value = String(v);
+    });
   });
 
   // "DXF Spiegeln" (67. Runde) - reine Umschalter, sofortige Wirkung ohne eigenen Dialog (analog
