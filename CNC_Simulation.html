@@ -2182,6 +2182,11 @@
      unten) - reine Überschrift + zugehörige .scale-choice-Radiogruppe darunter. */
   .scale-group { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
   .scale-group-title { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
+  /* Release 253: der Dialog "DXF-Bauteil definieren" ist mit allen Abschnitten höher als manches Fenster - er scrollt
+     dann in sich (Ok/Abbrechen bleiben erreichbar) */
+  #dxfThicknessPanel .paste-card { max-height: calc(100vh - 48px); overflow-y: auto; }
+  /* Release 253: Trennstriche im Dialog "DXF-Bauteil definieren" */
+  .dxf-part-sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0 10px; }
   /* "Werkzeug-DXF einlesen" (Release 200, #toolDxfImportPanel) - zweispaltiges Layout (links
      Eingabefelder/Profilliste, rechts die 2D-Vorschau mit den beiden Referenzpunkt-Markern),
      siehe dortigen Kommentar bei #toolDxfImportPanel in template_top.html. Bricht unter 720px
@@ -2616,7 +2621,7 @@
               <button class="menu-item" id="btnDxfMirrorXMenu" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (X axis)" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">DXF spiegeln X-Achse</button>
               <button class="menu-item" id="btnDxfMirrorYMenu" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (Y axis)" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">DXF spiegeln Y-Achse</button>
               <button class="menu-item" id="btnDxfRotateMenu" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Rotate DXF" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">DXF drehen</button>
-              <button class="menu-item" id="btnDxfThicknessMenu" type="button" disabled title="Bauteil des importierten DXF definieren: Stärke, Bauteilart (Stufe, Setzstufe, Wange gestemmt), Schmiegen bzw. Einstemmungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="DXF drawing settings" data-i18n-en-title="Define the part of the imported DXF: thickness, part type (tread, riser, stringer closed), bevels or mortises - only available once a DXF has been imported">DXF-Bauteil definieren</button>
+              <button class="menu-item" id="btnDxfThicknessMenu" type="button" disabled title="Bauteil des importierten DXF definieren: Bauteilart (Stufe, Setzstufe, Wange, Handlauf), Stärke, Schmiegen sowie vertikale und horizontale Bearbeitungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="DXF drawing settings" data-i18n-en-title="Define the part of the imported DXF: part type (tread, riser, stringer, handrail), thickness, bevels and vertical/horizontal machining - only available once a DXF has been imported">DXF-Bauteil definieren</button>
               <button class="menu-item" id="btnDxfToggleMenu" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden - erst verfügbar, sobald ein DXF importiert wurde">DXF ausblenden</button>
               <button class="menu-item" id="btnDxfDeleteMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Delete DXF" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported">DXF löschen</button>
             </div>
@@ -3284,7 +3289,7 @@
       <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">⬍ DXF</button>
       <button class="toolbar-btn" id="btnDxfMirrorY" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">⬌ DXF</button>
       <button class="toolbar-btn" id="btnDxfRotate" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">↻ DXF</button>
-      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="DXF-Bauteil definieren: Stärke, Bauteilart (Stufe, Setzstufe, Wange gestemmt), Schmiegen bzw. Einstemmungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Define the DXF part: thickness, part type (tread, riser, stringer closed), bevels or mortises - only available once a DXF has been imported">🧱 DXF</button>
+      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="DXF-Bauteil definieren: Bauteilart (Stufe, Setzstufe, Wange, Handlauf), Stärke, Schmiegen sowie vertikale und horizontale Bearbeitungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Define the DXF part: part type (tread, riser, stringer, handrail), thickness, bevels and vertical/horizontal machining - only available once a DXF has been imported">🧱 DXF</button>
       <!-- "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal
            sein, dass das in cm exportiert worden ist ... Da müsste man um den Faktor 10 skalieren.
            Umgekehrt gibt es das Problem auch. Lösung: DXF Skalier Icon rechts neben
@@ -4044,52 +4049,118 @@
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
     <h3 data-i18n-en="DXF drawing settings">DXF-Bauteil definieren</h3>
-    <p class="panel-hint" data-i18n-en="Defines the part represented by the DXF: thickness (mm) and part type. For a value other than 0, a second contour offset by the thickness is shown in addition to the existing contour (as a filled body when the transparency is below 100%). Positive values offset upward, negative values downward.">Definiert das durch das DXF dargestellte Bauteil: Stärke (mm) und Bauteilart. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur dargestellt (bei einer Transparenz unter 100 % als gefüllter Körper). Positive Werte versetzen nach oben, negative Werte nach unten.</p>
+    <p class="panel-hint" data-i18n-en="Defines the part represented by the DXF: part type and thickness (mm). For a value other than 0, a second contour offset by the thickness is shown in addition to the existing contour (as a filled body when the transparency is below 100%). Positive values offset upward, negative values downward.">Definiert das durch das DXF dargestellte Bauteil: Bauteilart und Stärke (mm). Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur dargestellt (bei einer Transparenz unter 100 % als gefüllter Körper). Positive Werte versetzen nach oben, negative Werte nach unten.</p>
+    <!-- Release 253 (Sebastian, Punkt 8 "Anordnung der Seite ändern"): Bauteil, Stärke, Trennstrich, je nach
+         Bauteilart Schmiegenerkennung (Stufe/Setzstufe), "Vertikale Bearbeitungen" (Stufe: Taschen + vertikale
+         Taschen aus Kreisen; Wange/Handlauf: Einstemmungs-Layer + Einstemmungstiefe, vertikale Taschen), "Horizontale
+         Bearbeitungen" (alle außer "- undefiniert -"), Trennstrich, Füll-Transparenz/Farben. "- undefiniert -" (Standard)
+         = nur Stärke, keine Erkennung von Bearbeitungen. Sichtbarkeit: updateDxfPartTypeUI() in app.js. -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Part type">Bauteil</span>
+        <select id="dxfPartTypeSelect" class="filename-input">
+          <option value="undefined" data-i18n-en="- undefined -">- undefiniert -</option>
+          <option value="tread" data-i18n-en="Tread">Stufe</option>
+          <option value="riser" data-i18n-en="Riser">Setzstufe</option>
+          <option value="stringer" data-i18n-en="Stringer">Wange</option>
+          <option value="handrail" data-i18n-en="Handrail">Handlauf</option>
+        </select>
+      </label>
+    </div>
     <div class="tool-data-row">
       <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
-    <!-- Release 249 (Sebastian: "... sollte es ein Dropdownmenü unter 'Stärke' geben": Stufe, Setzstufe,
-         Wange, gestemmt): Bauteilart. Stufe/Setzstufe behalten die Schmiegenerkennung (#dxfSchmiegeRow),
-         "Wange, gestemmt" blendet stattdessen die Einstemmungs-Einstellungen (#dxfMortiseRow) ein -
-         siehe updateDxfPartTypeUI()/recomputeMortise() in app.js und Konzept_DXF_Wange_gestemmt.md. -->
-    <div class="tool-data-row">
-      <label class="tool-data-field"><span data-i18n-en="Part type">Bauteil</span>
-        <select id="dxfPartTypeSelect" class="filename-input">
-          <option value="tread" data-i18n-en="Tread">Stufe</option>
-          <option value="riser" data-i18n-en="Riser">Setzstufe</option>
-          <option value="stringer" data-i18n-en="Stringer, closed">Wange, gestemmt</option>
-        </select>
-      </label>
-    </div>
-    <div class="scale-group" id="dxfMortiseRow" hidden>
-      <div class="tool-data-row" id="dxfMortiseLayerRow">
-        <label class="tool-data-field"><span data-i18n-en="Mortise layer">Einstemmungs-Layer</span>
-          <select id="dxfMortiseLayerSelect" class="filename-input"></select>
-        </label>
-      </div>
-      <div class="tool-data-row">
-        <label class="tool-data-field"><span id="dxfMortiseDepthLabel">Einstemmungstiefe (mm)</span>
-          <input type="text" id="dxfMortiseDepthInput" class="filename-input" inputmode="decimal" spellcheck="false">
-        </label>
-        <label class="tool-data-field" id="dxfMortiseDepth2Field" hidden><span id="dxfMortiseDepth2Label">Einstemmungstiefe Setzstufe (mm)</span>
-          <input type="text" id="dxfMortiseDepth2Input" class="filename-input" inputmode="decimal" spellcheck="false">
-        </label>
-      </div>
-      <p class="panel-hint" id="dxfMortiseHint"></p>
-    </div>
-    <!-- Release 243 (Sebastian: "Bei der DXF-Bauteilstärke Einstellung gibt es eine neue Auswahl
-         '[] Schmiegenerkennung', der aktiv gesetzt werden kann sobald es den 'Layer2' ... gibt ...
-         Es muss dann ausgewählt werden welcher Layer mit der Schmiegenberechnung erfolgen soll."):
-         Checkbox (Standard aus, nur aktivierbar wenn Layer2 oder folgende vorhanden) + Liste der
-         Kandidaten-Layer mit Auswahlkästchen, siehe refreshDxfSchmiegeUI()/confirmDxfThickness() in
-         app.js und Konzept_DXF_Schmiegenerkennung_Layer2_3.md. -->
+    <hr class="dxf-part-sep" id="dxfSepSchmiege">
     <div class="scale-group" id="dxfSchmiegeRow">
       <label class="scale-option"><input type="checkbox" id="dxfSchmiegeCheckbox"> <span data-i18n-en="Bevel detection">Schmiegenerkennung</span></label>
       <div id="dxfSchmiegeLayerList" hidden></div>
       <p class="panel-hint" id="dxfSchmiegeHint"></p>
     </div>
+    <hr class="dxf-part-sep" id="dxfSepVertical">
+    <div class="scale-group" id="dxfVerticalGroup">
+      <div class="scale-group-title"><span data-i18n-en="Vertical machining:">Vertikale Bearbeitungen:</span></div>
+      <div id="dxfMortiseRow" hidden>
+        <div class="tool-data-row">
+          <label class="tool-data-field" id="dxfMortiseLayerRow"><span data-i18n-en="Mortise layer">Einstemmungs-Layer</span>
+            <select id="dxfMortiseLayerSelect" class="filename-input"></select>
+          </label>
+          <label class="tool-data-field" id="dxfMortiseDepthField"><span id="dxfMortiseDepthLabel">Einstemmungstiefe (mm)</span>
+            <input type="text" id="dxfMortiseDepthInput" class="filename-input" inputmode="decimal" spellcheck="false">
+          </label>
+          <label class="tool-data-field" id="dxfMortiseDepth2Field" hidden><span id="dxfMortiseDepth2Label">Einstemmungstiefe Setzstufe (mm)</span>
+            <input type="text" id="dxfMortiseDepth2Input" class="filename-input" inputmode="decimal" spellcheck="false">
+          </label>
+        </div>
+        <p class="panel-hint" id="dxfMortiseHint"></p>
+      </div>
+      <div id="dxfPocketRow">
+        <label class="scale-option"><input type="checkbox" id="dxfPocketCheckbox"> <span data-i18n-en="Pockets">Taschen</span></label>
+        <div id="dxfPocketLayerList" hidden></div>
+        <p class="panel-hint" id="dxfPocketHint"></p>
+      </div>
+      <!-- Release 253 (Sebastian: "Die vertikale Tasche soll auch eingegeben werden können. Durchmesser der Tasche
+           = max. Ausdehnung in der DXF. Die Tiefe ist variabel ... Kreise werden automatisch erkannt."): Kreise aus
+           allen Layern (außer Kontur/COMPASS), eine Taschentiefe von der Bauteiloberkante. -->
+      <div id="dxfVPocketRow">
+        <label class="scale-option"><input type="checkbox" id="dxfVPocketCheckbox"> <span data-i18n-en="Vertical pockets (circles)">Vertikale Taschen (Kreise)</span></label>
+        <div class="tool-data-row" id="dxfVPocketBody" hidden>
+          <label class="tool-data-field"><span data-i18n-en="Pocket depth (mm):">Taschentiefe (mm):</span>
+            <input type="text" id="dxfVPocketDepthInput" class="filename-input" inputmode="decimal" spellcheck="false">
+          </label>
+        </div>
+        <p class="panel-hint" id="dxfVPocketHint"></p>
+      </div>
+    </div>
+    <hr class="dxf-part-sep" id="dxfSepHorizontal">
+    <!-- Release 251/252/253: horizontale Bearbeitungen (T/U), Form Rund/Eckig, Position in Z; bei Eckig ist die Länge
+         die Ausdehnung aus der Zeichnung (Querbalken des T bzw. Grundlinie des U), nur die Höhe wird eingegeben. -->
+    <div class="scale-group" id="dxfHBoreRow">
+      <div class="scale-group-title"><span data-i18n-en="Horizontal machining:">Horizontale Bearbeitungen:</span></div>
+      <label class="scale-option"><input type="checkbox" id="dxfHBoreCheckbox"> <span data-i18n-en="Bores from T symbols">Bohrungen aus T-Symbolen</span></label>
+      <div id="dxfHBoreBody" hidden>
+        <div class="tool-data-row">
+          <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
+            <select id="dxfHBoreShapeSelect" class="filename-input">
+              <option value="round" data-i18n-en="Round (diameter = crossbar of the T)">Rund (Durchmesser = Querbalken des T)</option>
+              <option value="rect" data-i18n-en="Rectangular (length from the drawing × height)">Eckig (Länge aus der Zeichnung × Höhe)</option>
+            </select>
+          </label>
+          <label class="tool-data-field"><span data-i18n-en="Position in Z: centre above underside (mm, empty = centred)">Position in Z: Mitte über Unterseite (mm, leer = mittig)</span>
+            <input type="text" id="dxfHBoreHeightInput" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
+          </label>
+        </div>
+        <div class="tool-data-row" id="dxfHBoreRectFields" hidden>
+          <label class="tool-data-field"><span data-i18n-en="Height (mm, in the thickness, empty = length)">Höhe (mm, in der Stärke, leer = Länge)</span>
+            <input type="text" id="dxfHBoreRectHeightInput" class="filename-input" inputmode="decimal" spellcheck="false">
+          </label>
+          <span class="tool-data-field" id="dxfHBoreRectLenInfo"></span>
+        </div>
+      </div>
+      <p class="panel-hint" id="dxfHBoreHint"></p>
+      <label class="scale-option"><input type="checkbox" id="dxfUBoreCheckbox"> <span data-i18n-en="Bores from U symbols">Bohrungen aus U-Symbolen</span></label>
+      <div id="dxfUBoreBody" hidden>
+        <div class="tool-data-row">
+          <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
+            <select id="dxfUBoreShapeSelect" class="filename-input">
+              <option value="round" data-i18n-en="Round (diameter = base line of the U)">Rund (Durchmesser = Grundlinie des U)</option>
+              <option value="rect" data-i18n-en="Rectangular (length from the drawing × height)">Eckig (Länge aus der Zeichnung × Höhe)</option>
+            </select>
+          </label>
+          <label class="tool-data-field"><span data-i18n-en="Position in Z: centre above underside (mm, empty = centred)">Position in Z: Mitte über Unterseite (mm, leer = mittig)</span>
+            <input type="text" id="dxfUBoreHeightInput" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
+          </label>
+        </div>
+        <div class="tool-data-row" id="dxfUBoreRectFields" hidden>
+          <label class="tool-data-field"><span data-i18n-en="Height (mm, in the thickness, empty = length)">Höhe (mm, in der Stärke, leer = Länge)</span>
+            <input type="text" id="dxfUBoreRectHeightInput" class="filename-input" inputmode="decimal" spellcheck="false">
+          </label>
+          <span class="tool-data-field" id="dxfUBoreRectLenInfo"></span>
+        </div>
+      </div>
+      <p class="panel-hint" id="dxfUBoreHint"></p>
+    </div>
+    <hr class="dxf-part-sep" id="dxfSepFill">
     <div class="scale-group" id="dxfThicknessTransparencyRow">
       <div class="scale-group-title"><span data-i18n-en="Fill transparency">Füll-Transparenz</span>: <span id="dxfThicknessTransparencyValue">100%</span></div>
       <div class="slider-row">
@@ -8199,7 +8270,7 @@
       let type = null;
       if (merged.length === 1) type = 'oben';
       else if (merged.length >= 3 && coverage <= 0.9 && minGap > TOL && maxGap / minGap <= 1.5) type = 'unten';
-      const info = { type, coverage, span, dashCount: merged.length, chord: null, reason: '' };
+      const info = { type, coverage, span, dashCount: merged.length, chord: null, reason: '', reasonEn: '' };
       out.groups.push(info);
       // Release 247: die Art (durchgezogen/gestrichelt) ist nur noch ein VORSCHLAG für die Auswahl
       // "sichtbar/nicht sichtbar" im Dialog; berechnet wird für jede Linie, die die Kontur erreicht.
@@ -8239,12 +8310,12 @@
         if (onEdge) continue;
         chord = { t0: uniq[k], t1: uniq[k + 1] }; bestOverlap = overlap;
       }
-      if (!chord || chord.t1 - chord.t0 < 1e-3) { info.reason = 'liegt nicht innerhalb der Kontur (oder auf einer Konturkante)'; return; }
+      if (!chord || chord.t1 - chord.t0 < 1e-3) { info.reason = 'liegt nicht innerhalb der Kontur (oder auf einer Konturkante)'; info.reasonEn = 'does not lie inside the contour (or lies on a contour edge)'; return; }
       const allow = (type === 'oben' ? 0 : maxGap) + 1;
       // Ein Überstand der Linie über die Kontur hinaus ist beliebig erlaubt (die Sehne endet an der
       // Kontur); die Linie muss nur beidseitig bis an die Kontur reichen.
       if (tmin - chord.t0 > allow || chord.t1 - tmax > allow) {
-        info.reason = 'erreicht die Kontur nicht'; return;
+        info.reason = 'erreicht die Kontur nicht'; info.reasonEn = 'does not reach the contour'; return;
       }
       info.chord = {
         type: type || 'oben',
@@ -8426,12 +8497,23 @@
   // (der Kreis), den bitte ignorieren") - ein Ring gilt als Kreis, wenn er mindestens 8 Punkte hat
   // und alle Punkte höchstens 1 % vom mittleren Abstand zum Schwerpunkt abweichen. Liefert
   // { loops: [[{x,y}...]], ignoredCircles, openChains }.
-  function buildMortiseLoopsFromLayerStrokes(strokes) {
+  //
+  // Release 250 (Taschen auf Stufen, Sebastian: "Die 'Taschenlayer' können eine gestrichelte oder
+  // durchgehende Linie haben"; Taschen können rund, eckig oder x-eckig sein): optionaler zweiter
+  // Parameter opts = { keepCircles, bridge }. keepCircles: Kreise sind hier gültige (runde) Taschen und
+  // werden NICHT ignoriert. bridge: gestrichelte Konturen werden zu geschlossenen Ringen
+  // ergänzt - die Strichstücke bleiben als offene Ketten übrig und werden per Lückenüberbrückung
+  // verbunden (siehe unten); die typische Lücke wird je Layer aus dem Median der Abstände zwischen
+  // benachbarten Kettenenden bestimmt (Toleranz = 1,6 x Median, höchstens 150 mm). Ergebnis zusätzlich
+  // .bridged = Anzahl der so geschlossenen Ringe.
+  function buildMortiseLoopsFromLayerStrokes(strokes, opts) {
     const TOL = 0.01;
-    const out = { loops: [], ignoredCircles: 0, openChains: 0 };
+    opts = opts || {};
+    const out = { loops: [], ignoredCircles: 0, openChains: 0, bridged: 0 };
+    const openPts = [];
     const segs = [];
     function pushLoop(pts) {
-      if (pts.length >= 8) {
+      if (!opts.keepCircles && pts.length >= 8) {
         let cx = 0, cy = 0;
         pts.forEach(p => { cx += p.x; cy += p.y; });
         cx /= pts.length; cy /= pts.length;
@@ -8481,8 +8563,317 @@
         const np = bestEnd === 0 ? segs[bestI].pts : segs[bestI].pts.slice().reverse();
         for (let k = 1; k < np.length; k++) chain.push(np[k]);
       }
-      if (closedLoop) pushLoop(chain.slice(0, chain.length - 1)); else out.openChains++;
+      if (closedLoop) pushLoop(chain.slice(0, chain.length - 1)); else openPts.push(chain);
     }
+    out.openChains = openPts.length;
+    if (opts.bridge && openPts.length && openPts.length <= 1500) {
+      const chains = openPts.map(pts => ({ pts, used: false }));
+      const ends = [];
+      chains.forEach((c, i) => { ends.push({ i, end: 0, p: c.pts[0] }); ends.push({ i, end: 1, p: c.pts[c.pts.length - 1] }); });
+      const dd = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      const nd = [];
+      ends.forEach(e => { let best = Infinity; ends.forEach(f => { if (f.i !== e.i) { const d = dd(e.p, f.p); if (d < best) best = d; } }); if (isFinite(best)) nd.push(best); });
+      nd.sort((a, b) => a - b);
+      const tol = nd.length ? Math.min(Math.max(nd[nd.length >> 1] * 1.6, 0.05), 150) : 0;
+      const area = pts => { let a = 0; for (let k = 0; k < pts.length; k++) { const q = pts[k], r = pts[(k + 1) % pts.length]; a += q.x * r.y - r.x * q.y; } return Math.abs(a) / 2; };
+      const len = pts => { let l = 0; for (let k = 1; k < pts.length; k++) l += dd(pts[k - 1], pts[k]); return l; };
+      let stillOpen = 0;
+      for (let c0 = 0; c0 < chains.length; c0++) {
+        if (chains[c0].used) continue;
+        chains[c0].used = true;
+        const cur = chains[c0].pts.slice();
+        let closed = false;
+        for (let guard = 0; guard <= chains.length; guard++) {
+          const last = cur[cur.length - 1], first = cur[0];
+          // nächstes freies Kettenende - von BEIDEN Enden der aktuellen Kette aus (die Startkette liegt
+          // mitten im Ring, ihr Anfang grenzt meist unmittelbar an das Ende der Schlusskette)
+          let best = null, bd = Infinity, atFirst = false;
+          for (const e of ends) {
+            if (chains[e.i].used) continue;
+            const dl = dd(last, e.p), df = dd(first, e.p);
+            if (dl < bd) { bd = dl; best = e; atFirst = false; }
+            if (df < bd) { bd = df; best = e; atFirst = true; }
+          }
+          const dClose = dd(last, first);
+          const closeTol = nd.length ? tol : len(cur) * 0.05;
+          const canClose = cur.length >= 3 && area(cur) > 1 && dClose <= closeTol;
+          if (best && bd <= tol) {
+            chains[best.i].used = true;
+            const pts = chains[best.i].pts;
+            if (!atFirst) {
+              const np = best.end === 0 ? pts : pts.slice().reverse();
+              for (const q of np) cur.push(q);
+            } else {
+              const np = best.end === 1 ? pts : pts.slice().reverse();
+              cur.unshift(...np);
+            }
+            continue;
+          }
+          if (canClose) closed = true;
+          break;
+        }
+        if (closed) { pushLoop(cur); out.bridged++; } else stillOpen++;
+      }
+      out.openChains = stillOpen;
+    }
+    return out;
+  }
+
+  // Release 251 (Sebastian: "Es soll eine Erkennung für horizontale Bearbeitungen geben. Diese sind
+  // entweder ein T oder ein eckiges U. Beim T liegt dieses T aber auch manchmal auf einem anderen
+  // Layer"): erkennt "T"-Symbole für horizontale Bohrungen in ALLEN Layern außer COMPASS und dem
+  // Kontur-/Ankerlayer. Ein T besteht aus einem Stab (Linie von außen/vom Rand zum Bohrungsende) und
+  // einem Querbalken, der den Stab am Stabende MITTIG berührt und senkrecht zu ihm steht.
+  //   Bohrungstiefe = Länge des Stabs ab Konturkante bis zum Ende, Durchmesser = Länge des Querbalkens.
+  // Der Stab darf aus mehreren aneinanderhängenden, gleichgerichteten Linien bestehen (z. B. am Rand
+  // der Kontur geteilt) und über die Kontur hinausragen - es zählt nur der Teil im Bauteil.
+  // Kein T sind: Kreuze (am Berührpunkt läuft eine dritte Linie weiter), Eckpunkte geschlossener
+  // Konturen (dort treffen sich mehr Linien), Stäbe, deren Ende nicht auf der Querbalken-Mitte liegt.
+  // Rückgabe: { ts: [{ id, layer, entry:{x,y}, end:{x,y}, dir:{x,y}, depth, diameter, bar:{a,b}, tail:{x,y},
+  //   cutByContour, startsOnEdge, strokes }], skippedOutside }. konturLoop optional ([{x,y}]); ohne Kontur beginnt die Bohrung am freien Stabende.
+  function detectHorizontalTs(geo, konturLayerName, konturLoop) {
+    const out = { ts: [], us: [], skippedOutside: 0, skippedInside: 0 };
+    if (!geo || !geo.strokes) return out;
+    const TOL = 0.05;
+    const byLayer = new Map();
+    geo.strokes.forEach(st => {
+      if (!st || st.closed || !st.points || st.points.length < 2) return;
+      const L = st.layer;
+      if (L === 'COMPASS' || L === konturLayerName || /^schmiege_(vorn|hinten)$/i.test(L || '')) return;
+      let arr = byLayer.get(L); if (!arr) { arr = []; byLayer.set(L, arr); }
+      for (let i = 1; i < st.points.length; i++) {
+        const a = st.points[i - 1], b = st.points[i];
+        if (Math.hypot(b.x - a.x, b.y - a.y) > 1e-6) arr.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, st });
+      }
+    });
+    const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+    const inPoly = (p, poly) => {
+      let c = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const A = poly[i], B = poly[j];
+        if ((A.y > p.y) !== (B.y > p.y) && p.x < (B.x - A.x) * (p.y - A.y) / (B.y - A.y) + A.x) c = !c;
+      }
+      return c;
+    };
+    // Abstand Punkt-Strecke und Parameter
+    const segInfo = (p, s) => {
+      const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y, l2 = dx * dx + dy * dy;
+      let t = ((p.x - s.a.x) * dx + (p.y - s.a.y) * dy) / l2;
+      const tc = Math.max(0, Math.min(1, t));
+      return { d: Math.hypot(p.x - (s.a.x + dx * tc), p.y - (s.a.y + dy * tc)), t, len: Math.sqrt(l2) };
+    };
+    // Einstieg einer Bohrungsachse F (Anfang, außen) -> E (Ende, im Bauteil): Schnitt mit der Kontur. Liegt E außerhalb
+    // der Kontur -> null (skippedOutside); beginnt die Achse im Inneren und nicht an der Kante (> 1 mm) -> null
+    // (skippedInside, eine horizontale Bearbeitung kommt immer von der Bauteilkante).
+    const placeAxis = (F, E) => {
+      let entry = { x: F.x, y: F.y }, cut = false, onEdge = false;
+      if (konturLoop && konturLoop.length >= 3) {
+        if (!inPoly(E, konturLoop)) { out.skippedOutside++; return null; }
+        const ts = [];
+        for (let i = 0; i < konturLoop.length; i++) {
+          const P = konturLoop[i], Q = konturLoop[(i + 1) % konturLoop.length];
+          const rx = E.x - F.x, ry = E.y - F.y, sx = Q.x - P.x, sy = Q.y - P.y;
+          const den = rx * sy - ry * sx;
+          if (Math.abs(den) < 1e-12) continue;
+          const t = ((P.x - F.x) * sy - (P.y - F.y) * sx) / den;
+          const u = ((P.x - F.x) * ry - (P.y - F.y) * rx) / den;
+          if (t >= -1e-9 && t <= 1 + 1e-9 && u >= -1e-9 && u <= 1 + 1e-9) ts.push(t);
+        }
+        // größter Schnitt vor dem Ende = Eintritt in das Bauteil (E liegt innen)
+        const tIn = ts.filter(t => t < 1 - 1e-9).sort((x, y) => y - x)[0];
+        if (tIn !== undefined && !inPoly(F, konturLoop)) {
+          entry = { x: F.x + (E.x - F.x) * tIn, y: F.y + (E.y - F.y) * tIn };
+          cut = true;
+        } else {
+          let dmin = Infinity;
+          for (let i = 0; i < konturLoop.length; i++) dmin = Math.min(dmin, segInfo(F, { a: konturLoop[i], b: konturLoop[(i + 1) % konturLoop.length] }).d);
+          if (dmin <= 1.0) onEdge = true;
+          else { out.skippedInside++; return null; }
+        }
+      }
+      const depth = dist(entry, E);
+      if (depth < 0.01) return null;
+      return { entry, cut, onEdge, depth };
+    };
+    let idCounter = 0;
+    byLayer.forEach((segs, layer) => {
+      if (segs.length > 20000 || segs.length < 2) return;
+      // 1) Stäbe: gleichgerichtete Linien, die an Knoten mit genau zwei Linien aneinanderhängen, zusammenfassen
+      const nodes = [];
+      const nodeOf = p => {
+        for (let i = 0; i < nodes.length; i++) if (dist(nodes[i].p, p) <= TOL) return nodes[i];
+        const n = { p: { x: p.x, y: p.y }, segs: [] }; nodes.push(n); return n;
+      };
+      // (lineares Suchen ist für die üblichen Dateien ausreichend; bei vielen Linien Raster)
+      let nodeOfFast = nodeOf;
+      if (segs.length > 400) {
+        const grid = new Map(), C = TOL * 4;
+        nodeOfFast = p => {
+          const cx = Math.floor(p.x / C), cy = Math.floor(p.y / C);
+          for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+            const b = grid.get((cx + dx) + ',' + (cy + dy)); if (!b) continue;
+            for (const n of b) if (dist(n.p, p) <= TOL) return n;
+          }
+          const n = { p: { x: p.x, y: p.y }, segs: [] }; nodes.push(n);
+          const k = cx + ',' + cy; let b = grid.get(k); if (!b) { b = []; grid.set(k, b); } b.push(n); return n;
+        };
+      }
+      segs.forEach((s, i) => { s.i = i; s.na = nodeOfFast(s.a); s.nb = nodeOfFast(s.b); s.na.segs.push(s); s.nb.segs.push(s); s.used = false; });
+      const unit = s => { const l = dist(s.a, s.b); return { x: (s.b.x - s.a.x) / l, y: (s.b.y - s.a.y) / l }; };
+      const lines = [];
+      segs.forEach(s => {
+        if (s.used) return;
+        s.used = true;
+        let a = s.na, b = s.nb; const d = unit(s);
+        const chain = [s];
+        const extend = (fromNode, dirSign, push) => {
+          for (let g = 0; g < 100; g++) {
+            if (fromNode.segs.length !== 2) return fromNode;
+            const o = fromNode.segs[0] === chain[push ? chain.length - 1 : 0] ? fromNode.segs[1] : fromNode.segs[0];
+            if (o.used || o === s) return fromNode;
+            const u = unit(o);
+            // Richtung von o vom aktuellen Knoten weg
+            const away = o.na === fromNode ? u : { x: -u.x, y: -u.y };
+            const dot = away.x * d.x * dirSign + away.y * d.y * dirSign;
+            if (dot < 0.9998) return fromNode;
+            o.used = true;
+            if (push) chain.push(o); else chain.unshift(o);
+            fromNode = o.na === fromNode ? o.nb : o.na;
+          }
+          return fromNode;
+        };
+        const endB = extend(b, 1, true);
+        const endA = extend(a, -1, false);
+        lines.push({ a: endA.p, b: endB.p, na: endA, nb: endB, segs: chain, len: dist(endA.p, endB.p) });
+      });
+      // 2) T-Suche: Stabende E (Knoten) liegt auf der Querbalken-Mitte
+      const lineSeg = ln => ({ a: ln.a, b: ln.b });
+      lines.forEach(stem => {
+        [0, 1].forEach(which => {
+          const E = which === 0 ? stem.a : stem.b, F = which === 0 ? stem.b : stem.a;
+          const En = which === 0 ? stem.na : stem.nb, Fn = which === 0 ? stem.nb : stem.na;
+          if (stem.len < 1) return;
+          // am freien Stabende (F) darf nichts anderes ansetzen
+          if (Fn.segs.some(q => !stem.segs.includes(q))) return;
+          if (Fn.segs.length !== 1) return;
+          const su = { x: (E.x - F.x) / stem.len, y: (E.y - F.y) / stem.len };
+          // alle Linien, die E berühren (außer dem Stab): genau der Querbalken (1 durchgehende Linie
+          // oder 2 Hälften, die am Knoten E enden) und sonst nichts
+          const touching = [];
+          for (const q of lines) {
+            if (q === stem) continue;
+            const info = segInfo(E, lineSeg(q));
+            if (info.d <= TOL * 2) touching.push({ q, t: info.t });
+          }
+          if (!touching.length) return;
+          // einzelne Linie, die E im Inneren berührt, oder zwei Linien, die dort enden
+          let barA = null, barB = null, barSegs = [];
+          const perp = q => { const u = { x: (q.b.x - q.a.x) / q.len, y: (q.b.y - q.a.y) / q.len }; return Math.abs(u.x * su.x + u.y * su.y) < 0.02; };
+          if (touching.length === 1) {
+            const q = touching[0].q, t = touching[0].t;
+            if (!perp(q) || q.len < 1) return;
+            // E muss im Inneren des Querbalkens liegen (nicht an seinem Ende)
+            if (!(t > 0.01 && t < 0.99)) return;
+            barA = q.a; barB = q.b; barSegs = q.segs;
+          } else if (touching.length === 2) {
+            const q1 = touching[0].q, q2 = touching[1].q;
+            if (!perp(q1) || !perp(q2)) return;
+            const e1 = dist(q1.a, E) <= TOL * 2 ? q1.b : (dist(q1.b, E) <= TOL * 2 ? q1.a : null);
+            const e2 = dist(q2.a, E) <= TOL * 2 ? q2.b : (dist(q2.b, E) <= TOL * 2 ? q2.a : null);
+            if (!e1 || !e2) return;
+            // gegenüberliegend, nicht gleichgerichtet
+            const d1 = { x: e1.x - E.x, y: e1.y - E.y }, d2 = { x: e2.x - E.x, y: e2.y - E.y };
+            const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
+            if (l1 < 0.5 || l2 < 0.5 || (d1.x * d2.x + d1.y * d2.y) / (l1 * l2) > -0.9998) return;
+            barA = e1; barB = e2; barSegs = touching[0].q.segs.concat(touching[1].q.segs);
+          } else return;
+          const barLen = dist(barA, barB);
+          if (barLen < 1) return;
+          // Stabende mittig auf dem Querbalken
+          const mid = { x: (barA.x + barB.x) / 2, y: (barA.y + barB.y) / 2 };
+          if (dist(mid, E) > Math.max(0.3, barLen * 0.03)) return;
+          const ax = placeAxis(F, E);
+          if (!ax) return;
+          const strokes = Array.from(new Set(stem.segs.concat(barSegs).map(q => q.st)));
+          out.ts.push({ id: ++idCounter, kind: 'T', layer, entry: ax.entry, end: { x: E.x, y: E.y }, dir: su, depth: ax.depth, diameter: barLen, width: barLen, bar: { a: { x: barA.x, y: barA.y }, b: { x: barB.x, y: barB.y } }, tail: { x: F.x, y: F.y }, cutByContour: ax.cut, startsOnEdge: ax.onEdge, strokes });
+        });
+      });
+      // 3) U-Suche (Release 252, Sebastian: "Bohrungen bei U-Form"): Grundlinie (Boden des U) mit zwei
+      // gleich langen, parallelen, gleichgerichteten Schenkeln, die senkrecht an ihren BEIDEN Enden ansetzen; an den
+      // Ecken treffen sich nur Schenkel und Grundlinie, die Schenkelenden sind frei (offene Seite = Bauteilkante).
+      // Achse = Mittellinie (Mitte der freien Enden -> Mitte der Grundlinie), Breite = Länge der Grundlinie.
+      const lineOfSeg = new Map();
+      lines.forEach(ln => ln.segs.forEach(q => lineOfSeg.set(q, ln)));
+      const otherLineAt = (node, self) => {
+        if (node.segs.length !== 2) return null;
+        const ls = node.segs.map(q => lineOfSeg.get(q)).filter(ln => ln && ln !== self);
+        return ls.length === 1 ? ls[0] : null;
+      };
+      lines.forEach(base => {
+        if (base.len < 1) return;
+        const legA = otherLineAt(base.na, base), legB = otherLineAt(base.nb, base);
+        if (!legA || !legB || legA === legB) return;
+        const far = (leg, node) => (leg.na === node ? { p: leg.b, n: leg.nb } : (leg.nb === node ? { p: leg.a, n: leg.na } : null));
+        const fa = far(legA, base.na), fb = far(legB, base.nb);
+        if (!fa || !fb) return;
+        if (fa.n.segs.length !== 1 || fb.n.segs.length !== 1) return;       // freie Schenkelenden
+        const bu = { x: (base.b.x - base.a.x) / base.len, y: (base.b.y - base.a.y) / base.len };
+        const da = { x: (fa.p.x - base.a.x) / legA.len, y: (fa.p.y - base.a.y) / legA.len };
+        const db = { x: (fb.p.x - base.b.x) / legB.len, y: (fb.p.y - base.b.y) / legB.len };
+        if (Math.abs(da.x * bu.x + da.y * bu.y) > 0.02 || Math.abs(db.x * bu.x + db.y * bu.y) > 0.02) return;   // senkrecht
+        if (da.x * db.x + da.y * db.y < 0.9998) return;                                                      // parallel, gleiche Seite
+        if (Math.abs(legA.len - legB.len) > Math.max(0.5, 0.03 * Math.max(legA.len, legB.len))) return;
+        const E = { x: (base.a.x + base.b.x) / 2, y: (base.a.y + base.b.y) / 2 };
+        const F = { x: (fa.p.x + fb.p.x) / 2, y: (fa.p.y + fb.p.y) / 2 };
+        const L = dist(F, E);
+        if (L < 1) return;
+        const ax = placeAxis(F, E);
+        if (!ax) return;
+        const strokes = Array.from(new Set(base.segs.concat(legA.segs, legB.segs).map(q => q.st)));
+        out.us.push({ id: ++idCounter, kind: 'U', layer, entry: ax.entry, end: E, dir: { x: (E.x - F.x) / L, y: (E.y - F.y) / L }, depth: ax.depth, diameter: base.len, width: base.len, bar: { a: { x: base.a.x, y: base.a.y }, b: { x: base.b.x, y: base.b.y } }, tail: F, cutByContour: ax.cut, startsOnEdge: ax.onEdge, strokes });
+      });
+    });
+    return out;
+  }
+
+  // Release 253 (Sebastian: "Die vertikale Tasche soll auch eingegeben werden können. Durchmesser der Tasche = max.
+  // Ausdehnung in der DXF ... Kreise werden automatisch erkannt."): alle Kreise in allen Layern außer COMPASS/Kontur/
+  // Schmiege_vorn/hinten - als CIRCLE (geschlossener Strich) oder aus Bögen (ARC, z. B. 2 Halb- oder 4 Viertelkreise)
+  // zusammengesetzt. Ein Ring gilt als Kreis, wenn er mindestens 8 Punkte hat und alle Punkte höchstens 1 % vom
+  // mittleren Radius abweichen. Durchmesser = größter Abstand zweier Punkte (max. Ausdehnung). Liefert
+  // [{ layer, loop: [{x,y}], center: {x,y}, diameter, strokes: [Strich-Objekte des Kreises] }].
+  function detectVerticalCircles(geo, konturLayerName) {
+    const out = [];
+    if (!geo || !geo.strokes) return out;
+    const byLayer = new Map();
+    geo.strokes.forEach(st => {
+      const L = st && st.layer;
+      if (!st || !st.points || st.points.length < 2 || L === 'COMPASS' || L === konturLayerName || /^schmiege_(vorn|hinten)$/i.test(L || '')) return;
+      let arr = byLayer.get(L); if (!arr) { arr = []; byLayer.set(L, arr); }
+      arr.push(st);
+    });
+    byLayer.forEach((strokes, layer) => {
+      if (strokes.length > 20000) return;
+      const r = buildMortiseLoopsFromLayerStrokes(strokes, { keepCircles: true });
+      r.loops.forEach(pts => {
+        if (pts.length < 8) return;
+        let cx = 0, cy = 0;
+        pts.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= pts.length; cy /= pts.length;
+        const rr = pts.map(p => Math.hypot(p.x - cx, p.y - cy));
+        const rm = rr.reduce((a, b) => a + b, 0) / rr.length;
+        if (!(rm > 0) || !rr.every(q => Math.abs(q - rm) <= rm * 0.01)) return;
+        let dmax = 0;
+        for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) { const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y); if (d > dmax) dmax = d; }
+        const tol = Math.max(0.01, rm * 0.01);
+        const onC = p => Math.abs(Math.hypot(p.x - cx, p.y - cy) - rm) <= tol;
+        const own = strokes.filter(st => st.points.every(onC) && st.points.every((p, k) => k === 0 || Math.hypot((p.x + st.points[k - 1].x) / 2 - cx, (p.y + st.points[k - 1].y) / 2 - cy) >= rm * 0.5));
+        // Taschen-Kontur als feiner Kreis (die Bögen sind beim Import nur grob unterteilt)
+        const D = Math.max(dmax, 2 * rm), N = 96, loop = [];
+        for (let k = 0; k < N; k++) { const a = 2 * Math.PI * k / N; loop.push({ x: cx + D / 2 * Math.cos(a), y: cy + D / 2 * Math.sin(a) }); }
+        out.push({ layer, loop, center: { x: cx, y: cy }, diameter: D, strokes: own });
+      });
+    });
     return out;
   }
 
@@ -9141,7 +9532,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -9885,36 +10276,56 @@
 // Rückgabe: { topZ, botZ, levels:[{depth, floorZ}], tris:[{v:[[x,y]x3], z, nz, kind}],
 //   walls:[{a:[x,y], b:[x,y], z0, z1, n:[nx,ny], kind}], rings:[{pts:[[x,y]...], z}], info } | null
 // ---------------------------------------------------------------------------------------------
-function buildMortiseMesh(contour, pockets, thickness) {
+function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   const PC = (typeof polygonClipping !== 'undefined') ? polygonClipping : null;
   const EC = (typeof earcut !== 'undefined') ? earcut : null;
+  buildMortiseMesh.lastEmpty = [];
   if (!PC || !EC || !contour || contour.length < 3 || !thickness) return null;
+  // Release 250: topContour (optional, gleiche Punktzahl wie contour) = obere Kontur bei schrägen Seiten
+  // (Schmiege); die Taschen werden gegen sie geschnitten, die Außenwände laufen von contour (unten) nach
+  // topContour (oben).
+  const topPts = (topContour && topContour.length === contour.length) ? topContour : contour;
+  const sloped = topPts !== contour;
   const H = Math.abs(thickness);
   const topZ = thickness > 0 ? thickness : 0, botZ = thickness > 0 ? 0 : thickness;
   const closeRing = pts => { const r = pts.map(p => [p.x, p.y]); const f = r[0], l = r[r.length - 1]; if (f[0] !== l[0] || f[1] !== l[1]) r.push([f[0], f[1]]); return r; };
-  const contourMP = [[closeRing(contour)]];
+  const bottomMP = [[closeRing(contour)]];
+  const topMP = sloped ? [[closeRing(topPts)]] : bottomMP;
   let clamped = false;
   const defs = [];
   (pockets || []).forEach(pk => {
     let d = Number(pk.depth);
-    if (!isFinite(d) || d <= 1e-9) return;
+    if (!isFinite(d) || d < 0) return;      // Tiefe 0 ist gültig (nur Umriss)
     if (d > H) { d = H; clamped = true; }
     const polys = (pk.loops || []).filter(l => l && l.length >= 3).map(l => [closeRing(l)]);
     if (!polys.length) return;
-    let region;
+    let region, un = null;
     try {
-      const un = PC.union(polys[0], ...polys.slice(1));
-      region = PC.intersection(contourMP, un);
-    } catch (e) { return; }
-    if (region && region.length) defs.push({ depth: d, region });
+      un = PC.union(polys[0], ...polys.slice(1));
+      region = PC.intersection(topMP, un);   // was über die Bauteilkontur hinausgeht, wird abgeschnitten
+    } catch (e) { region = null; }
+    if (region && region.length) defs.push({ depth: d, region, un, layer: pk.layer });
+    else buildMortiseMesh.lastEmpty.push(pk.layer || '?');
   });
-  if (!defs.length) return null;
-  const depths = Array.from(new Set(defs.map(x => Math.round(x.depth * 1e6) / 1e6))).sort((a, b) => a - b);
+  // Release 251: opts.allowPlain - auch ohne Taschen ein (glattes) Netz liefern, z. B. für horizontale Bohrungen
+  if (!defs.length && !(opts && opts.allowPlain)) return null;
+  const posDefs = defs.filter(x => x.depth > 1e-9), zeroDefs = defs.filter(x => x.depth <= 1e-9);
+  const depths = Array.from(new Set(posDefs.map(x => Math.round(x.depth * 1e6) / 1e6))).sort((a, b) => a - b);
   const C = depths.map(d => {
-    const rs = defs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => x.region);
+    const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => x.region);
     return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1));
   });
-  const R = PC.difference(contourMP, C[0]);
+  const R = C.length ? PC.difference(topMP, C[0]) : topMP;
+  // Bei schrägen Seiten (Schmiege) reicht der Boden einer Tasche bis zur Kontur AUF Bodenhöhe (zwischen unterer und
+  // oberer Kontur interpoliert), nicht bis zur oberen Kontur - sonst bliebe am offenen Rand ein Streifen ohne Boden.
+  const Cf = C.map((cj, j) => {
+    if (!sloped) return cj;
+    const fr = depths[j] > H ? 0 : (H - depths[j]) / H;
+    const ring = contour.map((b, i) => [b.x + (topPts[i].x - b.x) * fr, b.y + (topPts[i].y - b.y) * fr]); ring.push([ring[0][0], ring[0][1]]);
+    const pz = [[ring]];
+    const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= depths[j]).map(x => { try { return PC.intersection(pz, x.un); } catch (e) { return x.region; } });
+    try { return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1)); } catch (e) { return cj; }
+  });
   const area = mp => { let s = 0; mp.forEach(poly => poly.forEach((ring, ri) => { let a = 0; for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; s += (ri === 0 ? 1 : -1) * Math.abs(a) / 2; })); return s; };
   const mesh = { topZ, botZ, levels: [], tris: [], walls: [], rings: [], clamped, info: {} };
   function triangulate(mp, z, nz, kind) {
@@ -9931,47 +10342,125 @@ function buildMortiseMesh(contour, pockets, thickness) {
     });
   }
   const signedArea = ring => { let a = 0; for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; return a / 2; };
-  // Wände entlang der Ringe eines MultiPolygons; airInside = true: Luft (Einstemmung) liegt im Außenring
-  function addWalls(mp, z0, z1, kind, outwardIsAir) {
+  // Punkt-in-Mehrfachpolygon (gerade-ungerade-Regel über alle Ringe)
+  function inMP(x, y, mp) {
+    for (const poly of mp) {
+      let inside = false;
+      for (const ring of poly) {
+        for (let i = 0, j = ring.length - 2; i < ring.length - 1; j = i++) {
+          const a = ring[i], b = ring[j];
+          if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+        }
+      }
+      if (inside) return true;
+    }
+    return false;
+  }
+  // Abstand Punkt - Strecke
+  const segDist = (x, y, a, b) => {
+    const ex = b[0] - a[0], ey = b[1] - a[1], l2 = ex * ex + ey * ey;
+    let t = l2 > 0 ? ((x - a[0]) * ex + (y - a[1]) * ey) / l2 : 0; t = Math.max(0, Math.min(1, t));
+    return Math.hypot(x - (a[0] + t * ex), y - (a[1] + t * ey));
+  };
+  const topRing = topMP[0][0];
+  const onBoundary = (x, y) => { for (let i = 0; i < topRing.length - 1; i++) if (segDist(x, y, topRing[i], topRing[i + 1]) < 1e-3) return true; return false; };
+  // Wände entlang der Ringe eines MultiPolygons (Einstemmungs-/Taschenwände, senkrecht). Kanten, die auf der
+  // Bauteilkontur liegen (Tasche läuft über den Rand hinaus), bekommen KEINE Wand - dort ist die Tasche offen.
+  function addPocketWalls(mp, z0, z1) {
     mp.forEach(poly => poly.forEach((ring, ri) => {
       const ccw = signedArea(ring) > 0;
-      // Normale, die aus dem Material in die Luft zeigt:
-      //  Einstemmungs-Stufe (outwardIsAir=false): Luft im Außenring (innen), Insel-Ring: Luft außen
-      //  Bauteilkontur (outwardIsAir=true): Luft außerhalb des Rings
-      const airSideLeft = outwardIsAir ? !ccw : (ri === 0 ? ccw : !ccw);
+      const airSideLeft = (ri === 0 ? ccw : !ccw);
       for (let i = 0; i < ring.length - 1; i++) {
         const a = ring[i], b = ring[i + 1];
         const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
         if (len < 1e-9) continue;
+        if (onBoundary((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) continue;
         const n = airSideLeft ? [-dy / len, dx / len] : [dy / len, -dx / len];
-        // lange Wände in Stücke <= 60 mm teilen (gleichmäßigere Tiefenwerte beim Rastern)
         const parts = Math.max(1, Math.ceil(len / 60));
         for (let k = 0; k < parts; k++) {
           const t0 = k / parts, t1 = (k + 1) / parts;
-          mesh.walls.push({ a: [a[0] + dx * t0, a[1] + dy * t0], b: [a[0] + dx * t1, a[1] + dy * t1], z0, z1, n, kind });
+          mesh.walls.push({ a: [a[0] + dx * t0, a[1] + dy * t0], b: [a[0] + dx * t1, a[1] + dy * t1], z0, z1, n, kind: 'pocket' });
         }
       }
     }));
   }
-  // Unterseite + Oberseite
-  triangulate(contourMP, botZ, -1, 'bottom');
+  // Ring als Linienzug(e) für die Umrisse; skipBoundary: Kanten auf der Bauteilkontur auslassen (offene Polylinien)
+  function pushRing(ring, z, kind, skipBoundary) {
+    const pts = ring.slice(0, ring.length - 1);
+    if (!skipBoundary) { mesh.rings.push({ pts, z, kind }); return; }
+    let run = [];
+    const flush = () => { if (run.length >= 2) mesh.rings.push({ pts: run, z, kind, open: true }); run = []; };
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      if (onBoundary((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) { flush(); continue; }
+      if (!run.length) run.push(a);
+      run.push(b);
+    }
+    flush();
+  }
+  // Außenwände: je Kontur-Kante in Stücke geteilt (an den Stellen, wo Taschenränder die Kante treffen, und
+  // höchstens 60 mm lang). Liegt ein Stück im Bereich einer Tasche, reicht die Wand nur bis zum Boden der
+  // tiefsten Tasche dort (darüber ist die Tasche zum Rand hin offen). Bei schrägen Seiten (Schmiege) laufen die
+  // Wände von der unteren zur oberen Kontur.
+  (function outerWalls() {
+    const n = contour.length;
+    const ccw = signedArea(topMP[0][0]) > 0;
+    const verts = [];
+    C.forEach(mp => mp.forEach(poly => poly.forEach(ring => { for (let i = 0; i < ring.length - 1; i++) verts.push(ring[i]); })));
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const tA = [topPts[i].x, topPts[i].y], tB = [topPts[j].x, topPts[j].y];
+      const bA = [contour[i].x, contour[i].y], bB = [contour[j].x, contour[j].y];
+      const dx = tB[0] - tA[0], dy = tB[1] - tA[1], len = Math.hypot(dx, dy);
+      const dbx = bB[0] - bA[0], dby = bB[1] - bA[1];
+      if (len < 1e-9 && Math.hypot(dbx, dby) < 1e-9) continue;
+      const nrm = len > 1e-9 ? (ccw ? [dy / len, -dx / len] : [-dy / len, dx / len]) : [0, 0];
+      const ts = [0, 1];
+      if (len > 1e-9) {
+        verts.forEach(v => {
+          const t = ((v[0] - tA[0]) * dx + (v[1] - tA[1]) * dy) / (len * len);
+          if (t > 1e-6 && t < 1 - 1e-6 && segDist(v[0], v[1], tA, tB) < 1e-4) ts.push(t);
+        });
+        const parts = Math.max(1, Math.ceil(len / 60));
+        for (let k = 1; k < parts; k++) ts.push(k / parts);
+      }
+      ts.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < ts.length; k++) {
+        const t0 = ts[k], t1 = ts[k + 1];
+        if (t1 - t0 < 1e-9) continue;
+        const tm = (t0 + t1) / 2;
+        const mx = tA[0] + dx * tm - nrm[0] * 0.02, my = tA[1] + dy * tm - nrm[1] * 0.02;   // knapp INNERHALB der Kontur
+        let jj = -1;
+        for (let q = C.length - 1; q >= 0; q--) if (inMP(mx, my, C[q])) { jj = q; break; }
+        const z1 = jj >= 0 ? topZ - depths[jj] : topZ;
+        if (z1 - botZ < 1e-9) continue;
+        const fr = (z1 - botZ) / H;
+        const bot = t => [bA[0] + dbx * t, bA[1] + dby * t];
+        const top = t => [tA[0] + dx * t, tA[1] + dy * t];
+        const at = t => { const b = bot(t), tp = top(t); return [b[0] + (tp[0] - b[0]) * fr, b[1] + (tp[1] - b[1]) * fr]; };
+        const w = { a: bot(t0), b: bot(t1), z0: botZ, z1, n: nrm, kind: 'outer' };
+        if (sloped) { w.at = at(t0); w.bt = at(t1); }
+        mesh.walls.push(w);
+      }
+    }
+  })();
+  triangulate(bottomMP, botZ, -1, 'bottom');
   triangulate(R, topZ, 1, 'top');
-  // Außenwände der Kontur
-  addWalls(contourMP, botZ, topZ, 'outer', true);
-  // Stufen
   depths.forEach((d, j) => {
     const floorZ = topZ - d;
     const upperZ = j === 0 ? topZ : topZ - depths[j - 1];
     mesh.levels.push({ depth: d, floorZ });
-    const floorMP = j + 1 < depths.length ? PC.difference(C[j], C[j + 1]) : C[j];
+    const floorMP = j + 1 < depths.length ? PC.difference(Cf[j], Cf[j + 1]) : Cf[j];
     if (floorMP && floorMP.length) triangulate(floorMP, floorZ, 1, 'floor');
-    addWalls(C[j], floorZ, upperZ, 'pocket', false);
-    C[j].forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: floorZ, kind: 'floor' })));
-    if (j > 0) C[j].forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: upperZ, kind: 'rim' })));
+    addPocketWalls(C[j], floorZ, upperZ);
+    Cf[j].forEach(poly => poly.forEach(ring => pushRing(ring, floorZ, 'floor', false)));
+    if (j > 0) C[j].forEach(poly => poly.forEach(ring => pushRing(ring, upperZ, 'rim', true)));
   });
-  R.forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: topZ, kind: 'top' })));
-  contourMP.forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: botZ, kind: 'bottom' })));
-  mesh.info = { contourArea: area(contourMP), topArea: area(R), pocketArea: area(C[0]), levelCount: depths.length, triCount: mesh.tris.length, wallCount: mesh.walls.length };
+  R.forEach(poly => poly.forEach(ring => pushRing(ring, topZ, 'top', false)));
+  // Tiefe 0: nur der (abgeschnittene) Umriss der Tasche auf der Oberseite
+  zeroDefs.forEach(df => df.region.forEach(poly => poly.forEach(ring => pushRing(ring, topZ, 'outline0', false))));
+  bottomMP.forEach(poly => poly.forEach(ring => pushRing(ring, botZ, 'bottom', false)));
+  mesh.info = { contourArea: area(topMP), topArea: area(R), pocketArea: C.length ? area(C[0]) : 0, levelCount: depths.length, zeroCount: zeroDefs.length, sloped, triCount: mesh.tris.length, wallCount: mesh.walls.length, emptyPockets: buildMortiseMesh.lastEmpty.slice() };
   return mesh;
 }
 
@@ -10025,8 +10514,8 @@ function buildMortiseMesh(contour, pockets, thickness) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 249;
-  const APP_RELEASE_TIMESTAMP = '20.10.2026, 11:09 Uhr';
+  const APP_RELEASE_NUMBER = 253;
+  const APP_RELEASE_TIMESTAMP = '20.10.2026, 14:48 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13289,7 +13778,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // buildMortiseMesh()-Ergebnis (rohe DXF-Koordinaten, z relativ zur Original-Z-Ebene) oder null,
   // dxfMortiseUsedLayers = Layer, die als Netz dargestellt werden (kein Drahtgitter mehr),
   // dxfMortiseProblems = Meldungen beim Verlassen des Dialogs.
-  let dxfPartType = 'tread';
+  // Release 253: zusätzlich 'undefined' ("- undefiniert -", Standard: nur Stärke, keine Erkennung von Bearbeitungen)
+  // und 'handrail' (Handlauf, Auswahl wie bei der Wange); "Wange, gestemmt" heißt jetzt "Wange".
+  let dxfPartType = 'undefined';
+  const DXF_PART_TYPES = ['undefined', 'tread', 'riser', 'stringer', 'handrail'];
+  const isMortisePart = t => t === 'stringer' || t === 'handrail';   // Einstemmungen (Wange, Handlauf)
+  const isStepPart = t => t === 'tread' || t === 'riser';             // Schmiegenerkennung (Stufe, Setzstufe)
+  // Release 253: vertikale Taschen aus Kreisen (alle Layer außer Kontur/COMPASS), eine Taschentiefe; bei Stufe,
+  // Wange und Handlauf (nicht bei Setzstufe und "- undefiniert -").
+  let dxfVPocketEnabled = false;
+  let dxfVPocketDepth = 10;
+  let dxfVCircleCache = null;
+  let dxfVPocketHidden = null;
+  function getVerticalCircles() {
+    if (!dxfVCircleCache) {
+      if (!dxfGeometry) return [];
+      try { dxfVCircleCache = CNCParser.detectVerticalCircles(dxfGeometry, dxfKonturLayerName); } catch (e) { dxfVCircleCache = []; }
+    }
+    return dxfVCircleCache;
+  }
   let dxfMortiseInfo = null;
   let dxfMortiseLayer = null;
   let dxfMortiseDepth = 15;
@@ -13298,7 +13805,41 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfMortiseMesh = null;
   let dxfMortiseUsedLayers = [];
   let dxfMortiseProblems = [];
-  function getActiveSchmiegeRings() { return dxfPartType === 'stringer' ? null : (dxfLayerSchmiegeRings || dxfSchmiegeRings); }
+  // Release 250 (Taschen auf Stufen/Setzstufen): dxfPocketEnabled = Checkbox "Taschen", dxfPockets = Map
+  // Layername -> Tiefe in mm (von der Bauteiloberkante aus, 0 ist gültig = nur Umriss in der Outline-Farbe),
+  // dxfPocketCache = je Layer einmalig (lazy) ermittelte geschlossene Konturen (auch gestrichelte, siehe
+  // buildMortiseLoopsFromLayerStrokes(.., {keepCircles, bridge})). Keine Namenserkennung - der Bediener wählt.
+  let dxfPocketEnabled = false;
+  let dxfPockets = new Map();
+  let dxfPocketCache = new Map();
+  // Release 251 (horizontale Bohrungen, "T"; seit R252 auch "U", Einstellungen in dxfHBoreCfg): Höhe der Bohrungsachse
+  // über der Unterseite in mm (null = mittig), dxfHBoreCache = Ergebnis von CNCParser.detectHorizontalTs() (einmalig
+  // pro Import), dxfHBoreHidden = Set der Striche (T-Linien), die durch die Bohrungen ersetzt werden.
+  // Release 252: je Symbolart eigene Einstellungen (T / U): enabled, shape 'round' | 'rect', height (Mitte über der
+  // Unterseite, null = mittig), rectHeight (nur eckig, null = Länge; die Länge ist seit R253 immer die Ausdehnung aus der Zeichnung).
+  const newHBoreCfg = () => ({ T: { enabled: false, shape: 'round', height: null, rectHeight: null }, U: { enabled: false, shape: 'round', height: null, rectHeight: null } });
+  let dxfHBoreCfg = newHBoreCfg();
+  let dxfHBoreCache = null;
+  let dxfHBoreHidden = null;
+  let dxfHBoreStrokeSet = null;
+  // alle Striche, die zu erkannten T/U gehören (werden nie als Taschen-Kontur verwendet)
+  function getHBoreStrokeSet() {
+    if (!dxfHBoreStrokeSet) {
+      const det = getHBoreDetection();
+      dxfHBoreStrokeSet = new Set();
+      det.ts.concat(det.us).forEach(t => t.strokes.forEach(st => dxfHBoreStrokeSet.add(st)));
+    }
+    return dxfHBoreStrokeSet;
+  }
+  function getHBoreDetection() {
+    if (!dxfHBoreCache) {
+      if (!dxfGeometry || !dxfKonturLoop) return { ts: [], us: [], skippedOutside: 0, skippedInside: 0 };   // (noch) keine Kontur: nicht zwischenspeichern
+      dxfHBoreCache = { ts: [], us: [], skippedOutside: 0, skippedInside: 0 };
+      try { dxfHBoreCache = CNCParser.detectHorizontalTs(dxfGeometry, dxfKonturLayerName, dxfKonturLoop); } catch (e) { /* bleibt leer */ }
+    }
+    return dxfHBoreCache;
+  }
+  function getActiveSchmiegeRings() { return !isStepPart(dxfPartType) ? null : (dxfLayerSchmiegeRings || dxfSchmiegeRings); }   // Release 253: nur Stufe/Setzstufe
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -14791,14 +15332,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function recomputeLayerSchmiegeRings() {
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeProblems = [];
-    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo || dxfPartType === 'stringer') return; // Release 249: Wange hat keine Schmiegenerkennung
+    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo || !isStepPart(dxfPartType)) return; // Release 249/253: nur Stufe/Setzstufe haben die Schmiegenerkennung
     const chords = [];
     const problems = dxfLayerSchmiegeProblems;
     dxfLayerSchmiegeLayers.forEach((type, name) => {
       const r = dxfLayerSchmiegeInfo.perLayer[name];
       if (!r || !r.groups.length) { problems.push(name + ': ' + T('keine Linien auf diesem Layer', 'no lines on this layer')); return; }
       r.groups.forEach(g => {
-        if (!g.chord) problems.push(name + ': ' + T('Linie nicht berechenbar', 'line not computable') + (g.reason ? ' (' + g.reason + ')' : ''));
+        if (!g.chord) problems.push(name + ': ' + T('Linie nicht berechenbar', 'line not computable') + (g.reason ? ' (' + T(g.reason, g.reasonEn || g.reason) + ')' : ''));
       });
       r.chords.forEach(c => chords.push({ A: c.A, B: c.B, type: type === 'unten' ? 'unten' : 'oben', layer: name }));
     });
@@ -14830,39 +15371,126 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const c = dxfMortiseInfo && dxfMortiseInfo.candidates.find(q => q.loops.length);
     return c ? c.name : null;
   }
-  // Rechnet das Einstemmungs-Netz neu (nur bei 'stringer'). Layer ohne geschlossene Kontur, Tiefe 0
-  // usw. ergeben eine Meldung (dxfMortiseProblems), was berechenbar ist, wird dargestellt.
+  // Release 250: geschlossene Konturen eines beliebigen Layers für Taschen (Kreise sind gültig, gestrichelte
+  // Linien werden zu Ringen ergänzt) - je Import und Layer einmalig.
+  function getPocketLoops(name) {
+    let r = dxfPocketCache.get(name);
+    if (r) return r;
+    // Release 252: Striche erkannter T/U (horizontale Bearbeitungen) sind nie Taschen-Konturen (das offene U würde
+    // sonst per Lückenüberbrückung zu einem Rechteck geschlossen und senkrecht "von oben" ausgefräst)
+    const hbSet = dxfKonturLoop ? getHBoreStrokeSet() : null;
+    const strokes = dxfGeometry ? dxfGeometry.strokes.filter(st => st.layer === name && !(hbSet && hbSet.has(st))) : [];
+    if (strokes.length > 20000) r = { strokeCount: strokes.length, loops: [], bridged: 0, open: 0, tooMany: true };
+    else {
+      const q = CNCParser.buildMortiseLoopsFromLayerStrokes(strokes, { keepCircles: true, bridge: true });
+      r = { strokeCount: strokes.length, loops: q.loops, bridged: q.bridged, open: q.openChains, tooMany: false };
+    }
+    dxfPocketCache.set(name, r);
+    return r;
+  }
+  function listPocketLayers() {
+    if (!dxfGeometry) return [];
+    return (dxfGeometry.layerOrder || []).filter(n => n !== 'COMPASS' && n !== dxfKonturLayerName);
+  }
+  // Rechnet das Netz für Einstemmungen ("Wange, gestemmt") bzw. Taschen (Stufe/Setzstufe) neu. Layer ohne
+  // geschlossene Kontur usw. ergeben eine Meldung (dxfMortiseProblems), was berechenbar ist, wird dargestellt.
+  // Tiefe 0 ist gültig (nur der Umriss in der Outline-Farbe).
   function recomputeMortise() {
     dxfMortiseMesh = null;
     dxfMortiseUsedLayers = [];
     dxfMortiseProblems = [];
-    if (dxfPartType !== 'stringer' || !dxfKonturLoop || !dxfMortiseInfo) return;
+    dxfHBoreHidden = null;
+    dxfVPocketHidden = null;
+    const stringer = isMortisePart(dxfPartType);   // Wange oder Handlauf (Release 253)
+    if (!dxfKonturLoop) return;
+    if (dxfPartType === 'undefined') return;       // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
+    // Release 251: horizontale Bohrungen (T) - brauchen immer das Netz (auch ohne Einstemmungen/Taschen)
+    const hbDet = ((dxfHBoreCfg.T.enabled || dxfHBoreCfg.U.enabled) && dxfThickness) ? getHBoreDetection() : null;
+    const hbKinds = hbDet ? [['T', hbDet.ts], ['U', hbDet.us]].filter(([k, list]) => dxfHBoreCfg[k].enabled && list.length) : [];
+    const wantBores = hbKinds.length > 0;
+    // Release 253: vertikale Taschen (Kreise) bei Stufe, Wange und Handlauf
+    const vCircles = (dxfVPocketEnabled && dxfPartType !== 'riser') ? getVerticalCircles() : [];
+    const wantV = vCircles.length > 0;
+    const pocketsOn = dxfPartType === 'tread' && dxfPocketEnabled && dxfPockets.size;   // Taschen nur bei der Stufe (Release 253)
+    if (stringer && !dxfMortiseInfo && !wantBores && !wantV) return;
+    if (!stringer && !pocketsOn && !wantBores && !wantV) return;
     const problems = dxfMortiseProblems;
-    if (!dxfThickness) { problems.push(T('Die Stärke ist 0 - es gibt nichts auszustemmen.', 'The thickness is 0 - there is nothing to mortise.')); return; }
-    const named = dxfMortiseInfo.names;
+    const what = stringer ? T('Einstemmung', 'mortise') : T('Tasche', 'pocket');
+    if (!dxfThickness) { problems.push(stringer ? T('Die Stärke ist 0 - es gibt nichts auszustemmen.', 'The thickness is 0 - there is nothing to mortise.') : T('Die Stärke ist 0 - Taschen werden erst bei einer Stärke ungleich 0 dargestellt.', 'The thickness is 0 - pockets are only shown for a thickness other than 0.')); return; }
     const pockets = [], used = [];
-    const addPocket = (name, depth) => {
-      const c = dxfMortiseInfo.candidates.find(q => q.name === name);
-      if (!c || !c.loops.length) { problems.push(name + ': ' + T('keine geschlossene Kontur gefunden', 'no closed contour found')); return; }
-      if (!(depth > 0)) { problems.push(name + ': ' + T('Einstemmungstiefe muss größer als 0 sein', 'depth of mortise must be greater than 0')); return; }
-      pockets.push({ loops: c.loops, depth, layer: name });
+    const addPocket = (name, depth, loops, extraNote) => {
+      if (!loops.length) { problems.push(name + ': ' + T('keine geschlossene Kontur gefunden', 'no closed contour found') + (extraNote || '')); return; }
+      if (!(depth >= 0)) { problems.push(name + ': ' + T('ungültige Tiefe', 'invalid depth')); return; }
+      pockets.push({ loops, depth, layer: name });
       used.push(name);
     };
-    if (named.tread || named.riser) {
-      if (named.tread) addPocket(named.tread, dxfMortiseDepthTread);
-      if (named.riser) addPocket(named.riser, dxfMortiseDepthRiser);
-    } else if (dxfMortiseLayer) {
-      addPocket(dxfMortiseLayer, dxfMortiseDepth);
-    } else {
-      problems.push(T('Es ist kein Einstemmungs-Layer gewählt (bzw. die Datei enthält keinen Layer mit geschlossenen Konturen).', 'No mortise layer is selected (or the file has no layer with closed contours).'));
+    if (stringer) {
+      const named = dxfMortiseInfo.names;
+      const loopsOf = n => { const c = dxfMortiseInfo.candidates.find(q => q.name === n); return c ? c.loops : []; };
+      if (named.tread || named.riser) {
+        if (named.tread) addPocket(named.tread, dxfMortiseDepthTread, loopsOf(named.tread));
+        if (named.riser) addPocket(named.riser, dxfMortiseDepthRiser, loopsOf(named.riser));
+      } else if (dxfMortiseLayer) {
+        addPocket(dxfMortiseLayer, dxfMortiseDepth, loopsOf(dxfMortiseLayer));
+      }   // Release 253: "- keiner -" gewählt bzw. kein Layer vorhanden -> keine Einstemmung (keine Meldung)
+    } else if (pocketsOn) {
+      dxfPockets.forEach((depth, name) => {
+        const r = getPocketLoops(name);
+        addPocket(name, depth, r.loops, r.tooMany ? T(' (zu viele Linien)', ' (too many lines)') : T(' (bei gestrichelten Linien: Lücken zu groß oder Kontur nicht geschlossen)', ' (for dashed lines: gaps too large or contour not closed)'));
+      });
     }
-    if (!pockets.length) return;
+    if (wantV) {
+      const vName = T('Vertikale Taschen', 'Vertical pockets');
+      if (!(dxfVPocketDepth >= 0)) problems.push(vName + ': ' + T('ungültige Tiefe', 'invalid depth'));
+      else {
+        pockets.push({ loops: vCircles.map(c => c.loop), depth: dxfVPocketDepth, layer: vName });
+        dxfVPocketHidden = new Set();
+        vCircles.forEach(c => c.strokes.forEach(st => dxfVPocketHidden.add(st)));
+      }
+    }
+    if (!pockets.length && !wantBores) return;
+    // Stufe/Setzstufe mit Schmiege: untere/obere Kontur der Schmiege, sonst eine Kontur
+    const rings = stringer ? null : getActiveSchmiegeRings();
+    const botLoop = rings && rings.untenLoop && rings.obenLoop && rings.untenLoop.length === rings.obenLoop.length ? rings.untenLoop : dxfKonturLoop;
+    const topLoop = botLoop !== dxfKonturLoop ? rings.obenLoop : null;
     let mesh = null;
-    try { mesh = buildMortiseMesh(dxfKonturLoop, pockets, dxfThickness); } catch (e) { mesh = null; }
-    if (!mesh) { problems.push(T('Keine Einstemmung liegt innerhalb der Bauteilkontur - das Bauteil wird ohne Einstemmung dargestellt.', 'No mortise lies inside the part contour - the part is shown without a mortise.')); return; }
-    if (mesh.clamped) problems.push(T('Die Einstemmungstiefe war größer als die Stärke und wurde auf die Stärke (' + Math.abs(dxfThickness) + ' mm) begrenzt.', 'The depth of mortise exceeded the thickness and was limited to the thickness (' + Math.abs(dxfThickness) + ' mm).'));
+    try { mesh = buildMortiseMesh(botLoop, pockets, dxfThickness, topLoop, { allowPlain: wantBores || wantV }); } catch (e) { mesh = null; }
+    const empty = (buildMortiseMesh.lastEmpty || []).slice();
+    empty.forEach(n => problems.push(n + ': ' + T('liegt außerhalb der Bauteilkontur', 'lies outside the part contour')));
+    if (!mesh) { if (!empty.length) problems.push(T('Keine ' + what + ' liegt innerhalb der Bauteilkontur.', 'No ' + what + ' lies inside the part contour.')); problems.push(T('Das Bauteil wird ohne ' + what + ' dargestellt.', 'The part is shown without a ' + what + '.')); return; }
+    if (mesh.clamped) problems.push(T('Die Tiefe war größer als die Stärke und wurde auf die Stärke (' + Math.abs(dxfThickness) + ' mm) begrenzt.', 'The depth exceeded the thickness and was limited to the thickness (' + Math.abs(dxfThickness) + ' mm).'));
+    // Release 251/252: horizontale Bohrungen (T/U) am Netz anbringen - je Symbolart Form (rund/eckig) und Position in Z
+    // (Mitte über der Unterseite; Standard mittig).
+    if (wantBores) {
+      const Hh = Math.abs(dxfThickness);
+      const bores = [];
+      dxfHBoreHidden = new Set();
+      hbKinds.forEach(([k, list]) => {
+        const cfg = dxfHBoreCfg[k];
+        const pre = T('Bohrung ' + k + ': ', 'Bore ' + k + ': ');
+        const hRel = cfg.height == null ? Hh / 2 : cfg.height;
+        if (!(hRel >= 0 && hRel <= Hh)) {
+          problems.push(pre + T('Die Höhe (' + hRel + ' mm) liegt außerhalb der Bauteilstärke (0 bis ' + Hh + ' mm) - die Bohrungen werden nicht dargestellt.', 'the height (' + hRel + ' mm) is outside the part thickness (0 to ' + Hh + ' mm) - the bores are not shown.'));
+          return;
+        }
+        const rect = cfg.shape === 'rect';
+        let maxHalfZ = 0;
+        list.forEach(t => {
+          const rw = rect ? t.width : t.diameter;    // Release 253: Länge = Ausdehnung aus der Zeichnung
+          const rh = rect ? (cfg.rectHeight != null ? cfg.rectHeight : t.width) : t.diameter;
+          maxHalfZ = Math.max(maxHalfZ, rh / 2);
+          bores.push({ id: t.id, kind: k, shape: rect ? 'rect' : 'round', layer: t.layer, entry: [t.entry.x, t.entry.y], end: [t.end.x, t.end.y], tail: [t.tail.x, t.tail.y], dia: t.diameter, rw, rh, depth: t.depth, ext: t.cutByContour ? 'cut' : (t.startsOnEdge ? 'edge' : 'none'), zc: mesh.botZ + hRel });
+          t.strokes.forEach(st => dxfHBoreHidden.add(st));
+        });
+        if (hRel - maxHalfZ < -1e-6 || hRel + maxHalfZ > Hh + 1e-6) problems.push(pre + T('Mit dieser Position ragt die Bohrung (' + (rect ? 'Höhe ' : 'Ø ') + (maxHalfZ * 2).toFixed(1) + ' mm) über die Bauteilstärke (' + Hh + ' mm) hinaus - sie bricht oben bzw. unten durch.', 'at this position the bore (' + (rect ? 'height ' : 'Ø ') + (maxHalfZ * 2).toFixed(1) + ' mm) exceeds the part thickness (' + Hh + ' mm) - it breaks through the top or bottom.'));
+      });
+      if (hbDet.skippedOutside) problems.push(T('Bohrungen: ' + hbDet.skippedOutside + ' Symbol(e) liegen mit dem Ende außerhalb der Bauteilkontur und werden ignoriert.', 'Bores: ' + hbDet.skippedOutside + ' symbol(s) end outside the part contour and are ignored.'));
+      if (hbDet.skippedInside) problems.push(T('Bohrungen: ' + hbDet.skippedInside + ' Symbol(e) beginnen nicht an der Bauteilkante und werden ignoriert.', 'Bores: ' + hbDet.skippedInside + ' symbol(s) do not start at the edge of the part and are ignored.'));
+      if (bores.length) mesh.bores = bores; else dxfHBoreHidden = null;
+    }
     dxfMortiseMesh = mesh;
     dxfMortiseUsedLayers = used;
+    mesh.info.boreCount = mesh.bores ? mesh.bores.length : 0;
     window.__lastMortiseInfo = mesh.info;
   }
   function loadDxfText(text, filename) {
@@ -14935,11 +15563,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeInfo = computeLayerSchmiegeInfo();
     // Release 249: Bauteilart startet pro Import immer als "Stufe" (Altverhalten), Einstemmungen aus.
-    dxfPartType = 'tread';
+    dxfPartType = 'undefined'; // Release 253: Standard "- undefiniert -"
     dxfMortiseInfo = computeMortiseInfo();
     dxfMortiseLayer = defaultMortiseLayer();
     dxfMortiseDepth = 15; dxfMortiseDepthTread = 15; dxfMortiseDepthRiser = 15;
     dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = [];
+    dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
+    dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
+    dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
     // dxfVisible/dxfOffset/dxfMirror* oben - eine für die vorherige Datei ausgeblendete Layer-Auswahl
     // soll sich nicht auf eine neu geladene Datei übertragen (dieselbe Begründung wie bei
@@ -14985,7 +15616,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfSchmiegeHintenLayerName = null;
     dxfSchmiegeRings = null;
     dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Map(); dxfLayerSchmiegeProblems = []; dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
-    dxfPartType = 'tread'; dxfMortiseInfo = null; dxfMortiseLayer = null; dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
+    dxfPartType = 'undefined'; dxfMortiseInfo = null; dxfMortiseLayer = null; dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
+    dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
+    dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
+    dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -17978,21 +18612,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const fwd = cam.orient.fwd;
     const z1 = new Float32Array(W * H).fill(Infinity), z2 = new Float32Array(W * H).fill(Infinity);
     const c1 = new Uint32Array(W * H), c2 = new Uint32Array(W * H);
+    // Release 251: horizontale Bohrungen (mesh.bores) werden pro Pixel aus dem Körper "ausgeschnitten" (siehe
+    // unten); dafür braucht es zusätzlich die hinterste Rückseite je Pixel (zb).
+    const bores = (mesh.bores && mesh.bores.length) ? mesh.bores : null;
+    const zb = bores ? new Float32Array(W * H).fill(-Infinity) : null;
     // Eckpunkt (DXF-Rohkoordinate + relatives z) -> {x,y (Geräte-Pixel), d (Tiefe)}
     const cache = new Map();
+    // Release 252 (Sebastian: Bohrungen "beim Drehen der Zeichnung" teils unsichtbar bzw. nur halb): project()
+    // verwirft Punkte hinter der Kameraebene (cz <= 0.01) - bei nahem Zoom, Verschieben und flachem Blick entlang des
+    // Bauteils fielen dadurch ganze (große) Dreiecke weg, u. a. die Rückseiten, die das Ausschneiden der Bohrungen
+    // braucht. Die Projektion ist orthografisch, also hier ohne Verwerfen gerechnet; geclippt wird pro Pixel (NEAR).
+    const NEAR = 0.01;
+    const vw = canvas.clientWidth || 1, vh = canvas.clientHeight || 1;
+    const camPosU = cameraPosition(), basisU = buildBasis(camPosU);
+    const scaleU = (vh / 2) * (1 / Math.tan((45 * Math.PI / 180) / 2)) / cam.dist;
+    function projU(p) {
+      const rel = sub(p, camPosU);
+      return { x: vw / 2 + dot(rel, basisU.right) * scaleU, y: vh / 2 - dot(rel, basisU.up) * scaleU, depth: dot(rel, basisU.fwd) };
+    }
     function vert(x, y, zRel) {
       const key = x + '|' + y + '|' + zRel;
       let v = cache.get(key);
       if (v !== undefined) return v;
       const t = dxfTransformPoint({ x, y, z: baseZ });
-      const pp = proj(toRender({ x: t.x, y: t.y, z: t.z + zRel }));
-      v = pp ? { x: m.a * pp.x + m.e, y: m.d * pp.y + m.f, d: pp.depth } : null;
+      const pp = projU(toRender({ x: t.x, y: t.y, z: t.z + zRel }));
+      v = { x: m.a * pp.x + m.e, y: m.d * pp.y + m.f, d: pp.depth };
       cache.set(key, v);
       return v;
     }
     function pack(r, g, b) { return (r | (g << 8) | (b << 16) | (255 << 24)) >>> 0; }
     let triDrawn = 0, triCulled = 0;
-    function tri(a, b, c, col) {
+    function tri(a, b, c, col, back) {
       const area = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
       if (Math.abs(area) < 1e-6) return;
       const gx = ((b.d - a.d) * (c.y - a.y) - (c.d - a.d) * (b.y - a.y)) / area;
@@ -18016,7 +18666,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const xs = Math.max(0, Math.ceil(xl - 0.5)), xe = Math.min(W - 1, Math.ceil(xr - 0.5) - 1);
         let d = a.d + gx * (xs + 0.5 - a.x) + gy * (py - a.y);
         let i = y * W + xs;
+        if (back) {
+          for (let x = xs; x <= xe; x++, i++, d += gx) { if (d > zb[i]) zb[i] = d; }
+          continue;
+        }
         for (let x = xs; x <= xe; x++, i++, d += gx) {
+          if (d <= NEAR) continue;
           if (d < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = d; c1[i] = col; }
           else if (d < z2[i]) { z2[i] = d; c2[i] = col; }
         }
@@ -18030,7 +18685,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Dreiecke (Kappen/Böden): Normale (0,0,nz) in Arbeitskoordinaten
     for (const t of mesh.tris) {
       const facing = t.nz * fwd.y;
-      if (facing > -EPSF) { triCulled++; continue; }
+      if (facing > -EPSF) {
+        triCulled++;
+        if (zb && facing > EPSF) { const a = vert(t.v[0][0], t.v[0][1], t.z), b = vert(t.v[1][0], t.v[1][1], t.z), c = vert(t.v[2][0], t.v[2][1], t.z); if (a && b && c) tri(a, b, c, 0, true); }
+        continue;
+      }
       const a = vert(t.v[0][0], t.v[0][1], t.z), b = vert(t.v[1][0], t.v[1][1], t.z), c = vert(t.v[2][0], t.v[2][1], t.z);
       if (!a || !b || !c) continue;
       tri(a, b, c, shade(facing, t.kind === 'floor' ? 0.82 : 1));
@@ -18041,14 +18700,170 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const t1 = dxfTransformPoint({ x: w.a[0] + w.n[0], y: w.a[1] + w.n[1], z: 0 });
       let nx = t1.x - t0.x, ny = t1.y - t0.y;
       const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-      const facing = nx * fwd.x + ny * fwd.z;
-      if (facing > -EPSF) { triCulled++; continue; }
-      const p00 = vert(w.a[0], w.a[1], w.z0), p01 = vert(w.a[0], w.a[1], w.z1);
-      const p10 = vert(w.b[0], w.b[1], w.z0), p11 = vert(w.b[0], w.b[1], w.z1);
+      let nzv = 0;
+      const aTop = w.at || w.a, bTop = w.bt || w.b;
+      if (w.at) {
+        // schräge Wand (Schmiege): Normale aus den transformierten Eckpunkten, ausgerichtet nach außen
+        const q00 = dxfTransformPoint({ x: w.a[0], y: w.a[1], z: 0 }), q10 = dxfTransformPoint({ x: w.b[0], y: w.b[1], z: 0 }), q01 = dxfTransformPoint({ x: aTop[0], y: aTop[1], z: 0 });
+        const ux = q10.x - q00.x, uy = q10.y - q00.y, uz = 0, vx = q01.x - q00.x, vy = q01.y - q00.y, vz = w.z1 - w.z0;
+        let cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+        const cl = Math.hypot(cx, cy, cz) || 1; cx /= cl; cy /= cl; cz /= cl;
+        if (cx * nx + cy * ny < 0) { cx = -cx; cy = -cy; cz = -cz; }
+        nx = cx; ny = cy; nzv = cz;
+      }
+      const facing = nx * fwd.x + ny * fwd.z + nzv * fwd.y;
+      const p00 = vert(w.a[0], w.a[1], w.z0), p01 = vert(aTop[0], aTop[1], w.z1);
+      const p10 = vert(w.b[0], w.b[1], w.z0), p11 = vert(bTop[0], bTop[1], w.z1);
+      if (facing > -EPSF) {
+        triCulled++;
+        if (zb && facing > EPSF && p00 && p01 && p10 && p11) { tri(p00, p10, p11, 0, true); tri(p00, p11, p01, 0, true); }
+        continue;
+      }
       if (!p00 || !p01 || !p10 || !p11) continue;
       const col = shade(facing, w.kind === 'pocket' ? 0.92 : 1);
       tri(p00, p10, p11, col);
       tri(p00, p11, p01, col);
+    }
+    // Release 251 (horizontale Bohrungen, "T"): jede Bohrung ist ein waagerechter Zylinder mit flachem Ende. Pro Pixel
+    // wird der Sehstrahl mit dem Zylinder geschnitten (Intervall t0..t1 in Tiefeneinheiten): liegt die vorderste Fläche
+    // des Körpers im Zylinder, wird sie entfernt; als neue sichtbare Fläche erscheint dort die Austrittsfläche des
+    // Strahls aus dem Zylinder (Zylinderwand bzw. flaches Ende), sofern dahinter noch Material liegt (t1 vor der
+    // hintersten Rückseite zb). Bei Transparenz < 100 % kommt die Austrittsfläche auch dann als zweite Schicht hinzu,
+    // wenn der Zylinder ganz im Inneren liegt (Röntgenblick).
+    const carveMask = bores ? new Uint8Array(W * H) : null, cylMask = bores ? new Uint8Array(W * H) : null, faceMask = bores ? new Uint8Array(W * H) : null;
+    let boreCarved = 0, boreCyl = 0, boreSkipped = 0;
+    const seeThroughB = alpha < 0.999;
+    if (bores) {
+      const S = (x, y, z) => { const pp = projU(toRender({ x, y, z })); return [m.a * pp.x + m.e, m.d * pp.y + m.f, pp.depth]; };
+      for (const b of bores) {
+        const te = dxfTransformPoint({ x: b.entry[0], y: b.entry[1], z: baseZ });
+        const tn = dxfTransformPoint({ x: b.end[0], y: b.end[1], z: baseZ });
+        const tt = dxfTransformPoint({ x: b.tail[0], y: b.tail[1], z: baseZ });
+        const zA = te.z + b.zc;
+        let ux = tn.x - te.x, uy = tn.y - te.y;
+        const Lc = Math.hypot(ux, uy);
+        if (Lc < 1e-6 || !(b.depth > 0)) { boreSkipped++; continue; }
+        ux /= Lc; uy /= Lc;
+        const vx = -uy, vy = ux;                                  // quer zur Bohrrichtung, waagerecht
+        const kS = Lc / b.depth;                                  // Maßstab der DXF-Transformation (Skalierung)
+        const rect = b.shape === 'rect';
+        const R = b.dia * kS / 2;
+        const ha = rect ? b.rw * kS / 2 : R, hb = rect ? b.rh / 2 : R;   // halbe Länge (quer) / halbe Höhe (z, unskaliert wie die Stärke)
+        const big = Math.max(ha, hb);
+        const tailD = Math.hypot(tt.x - te.x, tt.y - te.y);
+        const ext = b.ext === 'cut' ? Math.max(tailD, 1.5 * big) : (b.ext === 'edge' ? 3 * big : 0);
+        // affine Abbildung um den Einstiegspunkt: Arbeitskoordinate -> (Pixel x, Pixel y, Tiefe)
+        const o = S(te.x, te.y, zA), ex = S(te.x + 100, te.y, zA), ey = S(te.x, te.y + 100, zA), ez = S(te.x, te.y, zA + 100);
+        const A = [[(ex[0] - o[0]) / 100, (ey[0] - o[0]) / 100, (ez[0] - o[0]) / 100], [(ex[1] - o[1]) / 100, (ey[1] - o[1]) / 100, (ez[1] - o[1]) / 100], [(ex[2] - o[2]) / 100, (ey[2] - o[2]) / 100, (ez[2] - o[2]) / 100]];
+        const det = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+        if (!(Math.abs(det) > 1e-12)) { boreSkipped++; continue; }
+        const Ai = [
+          [(A[1][1] * A[2][2] - A[1][2] * A[2][1]) / det, (A[0][2] * A[2][1] - A[0][1] * A[2][2]) / det, (A[0][1] * A[1][2] - A[0][2] * A[1][1]) / det],
+          [(A[1][2] * A[2][0] - A[1][0] * A[2][2]) / det, (A[0][0] * A[2][2] - A[0][2] * A[2][0]) / det, (A[0][2] * A[1][0] - A[0][0] * A[1][2]) / det],
+          [(A[1][0] * A[2][1] - A[1][1] * A[2][0]) / det, (A[0][1] * A[2][0] - A[0][0] * A[2][1]) / det, (A[0][0] * A[1][1] - A[0][1] * A[1][0]) / det]
+        ];
+        const rx = Ai[0][2], ry = Ai[1][2], rz = Ai[2][2];        // Sehrichtung in Arbeitskoordinaten (je Tiefeneinheit)
+        const rl = Math.hypot(rx, ry, rz) || 1;
+        // Bildschirm-Rechteck der Bohrung
+        let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+        for (const sv of [-ext, Lc]) for (const kp of [-1, 1]) for (const kz of [-1, 1]) {
+          const q = S(te.x + ux * sv + vx * ha * kp, te.y + uy * sv + vy * ha * kp, zA + hb * kz);
+          if (q[0] < mnx) mnx = q[0]; if (q[0] > mxx) mxx = q[0]; if (q[1] < mny) mny = q[1]; if (q[1] > mxy) mxy = q[1];
+        }
+        const x0 = Math.max(0, Math.floor(mnx) - 2), x1 = Math.min(W - 1, Math.ceil(mxx) + 2), y0 = Math.max(0, Math.floor(mny) - 2), y1 = Math.min(H - 1, Math.ceil(mxy) + 2);
+        if (x0 > x1 || y0 > y1) continue;
+        const ru = rx * ux + ry * uy, rv = rx * vx + ry * vy;
+        const rpx = rx - ru * ux, rpy = ry - ru * uy, rpz = rz;
+        const aa = rpx * rpx + rpy * rpy + rpz * rpz;
+        for (let y = y0; y <= y1; y++) {
+          const sy = y + 0.5;
+          for (let x = x0; x <= x1; x++) {
+            const i = y * W + x;
+            const f1 = z1[i];
+            if (f1 === Infinity || zb[i] === -Infinity) continue;
+            const sx = x + 0.5;
+            const dxp = sx - o[0], dyp = sy - o[1], dzp = -o[2];
+            const qx = Ai[0][0] * dxp + Ai[0][1] * dyp + Ai[0][2] * dzp;     // Strahlpunkt bei Tiefe 0, relativ zum Einstieg
+            const qy = Ai[1][0] * dxp + Ai[1][1] * dyp + Ai[1][2] * dzp;
+            const qz = Ai[2][0] * dxp + Ai[2][1] * dyp + Ai[2][2] * dzp;
+            const qu = qx * ux + qy * uy;
+            // Querschnitt: Kreis (rund) bzw. zwei Schichten v/z (eckig); Austritt = kleinste obere Grenze
+            let lo = -Infinity, hi = Infinity, exitK = 0, entryK = 0;
+            if (!rect) {
+              const qpx = qx - qu * ux, qpy = qy - qu * uy, qpz = qz;
+              const cc = qpx * qpx + qpy * qpy + qpz * qpz - R * R;
+              if (aa > 1e-12) {
+                const bq = qpx * rpx + qpy * rpy + qpz * rpz;
+                const disc = bq * bq - aa * cc;
+                if (disc <= 0) continue;
+                const sq = Math.sqrt(disc);
+                lo = (-bq - sq) / aa; hi = (-bq + sq) / aa; exitK = 1; entryK = 1;
+              } else if (cc > 0) continue;
+            } else {
+              const qv = qx * vx + qy * vy;
+              if (Math.abs(rv) > 1e-12) { let p0 = (-ha - qv) / rv, p1 = (ha - qv) / rv; if (p0 > p1) { const t = p0; p0 = p1; p1 = t; } if (p0 > lo) { lo = p0; entryK = rv > 0 ? 5 : 4; } if (p1 < hi) { hi = p1; exitK = rv > 0 ? 4 : 5; } }
+              else if (qv < -ha || qv > ha) continue;
+              if (Math.abs(rz) > 1e-12) { let p0 = (-hb - qz) / rz, p1 = (hb - qz) / rz; if (p0 > p1) { const t = p0; p0 = p1; p1 = t; } if (p0 > lo) { lo = p0; entryK = rz > 0 ? 7 : 6; } if (p1 < hi) { hi = p1; exitK = rz > 0 ? 6 : 7; } }
+              else if (qz < -hb || qz > hb) continue;
+            }
+            let capEnd = true;
+            if (Math.abs(ru) > 1e-9) {
+              const da = (-ext - qu) / ru, db = (Lc - qu) / ru;
+              const p0 = Math.min(da, db), p1 = Math.max(da, db);
+              if (p0 > lo) { lo = p0; entryK = 2; }
+              if (p1 < hi) { hi = p1; exitK = 2; capEnd = ru > 0; }      // capEnd: Austritt über das flache Ende
+            } else if (qu < -ext || qu > Lc) continue;
+            const t0 = lo, t1 = hi;
+            if (!(t1 > t0) || t1 <= NEAR) continue;
+            // vorderste Flächen im Ausschnitt entfernen
+            let carved = false;
+            const f2 = z2[i];
+            if (f1 > t0 && f1 < t1) {
+              if (f2 > t0 && f2 < t1) { z1[i] = Infinity; z2[i] = Infinity; c1[i] = 0; c2[i] = 0; }
+              else { z1[i] = f2; c1[i] = c2[i]; z2[i] = Infinity; c2[i] = 0; }
+              carved = true;
+            } else if (f2 > t0 && f2 < t1) { z2[i] = Infinity; c2[i] = 0; }
+            // dahinter Material? dann ist die Austrittsfläche sichtbar
+            const hasMat = f1 <= t1 + 1e-4 && t1 <= zb[i] + 1e-4 && (exitK !== 2 || capEnd);
+            if (hasMat) {
+              let nx, ny, nz, k = 0.62;
+              if (exitK === 1) {
+                const pxv = qx + t1 * rx, pyv = qy + t1 * ry, pzv = qz + t1 * rz;
+                const pu = pxv * ux + pyv * uy;
+                nx = -(pxv - pu * ux); ny = -(pyv - pu * uy); nz = -pzv;
+                const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+              } else if (exitK === 2) { nx = -ux; ny = -uy; nz = 0; k = 0.5; }
+              else if (exitK === 4 || exitK === 5) { const sg = exitK === 4 ? -1 : 1; nx = vx * sg; ny = vy * sg; nz = 0; }
+              else { nx = 0; ny = 0; nz = exitK === 6 ? -1 : 1; }
+              const facing = (nx * rx + ny * ry + nz * rz) / rl;
+              const col = shade(Math.min(facing, -0.05), k);
+              if (t1 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t1; c1[i] = col; }
+              else if (t1 < z2[i]) { z2[i] = t1; c2[i] = col; }
+              cylMask[i] = 1; faceMask[i] = exitK; boreCyl++;
+              if (carved) { carveMask[i] = 1; boreCarved++; }
+            } else if (carved) { carveMask[i] = 1; faceMask[i] = 3; boreCarved++; }
+            // Release 253 (Röntgenblick): tritt der Strahl hinter der Bohrung schon wieder aus dem Körper aus (Austritt
+            // außerhalb des Materials, z. B. nahe der Öffnung auf der abgewandten Seite), zeigt die Transparenz die
+            // vordere Bohrungswand (Eintritt t0), damit die Bohrung als ganzer Zylinder bzw. Quader sichtbar bleibt.
+            if (!hasMat && seeThroughB && t0 > NEAR && f1 <= t0 + 1e-4 && t0 <= zb[i] + 1e-4 && entryK !== 0) {
+              let nx, ny, nz, k = 0.62;
+              if (entryK === 1) {
+                const pxv = qx + t0 * rx, pyv = qy + t0 * ry, pzv = qz + t0 * rz;
+                const pu = pxv * ux + pyv * uy;
+                nx = pxv - pu * ux; ny = pyv - pu * uy; nz = pzv;
+                const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+              } else if (entryK === 2) { nx = ux; ny = uy; nz = 0; k = 0.5; }
+              else if (entryK === 4 || entryK === 5) { const sg = entryK === 4 ? 1 : -1; nx = vx * sg; ny = vy * sg; nz = 0; }
+              else { nx = 0; ny = 0; nz = entryK === 6 ? 1 : -1; }
+              const facing = -Math.abs((nx * rx + ny * ry + nz * rz) / rl);
+              const col = shade(Math.min(facing, -0.05), k);
+              if (t0 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t0; c1[i] = col; }
+              else if (t0 < z2[i]) { z2[i] = t0; c2[i] = col; }
+              cylMask[i] = 1; faceMask[i] = entryK; boreCyl++;
+            }
+          }
+        }
+      }
     }
     // Zusammensetzen: vorderste Fläche mit Deckkraft alpha, darunter ggf. die zweite
     const img = ctx.createImageData(W, H);
@@ -18077,7 +18892,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (drawRings) {
       for (const ring of mesh.rings) {
         const n = ring.pts.length;
-        for (let k = 0; k < n; k++) {
+        for (let k = 0; k < (ring.open ? n - 1 : n); k++) {
           const pa = ring.pts[k], pb = ring.pts[(k + 1) % n];
           const a = vert(pa[0], pa[1], ring.z), b = vert(pb[0], pb[1], ring.z);
           if (!a || !b) continue;
@@ -18085,6 +18900,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           for (let s = 0; s <= steps; s++) {
             const u = s / steps;
             const x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u, d = a.d + (b.d - a.d) * u;
+            if (d <= NEAR) continue;
             const x0 = Math.round(x) - half, y0 = Math.round(y) - half;
             for (let yy = y0; yy < y0 + lw; yy++) {
               if (yy < 0 || yy >= H) continue;
@@ -18098,6 +18914,32 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
       }
     }
+    // Release 251: Umrisse der Bohrungen - bei undurchsichtigem Körper der Rand der ausgeschnittenen Öffnung, bei
+    // Transparenz der Rand der gesamten Bohrung (Röntgenblick); zusätzlich der Rand zwischen Zylinderwand und flachem Ende.
+    let boreLinePixels = 0;
+    if (bores && (boreCyl || boreCarved) && !dxfHiddenLayers.has(dxfKonturLayerName)) {
+      const mk = seeThrough ? cylMask : carveMask;
+      const edge = [];
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          if (!mk[i]) continue;
+          const fm = faceMask[i];
+          let isEdge = x === 0 || y === 0 || x === W - 1 || y === H - 1 || !mk[i - 1] || !mk[i + 1] || !mk[i - W] || !mk[i + W];
+          if (!isEdge && fm !== faceMask[i + 1] && faceMask[i + 1] !== 3 && fm !== 3) isEdge = true;
+          if (!isEdge && fm !== faceMask[i + W] && faceMask[i + W] !== 3 && fm !== 3) isEdge = true;
+          if (isEdge) edge.push(i);
+        }
+      }
+      for (const i of edge) {
+        const x = i % W, y = (i - x) / W;
+        const xa = x - half, ya = y - half;
+        for (let yy = ya; yy < ya + lw; yy++) {
+          if (yy < 0 || yy >= H) continue;
+          for (let xx = xa; xx < xa + lw; xx++) { if (xx < 0 || xx >= W) continue; out[yy * W + xx] = lineCol; boreLinePixels++; }
+        }
+      }
+    }
     if (!mortiseOffCanvas) mortiseOffCanvas = document.createElement('canvas');
     if (mortiseOffCanvas.width !== W || mortiseOffCanvas.height !== H) { mortiseOffCanvas.width = W; mortiseOffCanvas.height = H; }
     mortiseOffCanvas.getContext('2d').putImageData(img, 0, 0);
@@ -18107,7 +18949,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.setLineDash([]);
     ctx.drawImage(mortiseOffCanvas, 0, 0);
     ctx.restore();
-    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc };
+    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped };
   }
 
   function drawDxf(proj) {
@@ -18166,7 +19008,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const transformedStrokes = dxfGeometry.strokes.filter(s => !dxfHiddenLayers.has(s.layer)).map(s => ({
       pts: s.points.map(dxfTransformPoint),
       color: (showLayerColors && s.color) ? `rgb(${s.color.r}, ${s.color.g}, ${s.color.b})` : defaultColor,
-      layer: s.layer
+      layer: s.layer,
+      src: s
     }));
     // Performance (79. Runde, s. strokeGroupedByColor() oben): statt eines eigenen
     // beginPath()/stroke()-Paars PRO STRICHZUG jetzt gebündelt nach Farbe - bei sehr vielen
@@ -18209,16 +19052,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Release 249: bei aktivem Einstemmungs-Netz ("Wange, gestemmt") übernimmt das Netz samt seinen
     // tiefengeprüften Umrisslinien die Darstellung der Kontur UND der Einstemmungs-Layer - beide
     // verschwinden deshalb aus den (nicht tiefengeprüften) Drahtgitter-Kopien.
-    const meshActive = fillActive && dxfPartType === 'stringer' && !!dxfMortiseMesh;
+    const meshActive = fillActive && !!dxfMortiseMesh; // Release 250: auch Stufe/Setzstufe mit Taschen
     const mortiseLayerSet = meshActive ? new Set(dxfMortiseUsedLayers) : null;
-    const bottomWireframeStrokes = (schmiegeActive || meshActive) ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer))) : transformedStrokes;
+    // Release 251: die T-Linien, aus denen horizontale Bohrungen entstanden sind, werden durch die Bohrungen ersetzt
+    const boreHide = (meshActive && dxfMortiseMesh.bores && dxfHBoreHidden) ? dxfHBoreHidden : null;
+    const circHide = (meshActive && dxfVPocketHidden) ? dxfVPocketHidden : null;   // Release 253: Kreise -> vertikale Taschen
+    const keepStroke = s => !(boreHide && boreHide.has(s.src)) && !(circHide && circHide.has(s.src));
+    const bottomWireframeStrokes = (schmiegeActive || meshActive) ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer)) && keepStroke(s)) : transformedStrokes;
     // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfBottomWireframeIncludesKontur in
     // den instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
     // window.__lastDxfKonturFillInfo/__lastFillRevolutionBodyFaceCount: hält unmittelbar fest, ob
     // der Kontur-Layer gerade Teil der flachen z=0-Drahtgitter-Kopie ist (Release 225, s.o.).
     window.__lastDxfBottomWireframeIncludesKontur = bottomWireframeStrokes.some(s => s.layer === dxfKonturLayerName);
     strokeGroupedByColor(bottomWireframeStrokes, proj, 0);
-    const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer))) : transformedStrokes;
+    const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer)) && keepStroke(s)) : transformedStrokes;
     // Bauteilstärke (67. Runde, Sebastian: "DXF Funktion um Bauteilstärke anzugeben") - Annahme
     // (siehe Dokumentation 9.8a): die DXF-Unterlage stellt die Aufstandsfläche/Oberseite des
     // Werkstücks dar (liegt "unter der gefrästen Kontur", siehe Abschnitt 9.8) - eine angegebene
@@ -25770,7 +26617,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const ok = r.groups.filter(g => g.chord);
     const bad = r.groups.length - ok.length;
     if (!ok.length) {
-      const why = (r.groups.find(g => g.reason) || {}).reason || '';
+      const gr = r.groups.find(g => g.reason) || {};
+      const why = gr.reason ? T(gr.reason, gr.reasonEn || gr.reason) : '';   // Release 253: Grund auch auf Englisch
       return T('keine berechenbare Linie', 'no computable line') + (why ? ' (' + why + ')' : '');
     }
     const nTop = ok.filter(g => g.type === 'oben').length, nBot = ok.length - nTop;
@@ -25844,6 +26692,110 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const dxfMortiseDepthLabel = el('dxfMortiseDepthLabel');
   const dxfMortiseDepth2Label = el('dxfMortiseDepth2Label');
   const dxfMortiseHint = el('dxfMortiseHint');
+  // Release 250: Taschen (Stufe/Setzstufe) - Checkbox, alle Layer zur Auswahl, je Layer eine Tiefe.
+  const dxfPocketRow = el('dxfPocketRow');
+  const dxfPocketCheckbox = el('dxfPocketCheckbox');
+  const dxfPocketLayerList = el('dxfPocketLayerList');
+  const dxfPocketHint = el('dxfPocketHint');
+  const DXF_POCKET_DEPTH_PREFILL = 10;
+  function describePocketLayer(name) {
+    const r = getPocketLoops(name);
+    if (!r.strokeCount) return T('keine Linien', 'no lines');
+    if (r.tooMany) return T('zu viele Linien', 'too many lines');
+    if (!r.loops.length) return T('keine geschlossene Kontur', 'no closed contour');
+    let t = r.loops.length + ' ' + T(r.loops.length > 1 ? 'geschlossene Konturen' : 'geschlossene Kontur', r.loops.length > 1 ? 'closed contours' : 'closed contour');
+    if (r.bridged) t += ' (' + T('gestrichelt ergänzt', 'dashed lines completed') + ')';
+    if (r.open) t += ', ' + r.open + ' ' + T(r.open > 1 ? 'offene Linienzüge ignoriert' : 'offener Linienzug ignoriert', r.open > 1 ? 'open polylines ignored' : 'open polyline ignored');
+    return t;
+  }
+  function refreshDxfPocketUI() {
+    const names = listPocketLayers();
+    dxfPocketCheckbox.disabled = !names.length;
+    dxfPocketCheckbox.checked = !!(names.length && dxfPocketEnabled);
+    dxfPocketLayerList.innerHTML = '';
+    names.forEach(name => {
+      const lab = document.createElement('label');
+      lab.className = 'scale-option';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.dataset.layer = name; cb.checked = dxfPockets.has(name);
+      const sp = document.createElement('span');
+      sp.textContent = ' ' + name + ' – ' + describePocketLayer(name) + ' ';
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'filename-input dxf-pocket-depth'; inp.dataset.layer = name;
+      inp.setAttribute('inputmode', 'decimal'); inp.spellcheck = false; inp.style.width = '70px';
+      inp.title = T('Tiefe der Tasche in mm, von der Bauteiloberkante aus (0 = nur Umriss)', 'Depth of the pocket in mm, from the top of the part (0 = outline only)');
+      inp.value = String(dxfPockets.has(name) ? dxfPockets.get(name) : DXF_POCKET_DEPTH_PREFILL);
+      const unit = document.createElement('span'); unit.textContent = ' mm';
+      const grp = document.createElement('span'); grp.className = 'dxf-pocket-depth-group'; grp.dataset.layer = name;
+      grp.appendChild(document.createTextNode(T('Tiefe', 'Depth') + ' ')); grp.appendChild(inp); grp.appendChild(unit);
+      grp.hidden = !cb.checked;
+      cb.addEventListener('change', () => { grp.hidden = !cb.checked; updateDxfPocketHint(); });
+      lab.appendChild(cb); lab.appendChild(sp); lab.appendChild(grp);
+      dxfPocketLayerList.appendChild(lab);
+    });
+    updateDxfPocketHint();
+  }
+  function updateDxfPocketHint() {
+    const names = listPocketLayers();
+    dxfPocketLayerList.hidden = !(dxfPocketCheckbox.checked && names.length);
+    if (!names.length) dxfPocketHint.textContent = T('Nur wählbar, wenn die DXF weitere Layer enthält.', 'Only available if the DXF contains further layers.');
+    else if (!dxfPocketCheckbox.checked) dxfPocketHint.textContent = T('Aus: keine Taschen.', 'Off: no pockets.');
+    else if (!dxfPocketLayerList.querySelector('input[type=checkbox]:checked')) dxfPocketHint.textContent = T('Bitte die Layer wählen, die Taschen enthalten, und je Layer die Tiefe angeben.', 'Please select the layers that contain pockets and enter the depth for each.');
+    else dxfPocketHint.textContent = T('Die Tiefe wird von der Bauteiloberkante aus gemessen; eine Tiefe von 0 zeigt nur den Umriss in der Outline-Farbe. Taschen können rund, eckig oder vieleckig sein, die Linien durchgehend oder gestrichelt. Was über die Bauteilkontur hinausragt, wird abgeschnitten. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'The depth is measured from the top of the part; a depth of 0 shows only the outline in the outline colour. Pockets can be round, rectangular or polygonal, with solid or dashed lines. Anything extending beyond the part contour is cut off. Shown in the filled view (transparency below 100%).');
+  }
+  dxfPocketCheckbox.addEventListener('change', updateDxfPocketHint);
+  // Release 251/252/253: horizontale Bearbeitungen - je Symbolart (T, U) Checkbox "Bohrungen aus ..." (nur aktivierbar, wenn
+  // Symbole gefunden wurden), Form rund/eckig, Position in Z, bei eckig Länge und Höhe.
+  const HB_UI = {};
+  [['T', 'dxfHBore'], ['U', 'dxfUBore']].forEach(([k, P]) => {
+    HB_UI[k] = { cb: el(P + 'Checkbox'), body: el(P + 'Body'), shape: el(P + 'ShapeSelect'), height: el(P + 'HeightInput'), rectFields: el(P + 'RectFields'), rectLenInfo: el(P + 'RectLenInfo'), rectHeight: el(P + 'RectHeightInput'), hint: el(P + 'Hint') };
+  });
+  const dxfHBoreCheckbox = HB_UI.T.cb, dxfHBoreHint = HB_UI.T.hint;
+  const hbList = (det, k) => (k === 'T' ? det.ts : det.us);
+  function describeHBoreDetection(k) {
+    const det = getHBoreDetection();
+    const list = hbList(det, k);
+    if (!list.length) return T('Keine ' + k + '-Symbole gefunden.', 'No ' + k + ' symbols found.');
+    const layers = Array.from(new Set(list.map(t => t.layer)));
+    const ws = list.map(t => t.width), deps = list.map(t => t.depth);
+    const rng = a => { const lo = Math.min(...a), hi = Math.max(...a); return Math.abs(hi - lo) < 0.05 ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1); };
+    return list.length + ' ' + k + ' ' + T('gefunden', list.length > 1 ? 'symbols found' : 'symbol found') + ' (' + T('Layer', 'layer') + ' ' + layers.join(', ') + '): ' + (k === 'T' ? 'Ø ' : T('Breite ', 'width ')) + rng(ws) + ' mm, ' + T('Tiefe', 'depth') + ' ' + rng(deps) + ' mm';
+  }
+  const fmtOpt = v => (v == null ? '' : String(v));
+  function refreshDxfHBoreUI() {
+    const det = getHBoreDetection();
+    ['T', 'U'].forEach(k => {
+      const ui = HB_UI[k], cfg = dxfHBoreCfg[k], n = hbList(det, k).length;
+      ui.cb.disabled = !n;
+      ui.cb.checked = !!(n && cfg.enabled);
+      ui.shape.value = cfg.shape === 'rect' ? 'rect' : 'round';
+      ui.height.value = fmtOpt(cfg.height);
+      ui.rectHeight.value = fmtOpt(cfg.rectHeight);
+    });
+    updateDxfHBoreHint();
+  }
+  function updateDxfHBoreHint() {
+    const det = getHBoreDetection();
+    ['T', 'U'].forEach(k => {
+      const ui = HB_UI[k], n = hbList(det, k).length;
+      ui.body.hidden = !(ui.cb.checked && n);
+      ui.rectFields.hidden = ui.shape.value !== 'rect';
+      // Release 253 (Sebastian: "Bei der Auswahl Eckig wird die vorhandene Ausdehnung Länge genommen"): Länge nur Anzeige
+      if (n) {
+        const ws = hbList(det, k).map(t => t.width), lo = Math.min(...ws), hi = Math.max(...ws);
+        ui.rectLenInfo.textContent = T('Länge (aus der Zeichnung): ', 'Length (from the drawing): ') + (Math.abs(hi - lo) < 0.05 ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1)) + ' mm';
+      } else ui.rectLenInfo.textContent = '';
+      if (!n) ui.hint.textContent = k === 'T'
+        ? T('Keine T-Symbole gefunden. Ein T besteht aus einem Stab und einem Querbalken, der den Stab am Ende mittig quer berührt (in jedem Layer außer dem Kontur-Layer).', 'No T symbols found. A T is a stem plus a crossbar that meets the end of the stem at its centre, at right angles (on any layer except the contour layer).')
+        : T('Keine U-Symbole gefunden. Ein U besteht aus zwei gleich langen, parallelen Schenkeln und einer Grundlinie quer dazu; die offene Seite liegt an der Bauteilkante.', 'No U symbols found. A U consists of two parallel legs of equal length and a base line across them; the open side lies at the edge of the part.');
+      else if (!ui.cb.checked) ui.hint.textContent = describeHBoreDetection(k) + '. ' + T('Aus: keine Bohrungen aus ' + k + '.', 'Off: no bores from ' + k + '.');
+      else ui.hint.textContent = describeHBoreDetection(k) + '. ' + (k === 'T'
+        ? T('Der Stab ist die Bohrung: sie beginnt an der Bauteilkante und endet flach am Ende des Stabs (Bohrungstiefe). Rund: Durchmesser = Querbalken. ', 'The stem is the bore: it starts at the edge of the part and ends flat at the end of the stem (bore depth). Round: diameter = crossbar. ')
+        : T('Die Mittellinie des U ist die Bohrung: sie beginnt an der Bauteilkante und endet flach an der Grundlinie (Bohrungstiefe). Rund: Durchmesser = Breite des U. ', 'The centre line of the U is the bore: it starts at the edge of the part and ends flat at the base line (bore depth). Round: diameter = width of the U. '))
+        + T('Eckig: Länge = ' + (k === 'T' ? 'Querbalken des T' : 'Grundlinie des U') + ' (quer zur Bohrrichtung), Höhe in der Stärke eingeben (leer = Länge). Position in Z = Mitte der Bohrung über der Unterseite, leer = mittig. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %), bei Transparenz auch im Inneren.', 'Rectangular: length = ' + (k === 'T' ? 'crossbar of the T' : 'base line of the U') + ' (across the bore), enter the height in the thickness (empty = length). Position in Z = centre of the bore above the underside, empty = centred. Shown in the filled view (transparency below 100%), and inside the part when transparent.');
+    });
+  }
+  ['T', 'U'].forEach(k => { HB_UI[k].cb.addEventListener('change', updateDxfHBoreHint); HB_UI[k].shape.addEventListener('change', updateDxfHBoreHint); });
   function describeMortiseCandidate(c) {
     if (!c.strokeCount) return T('keine Linien', 'no lines');
     const parts = [];
@@ -25863,20 +26815,20 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfMortiseLayerRow.hidden = isNamed;
     dxfMortiseLayerSelect.innerHTML = '';
     if (!isNamed) {
-      if (!info.candidates.length) {
-        const op = document.createElement('option');
-        op.value = ''; op.textContent = T('(kein weiterer Layer vorhanden)', '(no further layer available)');
-        dxfMortiseLayerSelect.appendChild(op);
-      }
+      // Release 253: "- keiner -" als erste Auswahl (z. B. Handlauf ohne Einstemmungen); ohne weitere Layer nur diese
+      const op0 = document.createElement('option');
+      op0.value = ''; op0.textContent = info.candidates.length ? T('- keiner -', '- none -') : T('- keiner (kein weiterer Layer vorhanden) -', '- none (no further layer available) -');
+      dxfMortiseLayerSelect.appendChild(op0);
       info.candidates.forEach(c => {
         const op = document.createElement('option');
         op.value = c.name;
         op.textContent = c.name + ' – ' + describeMortiseCandidate(c);
         dxfMortiseLayerSelect.appendChild(op);
       });
-      dxfMortiseLayerSelect.value = dxfMortiseLayer && info.candidates.some(c => c.name === dxfMortiseLayer) ? dxfMortiseLayer : (defaultMortiseLayer() || '');
+      dxfMortiseLayerSelect.value = dxfMortiseLayer === '' ? '' : (dxfMortiseLayer && info.candidates.some(c => c.name === dxfMortiseLayer) ? dxfMortiseLayer : (defaultMortiseLayer() || ''));
     }
-    const depthWord = T('Einstemmungstiefe', 'Depth of mortise');
+    const depthWord = T('Einstemmungstiefe', 'Depth of mortise');   // EN von Sebastian vorgegeben (Release 249)
+    dxfMortiseDepth2Label.textContent = depthWord + ' ' + T('Setzstufe', 'riser') + ' (mm)';   // Release 253: immer in der aktuellen Sprache
     if (isNamed && named.tread && named.riser) {
       dxfMortiseDepthLabel.textContent = depthWord + ' ' + T('Stufe', 'tread') + ' (mm)';
       dxfMortiseDepth2Label.textContent = depthWord + ' ' + T('Setzstufe', 'riser') + ' (mm)';
@@ -25894,15 +26846,57 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfMortiseDepth2Field.hidden = true;
     }
     dxfMortiseHint.textContent = isNamed
-      ? T('Die Layer "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '" werden als Einstemmungen erkannt. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise (Bohrungen) in diesen Layern werden ignoriert.',
-          'The layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '" are recognised as mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles (drill holes) in these layers are ignored.')
-      : T('Den Layer wählen, der die Einstemmungen enthält. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise (Bohrungen) im Layer werden ignoriert.',
-          'Select the layer that contains the mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles (drill holes) in the layer are ignored.');
+      ? T('Die Layer "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '" werden als Einstemmungen erkannt. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise werden hier ignoriert (siehe "Vertikale Taschen").',
+          'The layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '" are recognised as mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles are ignored here (see "Vertical pockets").')
+      : T('Den Layer wählen, der die Einstemmungen enthält (oder "- keiner -"). Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise werden hier ignoriert (siehe "Vertikale Taschen").',
+          'Select the layer that contains the mortises (or "- none -"). The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles are ignored here (see "Vertical pockets").');
+    updateDxfMortiseDepthVisibility();
   }
+  // Release 253: "Einstemmungstiefe" steht neben dem Layer und erscheint nur, wenn ein Layer gewählt ist
+  function updateDxfMortiseDepthVisibility() {
+    const info = dxfMortiseInfo || { names: { tread: null, riser: null } };
+    const isNamed = !!(info.names.tread || info.names.riser);
+    el('dxfMortiseDepthField').hidden = !isNamed && !dxfMortiseLayerSelect.value;
+  }
+  dxfMortiseLayerSelect.addEventListener('change', updateDxfMortiseDepthVisibility);
+  // Release 253: vertikale Taschen aus Kreisen
+  const dxfVPocketCheckbox = el('dxfVPocketCheckbox'), dxfVPocketBody = el('dxfVPocketBody'), dxfVPocketDepthInput = el('dxfVPocketDepthInput'), dxfVPocketHint = el('dxfVPocketHint');
+  function refreshDxfVPocketUI() {
+    const n = getVerticalCircles().length;
+    dxfVPocketCheckbox.disabled = !n;
+    dxfVPocketCheckbox.checked = !!(n && dxfVPocketEnabled);
+    dxfVPocketDepthInput.value = String(dxfVPocketDepth);
+    updateDxfVPocketHint();
+  }
+  function updateDxfVPocketHint() {
+    const cs = getVerticalCircles();
+    dxfVPocketBody.hidden = !(dxfVPocketCheckbox.checked && cs.length);
+    if (!cs.length) { dxfVPocketHint.textContent = T('Keine Kreise gefunden.', 'No circles found.'); return; }
+    const ds = cs.map(c => c.diameter), lo = Math.min(...ds), hi = Math.max(...ds);
+    const rng = Math.abs(hi - lo) < 0.05 ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1);
+    const layers = Array.from(new Set(cs.map(c => c.layer))).join(', ');
+    const found = cs.length + ' ' + T(cs.length > 1 ? 'Kreise' : 'Kreis', cs.length > 1 ? 'circles' : 'circle') + ' ' + T('erkannt', 'detected') + ' (' + T('Layer', 'layer') + ' ' + layers + '): Ø ' + rng + ' mm';
+    dxfVPocketHint.textContent = found + '. ' + (dxfVPocketCheckbox.checked
+      ? T('Durchmesser der Tasche = größte Ausdehnung des Kreises in der DXF; die Taschentiefe wird von der Bauteiloberkante aus gemessen (0 = nur Umriss).', 'Pocket diameter = largest extent of the circle in the DXF; the pocket depth is measured from the top of the part (0 = outline only).')
+      : T('Aus: keine vertikalen Taschen.', 'Off: no vertical pockets.'));
+  }
+  dxfVPocketCheckbox.addEventListener('change', updateDxfVPocketHint);
+  // Release 253 (Sebastian, Punkt 8): Sichtbarkeit je Bauteilart - "- undefiniert -": nur Stärke (+ Füll-Transparenz
+  // und darunter); Stufe: Schmiege, vertikal (Taschen + Kreise), horizontal; Setzstufe: Schmiege, horizontal;
+  // Wange/Handlauf: vertikal (Einstemmung + Kreise), horizontal. Vor jedem Abschnitt ein Trennstrich.
   function updateDxfPartTypeUI() {
-    const stringer = dxfPartTypeSelect.value === 'stringer';
-    dxfMortiseRow.hidden = !stringer;
-    el('dxfSchmiegeRow').hidden = stringer;
+    const t = dxfPartTypeSelect.value;
+    const mortise = isMortisePart(t), step = isStepPart(t);
+    const vertical = mortise || t === 'tread', horizontal = t !== 'undefined';
+    dxfMortiseRow.hidden = !mortise;
+    dxfPocketRow.hidden = t !== 'tread';
+    el('dxfVPocketRow').hidden = !vertical;
+    el('dxfSchmiegeRow').hidden = !step;
+    el('dxfSepSchmiege').hidden = !step;
+    el('dxfVerticalGroup').hidden = !vertical;
+    el('dxfSepVertical').hidden = !vertical;
+    el('dxfHBoreRow').hidden = !horizontal;
+    el('dxfSepHorizontal').hidden = !horizontal;
   }
   dxfPartTypeSelect.addEventListener('change', updateDxfPartTypeUI);
 
@@ -25911,6 +26905,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     refreshDxfSchmiegeUI(); // Release 243
     dxfPartTypeSelect.value = dxfPartType; // Release 249
     refreshDxfMortiseUI();
+    refreshDxfPocketUI(); // Release 250
+    refreshDxfHBoreUI(); // Release 251
+    refreshDxfVPocketUI(); // Release 253
     updateDxfPartTypeUI();
     // Release 222 (Sebastian: "Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte
     // drin."): solange der Dialog für diesen Import noch nie bestätigt wurde, werden die Felder mit
@@ -25949,14 +26946,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
     // Release 249: Bauteilart + Einstemmungs-Einstellungen übernehmen (Berechnung am Ende).
-    const pendingPartType = ['tread', 'riser', 'stringer'].includes(dxfPartTypeSelect.value) ? dxfPartTypeSelect.value : 'tread';
+    const pendingPartType = DXF_PART_TYPES.includes(dxfPartTypeSelect.value) ? dxfPartTypeSelect.value : 'undefined';
     const mortiseNames = (dxfMortiseInfo && dxfMortiseInfo.names) || { tread: null, riser: null };
     const parseDepth = inp => Math.abs(parseFloat(normalizeToolValue(inp.value, 0)) || 0);
-    if (pendingPartType === 'stringer') {
+    if (isMortisePart(pendingPartType)) {
       if (mortiseNames.tread && mortiseNames.riser) { dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput); dxfMortiseDepthRiser = parseDepth(dxfMortiseDepth2Input); }
       else if (mortiseNames.tread) dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput);
       else if (mortiseNames.riser) dxfMortiseDepthRiser = parseDepth(dxfMortiseDepthInput);
-      else { dxfMortiseDepth = parseDepth(dxfMortiseDepthInput); dxfMortiseLayer = dxfMortiseLayerSelect.value || null; }
+      else { dxfMortiseDepth = parseDepth(dxfMortiseDepthInput); dxfMortiseLayer = dxfMortiseLayerSelect.value || ''; }   // '' = bewusst "- keiner -" (Release 253)
     }
     // Release 243: Schmiegenerkennung übernehmen (erst nach erfolgreicher Validierung unten wirksam
     // wäre ein Teil-Zustand möglich - deshalb hier vorab nur die Auswahl merken, die Ringe werden am
@@ -25995,6 +26992,25 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfLayerSchmiegeEnabled = pendingSchmiegeEnabled; // Release 243
     dxfLayerSchmiegeLayers = pendingSchmiegeLayers;
     dxfPartType = pendingPartType; // Release 249 (erst nach der Validierung)
+    // Release 253: vertikale Taschen (Kreise) - Tiefe 0 gültig, leere/ungültige Eingabe zählt als 0
+    dxfVPocketEnabled = !dxfVPocketCheckbox.disabled && dxfVPocketCheckbox.checked;
+    dxfVPocketDepth = parseDepth(dxfVPocketDepthInput);
+    // Release 250: Taschen übernehmen (Tiefe 0 ist gültig, leere/ungültige Eingabe zählt als 0)
+    dxfPocketEnabled = !dxfPocketCheckbox.disabled && dxfPocketCheckbox.checked;
+    dxfPockets = new Map();
+    Array.from(dxfPocketLayerList.querySelectorAll('input[type=checkbox]:checked')).forEach(cb => {
+      const inp = Array.from(dxfPocketLayerList.querySelectorAll('input.dxf-pocket-depth')).find(i => i.dataset.layer === cb.dataset.layer);
+      dxfPockets.set(cb.dataset.layer, inp ? parseDepth(inp) : 0);
+    });
+    // Release 251/252: horizontale Bearbeitungen (leere Felder = mittig bzw. Breite aus der Zeichnung; ungültig -> leer)
+    {
+      const optNum = inp => { const v = inp.value.trim(); if (v === '') return null; const n = parseFloat(normalizeToolValue(v, 0)); return isFinite(n) ? Math.abs(n) : null; };
+      ['T', 'U'].forEach(k => {
+        const ui = HB_UI[k];
+        dxfHBoreCfg[k] = { enabled: !ui.cb.disabled && ui.cb.checked, shape: ui.shape.value === 'rect' ? 'rect' : 'round', height: optNum(ui.height), rectHeight: optNum(ui.rectHeight) };
+        if (dxfHBoreCfg[k].rectHeight === 0) dxfHBoreCfg[k].rectHeight = null;
+      });
+    }
     recomputeLayerSchmiegeRings();
     recomputeMortise(); // Release 249
     updateDxfUI();
@@ -26002,7 +27018,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfThicknessPanel.classList.remove('open');
     // Release 249: dasselbe für die Einstemmungen der gestemmten Wange.
     if (dxfMortiseProblems.length) {
-      const msg = T('Einstemmung:\n', 'Mortise:\n') + dxfMortiseProblems.join('\n');
+      const msg = (isMortisePart(dxfPartType) ? T('Einstemmung:\n', 'Mortise:\n') : (dxfPartType === 'tread' ? T('Taschen:\n', 'Pockets:\n') : T('Bearbeitungen:\n', 'Machining:\n'))) + dxfMortiseProblems.join('\n');
       setTimeout(() => alert(msg), 0);
     }
     // Release 247: Meldung beim Verlassen des Dialogs, wenn eine gewählte Schmiege nicht berechenbar war.
