@@ -1548,6 +1548,8 @@
     font-size: 12px;
   }
   .measure-hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  /* Release 248: feste Mindesthöhe, damit das Messfenster beim Bewegen des Cursors (Platzhalter <-> X/Y/Z-Zeilen) nicht springt */
+  .measure-live { min-height: 78px; }
   .move-tag {
     display: inline-block;
     margin-top: 6px;
@@ -2614,7 +2616,7 @@
               <button class="menu-item" id="btnDxfMirrorXMenu" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (X axis)" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">DXF spiegeln X-Achse</button>
               <button class="menu-item" id="btnDxfMirrorYMenu" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Mirror DXF (Y axis)" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">DXF spiegeln Y-Achse</button>
               <button class="menu-item" id="btnDxfRotateMenu" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Rotate DXF" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">DXF drehen</button>
-              <button class="menu-item" id="btnDxfThicknessMenu" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, nach oben versetzte Kontur samt Verbindungslinien dargestellt; negative Werte versetzen stattdessen nach unten) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="DXF part height" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second contour offset upward, including connecting lines; negative values offset downward instead) - only available once a DXF has been imported">DXF Bauteilhöhe</button>
+              <button class="menu-item" id="btnDxfThicknessMenu" type="button" disabled title="Bauteil des importierten DXF definieren: Stärke, Bauteilart (Stufe, Setzstufe, Wange gestemmt), Schmiegen bzw. Einstemmungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="DXF drawing settings" data-i18n-en-title="Define the part of the imported DXF: thickness, part type (tread, riser, stringer closed), bevels or mortises - only available once a DXF has been imported">DXF-Bauteil definieren</button>
               <button class="menu-item" id="btnDxfToggleMenu" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden - erst verfügbar, sobald ein DXF importiert wurde">DXF ausblenden</button>
               <button class="menu-item" id="btnDxfDeleteMenu" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en="Delete DXF" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported">DXF löschen</button>
             </div>
@@ -3282,7 +3284,7 @@
       <button class="toolbar-btn" id="btnDxfMirrorX" type="button" disabled title="Importiertes DXF an seiner eigenen X-Achse spiegeln (Y-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own X axis (Y sign is inverted) - only available once a DXF has been imported">⬍ DXF</button>
       <button class="toolbar-btn" id="btnDxfMirrorY" type="button" disabled title="Importiertes DXF an seiner eigenen Y-Achse spiegeln (X-Vorzeichen kehrt sich um) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Mirror the imported DXF on its own Y axis (X sign is inverted) - only available once a DXF has been imported">⬌ DXF</button>
       <button class="toolbar-btn" id="btnDxfRotate" type="button" disabled title="Importiertes DXF um einen frei wählbaren Winkel um seinen eigenen Koordinatenursprung drehen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Rotate the imported DXF by a freely selectable angle around its own coordinate origin - only available once a DXF has been imported">↻ DXF</button>
-      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="Bauteilstärke des importierten DXF angeben (wird als zweite, nach oben versetzte Kontur samt Verbindungslinien dargestellt; negative Werte versetzen stattdessen nach unten) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Specify the part thickness of the imported DXF (shown as a second contour offset upward, including connecting lines; negative values offset downward instead) - only available once a DXF has been imported">🧱 DXF</button>
+      <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="DXF-Bauteil definieren: Stärke, Bauteilart (Stufe, Setzstufe, Wange gestemmt), Schmiegen bzw. Einstemmungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Define the DXF part: thickness, part type (tread, riser, stringer closed), bevels or mortises - only available once a DXF has been imported">🧱 DXF</button>
       <!-- "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal
            sein, dass das in cm exportiert worden ist ... Da müsste man um den Faktor 10 skalieren.
            Umgekehrt gibt es das Problem auch. Lösung: DXF Skalier Icon rechts neben
@@ -3740,7 +3742,7 @@
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
     <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Set DXF part thickness">DXF Bauteilstärke einstellen</span></div>
+    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
     <div class="shortcut-sep"></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
     <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
@@ -4041,12 +4043,41 @@
      an beiden Z-Ebenen sichtbar. -->
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
-    <h3 data-i18n-en="Part thickness">Bauteilstärke</h3>
-    <p class="panel-hint" data-i18n-en="Thickness (mm) of the part represented by the DXF. For a value other than 0, a second contour offset by the thickness, plus connecting lines, is drawn in addition to the existing contour - a pure wireframe representation of the part thickness, not a filled surface. Positive values offset upward, negative values downward.">Stärke (mm) des durch das DXF dargestellten Bauteils. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur samt Verbindungslinien gezeichnet - eine reine Drahtgitter-Darstellung der Bauteilstärke, keine gefüllte Fläche. Positive Werte versetzen nach oben, negative Werte nach unten.</p>
+    <h3 data-i18n-en="DXF drawing settings">DXF-Bauteil definieren</h3>
+    <p class="panel-hint" data-i18n-en="Defines the part represented by the DXF: thickness (mm) and part type. For a value other than 0, a second contour offset by the thickness is shown in addition to the existing contour (as a filled body when the transparency is below 100%). Positive values offset upward, negative values downward.">Definiert das durch das DXF dargestellte Bauteil: Stärke (mm) und Bauteilart. Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur dargestellt (bei einer Transparenz unter 100 % als gefüllter Körper). Positive Werte versetzen nach oben, negative Werte nach unten.</p>
     <div class="tool-data-row">
       <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
+    </div>
+    <!-- Release 249 (Sebastian: "... sollte es ein Dropdownmenü unter 'Stärke' geben": Stufe, Setzstufe,
+         Wange, gestemmt): Bauteilart. Stufe/Setzstufe behalten die Schmiegenerkennung (#dxfSchmiegeRow),
+         "Wange, gestemmt" blendet stattdessen die Einstemmungs-Einstellungen (#dxfMortiseRow) ein -
+         siehe updateDxfPartTypeUI()/recomputeMortise() in app.js und Konzept_DXF_Wange_gestemmt.md. -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Part type">Bauteil</span>
+        <select id="dxfPartTypeSelect" class="filename-input">
+          <option value="tread" data-i18n-en="Tread">Stufe</option>
+          <option value="riser" data-i18n-en="Riser">Setzstufe</option>
+          <option value="stringer" data-i18n-en="Stringer, closed">Wange, gestemmt</option>
+        </select>
+      </label>
+    </div>
+    <div class="scale-group" id="dxfMortiseRow" hidden>
+      <div class="tool-data-row" id="dxfMortiseLayerRow">
+        <label class="tool-data-field"><span data-i18n-en="Mortise layer">Einstemmungs-Layer</span>
+          <select id="dxfMortiseLayerSelect" class="filename-input"></select>
+        </label>
+      </div>
+      <div class="tool-data-row">
+        <label class="tool-data-field"><span id="dxfMortiseDepthLabel">Einstemmungstiefe (mm)</span>
+          <input type="text" id="dxfMortiseDepthInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </label>
+        <label class="tool-data-field" id="dxfMortiseDepth2Field" hidden><span id="dxfMortiseDepth2Label">Einstemmungstiefe Setzstufe (mm)</span>
+          <input type="text" id="dxfMortiseDepth2Input" class="filename-input" inputmode="decimal" spellcheck="false">
+        </label>
+      </div>
+      <p class="panel-hint" id="dxfMortiseHint"></p>
     </div>
     <!-- Release 243 (Sebastian: "Bei der DXF-Bauteilstärke Einstellung gibt es eine neue Auswahl
          '[] Schmiegenerkennung', der aktiv gesetzt werden kann sobald es den 'Layer2' ... gibt ...
@@ -8366,6 +8397,95 @@
     return { untenLoop: unten, obenLoop: oben, zoneCount, skipped };
   }
 
+  // Release 249 (Sebastian: "Wange, gestemmt" im Dialog "DXF-Bauteil definieren"): Bausteine für die
+  // Einstemmungen einer gestemmten Wange.
+  //
+  // detectMortiseLayerNames(geo): findet die optionalen benannten Layer "Stufeneinstemmung" und
+  // "Setzstufeneinstemmung" (nicht case-sensitive, auch mit Leerzeichen/_/- vor "einstemmung" und im
+  // Plural; englisch "Tread mortise"/"Riser mortise"). Sind sie vorhanden, ist klar, welche Layer die
+  // Einstemmungen sind - es gibt dann je Layer eine eigene Tiefe und keine Layer-Auswahl.
+  function detectMortiseLayerNames(geo) {
+    const names = (geo && geo.layerOrder) || [];
+    const tread = names.find(n => /^stufen[ _-]?einstemmung(en)?$/i.test(n) || /^tread[ _-]?mortise(s)?$/i.test(n)) || null;
+    const riser = names.find(n => /^setzstufen[ _-]?einstemmung(en)?$/i.test(n) || /^riser[ _-]?mortise(s)?$/i.test(n)) || null;
+    return { tread, riser };
+  }
+
+  // listMortiseCandidates(geo, konturLayerName): Layer, aus denen der Bediener den Einstemmungs-Layer
+  // wählen kann - alle außer COMPASS, dem Kontur-/Ankerlayer und den benannten Schmiege_vorn/hinten-Layern.
+  function listMortiseCandidates(geo, konturLayerName) {
+    const names = (geo && geo.layerOrder) || [];
+    return names.filter(n => n !== 'COMPASS' && n !== konturLayerName && !/^schmiege_(vorn|hinten)$/i.test(n));
+  }
+
+  // buildMortiseLoopsFromLayerStrokes(strokes): alle GESCHLOSSENEN Konturen eines Layers (jede
+  // Einstemmung ist ein geschlossener Linienzug, z. B. 4-5 LINE-Elemente). Verkettet in
+  // Dateireihenfolge per Endpunkt-Abgleich (Toleranz 0,01 mm; die Kette wird beim Schließen beendet,
+  // damit sich Einstemmungen, die sich einen Eckpunkt teilen, nicht vermischen). Offene Ketten
+  // werden verworfen, ebenso KREISE (Bohrungen, Sebastian: "Da ist eine Bohrung drin in Layer2
+  // (der Kreis), den bitte ignorieren") - ein Ring gilt als Kreis, wenn er mindestens 8 Punkte hat
+  // und alle Punkte höchstens 1 % vom mittleren Abstand zum Schwerpunkt abweichen. Liefert
+  // { loops: [[{x,y}...]], ignoredCircles, openChains }.
+  function buildMortiseLoopsFromLayerStrokes(strokes) {
+    const TOL = 0.01;
+    const out = { loops: [], ignoredCircles: 0, openChains: 0 };
+    const segs = [];
+    function pushLoop(pts) {
+      if (pts.length >= 8) {
+        let cx = 0, cy = 0;
+        pts.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= pts.length; cy /= pts.length;
+        const rr = pts.map(p => Math.hypot(p.x - cx, p.y - cy));
+        const rm = rr.reduce((a, b) => a + b, 0) / rr.length;
+        if (rm > 0 && rr.every(r => Math.abs(r - rm) <= rm * 0.01)) { out.ignoredCircles++; return; }
+      }
+      if (pts.length >= 3) out.loops.push(pts);
+    }
+    (strokes || []).forEach(s => {
+      const pts = (s && s.points) || [];
+      if (s.closed && pts.length >= 3) { pushLoop(pts.map(p => ({ x: p.x, y: p.y }))); return; }
+      if (!s.closed && pts.length >= 2) segs.push({ pts: pts.map(p => ({ x: p.x, y: p.y })), used: false });
+    });
+    if (!segs.length || segs.length > 40000) return out;
+    const CELL = TOL * 2, grid = new Map();
+    const key = (x, y) => Math.floor(x / CELL) + ',' + Math.floor(y / CELL);
+    segs.forEach((sg, i) => [0, 1].forEach(end => {
+      const pt = end === 0 ? sg.pts[0] : sg.pts[sg.pts.length - 1];
+      const k = key(pt.x, pt.y);
+      let b = grid.get(k); if (!b) { b = []; grid.set(k, b); }
+      b.push({ i, end });
+    }));
+    const same = (a, b) => Math.abs(a.x - b.x) <= TOL && Math.abs(a.y - b.y) <= TOL;
+    for (let start = 0; start < segs.length; start++) {
+      if (segs[start].used) continue;
+      segs[start].used = true;
+      const chain = segs[start].pts.slice();
+      let closedLoop = false;
+      for (let safety = 0; safety <= segs.length; safety++) {
+        const last = chain[chain.length - 1];
+        if (chain.length >= 4 && same(chain[0], last)) { closedLoop = true; break; }
+        let bestI = -1, bestEnd = 0;
+        const cx = Math.floor(last.x / CELL), cy = Math.floor(last.y / CELL);
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+          const b = grid.get((cx + dx) + ',' + (cy + dy));
+          if (!b) continue;
+          b.forEach(ref => {
+            if (segs[ref.i].used) return;
+            const pt = ref.end === 0 ? segs[ref.i].pts[0] : segs[ref.i].pts[segs[ref.i].pts.length - 1];
+            if (!same(last, pt)) return;
+            if (bestI === -1 || ref.i < bestI || (ref.i === bestI && ref.end < bestEnd)) { bestI = ref.i; bestEnd = ref.end; }
+          });
+        }
+        if (bestI === -1) break;
+        segs[bestI].used = true;
+        const np = bestEnd === 0 ? segs[bestI].pts : segs[bestI].pts.slice().reverse();
+        for (let k = 1; k < np.length; k++) chain.push(np[k]);
+      }
+      if (closedLoop) pushLoop(chain.slice(0, chain.length - 1)); else out.openChains++;
+    }
+    return out;
+  }
+
   // Release 200 (Sebastian: "Ich möchte in der Simulation eine Werkzeugdatei öffnen (DXF) und dieses
   // Werkzeug soll dargestellt werden ... Die Werkzeugdaten sind immer achssymmetrisch", siehe
   // Konzept_DXF_Werkzeugdarstellung.md): baut aus einer ungeordneten Menge einzelner, bereits von
@@ -9021,7 +9141,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -9719,6 +9839,144 @@
 });
 </script>
 <script>
+/* Release 249 - eingebettete Bibliotheken (offline, kein Netzzugriff nötig):
+   polygon-clipping 0.15.7 (MIT, Mike Fogel; enthält splaytree 3.1.2, MIT, Alexander Milevski, und tslib-Teile, Microsoft, Apache-2.0)
+   earcut 2.2.4 (ISC, Mapbox).
+   Danach: buildMortiseMesh() - Geometrie der Einstemmungen ("Wange, gestemmt"). */
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t="undefined"!=typeof globalThis?globalThis:t||self).polygonClipping=e()}(this,(function(){"use strict";
+/**
+     * splaytree v3.1.2
+     * Fast Splay tree for Node and browser
+     *
+     * @author Alexander Milevski <info@w8r.name>
+     * @license MIT
+     * @preserve
+     */
+/*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */function t(t,e){var n,r,i,o,s={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:l(0),throw:l(1),return:l(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function l(o){return function(l){return function(o){if(n)throw new TypeError("Generator is already executing.");for(;s;)try{if(n=1,r&&(i=2&o[0]?r.return:o[0]?r.throw||((i=r.return)&&i.call(r),0):r.next)&&!(i=i.call(r,o[1])).done)return i;switch(r=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return s.label++,{value:o[1],done:!1};case 5:s.label++,r=o[1],o=[0];continue;case 7:o=s.ops.pop(),s.trys.pop();continue;default:if(!(i=s.trys,(i=i.length>0&&i[i.length-1])||6!==o[0]&&2!==o[0])){s=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){s.label=o[1];break}if(6===o[0]&&s.label<i[1]){s.label=i[1],i=o;break}if(i&&s.label<i[2]){s.label=i[2],s.ops.push(o);break}i[2]&&s.ops.pop(),s.trys.pop();continue}o=e.call(t,s)}catch(t){o=[6,t],r=0}finally{n=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,l])}}}var e=function(t,e){this.next=null,this.key=t,this.data=e,this.left=null,this.right=null};function n(t,e){return t>e?1:t<e?-1:0}function r(t,n,r){for(var i=new e(null,null),o=i,s=i;;){var l=r(t,n.key);if(l<0){if(null===n.left)break;if(r(t,n.left.key)<0){var h=n.left;if(n.left=h.right,h.right=n,null===(n=h).left)break}s.left=n,s=n,n=n.left}else{if(!(l>0))break;if(null===n.right)break;if(r(t,n.right.key)>0){h=n.right;if(n.right=h.left,h.left=n,null===(n=h).right)break}o.right=n,o=n,n=n.right}}return o.right=n.left,s.left=n.right,n.left=i.right,n.right=i.left,n}function i(t,n,i,o){var s=new e(t,n);if(null===i)return s.left=s.right=null,s;var l=o(t,(i=r(t,i,o)).key);return l<0?(s.left=i.left,s.right=i,i.left=null):l>=0&&(s.right=i.right,s.left=i,i.right=null),s}function o(t,e,n){var i=null,o=null;if(e){var s=n((e=r(t,e,n)).key,t);0===s?(i=e.left,o=e.right):s<0?(o=e.right,e.right=null,i=e):(i=e.left,e.left=null,o=e)}return{left:i,right:o}}function s(t,e,n,r,i){if(t){r(e+(n?"└── ":"├── ")+i(t)+"\n");var o=e+(n?"    ":"│   ");t.left&&s(t.left,o,!1,r,i),t.right&&s(t.right,o,!0,r,i)}}var l=function(){function l(t){void 0===t&&(t=n),this._root=null,this._size=0,this._comparator=t}return l.prototype.insert=function(t,e){return this._size++,this._root=i(t,e,this._root,this._comparator)},l.prototype.add=function(t,n){var i=new e(t,n);null===this._root&&(i.left=i.right=null,this._size++,this._root=i);var o=this._comparator,s=r(t,this._root,o),l=o(t,s.key);return 0===l?this._root=s:(l<0?(i.left=s.left,i.right=s,s.left=null):l>0&&(i.right=s.right,i.left=s,s.right=null),this._size++,this._root=i),this._root},l.prototype.remove=function(t){this._root=this._remove(t,this._root,this._comparator)},l.prototype._remove=function(t,e,n){var i;return null===e?null:0===n(t,(e=r(t,e,n)).key)?(null===e.left?i=e.right:(i=r(t,e.left,n)).right=e.right,this._size--,i):e},l.prototype.pop=function(){var t=this._root;if(t){for(;t.left;)t=t.left;return this._root=r(t.key,this._root,this._comparator),this._root=this._remove(t.key,this._root,this._comparator),{key:t.key,data:t.data}}return null},l.prototype.findStatic=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return e;e=r<0?e.left:e.right}return null},l.prototype.find=function(t){return this._root&&(this._root=r(t,this._root,this._comparator),0!==this._comparator(t,this._root.key))?null:this._root},l.prototype.contains=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return!0;e=r<0?e.left:e.right}return!1},l.prototype.forEach=function(t,e){for(var n=this._root,r=[],i=!1;!i;)null!==n?(r.push(n),n=n.left):0!==r.length?(n=r.pop(),t.call(e,n),n=n.right):i=!0;return this},l.prototype.range=function(t,e,n,r){for(var i=[],o=this._comparator,s=this._root;0!==i.length||s;)if(s)i.push(s),s=s.left;else{if(o((s=i.pop()).key,e)>0)break;if(o(s.key,t)>=0&&n.call(r,s))return this;s=s.right}return this},l.prototype.keys=function(){var t=[];return this.forEach((function(e){var n=e.key;return t.push(n)})),t},l.prototype.values=function(){var t=[];return this.forEach((function(e){var n=e.data;return t.push(n)})),t},l.prototype.min=function(){return this._root?this.minNode(this._root).key:null},l.prototype.max=function(){return this._root?this.maxNode(this._root).key:null},l.prototype.minNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.left;)t=t.left;return t},l.prototype.maxNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.right;)t=t.right;return t},l.prototype.at=function(t){for(var e=this._root,n=!1,r=0,i=[];!n;)if(e)i.push(e),e=e.left;else if(i.length>0){if(e=i.pop(),r===t)return e;r++,e=e.right}else n=!0;return null},l.prototype.next=function(t){var e=this._root,n=null;if(t.right){for(n=t.right;n.left;)n=n.left;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?(n=e,e=e.left):e=e.right}return n},l.prototype.prev=function(t){var e=this._root,n=null;if(null!==t.left){for(n=t.left;n.right;)n=n.right;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?e=e.left:(n=e,e=e.right)}return n},l.prototype.clear=function(){return this._root=null,this._size=0,this},l.prototype.toList=function(){return function(t){var n=t,r=[],i=!1,o=new e(null,null),s=o;for(;!i;)n?(r.push(n),n=n.left):r.length>0?n=(n=s=s.next=r.pop()).right:i=!0;return s.next=null,o.next}(this._root)},l.prototype.load=function(t,n,r){void 0===n&&(n=[]),void 0===r&&(r=!1);var i=t.length,o=this._comparator;if(r&&f(t,n,0,i-1,o),null===this._root)this._root=h(t,n,0,i),this._size=i;else{var s=function(t,n,r){var i=new e(null,null),o=i,s=t,l=n;for(;null!==s&&null!==l;)r(s.key,l.key)<0?(o.next=s,s=s.next):(o.next=l,l=l.next),o=o.next;null!==s?o.next=s:null!==l&&(o.next=l);return i.next}(this.toList(),function(t,n){for(var r=new e(null,null),i=r,o=0;o<t.length;o++)i=i.next=new e(t[o],n[o]);return i.next=null,r.next}(t,n),o);i=this._size+i,this._root=u({head:s},0,i)}return this},l.prototype.isEmpty=function(){return null===this._root},Object.defineProperty(l.prototype,"size",{get:function(){return this._size},enumerable:!0,configurable:!0}),Object.defineProperty(l.prototype,"root",{get:function(){return this._root},enumerable:!0,configurable:!0}),l.prototype.toString=function(t){void 0===t&&(t=function(t){return String(t.key)});var e=[];return s(this._root,"",!0,(function(t){return e.push(t)}),t),e.join("")},l.prototype.update=function(t,e,n){var s=this._comparator,l=o(t,this._root,s),h=l.left,u=l.right;s(t,e)<0?u=i(e,n,u,s):h=i(e,n,h,s),this._root=function(t,e,n){return null===e?t:(null===t||((e=r(t.key,e,n)).left=t),e)}(h,u,s)},l.prototype.split=function(t){return o(t,this._root,this._comparator)},l.prototype[Symbol.iterator]=function(){var e,n,r;return t(this,(function(t){switch(t.label){case 0:e=this._root,n=[],r=!1,t.label=1;case 1:return r?[3,6]:null===e?[3,2]:(n.push(e),e=e.left,[3,5]);case 2:return 0===n.length?[3,4]:[4,e=n.pop()];case 3:return t.sent(),e=e.right,[3,5];case 4:r=!0,t.label=5;case 5:return[3,1];case 6:return[2]}}))},l}();function h(t,n,r,i){var o=i-r;if(o>0){var s=r+Math.floor(o/2),l=t[s],u=n[s],f=new e(l,u);return f.left=h(t,n,r,s),f.right=h(t,n,s+1,i),f}return null}function u(t,e,n){var r=n-e;if(r>0){var i=e+Math.floor(r/2),o=u(t,e,i),s=t.head;return s.left=o,t.head=t.head.next,s.right=u(t,i+1,n),s}return null}function f(t,e,n,r,i){if(!(n>=r)){for(var o=t[n+r>>1],s=n-1,l=r+1;;){do{s++}while(i(t[s],o)<0);do{l--}while(i(t[l],o)>0);if(s>=l)break;var h=t[s];t[s]=t[l],t[l]=h,h=e[s],e[s]=e[l],e[l]=h}f(t,e,n,l,i),f(t,e,l+1,r,i)}}const c=(t,e)=>t.ll.x<=e.x&&e.x<=t.ur.x&&t.ll.y<=e.y&&e.y<=t.ur.y,p=(t,e)=>{if(e.ur.x<t.ll.x||t.ur.x<e.ll.x||e.ur.y<t.ll.y||t.ur.y<e.ll.y)return null;const n=t.ll.x<e.ll.x?e.ll.x:t.ll.x,r=t.ur.x<e.ur.x?t.ur.x:e.ur.x;return{ll:{x:n,y:t.ll.y<e.ll.y?e.ll.y:t.ll.y},ur:{x:r,y:t.ur.y<e.ur.y?t.ur.y:e.ur.y}}};let g=Number.EPSILON;void 0===g&&(g=Math.pow(2,-52));const a=g*g,y=(t,e)=>{if(-g<t&&t<g&&-g<e&&e<g)return 0;const n=t-e;return n*n<a*t*e?0:t<e?-1:1};class x{constructor(){this.tree=new l,this.round(0)}round(t){const e=this.tree.add(t),n=this.tree.prev(e);if(null!==n&&0===y(e.key,n.key))return this.tree.remove(t),n.key;const r=this.tree.next(e);return null!==r&&0===y(e.key,r.key)?(this.tree.remove(t),r.key):t}}const b=new class{constructor(){this.reset()}reset(){this.xRounder=new x,this.yRounder=new x}round(t,e){return{x:this.xRounder.round(t),y:this.yRounder.round(e)}}},v=11102230246251565e-32,d=134217729,m=(3+8*v)*v;function E(t,e,n,r,i){let o,s,l,h,u=e[0],f=r[0],c=0,p=0;f>u==f>-u?(o=u,u=e[++c]):(o=f,f=r[++p]);let g=0;if(c<t&&p<n)for(f>u==f>-u?(s=u+o,l=o-(s-u),u=e[++c]):(s=f+o,l=o-(s-f),f=r[++p]),o=s,0!==l&&(i[g++]=l);c<t&&p<n;)f>u==f>-u?(s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c]):(s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p]),o=s,0!==l&&(i[g++]=l);for(;c<t;)s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c],o=s,0!==l&&(i[g++]=l);for(;p<n;)s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p],o=s,0!==l&&(i[g++]=l);return 0===o&&0!==g||(i[g++]=o),g}function S(t){return new Float64Array(t)}const _=22204460492503146e-32,w=11093356479670487e-47,k=S(4),R=S(8),I=S(12),P=S(16),N=S(4);function A(t,e,n,r,i,o){const s=(e-o)*(n-i),l=(t-i)*(r-o),h=s-l,u=Math.abs(s+l);return Math.abs(h)>=33306690738754716e-32*u?h:-function(t,e,n,r,i,o,s){let l,h,u,f,c,p,g,a,y,x,b,v,S,A,O,L,$,M;const z=t-i,B=n-i,G=e-o,T=r-o;A=z*T,p=d*z,g=p-(p-z),a=z-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=G*B,p=d*G,g=p-(p-G),a=G-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,k[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,k[1]=S-(b+c)+(c-L),M=v+b,c=M-v,k[2]=v-(M-c)+(b-c),k[3]=M;let q=function(t,e){let n=e[0];for(let r=1;r<t;r++)n+=e[r];return n}(4,k),C=_*s;if(q>=C||-q>=C)return q;if(c=t-z,l=t-(z+c)+(c-i),c=n-B,u=n-(B+c)+(c-i),c=e-G,h=e-(G+c)+(c-o),c=r-T,f=r-(T+c)+(c-o),0===l&&0===h&&0===u&&0===f)return q;if(C=w*s+m*Math.abs(q),q+=z*f+T*l-(G*u+B*h),q>=C||-q>=C)return q;A=l*T,p=d*l,g=p-(p-l),a=l-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=h*B,p=d*h,g=p-(p-h),a=h-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const F=E(4,k,4,N,R);A=z*f,p=d*z,g=p-(p-z),a=z-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=G*u,p=d*G,g=p-(p-G),a=G-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const j=E(F,R,4,N,I);A=l*f,p=d*l,g=p-(p-l),a=l-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=h*u,p=d*h,g=p-(p-h),a=h-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const U=E(j,I,4,N,P);return P[U-1]}(t,e,n,r,i,o,u)}const O=(t,e)=>t.x*e.y-t.y*e.x,L=(t,e)=>t.x*e.x+t.y*e.y,$=(t,e,n)=>{const r=A(t.x,t.y,e.x,e.y,n.x,n.y);return r>0?-1:r<0?1:0},M=t=>Math.sqrt(L(t,t)),z=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return O(i,r)/M(i)/M(r)},B=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return L(i,r)/M(i)/M(r)},G=(t,e,n)=>0===e.y?null:{x:t.x+e.x/e.y*(n-t.y),y:n},T=(t,e,n)=>0===e.x?null:{x:n,y:t.y+e.y/e.x*(n-t.x)};class q{static compare(t,e){const n=q.comparePoints(t.point,e.point);return 0!==n?n:(t.point!==e.point&&t.link(e),t.isLeft!==e.isLeft?t.isLeft?1:-1:F.compare(t.segment,e.segment))}static comparePoints(t,e){return t.x<e.x?-1:t.x>e.x?1:t.y<e.y?-1:t.y>e.y?1:0}constructor(t,e){void 0===t.events?t.events=[this]:t.events.push(this),this.point=t,this.isLeft=e}link(t){if(t.point===this.point)throw new Error("Tried to link already linked events");const e=t.point.events;for(let t=0,n=e.length;t<n;t++){const n=e[t];this.point.events.push(n),n.point=this.point}this.checkForConsuming()}checkForConsuming(){const t=this.point.events.length;for(let e=0;e<t;e++){const n=this.point.events[e];if(void 0===n.segment.consumedBy)for(let r=e+1;r<t;r++){const t=this.point.events[r];void 0===t.consumedBy&&(n.otherSE.point.events===t.otherSE.point.events&&n.segment.consume(t.segment))}}}getAvailableLinkedEvents(){const t=[];for(let e=0,n=this.point.events.length;e<n;e++){const n=this.point.events[e];n!==this&&!n.segment.ringOut&&n.segment.isInResult()&&t.push(n)}return t}getLeftmostComparator(t){const e=new Map,n=n=>{const r=n.otherSE;e.set(n,{sine:z(this.point,t.point,r.point),cosine:B(this.point,t.point,r.point)})};return(t,r)=>{e.has(t)||n(t),e.has(r)||n(r);const{sine:i,cosine:o}=e.get(t),{sine:s,cosine:l}=e.get(r);return i>=0&&s>=0?o<l?1:o>l?-1:0:i<0&&s<0?o<l?-1:o>l?1:0:s<i?-1:s>i?1:0}}}let C=0;class F{static compare(t,e){const n=t.leftSE.point.x,r=e.leftSE.point.x,i=t.rightSE.point.x,o=e.rightSE.point.x;if(o<n)return 1;if(i<r)return-1;const s=t.leftSE.point.y,l=e.leftSE.point.y,h=t.rightSE.point.y,u=e.rightSE.point.y;if(n<r){if(l<s&&l<h)return 1;if(l>s&&l>h)return-1;const n=t.comparePoint(e.leftSE.point);if(n<0)return 1;if(n>0)return-1;const r=e.comparePoint(t.rightSE.point);return 0!==r?r:-1}if(n>r){if(s<l&&s<u)return-1;if(s>l&&s>u)return 1;const n=e.comparePoint(t.leftSE.point);if(0!==n)return n;const r=t.comparePoint(e.rightSE.point);return r<0?1:r>0?-1:1}if(s<l)return-1;if(s>l)return 1;if(i<o){const n=e.comparePoint(t.rightSE.point);if(0!==n)return n}if(i>o){const n=t.comparePoint(e.rightSE.point);if(n<0)return 1;if(n>0)return-1}if(i!==o){const t=h-s,e=i-n,f=u-l,c=o-r;if(t>e&&f<c)return 1;if(t<e&&f>c)return-1}return i>o?1:i<o||h<u?-1:h>u?1:t.id<e.id?-1:t.id>e.id?1:0}constructor(t,e,n,r){this.id=++C,this.leftSE=t,t.segment=this,t.otherSE=e,this.rightSE=e,e.segment=this,e.otherSE=t,this.rings=n,this.windings=r}static fromRing(t,e,n){let r,i,o;const s=q.comparePoints(t,e);if(s<0)r=t,i=e,o=1;else{if(!(s>0))throw new Error(`Tried to create degenerate segment at [${t.x}, ${t.y}]`);r=e,i=t,o=-1}const l=new q(r,!0),h=new q(i,!1);return new F(l,h,[n],[o])}replaceRightSE(t){this.rightSE=t,this.rightSE.segment=this,this.rightSE.otherSE=this.leftSE,this.leftSE.otherSE=this.rightSE}bbox(){const t=this.leftSE.point.y,e=this.rightSE.point.y;return{ll:{x:this.leftSE.point.x,y:t<e?t:e},ur:{x:this.rightSE.point.x,y:t>e?t:e}}}vector(){return{x:this.rightSE.point.x-this.leftSE.point.x,y:this.rightSE.point.y-this.leftSE.point.y}}isAnEndpoint(t){return t.x===this.leftSE.point.x&&t.y===this.leftSE.point.y||t.x===this.rightSE.point.x&&t.y===this.rightSE.point.y}comparePoint(t){if(this.isAnEndpoint(t))return 0;const e=this.leftSE.point,n=this.rightSE.point,r=this.vector();if(e.x===n.x)return t.x===e.x?0:t.x<e.x?1:-1;const i=(t.y-e.y)/r.y,o=e.x+i*r.x;if(t.x===o)return 0;const s=(t.x-e.x)/r.x,l=e.y+s*r.y;return t.y===l?0:t.y<l?-1:1}getIntersection(t){const e=this.bbox(),n=t.bbox(),r=p(e,n);if(null===r)return null;const i=this.leftSE.point,o=this.rightSE.point,s=t.leftSE.point,l=t.rightSE.point,h=c(e,s)&&0===this.comparePoint(s),u=c(n,i)&&0===t.comparePoint(i),f=c(e,l)&&0===this.comparePoint(l),g=c(n,o)&&0===t.comparePoint(o);if(u&&h)return g&&!f?o:!g&&f?l:null;if(u)return f&&i.x===l.x&&i.y===l.y?null:i;if(h)return g&&o.x===s.x&&o.y===s.y?null:s;if(g&&f)return null;if(g)return o;if(f)return l;const a=((t,e,n,r)=>{if(0===e.x)return T(n,r,t.x);if(0===r.x)return T(t,e,n.x);if(0===e.y)return G(n,r,t.y);if(0===r.y)return G(t,e,n.y);const i=O(e,r);if(0==i)return null;const o={x:n.x-t.x,y:n.y-t.y},s=O(o,e)/i,l=O(o,r)/i;return{x:(t.x+l*e.x+(n.x+s*r.x))/2,y:(t.y+l*e.y+(n.y+s*r.y))/2}})(i,this.vector(),s,t.vector());return null===a?null:c(r,a)?b.round(a.x,a.y):null}split(t){const e=[],n=void 0!==t.events,r=new q(t,!0),i=new q(t,!1),o=this.rightSE;this.replaceRightSE(i),e.push(i),e.push(r);const s=new F(r,o,this.rings.slice(),this.windings.slice());return q.comparePoints(s.leftSE.point,s.rightSE.point)>0&&s.swapEvents(),q.comparePoints(this.leftSE.point,this.rightSE.point)>0&&this.swapEvents(),n&&(r.checkForConsuming(),i.checkForConsuming()),e}swapEvents(){const t=this.rightSE;this.rightSE=this.leftSE,this.leftSE=t,this.leftSE.isLeft=!0,this.rightSE.isLeft=!1;for(let t=0,e=this.windings.length;t<e;t++)this.windings[t]*=-1}consume(t){let e=this,n=t;for(;e.consumedBy;)e=e.consumedBy;for(;n.consumedBy;)n=n.consumedBy;const r=F.compare(e,n);if(0!==r){if(r>0){const t=e;e=n,n=t}if(e.prev===n){const t=e;e=n,n=t}for(let t=0,r=n.rings.length;t<r;t++){const r=n.rings[t],i=n.windings[t],o=e.rings.indexOf(r);-1===o?(e.rings.push(r),e.windings.push(i)):e.windings[o]+=i}n.rings=null,n.windings=null,n.consumedBy=e,n.leftSE.consumedBy=e.leftSE,n.rightSE.consumedBy=e.rightSE}}prevInResult(){return void 0!==this._prevInResult||(this.prev?this.prev.isInResult()?this._prevInResult=this.prev:this._prevInResult=this.prev.prevInResult():this._prevInResult=null),this._prevInResult}beforeState(){if(void 0!==this._beforeState)return this._beforeState;if(this.prev){const t=this.prev.consumedBy||this.prev;this._beforeState=t.afterState()}else this._beforeState={rings:[],windings:[],multiPolys:[]};return this._beforeState}afterState(){if(void 0!==this._afterState)return this._afterState;const t=this.beforeState();this._afterState={rings:t.rings.slice(0),windings:t.windings.slice(0),multiPolys:[]};const e=this._afterState.rings,n=this._afterState.windings,r=this._afterState.multiPolys;for(let t=0,r=this.rings.length;t<r;t++){const r=this.rings[t],i=this.windings[t],o=e.indexOf(r);-1===o?(e.push(r),n.push(i)):n[o]+=i}const i=[],o=[];for(let t=0,r=e.length;t<r;t++){if(0===n[t])continue;const r=e[t],s=r.poly;if(-1===o.indexOf(s))if(r.isExterior)i.push(s);else{-1===o.indexOf(s)&&o.push(s);const t=i.indexOf(r.poly);-1!==t&&i.splice(t,1)}}for(let t=0,e=i.length;t<e;t++){const e=i[t].multiPoly;-1===r.indexOf(e)&&r.push(e)}return this._afterState}isInResult(){if(this.consumedBy)return!1;if(void 0!==this._isInResult)return this._isInResult;const t=this.beforeState().multiPolys,e=this.afterState().multiPolys;switch(H.type){case"union":{const n=0===t.length,r=0===e.length;this._isInResult=n!==r;break}case"intersection":{let n,r;t.length<e.length?(n=t.length,r=e.length):(n=e.length,r=t.length),this._isInResult=r===H.numMultiPolys&&n<r;break}case"xor":{const n=Math.abs(t.length-e.length);this._isInResult=n%2==1;break}case"difference":{const n=t=>1===t.length&&t[0].isSubject;this._isInResult=n(t)!==n(e);break}default:throw new Error(`Unrecognized operation type found ${H.type}`)}return this._isInResult}}class j{constructor(t,e,n){if(!Array.isArray(t)||0===t.length)throw new Error("Input geometry is not a valid Polygon or MultiPolygon");if(this.poly=e,this.isExterior=n,this.segments=[],"number"!=typeof t[0][0]||"number"!=typeof t[0][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");const r=b.round(t[0][0],t[0][1]);this.bbox={ll:{x:r.x,y:r.y},ur:{x:r.x,y:r.y}};let i=r;for(let e=1,n=t.length;e<n;e++){if("number"!=typeof t[e][0]||"number"!=typeof t[e][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");let n=b.round(t[e][0],t[e][1]);n.x===i.x&&n.y===i.y||(this.segments.push(F.fromRing(i,n,this)),n.x<this.bbox.ll.x&&(this.bbox.ll.x=n.x),n.y<this.bbox.ll.y&&(this.bbox.ll.y=n.y),n.x>this.bbox.ur.x&&(this.bbox.ur.x=n.x),n.y>this.bbox.ur.y&&(this.bbox.ur.y=n.y),i=n)}r.x===i.x&&r.y===i.y||this.segments.push(F.fromRing(i,r,this))}getSweepEvents(){const t=[];for(let e=0,n=this.segments.length;e<n;e++){const n=this.segments[e];t.push(n.leftSE),t.push(n.rightSE)}return t}}class U{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");this.exteriorRing=new j(t[0],this,!0),this.bbox={ll:{x:this.exteriorRing.bbox.ll.x,y:this.exteriorRing.bbox.ll.y},ur:{x:this.exteriorRing.bbox.ur.x,y:this.exteriorRing.bbox.ur.y}},this.interiorRings=[];for(let e=1,n=t.length;e<n;e++){const n=new j(t[e],this,!1);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.interiorRings.push(n)}this.multiPoly=e}getSweepEvents(){const t=this.exteriorRing.getSweepEvents();for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class Y{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");try{"number"==typeof t[0][0][0]&&(t=[t])}catch(t){}this.polys=[],this.bbox={ll:{x:Number.POSITIVE_INFINITY,y:Number.POSITIVE_INFINITY},ur:{x:Number.NEGATIVE_INFINITY,y:Number.NEGATIVE_INFINITY}};for(let e=0,n=t.length;e<n;e++){const n=new U(t[e],this);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.polys.push(n)}this.isSubject=e}getSweepEvents(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class V{static factory(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.isInResult()||r.ringOut)continue;let i=null,o=r.leftSE,s=r.rightSE;const l=[o],h=o.point,u=[];for(;i=o,o=s,l.push(o),o.point!==h;)for(;;){const t=o.getAvailableLinkedEvents();if(0===t.length){const t=l[0].point,e=l[l.length-1].point;throw new Error(`Unable to complete output ring starting at [${t.x}, ${t.y}]. Last matching segment found ends at [${e.x}, ${e.y}].`)}if(1===t.length){s=t[0].otherSE;break}let n=null;for(let t=0,e=u.length;t<e;t++)if(u[t].point===o.point){n=t;break}if(null!==n){const t=u.splice(n)[0],r=l.splice(t.index);r.unshift(r[0].otherSE),e.push(new V(r.reverse()));continue}u.push({index:l.length,point:o.point});const r=o.getLeftmostComparator(i);s=t.sort(r)[0].otherSE;break}e.push(new V(l))}return e}constructor(t){this.events=t;for(let e=0,n=t.length;e<n;e++)t[e].segment.ringOut=this;this.poly=null}getGeom(){let t=this.events[0].point;const e=[t];for(let n=1,r=this.events.length-1;n<r;n++){const r=this.events[n].point,i=this.events[n+1].point;0!==$(r,t,i)&&(e.push(r),t=r)}if(1===e.length)return null;const n=e[0],r=e[1];0===$(n,t,r)&&e.shift(),e.push(e[0]);const i=this.isExteriorRing()?1:-1,o=this.isExteriorRing()?0:e.length-1,s=this.isExteriorRing()?e.length:-1,l=[];for(let t=o;t!=s;t+=i)l.push([e[t].x,e[t].y]);return l}isExteriorRing(){if(void 0===this._isExteriorRing){const t=this.enclosingRing();this._isExteriorRing=!t||!t.isExteriorRing()}return this._isExteriorRing}enclosingRing(){return void 0===this._enclosingRing&&(this._enclosingRing=this._calcEnclosingRing()),this._enclosingRing}_calcEnclosingRing(){let t=this.events[0];for(let e=1,n=this.events.length;e<n;e++){const n=this.events[e];q.compare(t,n)>0&&(t=n)}let e=t.segment.prevInResult(),n=e?e.prevInResult():null;for(;;){if(!e)return null;if(!n)return e.ringOut;if(n.ringOut!==e.ringOut)return n.ringOut.enclosingRing()!==e.ringOut?e.ringOut:e.ringOut.enclosingRing();e=n.prevInResult(),n=e?e.prevInResult():null}}}class X{constructor(t){this.exteriorRing=t,t.poly=this,this.interiorRings=[]}addInterior(t){this.interiorRings.push(t),t.poly=this}getGeom(){const t=[this.exteriorRing.getGeom()];if(null===t[0])return null;for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getGeom();null!==n&&t.push(n)}return t}}class Q{constructor(t){this.rings=t,this.polys=this._composePolys(t)}getGeom(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getGeom();null!==n&&t.push(n)}return t}_composePolys(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.poly)if(r.isExteriorRing())e.push(new X(r));else{const t=r.enclosingRing();t.poly||e.push(new X(t)),t.poly.addInterior(r)}}return e}}class W{constructor(t){let e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:F.compare;this.queue=t,this.tree=new l(e),this.segments=[]}process(t){const e=t.segment,n=[];if(t.consumedBy)return t.isLeft?this.queue.remove(t.otherSE):this.tree.remove(e),n;const r=t.isLeft?this.tree.add(e):this.tree.find(e);if(!r)throw new Error(`Unable to find segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] in SweepLine tree.`);let i,o,s=r,l=r;for(;void 0===i;)s=this.tree.prev(s),null===s?i=null:void 0===s.key.consumedBy&&(i=s.key);for(;void 0===o;)l=this.tree.next(l),null===l?o=null:void 0===l.key.consumedBy&&(o=l.key);if(t.isLeft){let r=null;if(i){const t=i.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(r=t),!i.isAnEndpoint(t))){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}let s=null;if(o){const t=o.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(s=t),!o.isAnEndpoint(t))){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}if(null!==r||null!==s){let t=null;if(null===r)t=s;else if(null===s)t=r;else{t=q.comparePoints(r,s)<=0?r:s}this.queue.remove(e.rightSE),n.push(e.rightSE);const i=e.split(t);for(let t=0,e=i.length;t<e;t++)n.push(i[t])}n.length>0?(this.tree.remove(e),n.push(t)):(this.segments.push(e),e.prev=i)}else{if(i&&o){const t=i.getIntersection(o);if(null!==t){if(!i.isAnEndpoint(t)){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}if(!o.isAnEndpoint(t)){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}}this.tree.remove(e)}return n}_splitSafely(t,e){this.tree.remove(t);const n=t.rightSE;this.queue.remove(n);const r=t.split(e);return r.push(n),void 0===t.consumedBy&&this.tree.add(t),r}}const Z="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_QUEUE_SIZE||1e6,D="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS||1e6;const H=new class{run(t,e,n){H.type=t,b.reset();const r=[new Y(e,!0)];for(let t=0,e=n.length;t<e;t++)r.push(new Y(n[t],!1));if(H.numMultiPolys=r.length,"difference"===H.type){const t=r[0];let e=1;for(;e<r.length;)null!==p(r[e].bbox,t.bbox)?e++:r.splice(e,1)}if("intersection"===H.type)for(let t=0,e=r.length;t<e;t++){const e=r[t];for(let n=t+1,i=r.length;n<i;n++)if(null===p(e.bbox,r[n].bbox))return[]}const i=new l(q.compare);for(let t=0,e=r.length;t<e;t++){const e=r[t].getSweepEvents();for(let t=0,n=e.length;t<n;t++)if(i.insert(e[t]),i.size>Z)throw new Error("Infinite loop when putting segment endpoints in a priority queue (queue size too big).")}const o=new W(i);let s=i.size,h=i.pop();for(;h;){const t=h.key;if(i.size===s){const e=t.segment;throw new Error(`Unable to pop() ${t.isLeft?"left":"right"} SweepEvent [${t.point.x}, ${t.point.y}] from segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] from queue.`)}if(i.size>Z)throw new Error("Infinite loop when passing sweep line over endpoints (queue size too big).");if(o.segments.length>D)throw new Error("Infinite loop when passing sweep line over endpoints (too many sweep line segments).");const e=o.process(t);for(let t=0,n=e.length;t<n;t++){const n=e[t];void 0===n.consumedBy&&i.insert(n)}s=i.size,h=i.pop()}b.reset();const u=V.factory(o.segments);return new Q(u).getGeom()}};var J={union:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("union",t,n)},intersection:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("intersection",t,n)},xor:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("xor",t,n)},difference:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("difference",t,n)}};return J}));
+!function(e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define([],e):("undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this).earcut=e()}(function(){return function r(x,i,u){function f(n,e){if(!i[n]){if(!x[n]){var t="function"==typeof require&&require;if(!e&&t)return t(n,!0);if(o)return o(n,!0);throw(e=new Error("Cannot find module '"+n+"'")).code="MODULE_NOT_FOUND",e}t=i[n]={exports:{}},x[n][0].call(t.exports,function(e){return f(x[n][1][e]||e)},t,t.exports,r,x,i,u)}return i[n].exports}for(var o="function"==typeof require&&require,e=0;e<u.length;e++)f(u[e]);return f}({1:[function(e,n,t){"use strict";function r(e,n,t){t=t||2;var r,x,i,u,f,o=n&&n.length,v=o?n[0]*t:e.length,p=s(e,0,v,t,!0),y=[];if(p&&p.next!==p.prev){if(o&&(p=function(e,n,t,r){var x,i,u,f,o=[];for(x=0,i=n.length;x<i;x++)f=n[x]*r,u=x<i-1?n[x+1]*r:e.length,(f=s(e,f,u,r,!1))===f.next&&(f.steiner=!0),o.push(function(e){var n=e,t=e;for(;(n.x<t.x||n.x===t.x&&n.y<t.y)&&(t=n),n=n.next,n!==e;);return t}(f));for(o.sort(c),x=0;x<o.length;x++)t=function(e,n){var t=function(e,n){var t,r=n,x=e.x,i=e.y,u=-1/0;do{if(i<=r.y&&i>=r.next.y&&r.next.y!==r.y){var f=r.x+(i-r.y)*(r.next.x-r.x)/(r.next.y-r.y);if(f<=x&&u<f&&(u=f,t=r.x<r.next.x?r:r.next,f===x))return t}}while(r=r.next,r!==n);if(!t)return null;var o,v=t,p=t.x,y=t.y,a=1/0;r=t;for(;x>=r.x&&r.x>=p&&x!==r.x&&D(i<y?x:u,i,p,y,i<y?u:x,i,r.x,r.y)&&(o=Math.abs(i-r.y)/(x-r.x),_(r,e)&&(o<a||o===a&&(r.x>t.x||r.x===t.x&&function(e,n){return E(e.prev,e,n.prev)<0&&E(n.next,e,e.next)<0}(t,r)))&&(t=r,a=o)),r=r.next,r!==v;);return t}(e,n);if(!t)return n;n=j(t,e);return q(n,n.next),q(t,t.next)}(o[x],t);return t}(e,n,p,t)),e.length>80*t){for(var a=r=e[0],l=x=e[1],h=t;h<v;h+=t)(i=e[h])<a&&(a=i),(u=e[h+1])<l&&(l=u),r<i&&(r=i),x<u&&(x=u);f=0!==(f=Math.max(r-a,x-l))?32767/f:0}O(p,y,t,a,l,f,0)}return y}function s(e,n,t,r,x){var i,u;if(x===0<d(e,n,t,r))for(i=n;i<t;i+=r)u=f(i,e[i],e[i+1],u);else for(i=t-r;n<=i;i-=r)u=f(i,e[i],e[i+1],u);return u&&N(u,u.next)&&(C(u),u=u.next),u}function q(e,n){if(!e)return e;n=n||e;var t,r=e;do{if(t=!1,r.steiner||!N(r,r.next)&&0!==E(r.prev,r,r.next))r=r.next;else{if(C(r),(r=n=r.prev)===r.next)break;t=!0}}while(t||r!==n);return n}function O(e,n,t,r,x,i,u){if(e){if(!u&&i){for(var f=e,o=r,v=x,p=i,y=f;0===y.z&&(y.z=k(y.x,y.y,o,v,p)),y.prevZ=y.prev,y.nextZ=y.next,(y=y.next)!==f;);y.prevZ.nextZ=null,y.prevZ=null;var a,l,h,s,c,d,Z,g,w=y,M=1;do{for(l=w,c=w=null,d=0;l;){for(d++,h=l,a=Z=0;a<M&&(Z++,h=h.nextZ);a++);for(g=M;0<Z||0<g&&h;)0!==Z&&(0===g||!h||l.z<=h.z)?(l=(s=l).nextZ,Z--):(h=(s=h).nextZ,g--),c?c.nextZ=s:w=s,s.prevZ=c,c=s;l=h}}while(c.nextZ=null,M*=2,1<d)}for(var b,m,z=e;e.prev!==e.next;)if(b=e.prev,m=e.next,i?function(e,n,t,r){var x=e.prev,i=e,u=e.next;if(0<=E(x,i,u))return;var f=x.x,o=i.x,v=u.x,p=x.y,y=i.y,a=u.y,l=f<o?f<v?f:v:o<v?o:v,h=p<y?p<a?p:a:y<a?y:a,s=o<f?v<f?f:v:v<o?o:v,c=y<p?a<p?p:a:a<y?y:a,d=k(l,h,n,t,r),Z=k(s,c,n,t,r),g=e.prevZ,w=e.nextZ;for(;g&&g.z>=d&&w&&w.z<=Z;){if(g.x>=l&&g.x<=s&&g.y>=h&&g.y<=c&&g!==x&&g!==u&&D(f,p,o,y,v,a,g.x,g.y)&&0<=E(g.prev,g,g.next))return;if(g=g.prevZ,w.x>=l&&w.x<=s&&w.y>=h&&w.y<=c&&w!==x&&w!==u&&D(f,p,o,y,v,a,w.x,w.y)&&0<=E(w.prev,w,w.next))return;w=w.nextZ}for(;g&&g.z>=d;){if(g.x>=l&&g.x<=s&&g.y>=h&&g.y<=c&&g!==x&&g!==u&&D(f,p,o,y,v,a,g.x,g.y)&&0<=E(g.prev,g,g.next))return;g=g.prevZ}for(;w&&w.z<=Z;){if(w.x>=l&&w.x<=s&&w.y>=h&&w.y<=c&&w!==x&&w!==u&&D(f,p,o,y,v,a,w.x,w.y)&&0<=E(w.prev,w,w.next))return;w=w.nextZ}return 1}(e,r,x,i):function(e){var n=e.prev,t=e,e=e.next;if(0<=E(n,t,e))return;var r=n.x,x=t.x,i=e.x,u=n.y,f=t.y,o=e.y,v=r<x?r<i?r:i:x<i?x:i,p=u<f?u<o?u:o:f<o?f:o,y=x<r?i<r?r:i:i<x?x:i,a=f<u?o<u?u:o:o<f?f:o,l=e.next;for(;l!==n;){if(l.x>=v&&l.x<=y&&l.y>=p&&l.y<=a&&D(r,u,x,f,i,o,l.x,l.y)&&0<=E(l.prev,l,l.next))return;l=l.next}return 1}(e))n.push(b.i/t|0),n.push(e.i/t|0),n.push(m.i/t|0),C(e),e=m.next,z=m.next;else if((e=m)===z){u?1===u?O(e=function(e,n,t){var r=e;do{var x=r.prev,i=r.next.next}while(!N(x,i)&&U(x,r,r.next,i)&&_(x,i)&&_(i,x)&&(n.push(x.i/t|0),n.push(r.i/t|0),n.push(i.i/t|0),C(r),C(r.next),r=e=i),r=r.next,r!==e);return q(r)}(q(e),n,t),n,t,r,x,i,2):2===u&&function(e,n,t,r,x,i){var u=e;do{for(var f,o=u.next.next;o!==u.prev;){if(u.i!==o.i&&function(e,n){return e.next.i!==n.i&&e.prev.i!==n.i&&!function(e,n){var t=e;do{if(t.i!==e.i&&t.next.i!==e.i&&t.i!==n.i&&t.next.i!==n.i&&U(t,t.next,e,n))return 1}while(t=t.next,t!==e);return}(e,n)&&(_(e,n)&&_(n,e)&&function(e,n){var t=e,r=!1,x=(e.x+n.x)/2,i=(e.y+n.y)/2;for(;t.y>i!=t.next.y>i&&t.next.y!==t.y&&x<(t.next.x-t.x)*(i-t.y)/(t.next.y-t.y)+t.x&&(r=!r),t=t.next,t!==e;);return r}(e,n)&&(E(e.prev,e,n.prev)||E(e,n.prev,n))||N(e,n)&&0<E(e.prev,e,e.next)&&0<E(n.prev,n,n.next))}(u,o))return f=j(u,o),u=q(u,u.next),f=q(f,f.next),O(u,n,t,r,x,i,0),O(f,n,t,r,x,i,0);o=o.next}}while(u=u.next,u!==e)}(e,n,t,r,x,i):O(q(e),n,t,r,x,i,1);break}}}function c(e,n){return e.x-n.x}function k(e,n,t,r,x){return(e=1431655765&((e=858993459&((e=252645135&((e=16711935&((e=(e-t)*x|0)|e<<8))|e<<4))|e<<2))|e<<1))|(n=1431655765&((n=858993459&((n=252645135&((n=16711935&((n=(n-r)*x|0)|n<<8))|n<<4))|n<<2))|n<<1))<<1}function D(e,n,t,r,x,i,u,f){return(e-u)*(i-f)<=(x-u)*(n-f)&&(t-u)*(n-f)<=(e-u)*(r-f)&&(x-u)*(r-f)<=(t-u)*(i-f)}function E(e,n,t){return(n.y-e.y)*(t.x-n.x)-(n.x-e.x)*(t.y-n.y)}function N(e,n){return e.x===n.x&&e.y===n.y}function U(e,n,t,r){var x=v(E(e,n,t)),i=v(E(e,n,r)),u=v(E(t,r,e)),f=v(E(t,r,n));return x!==i&&u!==f||(0===x&&o(e,t,n)||(0===i&&o(e,r,n)||(0===u&&o(t,e,r)||!(0!==f||!o(t,n,r)))))}function o(e,n,t){return n.x<=Math.max(e.x,t.x)&&n.x>=Math.min(e.x,t.x)&&n.y<=Math.max(e.y,t.y)&&n.y>=Math.min(e.y,t.y)}function v(e){return 0<e?1:e<0?-1:0}function _(e,n){return E(e.prev,e,e.next)<0?0<=E(e,n,e.next)&&0<=E(e,e.prev,n):E(e,n,e.prev)<0||E(e,e.next,n)<0}function j(e,n){var t=new u(e.i,e.x,e.y),r=new u(n.i,n.x,n.y),x=e.next,i=n.prev;return(e.next=n).prev=e,(t.next=x).prev=t,(r.next=t).prev=r,(i.next=r).prev=i,r}function f(e,n,t,r){e=new u(e,n,t);return r?(e.next=r.next,(e.prev=r).next.prev=e,r.next=e):(e.prev=e).next=e,e}function C(e){e.next.prev=e.prev,e.prev.next=e.next,e.prevZ&&(e.prevZ.nextZ=e.nextZ),e.nextZ&&(e.nextZ.prevZ=e.prevZ)}function u(e,n,t){this.i=e,this.x=n,this.y=t,this.prev=null,this.next=null,this.z=0,this.prevZ=null,this.nextZ=null,this.steiner=!1}function d(e,n,t,r){for(var x=0,i=n,u=t-r;i<t;i+=r)x+=(e[u]-e[i])*(e[i+1]+e[u+1]),u=i;return x}n.exports=r,(n.exports.default=r).deviation=function(e,n,t,r){var x=n&&n.length,i=x?n[0]*t:e.length,u=Math.abs(d(e,0,i,t));if(x)for(var f=0,o=n.length;f<o;f++){var v=n[f]*t,p=f<o-1?n[f+1]*t:e.length;u-=Math.abs(d(e,v,p,t))}for(var y=0,f=0;f<r.length;f+=3){var a=r[f]*t,l=r[f+1]*t,h=r[f+2]*t;y+=Math.abs((e[a]-e[h])*(e[1+l]-e[1+a])-(e[a]-e[l])*(e[1+h]-e[1+a]))}return 0===u&&0===y?0:Math.abs((y-u)/u)},r.flatten=function(e){for(var n=e[0][0].length,t={vertices:[],holes:[],dimensions:n},r=0,x=0;x<e.length;x++){for(var i=0;i<e[x].length;i++)for(var u=0;u<n;u++)t.vertices.push(e[x][i][u]);0<x&&(r+=e[x-1].length,t.holes.push(r))}return t}},{}]},{},[1])(1)});
+
+// ---------------------------------------------------------------------------------------------
+// Release 249 ("DXF-Bauteil definieren" -> "Wange, gestemmt"): Geometrie der Einstemmungen.
+// buildMortiseMesh() baut aus der Bauteilkontur (dxfKonturLoop, rohe DXF-Koordinaten) und den
+// Einstemmungs-Konturen (geschlossene Ringe der gewählten Einstemmungs-Layer, je mit Tiefe) ein
+// kleines 3D-Netz: Dreiecke (Kappen/Böden, per earcut trianguliert) und senkrechte Wände. Die
+// Mengenoperationen (Vereinigung der Einstemmungen, Schnitt mit der Kontur, Differenz = Oberseite)
+// macht polygon-clipping; mehrere Tiefen werden als kumulative Stufen aufgebaut (Stufe j = alle
+// Einstemmungen mit Tiefe >= d_j; Boden der Stufe j = C_j minus C_(j+1); Wand der Stufe j läuft von
+// deren Boden bis zum Boden der nächst flacheren Stufe bzw. zur Oberkante) - dadurch stimmt auch die
+// Überlappung von Stufen- und Setzstufen-Einstemmung (dort gilt die größere Tiefe).
+// z-Werte sind RELATIV zur Original-Z-Ebene der DXF (wie dxfThickness in drawDxf()): bei positiver
+// Stärke liegt die Unterseite bei 0 und die Oberseite bei +T, bei negativer Stärke die Oberseite
+// bei 0 und die Unterseite bei T (<0). Die Tiefe wird immer von der Oberseite aus gemessen und auf
+// die Stärke begrenzt (Rückgabe .clamped).
+// Rückgabe: { topZ, botZ, levels:[{depth, floorZ}], tris:[{v:[[x,y]x3], z, nz, kind}],
+//   walls:[{a:[x,y], b:[x,y], z0, z1, n:[nx,ny], kind}], rings:[{pts:[[x,y]...], z}], info } | null
+// ---------------------------------------------------------------------------------------------
+function buildMortiseMesh(contour, pockets, thickness) {
+  const PC = (typeof polygonClipping !== 'undefined') ? polygonClipping : null;
+  const EC = (typeof earcut !== 'undefined') ? earcut : null;
+  if (!PC || !EC || !contour || contour.length < 3 || !thickness) return null;
+  const H = Math.abs(thickness);
+  const topZ = thickness > 0 ? thickness : 0, botZ = thickness > 0 ? 0 : thickness;
+  const closeRing = pts => { const r = pts.map(p => [p.x, p.y]); const f = r[0], l = r[r.length - 1]; if (f[0] !== l[0] || f[1] !== l[1]) r.push([f[0], f[1]]); return r; };
+  const contourMP = [[closeRing(contour)]];
+  let clamped = false;
+  const defs = [];
+  (pockets || []).forEach(pk => {
+    let d = Number(pk.depth);
+    if (!isFinite(d) || d <= 1e-9) return;
+    if (d > H) { d = H; clamped = true; }
+    const polys = (pk.loops || []).filter(l => l && l.length >= 3).map(l => [closeRing(l)]);
+    if (!polys.length) return;
+    let region;
+    try {
+      const un = PC.union(polys[0], ...polys.slice(1));
+      region = PC.intersection(contourMP, un);
+    } catch (e) { return; }
+    if (region && region.length) defs.push({ depth: d, region });
+  });
+  if (!defs.length) return null;
+  const depths = Array.from(new Set(defs.map(x => Math.round(x.depth * 1e6) / 1e6))).sort((a, b) => a - b);
+  const C = depths.map(d => {
+    const rs = defs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => x.region);
+    return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1));
+  });
+  const R = PC.difference(contourMP, C[0]);
+  const area = mp => { let s = 0; mp.forEach(poly => poly.forEach((ring, ri) => { let a = 0; for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; s += (ri === 0 ? 1 : -1) * Math.abs(a) / 2; })); return s; };
+  const mesh = { topZ, botZ, levels: [], tris: [], walls: [], rings: [], clamped, info: {} };
+  function triangulate(mp, z, nz, kind) {
+    mp.forEach(poly => {
+      const flat = [], holes = [];
+      poly.forEach((ring, ri) => {
+        if (ri > 0) holes.push(flat.length / 2);
+        for (let i = 0; i < ring.length - 1; i++) flat.push(ring[i][0], ring[i][1]);
+      });
+      const idx = EC(flat, holes);
+      for (let i = 0; i + 2 < idx.length; i += 3) {
+        mesh.tris.push({ v: [[flat[idx[i] * 2], flat[idx[i] * 2 + 1]], [flat[idx[i + 1] * 2], flat[idx[i + 1] * 2 + 1]], [flat[idx[i + 2] * 2], flat[idx[i + 2] * 2 + 1]]], z, nz, kind });
+      }
+    });
+  }
+  const signedArea = ring => { let a = 0; for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; return a / 2; };
+  // Wände entlang der Ringe eines MultiPolygons; airInside = true: Luft (Einstemmung) liegt im Außenring
+  function addWalls(mp, z0, z1, kind, outwardIsAir) {
+    mp.forEach(poly => poly.forEach((ring, ri) => {
+      const ccw = signedArea(ring) > 0;
+      // Normale, die aus dem Material in die Luft zeigt:
+      //  Einstemmungs-Stufe (outwardIsAir=false): Luft im Außenring (innen), Insel-Ring: Luft außen
+      //  Bauteilkontur (outwardIsAir=true): Luft außerhalb des Rings
+      const airSideLeft = outwardIsAir ? !ccw : (ri === 0 ? ccw : !ccw);
+      for (let i = 0; i < ring.length - 1; i++) {
+        const a = ring[i], b = ring[i + 1];
+        const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+        if (len < 1e-9) continue;
+        const n = airSideLeft ? [-dy / len, dx / len] : [dy / len, -dx / len];
+        // lange Wände in Stücke <= 60 mm teilen (gleichmäßigere Tiefenwerte beim Rastern)
+        const parts = Math.max(1, Math.ceil(len / 60));
+        for (let k = 0; k < parts; k++) {
+          const t0 = k / parts, t1 = (k + 1) / parts;
+          mesh.walls.push({ a: [a[0] + dx * t0, a[1] + dy * t0], b: [a[0] + dx * t1, a[1] + dy * t1], z0, z1, n, kind });
+        }
+      }
+    }));
+  }
+  // Unterseite + Oberseite
+  triangulate(contourMP, botZ, -1, 'bottom');
+  triangulate(R, topZ, 1, 'top');
+  // Außenwände der Kontur
+  addWalls(contourMP, botZ, topZ, 'outer', true);
+  // Stufen
+  depths.forEach((d, j) => {
+    const floorZ = topZ - d;
+    const upperZ = j === 0 ? topZ : topZ - depths[j - 1];
+    mesh.levels.push({ depth: d, floorZ });
+    const floorMP = j + 1 < depths.length ? PC.difference(C[j], C[j + 1]) : C[j];
+    if (floorMP && floorMP.length) triangulate(floorMP, floorZ, 1, 'floor');
+    addWalls(C[j], floorZ, upperZ, 'pocket', false);
+    C[j].forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: floorZ, kind: 'floor' })));
+    if (j > 0) C[j].forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: upperZ, kind: 'rim' })));
+  });
+  R.forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: topZ, kind: 'top' })));
+  contourMP.forEach(poly => poly.forEach(ring => mesh.rings.push({ pts: ring.slice(0, ring.length - 1), z: botZ, kind: 'bottom' })));
+  mesh.info = { contourArea: area(contourMP), topArea: area(R), pocketArea: area(C[0]), levelCount: depths.length, triCount: mesh.tris.length, wallCount: mesh.walls.length };
+  return mesh;
+}
+
+</script>
+<script>
 (function () {
   'use strict';
 
@@ -9767,8 +10025,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 247;
-  const APP_RELEASE_TIMESTAMP = '20.10.2026, 09:12 Uhr';
+  const APP_RELEASE_NUMBER = 249;
+  const APP_RELEASE_TIMESTAMP = '20.10.2026, 11:09 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12617,6 +12875,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const dxfRotateInput = el('dxfRotateInput');
   const dxfThicknessPanel = el('dxfThicknessPanel');
   const dxfThicknessInput = el('dxfThicknessInput');
+  const dxfPartTypeSelect = el('dxfPartTypeSelect'); // Release 249
   // Release 216, siehe Deklaration von dxfThicknessTransparency/dxfThicknessColor weiter unten
   // sowie openDxfThicknessPanel()/confirmDxfThickness() ganz unten in dieser Datei.
   const dxfThicknessTransparencyRow = el('dxfThicknessTransparencyRow');
@@ -13019,7 +13278,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfLayerSchmiegeProblems = [];
   let dxfLayerSchmiegeInfo = null;
   let dxfLayerSchmiegeRings = null;
-  function getActiveSchmiegeRings() { return dxfLayerSchmiegeRings || dxfSchmiegeRings; }
+  // Release 249 (Sebastian, "DXF-Bauteil definieren": Bauteilart Stufe / Setzstufe / Wange, gestemmt;
+  // siehe Konzept_DXF_Wange_gestemmt.md): dxfPartType 'tread' | 'riser' | 'stringer'. Stufe/Setzstufe
+  // verhalten sich wie bisher (Schmiegenerkennung), 'stringer' (Wange, gestemmt) hat KEINE
+  // Schmiegenerkennung, dafür Einstemmungen: dxfMortiseInfo = einmalig pro Import ermittelte Kandidaten-
+  // Layer (mit geschlossenen Konturen, ignorierten Kreisen/offenen Linienzügen) und die optional
+  // benannten Layer "Stufeneinstemmung"/"Setzstufeneinstemmung" (dann je Layer eine eigene Tiefe, keine
+  // Layer-Auswahl). dxfMortiseLayer/dxfMortiseDepth = Einzel-Layer-Modus (Bediener wählt EINEN Layer,
+  // Tiefe von der Oberseite aus), dxfMortiseDepthTread/-Riser = benannter Modus. dxfMortiseMesh =
+  // buildMortiseMesh()-Ergebnis (rohe DXF-Koordinaten, z relativ zur Original-Z-Ebene) oder null,
+  // dxfMortiseUsedLayers = Layer, die als Netz dargestellt werden (kein Drahtgitter mehr),
+  // dxfMortiseProblems = Meldungen beim Verlassen des Dialogs.
+  let dxfPartType = 'tread';
+  let dxfMortiseInfo = null;
+  let dxfMortiseLayer = null;
+  let dxfMortiseDepth = 15;
+  let dxfMortiseDepthTread = 15;
+  let dxfMortiseDepthRiser = 15;
+  let dxfMortiseMesh = null;
+  let dxfMortiseUsedLayers = [];
+  let dxfMortiseProblems = [];
+  function getActiveSchmiegeRings() { return dxfPartType === 'stringer' ? null : (dxfLayerSchmiegeRings || dxfSchmiegeRings); }
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -13119,6 +13398,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // aktiv ist und gerade nicht per Drag die Kamera gedreht/verschoben wird - derselbe hitTest3D()
   // wie beim tatsächlichen Klick, nur ohne dabei bereits einen Mess-Punkt zu setzen. {x,y,z} | null.
   let measureHoverPoint = null;
+  // Release 248 (Sebastian: "Wenn die Messfunktion in der Sim an ist, sollte an dem Infofenster die
+  // aktuelle Live-Position des Cursors stehen, in X, Y und ggf. Z Koordinate. Erst wenn geklickt und
+  // gemessen wird, geht das weg."): measureLiveCursor = {x, y, z, snapped} | null - Position unter dem
+  // Mauszeiger, solange eine Messung (Länge oder Winkel) noch nicht vollständig ist. Fangpunkt
+  // (snapped=true): X/Y/Z des Punktes; sonst (snapped=false): der Mauszeiger auf der Arbeitsebene
+  // Z = 0 (nur X/Y, z=null).
+  let measureLiveCursor = null;
 
   // Winkelmessung (67. Runde, Sebastian: "zweite Messfunktion für Winkel ... Winkelmessfunktion
   // aktiv = dann Messung über drei Punkte und Ausgabe von Winkel + Gegenwinkel bei bisheriger
@@ -14505,7 +14791,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function recomputeLayerSchmiegeRings() {
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeProblems = [];
-    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo) return;
+    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo || dxfPartType === 'stringer') return; // Release 249: Wange hat keine Schmiegenerkennung
     const chords = [];
     const problems = dxfLayerSchmiegeProblems;
     dxfLayerSchmiegeLayers.forEach((type, name) => {
@@ -14526,6 +14812,58 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (res && res.zoneCount > 0) dxfLayerSchmiegeRings = res;
       ((res && res.skipped) || []).forEach(c => problems.push(c.layer + ': ' + T('Schmiege nicht berechenbar (Linie liegt auf einer Konturkante, überlappt mit einer anderen Schmiege oder umschließt die ganze Kontur)', 'bevel not computable (line lies on a contour edge, overlaps another bevel or encloses the whole contour)')));
     }
+  }
+  // Release 249: Kandidaten-Layer für die Einstemmungen (alle außer COMPASS/Kontur/Schmiege_vorn/hinten)
+  // samt der dort gefundenen geschlossenen Konturen - einmalig pro Import.
+  function computeMortiseInfo() {
+    const info = { names: { tread: null, riser: null }, candidates: [] };
+    if (!dxfGeometry || !dxfKonturLoop) return info;
+    info.names = CNCParser.detectMortiseLayerNames(dxfGeometry);
+    CNCParser.listMortiseCandidates(dxfGeometry, dxfKonturLayerName).forEach(name => {
+      const strokes = dxfGeometry.strokes.filter(st => st.layer === name);
+      const r = CNCParser.buildMortiseLoopsFromLayerStrokes(strokes);
+      info.candidates.push({ name, strokeCount: strokes.length, loops: r.loops, circles: r.ignoredCircles, open: r.openChains });
+    });
+    return info;
+  }
+  function defaultMortiseLayer() {
+    const c = dxfMortiseInfo && dxfMortiseInfo.candidates.find(q => q.loops.length);
+    return c ? c.name : null;
+  }
+  // Rechnet das Einstemmungs-Netz neu (nur bei 'stringer'). Layer ohne geschlossene Kontur, Tiefe 0
+  // usw. ergeben eine Meldung (dxfMortiseProblems), was berechenbar ist, wird dargestellt.
+  function recomputeMortise() {
+    dxfMortiseMesh = null;
+    dxfMortiseUsedLayers = [];
+    dxfMortiseProblems = [];
+    if (dxfPartType !== 'stringer' || !dxfKonturLoop || !dxfMortiseInfo) return;
+    const problems = dxfMortiseProblems;
+    if (!dxfThickness) { problems.push(T('Die Stärke ist 0 - es gibt nichts auszustemmen.', 'The thickness is 0 - there is nothing to mortise.')); return; }
+    const named = dxfMortiseInfo.names;
+    const pockets = [], used = [];
+    const addPocket = (name, depth) => {
+      const c = dxfMortiseInfo.candidates.find(q => q.name === name);
+      if (!c || !c.loops.length) { problems.push(name + ': ' + T('keine geschlossene Kontur gefunden', 'no closed contour found')); return; }
+      if (!(depth > 0)) { problems.push(name + ': ' + T('Einstemmungstiefe muss größer als 0 sein', 'depth of mortise must be greater than 0')); return; }
+      pockets.push({ loops: c.loops, depth, layer: name });
+      used.push(name);
+    };
+    if (named.tread || named.riser) {
+      if (named.tread) addPocket(named.tread, dxfMortiseDepthTread);
+      if (named.riser) addPocket(named.riser, dxfMortiseDepthRiser);
+    } else if (dxfMortiseLayer) {
+      addPocket(dxfMortiseLayer, dxfMortiseDepth);
+    } else {
+      problems.push(T('Es ist kein Einstemmungs-Layer gewählt (bzw. die Datei enthält keinen Layer mit geschlossenen Konturen).', 'No mortise layer is selected (or the file has no layer with closed contours).'));
+    }
+    if (!pockets.length) return;
+    let mesh = null;
+    try { mesh = buildMortiseMesh(dxfKonturLoop, pockets, dxfThickness); } catch (e) { mesh = null; }
+    if (!mesh) { problems.push(T('Keine Einstemmung liegt innerhalb der Bauteilkontur - das Bauteil wird ohne Einstemmung dargestellt.', 'No mortise lies inside the part contour - the part is shown without a mortise.')); return; }
+    if (mesh.clamped) problems.push(T('Die Einstemmungstiefe war größer als die Stärke und wurde auf die Stärke (' + Math.abs(dxfThickness) + ' mm) begrenzt.', 'The depth of mortise exceeded the thickness and was limited to the thickness (' + Math.abs(dxfThickness) + ' mm).'));
+    dxfMortiseMesh = mesh;
+    dxfMortiseUsedLayers = used;
+    window.__lastMortiseInfo = mesh.info;
   }
   function loadDxfText(text, filename) {
     dxfGeometry = CNCParser.parseDXF(text);
@@ -14596,6 +14934,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfLayerSchmiegeProblems = [];
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeInfo = computeLayerSchmiegeInfo();
+    // Release 249: Bauteilart startet pro Import immer als "Stufe" (Altverhalten), Einstemmungen aus.
+    dxfPartType = 'tread';
+    dxfMortiseInfo = computeMortiseInfo();
+    dxfMortiseLayer = defaultMortiseLayer();
+    dxfMortiseDepth = 15; dxfMortiseDepthTread = 15; dxfMortiseDepthRiser = 15;
+    dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = [];
     // "DXF-Layer" (78. Runde): jeder neue Import startet mit ALLEN Layern sichtbar, exakt wie
     // dxfVisible/dxfOffset/dxfMirror* oben - eine für die vorherige Datei ausgeblendete Layer-Auswahl
     // soll sich nicht auf eine neu geladene Datei übertragen (dieselbe Begründung wie bei
@@ -14641,6 +14985,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfSchmiegeHintenLayerName = null;
     dxfSchmiegeRings = null;
     dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Map(); dxfLayerSchmiegeProblems = []; dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
+    dxfPartType = 'tread'; dxfMortiseInfo = null; dxfMortiseLayer = null; dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
     dxfMovePanel.classList.remove('open');
@@ -16476,6 +16821,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfThicknessTransparency, dxfThicknessColor,
       // Release 243: Layer-Schmiegen (Ringe werden bei jeder Änderung neu erzeugt -> Objektidentität reicht)
       dxfLayerSchmiegeRings,
+      dxfMortiseMesh, dxfPartType, // Release 249
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
       // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
@@ -16506,6 +16852,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
       a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings &&
+      a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType &&
       a.dxfOutlineColor === b.dxfOutlineColor &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
@@ -17067,7 +17414,50 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function updateMeasureHover(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     measureHoverPoint = hitTest3D(clientX - rect.left, clientY - rect.top);
+    setMeasureLiveCursor(clientX - rect.left, clientY - rect.top, measureHoverPoint);
     requestRender();
+  }
+
+  // Release 248: Mauszeiger (Canvas-Pixel) auf die Arbeitsebene Z = 0 projizieren. Die Projektion ist
+  // orthografisch (siehe project()): Bildschirmpunkt -> Strahl camPos + right*cx + up*cy + fwd*t im
+  // Render-Raum (x, y=Welt-Z, z=Welt-Y, siehe toRender), Schnitt mit Render-y = 0. null bei (fast)
+  // waagerechter Blickrichtung (Ebene dann nur noch als Linie sichtbar).
+  function cursorToWorkPlane(mx, my) {
+    const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+    const camPos = cameraPosition();
+    const basis = buildBasis(camPos);
+    const f = 1 / Math.tan((45 * Math.PI / 180) / 2);
+    const scale = (h / 2) * f / cam.dist;
+    const cx = (mx - w / 2) / scale, cy = -(my - h / 2) / scale;
+    const base = {
+      x: camPos.x + basis.right.x * cx + basis.up.x * cy,
+      y: camPos.y + basis.right.y * cx + basis.up.y * cy,
+      z: camPos.z + basis.right.z * cx + basis.up.z * cy
+    };
+    if (Math.abs(basis.fwd.y) < 1e-3) return null;
+    const t = -base.y / basis.fwd.y;
+    return { x: base.x + basis.fwd.x * t, y: base.z + basis.fwd.z * t };
+  }
+  function setMeasureLiveCursor(mx, my, snap) {
+    if (snap) measureLiveCursor = { x: snap.x, y: snap.y, z: snap.z, snapped: true };
+    else {
+      const q = cursorToWorkPlane(mx, my);
+      measureLiveCursor = q ? { x: q.x, y: q.y, z: null, snapped: false } : null;
+    }
+    refreshMeasureLive();
+  }
+  function measureLiveHtml() {
+    const c = measureLiveCursor;
+    if (!c) return '<div class="measure-hint">' + T('Cursor: Maus im 3D-Bereich bewegen …', 'Cursor: move the mouse over the 3D area …') + '</div>';
+    return `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} X</span><span class="v">${fmt(c.x)} mm</span></div>` +
+      `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} Y</span><span class="v">${fmt(c.y)} mm</span></div>` +
+      (c.z != null ? `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} Z</span><span class="v">${fmt(c.z)} mm</span></div>` : '') +
+      `<div class="measure-hint">${c.snapped ? T('Fangpunkt', 'Snap point') : T('auf Arbeitsebene Z = 0', 'on work plane Z = 0')}</div>`;
+  }
+  // Nur der Live-Block wird neu geschrieben (nicht das ganze Messfenster), siehe updateMeasureOutput().
+  function refreshMeasureLive() {
+    const box = measurePanel.querySelector('.measure-live');
+    if (box) box.innerHTML = measureLiveHtml();
   }
 
   function handleMeasureClick(clientX, clientY) {
@@ -17092,6 +17482,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function updateAngleMeasureHover(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     angleHoverPoint = hitTest3D(clientX - rect.left, clientY - rect.top);
+    setMeasureLiveCursor(clientX - rect.left, clientY - rect.top, angleHoverPoint);
     requestRender();
   }
 
@@ -17146,6 +17537,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function updateMeasureOutput() {
+    updateMeasureOutputInner();
+    refreshMeasureLive();
+  }
+  function updateMeasureOutputInner() {
     if (!measureActive && !angleMeasureActive) { measurePanel.hidden = true; return; }
     measurePanel.hidden = false;
     if (angleMeasureActive) {
@@ -17156,11 +17551,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Längenmesswerkzeug erscheinen - hier je einmal für beide Schenkel (Scheitelpunkt -> erster
       // bzw. dritter Punkt). "Gegenwinkel" wird als Explementärwinkel (360° - Winkel) verstanden.
       if (anglePoints.length === 0) {
-        measurePanel.innerHTML = '<div class="measure-hint">' + T('Winkelmessung aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Angle measurement active: Click the first point (or line) in the 3D space.') + '</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Winkelmessung aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Angle measurement active: Click the first point (or line) in the 3D space.') + '</div>' + '<div class="readout-sep"></div><div class="measure-live"></div>';
       } else if (anglePoints.length === 1) {
-        measurePanel.innerHTML = '<div class="measure-hint">' + T('Erster Punkt gesetzt – Scheitelpunkt (zweiten Punkt) anklicken.', 'First point set – click the vertex (second point).') + '</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Erster Punkt gesetzt – Scheitelpunkt (zweiten Punkt) anklicken.', 'First point set – click the vertex (second point).') + '</div>' + '<div class="readout-sep"></div><div class="measure-live"></div>';
       } else if (anglePoints.length === 2) {
-        measurePanel.innerHTML = '<div class="measure-hint">' + T('Scheitelpunkt gesetzt – dritten Punkt anklicken.', 'Vertex set – click the third point.') + '</div>';
+        measurePanel.innerHTML = '<div class="measure-hint">' + T('Scheitelpunkt gesetzt – dritten Punkt anklicken.', 'Vertex set – click the third point.') + '</div>' + '<div class="readout-sep"></div><div class="measure-live"></div>';
       } else {
         const [p1, vertex, p3] = anglePoints;
         const v1 = { x: p1.x - vertex.x, y: p1.y - vertex.y, z: p1.z - vertex.z };
@@ -17192,9 +17587,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       return;
     }
     if (!measureStart) {
-      measurePanel.innerHTML = '<div class="measure-hint">' + T('Messwerkzeug aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Measurement tool active: Click the first point (or line) in the 3D area.') + '</div>';
+      measurePanel.innerHTML = '<div class="measure-hint">' + T('Messwerkzeug aktiv: ersten Punkt (oder Linie) im 3D-Bereich anklicken.', 'Measurement tool active: Click the first point (or line) in the 3D area.') + '</div>' + '<div class="readout-sep"></div><div class="measure-live"></div>';
     } else if (!measureEnd) {
-      measurePanel.innerHTML = '<div class="measure-hint">' + T('Startpunkt gesetzt – zweiten Punkt (oder Linie) anklicken.', 'Start point set – click the second point (or line).') + '</div>';
+      measurePanel.innerHTML = '<div class="measure-hint">' + T('Startpunkt gesetzt – zweiten Punkt (oder Linie) anklicken.', 'Start point set – click the second point (or line).') + '</div>' + '<div class="readout-sep"></div><div class="measure-live"></div>';
     } else {
       measurePanel.innerHTML =
         measureLegRows(measureStart, measureEnd, '') +
@@ -17560,6 +17955,161 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
   }
 
+  // Release 249 ("Wange, gestemmt"): Darstellung des Einstemmungs-Netzes (dxfMortiseMesh, siehe
+  // buildMortiseMesh()). Die Einstemmungen machen die Fläche so verwinkelt (Böden, Stufen, Wände in
+  // mehreren Tiefen), dass die bisherige Sortierung nach Flächenmitte (fillRevolutionBody()) nicht mehr
+  // zuverlässig ist - deshalb ein kleiner Software-Tiefenpuffer (z-Buffer): jedes Dreieck wird in ein
+  // Offscreen-Bild gerastert, pro Pixel gilt die nächste Fläche. Die Projektion ist orthografisch
+  // (siehe project()), die Tiefe also linear über das Dreieck interpolierbar. Rückseiten werden
+  // verworfen (das Netz ist ein geschlossener Körper); zusätzlich merkt sich der Puffer pro Pixel die
+  // zweitnächste Fläche, damit eine Transparenz < 100 % wie beim bisherigen Körper wirkt. Die
+  // Umrisslinien (Kontur oben/unten, Einstemmungsränder) werden tiefengeprüft darüber gezeichnet; bei
+  // Transparenz < 100 % scheinen sie durch die vorderste Fläche hindurch.
+  let mortiseOffCanvas = null;
+  function drawMortiseBody(proj, mesh, baseZ) {
+    const m = ctx.getTransform();
+    const sc = m.a || 1;
+    const cv = ctx.canvas;
+    const W = cv.width, H = cv.height;
+    if (!W || !H) return null;
+    const hex = /^#[0-9a-f]{6}$/i.test(dxfThicknessColor) ? dxfThicknessColor : '#3399ff';
+    const baseR = parseInt(hex.slice(1, 3), 16), baseG = parseInt(hex.slice(3, 5), 16), baseB = parseInt(hex.slice(5, 7), 16);
+    const alpha = Math.max(0, Math.min(1, 1 - dxfThicknessTransparency / 100));
+    const fwd = cam.orient.fwd;
+    const z1 = new Float32Array(W * H).fill(Infinity), z2 = new Float32Array(W * H).fill(Infinity);
+    const c1 = new Uint32Array(W * H), c2 = new Uint32Array(W * H);
+    // Eckpunkt (DXF-Rohkoordinate + relatives z) -> {x,y (Geräte-Pixel), d (Tiefe)}
+    const cache = new Map();
+    function vert(x, y, zRel) {
+      const key = x + '|' + y + '|' + zRel;
+      let v = cache.get(key);
+      if (v !== undefined) return v;
+      const t = dxfTransformPoint({ x, y, z: baseZ });
+      const pp = proj(toRender({ x: t.x, y: t.y, z: t.z + zRel }));
+      v = pp ? { x: m.a * pp.x + m.e, y: m.d * pp.y + m.f, d: pp.depth } : null;
+      cache.set(key, v);
+      return v;
+    }
+    function pack(r, g, b) { return (r | (g << 8) | (b << 16) | (255 << 24)) >>> 0; }
+    let triDrawn = 0, triCulled = 0;
+    function tri(a, b, c, col) {
+      const area = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+      if (Math.abs(area) < 1e-6) return;
+      const gx = ((b.d - a.d) * (c.y - a.y) - (c.d - a.d) * (b.y - a.y)) / area;
+      const gy = ((b.x - a.x) * (c.d - a.d) - (c.x - a.x) * (b.d - a.d)) / area;
+      const minY = Math.max(0, Math.ceil(Math.min(a.y, b.y, c.y) - 0.5));
+      const maxY = Math.min(H - 1, Math.ceil(Math.max(a.y, b.y, c.y) - 0.5) - 1);
+      const P = [a, b, c];
+      triDrawn++;
+      for (let y = minY; y <= maxY; y++) {
+        const py = y + 0.5;
+        let xl = Infinity, xr = -Infinity;
+        for (let e = 0; e < 3; e++) {
+          const p = P[e], q = P[(e + 1) % 3];
+          if ((p.y <= py && q.y > py) || (q.y <= py && p.y > py)) {
+            const x = p.x + (py - p.y) * (q.x - p.x) / (q.y - p.y);
+            if (x < xl) xl = x;
+            if (x > xr) xr = x;
+          }
+        }
+        if (xl === Infinity) continue;
+        const xs = Math.max(0, Math.ceil(xl - 0.5)), xe = Math.min(W - 1, Math.ceil(xr - 0.5) - 1);
+        let d = a.d + gx * (xs + 0.5 - a.x) + gy * (py - a.y);
+        let i = y * W + xs;
+        for (let x = xs; x <= xe; x++, i++, d += gx) {
+          if (d < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = d; c1[i] = col; }
+          else if (d < z2[i]) { z2[i] = d; c2[i] = col; }
+        }
+      }
+    }
+    const shade = (facing, k) => {
+      const light = (0.55 + 0.45 * Math.max(0, -facing)) * k;
+      return pack(Math.min(255, Math.round(baseR * light)), Math.min(255, Math.round(baseG * light)), Math.min(255, Math.round(baseB * light)));
+    };
+    const EPSF = 1e-4;
+    // Dreiecke (Kappen/Böden): Normale (0,0,nz) in Arbeitskoordinaten
+    for (const t of mesh.tris) {
+      const facing = t.nz * fwd.y;
+      if (facing > -EPSF) { triCulled++; continue; }
+      const a = vert(t.v[0][0], t.v[0][1], t.z), b = vert(t.v[1][0], t.v[1][1], t.z), c = vert(t.v[2][0], t.v[2][1], t.z);
+      if (!a || !b || !c) continue;
+      tri(a, b, c, shade(facing, t.kind === 'floor' ? 0.82 : 1));
+    }
+    // Wände: Normale aus dem transformierten Punktpaar (gilt auch bei Spiegeln/Drehen/Skalieren)
+    for (const w of mesh.walls) {
+      const t0 = dxfTransformPoint({ x: w.a[0], y: w.a[1], z: 0 });
+      const t1 = dxfTransformPoint({ x: w.a[0] + w.n[0], y: w.a[1] + w.n[1], z: 0 });
+      let nx = t1.x - t0.x, ny = t1.y - t0.y;
+      const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+      const facing = nx * fwd.x + ny * fwd.z;
+      if (facing > -EPSF) { triCulled++; continue; }
+      const p00 = vert(w.a[0], w.a[1], w.z0), p01 = vert(w.a[0], w.a[1], w.z1);
+      const p10 = vert(w.b[0], w.b[1], w.z0), p11 = vert(w.b[0], w.b[1], w.z1);
+      if (!p00 || !p01 || !p10 || !p11) continue;
+      const col = shade(facing, w.kind === 'pocket' ? 0.92 : 1);
+      tri(p00, p10, p11, col);
+      tri(p00, p11, p01, col);
+    }
+    // Zusammensetzen: vorderste Fläche mit Deckkraft alpha, darunter ggf. die zweite
+    const img = ctx.createImageData(W, H);
+    const out = new Uint32Array(img.data.buffer);
+    let covered = 0;
+    for (let i = 0, n = W * H; i < n; i++) {
+      if (z1[i] === Infinity) continue;
+      covered++;
+      const f = c1[i];
+      if (alpha >= 0.999) { out[i] = f; continue; }
+      let r = (f & 255) * alpha, g = ((f >>> 8) & 255) * alpha, b = ((f >>> 16) & 255) * alpha, a = alpha;
+      if (z2[i] !== Infinity) {
+        const s = c2[i], k = alpha * (1 - alpha);
+        r += (s & 255) * k; g += ((s >>> 8) & 255) * k; b += ((s >>> 16) & 255) * k; a += k;
+      }
+      out[i] = ((Math.round(r / a)) | (Math.round(g / a) << 8) | (Math.round(b / a) << 16) | (Math.round(a * 255) << 24)) >>> 0;
+    }
+    // Umrisslinien (tiefengeprüft)
+    let lineCol = 0xff000000;
+    if (/^#[0-9a-f]{6}$/i.test(dxfOutlineColor)) lineCol = pack(parseInt(dxfOutlineColor.slice(1, 3), 16), parseInt(dxfOutlineColor.slice(3, 5), 16), parseInt(dxfOutlineColor.slice(5, 7), 16));
+    const lw = Math.max(1, Math.round(1.5 * sc)), half = Math.floor(lw / 2);
+    const BIAS = 0.75;
+    const seeThrough = alpha < 0.999;
+    let linePixels = 0;
+    const drawRings = !dxfHiddenLayers.has(dxfKonturLayerName);
+    if (drawRings) {
+      for (const ring of mesh.rings) {
+        const n = ring.pts.length;
+        for (let k = 0; k < n; k++) {
+          const pa = ring.pts[k], pb = ring.pts[(k + 1) % n];
+          const a = vert(pa[0], pa[1], ring.z), b = vert(pb[0], pb[1], ring.z);
+          if (!a || !b) continue;
+          const steps = Math.max(1, Math.ceil(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y))));
+          for (let s = 0; s <= steps; s++) {
+            const u = s / steps;
+            const x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u, d = a.d + (b.d - a.d) * u;
+            const x0 = Math.round(x) - half, y0 = Math.round(y) - half;
+            for (let yy = y0; yy < y0 + lw; yy++) {
+              if (yy < 0 || yy >= H) continue;
+              for (let xx = x0; xx < x0 + lw; xx++) {
+                if (xx < 0 || xx >= W) continue;
+                const i = yy * W + xx;
+                if (d <= z1[i] + BIAS || (seeThrough && d <= z2[i] + BIAS)) { out[i] = lineCol; linePixels++; }
+              }
+            }
+          }
+        }
+      }
+    }
+    if (!mortiseOffCanvas) mortiseOffCanvas = document.createElement('canvas');
+    if (mortiseOffCanvas.width !== W || mortiseOffCanvas.height !== H) { mortiseOffCanvas.width = W; mortiseOffCanvas.height = H; }
+    mortiseOffCanvas.getContext('2d').putImageData(img, 0, 0);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
+    ctx.drawImage(mortiseOffCanvas, 0, 0);
+    ctx.restore();
+    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc };
+  }
+
   function drawDxf(proj) {
     if (!dxfGeometry || !dxfVisible) return;
     const defaultColor = cssVar('--dxf-color') || cssVar('--tool-color');
@@ -17656,14 +18206,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Schmiege, siehe Regressionstests test_r216.../test_r217.../test_r218..., die bewusst genau
     // diese Linie über eine Rotpixel-Zählung prüfen).
     const schmiegeActive = fillActive && !!(getActiveSchmiegeRings() && getActiveSchmiegeRings().zoneCount > 0);
-    const bottomWireframeStrokes = schmiegeActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
+    // Release 249: bei aktivem Einstemmungs-Netz ("Wange, gestemmt") übernimmt das Netz samt seinen
+    // tiefengeprüften Umrisslinien die Darstellung der Kontur UND der Einstemmungs-Layer - beide
+    // verschwinden deshalb aus den (nicht tiefengeprüften) Drahtgitter-Kopien.
+    const meshActive = fillActive && dxfPartType === 'stringer' && !!dxfMortiseMesh;
+    const mortiseLayerSet = meshActive ? new Set(dxfMortiseUsedLayers) : null;
+    const bottomWireframeStrokes = (schmiegeActive || meshActive) ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer))) : transformedStrokes;
     // Nur für Diagnose/Regressionstests (window.__debug_getLastDxfBottomWireframeIncludesKontur in
     // den instrumentierten Testkopien) - ohne Funktion für die eigentliche Darstellung, analog zu
     // window.__lastDxfKonturFillInfo/__lastFillRevolutionBodyFaceCount: hält unmittelbar fest, ob
     // der Kontur-Layer gerade Teil der flachen z=0-Drahtgitter-Kopie ist (Release 225, s.o.).
     window.__lastDxfBottomWireframeIncludesKontur = bottomWireframeStrokes.some(s => s.layer === dxfKonturLayerName);
     strokeGroupedByColor(bottomWireframeStrokes, proj, 0);
-    const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName) : transformedStrokes;
+    const topWireframeStrokes = fillActive ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer))) : transformedStrokes;
     // Bauteilstärke (67. Runde, Sebastian: "DXF Funktion um Bauteilstärke anzugeben") - Annahme
     // (siehe Dokumentation 9.8a): die DXF-Unterlage stellt die Aufstandsfläche/Oberseite des
     // Werkstücks dar (liegt "unter der gefrästen Kontur", siehe Abschnitt 9.8) - eine angegebene
@@ -17730,7 +18285,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // angewendet. Die Ring-Punktliste wird am Ende um den Startpunkt ergänzt (geschlossener
       // Ring), exakt wie bei den Kreisringen in drawToolHolder()/drawTool() oben (dort ist der
       // Schlusspunkt durch den vollen 360°-Winkel automatisch identisch mit dem Startpunkt).
-      if (fillActive) {
+      if (meshActive) {
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+        const rinfo = drawMortiseBody(proj, dxfMortiseMesh, dxfKonturLoop[0].z || 0);
+        window.__lastMortiseRenderInfo = Object.assign({ thickness: dxfThickness, levels: dxfMortiseMesh.levels.length, tris: dxfMortiseMesh.tris.length, walls: dxfMortiseMesh.walls.length }, rinfo || {});
+      } else if (fillActive) {
         // Release 221 ("Schmiege_vorn"/"Schmiege_hinten", siehe Deklaration von dxfSchmiegeRings
         // oben sowie buildSchmiegeKonturRings() in parser.js): liegen einer oder beide der
         // optionalen Schmiege-Layer vor, wird nicht mehr für beide Ringe derselbe dxfKonturLoop
@@ -23631,6 +24191,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     measureActive = !measureActive;
     canvas.style.cursor = measureActive ? 'crosshair' : '';
     if (!measureActive) { measureStart = null; measureEnd = null; measureHoverPoint = null; }
+    measureLiveCursor = null; // Release 248
     // Winkelmessung UND Codesprung sind exklusiv zur Längenmessung (67. Runde bzw. Release 101,
     // siehe codeJumpActive weiter oben) - Aktivieren der einen schaltet die anderen automatisch
     // ab, statt mehrere gleichzeitig laufen zu lassen (dieselbe 3D-Linksklick-Aktion würde sonst
@@ -23659,6 +24220,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     angleMeasureActive = !angleMeasureActive;
     canvas.style.cursor = angleMeasureActive ? 'crosshair' : '';
     if (!angleMeasureActive) { anglePoints = []; angleHoverPoint = null; }
+    measureLiveCursor = null; // Release 248
     if (angleMeasureActive && measureActive) {
       measureActive = false;
       measureStart = null; measureEnd = null; measureHoverPoint = null;
@@ -24557,6 +25119,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // echte (nicht-ziehende) Mausbewegung ihn am neuen Blickwinkel neu bestimmt.
     if (measureActive && measureHoverPoint) measureHoverPoint = null;
     if (angleMeasureActive && angleHoverPoint) angleHoverPoint = null;
+    if (measureLiveCursor) { measureLiveCursor = null; refreshMeasureLive(); } // Release 248: während des Kamera-Drags keine Live-Position
     const dx = e.clientX - lastPX, dy = e.clientY - lastPY;
     lastPX = e.clientX; lastPY = e.clientY;
     if (dragButton === 2) {
@@ -24657,6 +25220,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Fangpunkt gehört zu einer Mausposition, die es gerade nicht mehr gibt, deshalb ausblenden.
       if (measureHoverPoint) { measureHoverPoint = null; requestRender(); }
       if (angleHoverPoint) { angleHoverPoint = null; requestRender(); }
+      if (measureLiveCursor) { measureLiveCursor = null; refreshMeasureLive(); } // Release 248
     })
   );
   // Zoom zum Mauszeiger (Sebastian, 41. Runde: "Es soll da rangezoomt werden, wo der
@@ -25270,9 +25834,84 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   dxfSchmiegeCheckbox.addEventListener('change', updateDxfSchmiegeHint);
 
+  // Release 249: Bauteilart-Dropdown + Einstemmungs-Einstellungen im Dialog "DXF-Bauteil definieren".
+  const dxfMortiseRow = el('dxfMortiseRow');
+  const dxfMortiseLayerRow = el('dxfMortiseLayerRow');
+  const dxfMortiseLayerSelect = el('dxfMortiseLayerSelect');
+  const dxfMortiseDepthInput = el('dxfMortiseDepthInput');
+  const dxfMortiseDepth2Input = el('dxfMortiseDepth2Input');
+  const dxfMortiseDepth2Field = el('dxfMortiseDepth2Field');
+  const dxfMortiseDepthLabel = el('dxfMortiseDepthLabel');
+  const dxfMortiseDepth2Label = el('dxfMortiseDepth2Label');
+  const dxfMortiseHint = el('dxfMortiseHint');
+  function describeMortiseCandidate(c) {
+    if (!c.strokeCount) return T('keine Linien', 'no lines');
+    const parts = [];
+    if (c.loops.length) parts.push(c.loops.length + ' ' + T(c.loops.length > 1 ? 'geschlossene Konturen' : 'geschlossene Kontur', c.loops.length > 1 ? 'closed contours' : 'closed contour'));
+    else parts.push(T('keine geschlossene Kontur', 'no closed contour'));
+    if (c.circles) parts.push(c.circles + ' ' + T(c.circles > 1 ? 'Kreise ignoriert' : 'Kreis ignoriert', c.circles > 1 ? 'circles ignored' : 'circle ignored'));
+    if (c.open) parts.push(c.open + ' ' + T(c.open > 1 ? 'offene Linienzüge ignoriert' : 'offener Linienzug ignoriert', c.open > 1 ? 'open polylines ignored' : 'open polyline ignored'));
+    return parts.join(', ');
+  }
+  // Baut die Einstemmungs-Einstellungen passend zur Datei auf: gibt es benannte Layer
+  // ("Stufeneinstemmung"/"Setzstufeneinstemmung"), erscheint je Layer ein Tiefenfeld und KEINE
+  // Layer-Auswahl; sonst eine Layer-Auswahl (genau ein Einstemmungs-Layer) und ein Tiefenfeld.
+  function refreshDxfMortiseUI() {
+    const info = dxfMortiseInfo || { names: { tread: null, riser: null }, candidates: [] };
+    const named = info.names;
+    const isNamed = !!(named.tread || named.riser);
+    dxfMortiseLayerRow.hidden = isNamed;
+    dxfMortiseLayerSelect.innerHTML = '';
+    if (!isNamed) {
+      if (!info.candidates.length) {
+        const op = document.createElement('option');
+        op.value = ''; op.textContent = T('(kein weiterer Layer vorhanden)', '(no further layer available)');
+        dxfMortiseLayerSelect.appendChild(op);
+      }
+      info.candidates.forEach(c => {
+        const op = document.createElement('option');
+        op.value = c.name;
+        op.textContent = c.name + ' – ' + describeMortiseCandidate(c);
+        dxfMortiseLayerSelect.appendChild(op);
+      });
+      dxfMortiseLayerSelect.value = dxfMortiseLayer && info.candidates.some(c => c.name === dxfMortiseLayer) ? dxfMortiseLayer : (defaultMortiseLayer() || '');
+    }
+    const depthWord = T('Einstemmungstiefe', 'Depth of mortise');
+    if (isNamed && named.tread && named.riser) {
+      dxfMortiseDepthLabel.textContent = depthWord + ' ' + T('Stufe', 'tread') + ' (mm)';
+      dxfMortiseDepth2Label.textContent = depthWord + ' ' + T('Setzstufe', 'riser') + ' (mm)';
+      dxfMortiseDepthInput.value = String(dxfMortiseDepthTread);
+      dxfMortiseDepth2Input.value = String(dxfMortiseDepthRiser);
+      dxfMortiseDepth2Field.hidden = false;
+    } else if (isNamed) {
+      const isTread = !!named.tread;
+      dxfMortiseDepthLabel.textContent = depthWord + ' ' + (isTread ? T('Stufe', 'tread') : T('Setzstufe', 'riser')) + ' (mm)';
+      dxfMortiseDepthInput.value = String(isTread ? dxfMortiseDepthTread : dxfMortiseDepthRiser);
+      dxfMortiseDepth2Field.hidden = true;
+    } else {
+      dxfMortiseDepthLabel.textContent = depthWord + ' (mm)';
+      dxfMortiseDepthInput.value = String(dxfMortiseDepth);
+      dxfMortiseDepth2Field.hidden = true;
+    }
+    dxfMortiseHint.textContent = isNamed
+      ? T('Die Layer "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '" werden als Einstemmungen erkannt. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise (Bohrungen) in diesen Layern werden ignoriert.',
+          'The layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '" are recognised as mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles (drill holes) in these layers are ignored.')
+      : T('Den Layer wählen, der die Einstemmungen enthält. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise (Bohrungen) im Layer werden ignoriert.',
+          'Select the layer that contains the mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles (drill holes) in the layer are ignored.');
+  }
+  function updateDxfPartTypeUI() {
+    const stringer = dxfPartTypeSelect.value === 'stringer';
+    dxfMortiseRow.hidden = !stringer;
+    el('dxfSchmiegeRow').hidden = stringer;
+  }
+  dxfPartTypeSelect.addEventListener('change', updateDxfPartTypeUI);
+
   function openDxfThicknessPanel() {
     if (!dxfGeometry) return;
     refreshDxfSchmiegeUI(); // Release 243
+    dxfPartTypeSelect.value = dxfPartType; // Release 249
+    refreshDxfMortiseUI();
+    updateDxfPartTypeUI();
     // Release 222 (Sebastian: "Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte
     // drin."): solange der Dialog für diesen Import noch nie bestätigt wurde, werden die Felder mit
     // DXF_THICKNESS_PREFILL/DXF_THICKNESS_TRANSPARENCY_PREFILL vorbefüllt statt mit dem tatsächlich
@@ -25309,6 +25948,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
+    // Release 249: Bauteilart + Einstemmungs-Einstellungen übernehmen (Berechnung am Ende).
+    const pendingPartType = ['tread', 'riser', 'stringer'].includes(dxfPartTypeSelect.value) ? dxfPartTypeSelect.value : 'tread';
+    const mortiseNames = (dxfMortiseInfo && dxfMortiseInfo.names) || { tread: null, riser: null };
+    const parseDepth = inp => Math.abs(parseFloat(normalizeToolValue(inp.value, 0)) || 0);
+    if (pendingPartType === 'stringer') {
+      if (mortiseNames.tread && mortiseNames.riser) { dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput); dxfMortiseDepthRiser = parseDepth(dxfMortiseDepth2Input); }
+      else if (mortiseNames.tread) dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput);
+      else if (mortiseNames.riser) dxfMortiseDepthRiser = parseDepth(dxfMortiseDepthInput);
+      else { dxfMortiseDepth = parseDepth(dxfMortiseDepthInput); dxfMortiseLayer = dxfMortiseLayerSelect.value || null; }
+    }
     // Release 243: Schmiegenerkennung übernehmen (erst nach erfolgreicher Validierung unten wirksam
     // wäre ein Teil-Zustand möglich - deshalb hier vorab nur die Auswahl merken, die Ringe werden am
     // Ende berechnet).
@@ -25345,10 +25994,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
     dxfLayerSchmiegeEnabled = pendingSchmiegeEnabled; // Release 243
     dxfLayerSchmiegeLayers = pendingSchmiegeLayers;
+    dxfPartType = pendingPartType; // Release 249 (erst nach der Validierung)
     recomputeLayerSchmiegeRings();
+    recomputeMortise(); // Release 249
     updateDxfUI();
     requestRender();
     dxfThicknessPanel.classList.remove('open');
+    // Release 249: dasselbe für die Einstemmungen der gestemmten Wange.
+    if (dxfMortiseProblems.length) {
+      const msg = T('Einstemmung:\n', 'Mortise:\n') + dxfMortiseProblems.join('\n');
+      setTimeout(() => alert(msg), 0);
+    }
     // Release 247: Meldung beim Verlassen des Dialogs, wenn eine gewählte Schmiege nicht berechenbar war.
     if (dxfLayerSchmiegeProblems.length) {
       const msg = T('Schmiege nicht berechenbar:\n', 'Bevel could not be computed:\n') + dxfLayerSchmiegeProblems.join('\n') + (dxfLayerSchmiegeRings ? T('\n\nWas berechenbar war, wird dargestellt.', '\n\nWhat could be computed is shown.') : T('\n\nDas Bauteil wird ohne Schmiege dargestellt.', '\n\nThe part is shown without a bevel.'));
