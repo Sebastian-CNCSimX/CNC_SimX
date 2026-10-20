@@ -5068,6 +5068,7 @@
         <div class="dxf-measure-toolrow">
           <button class="toolbar-btn" id="toolDxfMeasureLengthBtn" type="button" title="Messwerkzeug: Abstand zwischen zwei angeklickten Fangpunkten in der Vorschau messen (Direkt, ΔX, ΔY)" data-i18n-en-title="Measurement tool: measure the distance between two clicked snap points in the preview (direct, ΔX, ΔY)">📏</button>
           <button class="toolbar-btn" id="toolDxfMeasureAngleBtn" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Fangpunkte in der Vorschau messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked snap points in the preview (second click = vertex) - shows angle and counter-angle">∠</button>
+          <button class="toolbar-btn" id="toolDxfViewHomeBtn" type="button" title="Home: Zeichnung wieder zentrieren (Zoom und Verschiebung zurücksetzen). Zoomen mit dem Mausrad (zum Cursor hin), Verschieben mit der rechten Maustaste." data-i18n-en-title="Home: re-center the drawing (reset zoom and pan). Zoom with the mouse wheel (towards the cursor), pan with the right mouse button.">⌂</button>
         </div>
         <canvas id="toolDxfImportCanvas" width="260" height="420"></canvas>
         <div class="dxf-measure-panel" id="toolDxfMeasurePanel" hidden></div>
@@ -5159,6 +5160,7 @@
         <div class="dxf-measure-toolrow">
           <button class="toolbar-btn" id="chuckDxfMeasureLengthBtn" type="button" title="Messwerkzeug: Abstand zwischen zwei angeklickten Fangpunkten in der Vorschau messen (Direkt, ΔX, ΔY)" data-i18n-en-title="Measurement tool: measure the distance between two clicked snap points in the preview (direct, ΔX, ΔY)">📏</button>
           <button class="toolbar-btn" id="chuckDxfMeasureAngleBtn" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Fangpunkte in der Vorschau messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked snap points in the preview (second click = vertex) - shows angle and counter-angle">∠</button>
+          <button class="toolbar-btn" id="chuckDxfViewHomeBtn" type="button" title="Home: Zeichnung wieder zentrieren (Zoom und Verschiebung zurücksetzen). Zoomen mit dem Mausrad (zum Cursor hin), Verschieben mit der rechten Maustaste." data-i18n-en-title="Home: re-center the drawing (reset zoom and pan). Zoom with the mouse wheel (towards the cursor), pan with the right mouse button.">⌂</button>
         </div>
         <canvas id="chuckDxfImportCanvas" width="260" height="420"></canvas>
         <div class="dxf-measure-panel" id="chuckDxfMeasurePanel" hidden></div>
@@ -9714,8 +9716,8 @@
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 243;
-  const APP_RELEASE_TIMESTAMP = '19.10.2026, 15:36 Uhr';
+  const APP_RELEASE_NUMBER = 244;
+  const APP_RELEASE_TIMESTAMP = '20.10.2026, 07:39 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -16735,6 +16737,51 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // ============================================================
   const MEASURE_PICK_PX = 14;
 
+  // Release 244 (Sebastian: "Messe vom 3D Körper (Werkzeug, egal ob Zylinder, mit Profil oder
+  // Säge (was ja auch ein Zylinder ist...)) zum Werkstück hin, also zur DXF bzw. zum CNC Code in
+  // 3D Sim einbauen"): der Werkzeugkörper ist als Messziel fangbar. drawTool() befüllt pro Frame
+  // (für die aktuelle Scrub-Position) die Welt-Fangpunkte des SICHTBAREN Werkzeugkörpers:
+  // je Querschnittsring (Zylinder/Säge: die beiden Stirnflächen, Profilwerkzeug: jeder
+  // Profil-Eckpunkt) der Mittelpunkt auf der Werkzeugachse plus vier Randpunkte (±u, ±v - bei
+  // senkrechtem Werkzeug achsparallel in X/Y, bei der gekippten Säge Schnittrichtung und
+  // Höhe/Unterkante). Zusätzlich liegen die Ringe selbst als Polylinien vor (toolSnapRings), damit
+  // - wie bei CNC-/DXF-Linien - ein Klick auf die Randkante den nächsten Punkt auf dem Ring
+  // (Lot-Fußpunkt) liefert. Ist der Werkzeugkörper ausgeblendet (showTool=false) oder gibt es
+  // keinen aktuellen Werkzeugpunkt, bleiben beide Listen leer - wie beim ausgeblendeten DXF.
+  let toolSnapPoints = [];
+  let toolSnapRings = [];
+  function buildToolSnapGeometry(tip, top, axis, u, v, toolRadius, renderProfile) {
+    const pts = [], rings = [];
+    const seen = new Set();
+    function addRing(c, r) {
+      const key = [c.x, c.y, c.z, r].map(n => n.toFixed(4)).join('|');
+      if (seen.has(key)) return;
+      seen.add(key);
+      pts.push({ x: c.x, y: c.y, z: c.z });
+      if (r > 1e-6) {
+        [[u, 1], [u, -1], [v, 1], [v, -1]].forEach(function (e) {
+          pts.push({ x: c.x + e[0].x * r * e[1], y: c.y + e[0].y * r * e[1], z: c.z + e[0].z * r * e[1] });
+        });
+        const N = 48, ring = [];
+        for (let i = 0; i <= N; i++) {
+          const th = (i / N) * Math.PI * 2, ct = Math.cos(th) * r, st = Math.sin(th) * r;
+          ring.push({ x: c.x + u.x * ct + v.x * st, y: c.y + u.y * ct + v.y * st, z: c.z + u.z * ct + v.z * st });
+        }
+        rings.push(ring);
+      }
+    }
+    if (renderProfile && renderProfile.length) {
+      renderProfile.forEach(function (pt) {
+        addRing({ x: tip.x + axis.x * pt.dist, y: tip.y + axis.y * pt.dist, z: tip.z + axis.z * pt.dist }, Math.abs(pt.r));
+      });
+    } else {
+      addRing(tip, toolRadius);
+      addRing(top, toolRadius);
+    }
+    toolSnapPoints = pts;
+    toolSnapRings = rings;
+  }
+
   function pointToSegmentDist(px, py, ax, ay, bx, by) {
     const dx = bx - ax, dy = by - ay;
     const lenSq = dx * dx + dy * dy;
@@ -16784,7 +16831,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // dxfPointsForBounds() liefert bereits ein leeres Array, wenn kein DXF geladen ODER es
     // gerade ausgeblendet ist (siehe dort) - ein ausgeblendetes DXF lässt sich damit auch
     // konsequent nicht anmessen.
-    viewPoints.concat(dxfPointsForBounds()).forEach(p => {
+    viewPoints.concat(dxfPointsForBounds(), toolSnapPoints).forEach(p => {
       const s = proj(toRender(p));
       if (!s) return;
       const d = Math.hypot(s.x - mx, s.y - my);
@@ -16870,6 +16917,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
       });
     }
+    // Release 244: Randkanten des Werkzeugkörpers (Ringe) - dieselbe Lot-Fußpunkt-Logik
+    toolSnapRings.forEach(ring => {
+      for (let i = 1; i < ring.length; i++) {
+        const a = proj(toRender(ring[i - 1]));
+        const b = proj(toRender(ring[i]));
+        if (!a || !b) continue;
+        const { dist, t } = pointToSegmentDist(mx, my, a.x, a.y, b.x, b.y);
+        if (dist < bestSegDist) { bestSegDist = dist; bestSeg = [ring[i - 1], ring[i]]; bestT = t; }
+      }
+    });
     if (bestSeg) {
       const [p0, p1] = bestSeg;
       return {
@@ -18662,6 +18719,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // (der Halter setzt direkt am Zylinder-Ende an) und bleibt deshalb unbedingt; nur wenn WEDER
     // das eine NOCH das andere sichtbar sein soll, kann die gesamte Funktion wie bisher sofort
     // enden.
+    toolSnapPoints = []; toolSnapRings = []; // Release 244, siehe buildToolSnapGeometry()
     const p = points[scrubIdx];
     if (!p || p.toolRadius == null || p.toolLength == null || p.toolRadius <= 0 || p.toolLength <= 0) return;
     if (!showTool && !showToolHolder) return;
@@ -18779,6 +18837,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const helper = Math.abs(axis.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
     const u = normalize(cross(axis, helper));
     const v = cross(axis, u);
+    if (showTool) buildToolSnapGeometry(tip, top, axis, u, v, p.toolRadius, renderProfile); // Release 244
 
     // Werkzeug-Zylinder bzw. - NEU, Release 200 - profilbasierter Werkzeugkörper (74. Runde:
     // eigenständig über showTool aus-/einblendbar, siehe Kommentar am Funktionsanfang) - "u"/"v"
@@ -21577,6 +21636,70 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // bevor er (im selben Tastendruck NICHT, erst beim nächsten) den Dialog selbst schließt.
   const dxfPreviewMeasureHandlers = [];
 
+  // Release 244 (Sebastian: "Zoomen beim 'Spannfutter bearbeiten' und 'Werkzeug bearbeiten' im
+  // DXF-Bereich (in dem man auch messen kann) einbauen. Dadurch trifft man eventuell zu messende
+  // Punkte einfacher. Zoomverhalten ist wie bei der 3D Sim (also dahin wo der Cursor zeigt, wird
+  // gezoomt, Rechte Maustaste verschieben)" + "Rechts neben der 'Winkelmess'-Funktion ... ein
+  // Home-Button ..., der die Zeichnung wieder zentriert"): gemeinsamer Ansichts-Baustein für beide
+  // 2D-Vorschau-Canvas. Die Ansicht ist eine reine Bildschirm-Transformation sx = bx*k + ox,
+  // sy = by*k + oy auf die bisherigen ("Basis"-)Canvas-Koordinaten bx/by - die gesamte bisherige
+  // Abbildung r/dist -> Pixel bleibt dadurch unverändert, die Dialoge schieben ihre Koordinaten nur
+  // zusätzlich durch view.x()/view.y() (bzw. view.invY() für das Ziehen der Referenzmarker).
+  // Zoom wie in der 3D-Sim: Faktor exp(-deltaY*0.0012) pro Mausrad-Ereignis, der Punkt unter dem
+  // Cursor bleibt dabei an derselben Stelle; Verschieben mit gedrückter rechter Maustaste.
+  function createDxfPreviewViewport(canvas, redraw) {
+    const K_MIN = 0.5, K_MAX = 60;
+    const v = { k: 1, ox: 0, oy: 0 };
+    let panning = null;
+    function canvasXY(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: (clientX - rect.left) * (canvas.width / (rect.width || 1)), y: (clientY - rect.top) * (canvas.height / (rect.height || 1)) };
+    }
+    canvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      const p = canvasXY(e.clientX, e.clientY);
+      const kNew = Math.max(K_MIN, Math.min(K_MAX, v.k * Math.exp(-e.deltaY * 0.0012)));
+      if (kNew === v.k) return;
+      const f = kNew / v.k;
+      v.ox = p.x - (p.x - v.ox) * f;
+      v.oy = p.y - (p.y - v.oy) * f;
+      v.k = kNew;
+      redraw();
+    }, { passive: false });
+    canvas.addEventListener('mousedown', function (e) {
+      if (e.button !== 2) return;
+      const p = canvasXY(e.clientX, e.clientY);
+      panning = { x: p.x, y: p.y, ox: v.ox, oy: v.oy };
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!panning) return;
+      const p = canvasXY(e.clientX, e.clientY);
+      v.ox = panning.ox + (p.x - panning.x);
+      v.oy = panning.oy + (p.y - panning.y);
+      redraw();
+    });
+    window.addEventListener('mouseup', function (e) {
+      if (!panning || e.button !== 2) return;
+      panning = null;
+      canvas.style.cursor = '';
+      redraw();
+    });
+    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); e.stopPropagation(); });
+    const api = {
+      x: function (bx) { return bx * v.k + v.ox; },
+      y: function (by) { return by * v.k + v.oy; },
+      invX: function (sx) { return (sx - v.ox) / v.k; },
+      invY: function (sy) { return (sy - v.oy) / v.k; },
+      reset: function () { v.k = 1; v.ox = 0; v.oy = 0; panning = null; },
+      isHome: function () { return v.k === 1 && v.ox === 0 && v.oy === 0; },
+      state: function () { return { k: v.k, ox: v.ox, oy: v.oy }; }
+    };
+    canvas.__viewport = api; // nur zur Diagnose/Tests (Release 244)
+    return api;
+  }
+
   function createDxfPreviewMeasureTool(opts) {
     const lengthBtn = opts.lengthBtn, angleBtn = opts.angleBtn, panelEl = opts.panelEl,
       canvas = opts.canvas, getMapping = opts.getMapping;
@@ -21788,6 +21911,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const errorHint = el('toolDxfImportErrorHint');
     const canvas = el('toolDxfImportCanvas');
     const ctx = canvas.getContext('2d');
+    // Release 244: Zoom/Verschieben (siehe createDxfPreviewViewport()) + Home-Button
+    const view = createDxfPreviewViewport(canvas, function () { draw(); });
 
     // Messfunktion (NEU, Release 229, siehe createDxfPreviewMeasureTool() oben). buildMapping()
     // liefert dieselbe r/dist->Bildschirm-Zuordnung wie draw() weiter unten (bewusst separat
@@ -21812,7 +21937,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
         points.push({ r: p.r, dist: p.dist });
         if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
       });
-      return { toScreen: (r, dist) => ({ x: xOf(r), y: yOf(dist) }), points: points };
+      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points };
     }
     const measureTool = createDxfPreviewMeasureTool({
       lengthBtn: el('toolDxfMeasureLengthBtn'),
@@ -21830,6 +21955,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       isActive: measureTool.isActive,
       deactivate: function () { measureTool.reset(); draw(); }
     });
+    el('toolDxfViewHomeBtn').addEventListener('click', function () { view.reset(); draw(); }); // Release 244
 
     // Bearbeitungszustand des Dialogs - unabhängig vom globalen toolDxfProfiles-Array, erst
     // "Speichern" schreibt zurück (siehe unten). currentId===null bedeutet "neues Profil",
@@ -21894,8 +22020,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const drawableH = h - padding * 2;
       const drawableW = w - padding * 2;
       const distSpan = (distMax - distMin) || 1;
-      function yOf(dist) { return padding + drawableH * (1 - (dist - distMin) / distSpan); }
-      function xOf(r) { return w / 2 + (r / rMax) * (drawableW / 2) * 0.9; }
+      function yOf(dist) { return view.y(padding + drawableH * (1 - (dist - distMin) / distSpan)); }
+      function xOf(r) { return view.x(w / 2 + (r / rMax) * (drawableW / 2) * 0.9); }
 
       // Silhouette - rechte Kontur hoch, linke (gespiegelte) Kontur wieder runter, als ein
       // einziger geschlossener Pfad.
@@ -21936,8 +22062,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
       // Mittelachse
       ctx.beginPath();
-      ctx.moveTo(w / 2, padding);
-      ctx.lineTo(w / 2, h - padding);
+      ctx.moveTo(view.x(w / 2), view.y(padding));
+      ctx.lineTo(view.x(w / 2), view.y(h - padding));
       ctx.strokeStyle = '#8a93a6';
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1;
@@ -21980,8 +22106,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const span = (max - min) || 1;
       return {
         canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
-        distOf: (canvasY) => min + (1 - (canvasY - padding) / drawableH) * span,
-        yOf: (dist) => padding + drawableH * (1 - (dist - min) / span)
+        distOf: (canvasY) => min + (1 - (view.invY(canvasY) - padding) / drawableH) * span,
+        yOf: (dist) => view.y(padding + drawableH * (1 - (dist - min) / span))
       };
     }
     function hitTestMarker(clientYOffsetInRect) {
@@ -22005,6 +22131,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       };
     }
     canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Release 244: rechte Maustaste = Verschieben (siehe createDxfPreviewViewport)
       if (measureTool.isActive()) {
         const p = canvasXYFromClient(e.clientX, e.clientY);
         measureTool.handleClick(p.x, p.y);
@@ -22074,6 +22201,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Release 229 - ein neu eingelesenes/umskaliertes Profil macht eine laufende Messung
       // gegenstandslos (die Fangpunkte gehören zum ALTEN Profil) - siehe Kommentar in resetForm().
       measureTool.reset();
+      view.reset();
       if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -22182,6 +22310,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       showError('');
       profileSelect.selectedIndex = -1;
       measureTool.reset(); // Release 229 - eine laufende Messung darf nicht ins nächste Profil "mitwandern"
+      view.reset(); // Release 244
       draw();
     }
 
@@ -22204,6 +22333,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       syncRefInputsFromState();
       showError('');
       measureTool.reset(); // Release 229 - siehe Kommentar in resetForm()
+      view.reset(); // Release 244
       draw();
     }
 
@@ -22347,6 +22477,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const errorHint = el('chuckDxfImportErrorHint');
     const canvas = el('chuckDxfImportCanvas');
     const ctx = canvas.getContext('2d');
+    // Release 244: Zoom/Verschieben (siehe createDxfPreviewViewport()) + Home-Button
+    const view = createDxfPreviewViewport(canvas, function () { draw(); });
 
     // Messfunktion (NEU, Release 229) - 1:1 dasselbe Prinzip wie im Werkzeugprofil-Dialog oben,
     // siehe dessen ausführlichen Kommentar.
@@ -22368,7 +22500,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
         points.push({ r: p.r, dist: p.dist });
         if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
       });
-      return { toScreen: (r, dist) => ({ x: xOf(r), y: yOf(dist) }), points: points };
+      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points };
     }
     const measureTool = createDxfPreviewMeasureTool({
       lengthBtn: el('chuckDxfMeasureLengthBtn'),
@@ -22383,6 +22515,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       isActive: measureTool.isActive,
       deactivate: function () { measureTool.reset(); draw(); }
     });
+    el('chuckDxfViewHomeBtn').addEventListener('click', function () { view.reset(); draw(); }); // Release 244
 
     let currentId = null;
     let dxfText = null;
@@ -22436,8 +22569,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const drawableH = h - padding * 2;
       const drawableW = w - padding * 2;
       const distSpan = (distMax - distMin) || 1;
-      function yOf(dist) { return padding + drawableH * (1 - (dist - distMin) / distSpan); }
-      function xOf(r) { return w / 2 + (r / rMax) * (drawableW / 2) * 0.9; }
+      function yOf(dist) { return view.y(padding + drawableH * (1 - (dist - distMin) / distSpan)); }
+      function xOf(r) { return view.x(w / 2 + (r / rMax) * (drawableW / 2) * 0.9); }
 
       const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
       ctx.beginPath();
@@ -22456,8 +22589,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(w / 2, padding);
-      ctx.lineTo(w / 2, h - padding);
+      ctx.moveTo(view.x(w / 2), view.y(padding));
+      ctx.lineTo(view.x(w / 2), view.y(h - padding));
       ctx.strokeStyle = '#8a93a6';
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1;
@@ -22494,8 +22627,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const span = (max - min) || 1;
       return {
         canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
-        distOf: (canvasY) => min + (1 - (canvasY - padding) / drawableH) * span,
-        yOf: (dist) => padding + drawableH * (1 - (dist - min) / span)
+        distOf: (canvasY) => min + (1 - (view.invY(canvasY) - padding) / drawableH) * span,
+        yOf: (dist) => view.y(padding + drawableH * (1 - (dist - min) / span))
       };
     }
     function hitTestMarker(clientYOffsetInRect) {
@@ -22516,6 +22649,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       };
     }
     canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Release 244: rechte Maustaste = Verschieben (siehe createDxfPreviewViewport)
       if (measureTool.isActive()) {
         const p = canvasXYFromClient(e.clientX, e.clientY);
         measureTool.handleClick(p.x, p.y);
@@ -22567,6 +22701,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Release 229 - ein neu eingelesenes/umskaliertes Profil macht eine laufende Messung
       // gegenstandslos (die Fangpunkte gehören zum ALTEN Profil) - siehe Kommentar in resetForm().
       measureTool.reset();
+      view.reset();
       if (!dxfText) { parsedMain = null; parsedAlternate = null; wasClosedLoop = false; draw(); return; }
       const scale = parseNum(scaleInput.value);
       if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
@@ -22647,6 +22782,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       showError('');
       profileSelect.selectedIndex = -1;
       measureTool.reset(); // Release 229 - eine laufende Messung darf nicht ins nächste Profil "mitwandern"
+      view.reset(); // Release 244
       draw();
     }
 
@@ -22668,6 +22804,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       syncRefInputsFromState();
       showError('');
       measureTool.reset(); // Release 229 - siehe Kommentar in resetForm()
+      view.reset(); // Release 244
       draw();
     }
 
