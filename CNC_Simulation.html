@@ -8829,7 +8829,7 @@
     let idCounter = 0;
     byLayer.forEach((segs, layer) => {
       if (segs.length > 20000 || segs.length < 2) return;
-      // 1) Stäbe: gleichgerichtete Linien, die an Knoten mit genau zwei Linien aneinanderhängen, zusammenfassen
+      // 1) Stäbe: kollineare Linienstücke, die sich Knoten teilen, zusammenfassen (seit Release 258 richtungs- und knotengradunabhängig)
       const nodes = [];
       const nodeOf = p => {
         for (let i = 0; i < nodes.length; i++) if (dist(nodes[i].p, p) <= TOL) return nodes[i];
@@ -8851,34 +8851,73 @@
       }
       segs.forEach((s, i) => { s.i = i; s.na = nodeOfFast(s.a); s.nb = nodeOfFast(s.b); s.na.segs.push(s); s.nb.segs.push(s); s.used = false; });
       const unit = s => { const l = dist(s.a, s.b); return { x: (s.b.x - s.a.x) / l, y: (s.b.y - s.a.y) / l }; };
+      // Release 258 (Sebastian: "Dieses Bauteil hat zwei überlappende T in der Mitte ... quasi zwei Bohrungen, die sich
+      // in der Mitte des Bauteils treffen und überlappen"): kollineare Linienstücke, die sich einen Knoten teilen, werden
+      // unabhängig von ihrer Zeichenrichtung und von der Anzahl weiterer Linien am Knoten zu EINER Linie zusammengefasst
+      // (Querbalken aus hin- und hergezeichneten Teilstücken). Die Linie reicht von der kleinsten bis zur größten
+      // Projektion ihrer Knoten auf die Richtung des Startstücks.
       const lines = [];
       segs.forEach(s => {
         if (s.used) return;
         s.used = true;
-        let a = s.na, b = s.nb; const d = unit(s);
-        const chain = [s];
-        const extend = (fromNode, dirSign, push) => {
-          for (let g = 0; g < 100; g++) {
-            if (fromNode.segs.length !== 2) return fromNode;
-            const o = fromNode.segs[0] === chain[push ? chain.length - 1 : 0] ? fromNode.segs[1] : fromNode.segs[0];
-            if (o.used || o === s) return fromNode;
+        const d = unit(s), o0 = s.a;
+        const lat = p => Math.abs((p.x - o0.x) * d.y - (p.y - o0.y) * d.x);
+        const chain = [s], stack = [s.na, s.nb], seen = new Set([s.na, s.nb]);
+        while (stack.length && chain.length < 2000) {
+          const n = stack.pop();
+          for (const o of n.segs) {
+            if (o.used) continue;
             const u = unit(o);
-            // Richtung von o vom aktuellen Knoten weg
-            const away = o.na === fromNode ? u : { x: -u.x, y: -u.y };
-            const dot = away.x * d.x * dirSign + away.y * d.y * dirSign;
-            if (dot < 0.9998) return fromNode;
-            o.used = true;
-            if (push) chain.push(o); else chain.unshift(o);
-            fromNode = o.na === fromNode ? o.nb : o.na;
+            if (Math.abs(u.x * d.x + u.y * d.y) < 0.9998) continue;
+            if (lat(o.a) > TOL * 2 || lat(o.b) > TOL * 2) continue;
+            o.used = true; chain.push(o);
+            [o.na, o.nb].forEach(m => { if (!seen.has(m)) { seen.add(m); stack.push(m); } });
           }
-          return fromNode;
-        };
-        const endB = extend(b, 1, true);
-        const endA = extend(a, -1, false);
+        }
+        let endA = null, endB = null, tA = Infinity, tB = -Infinity;
+        seen.forEach(m => {
+          const t = (m.p.x - o0.x) * d.x + (m.p.y - o0.y) * d.y;
+          if (t < tA) { tA = t; endA = m; }
+          if (t > tB) { tB = t; endB = m; }
+        });
         lines.push({ a: endA.p, b: endB.p, na: endA, nb: endB, segs: chain, len: dist(endA.p, endB.p) });
       });
       // 2) T-Suche: Stabende E (Knoten) liegt auf der Querbalken-Mitte
       const lineSeg = ln => ({ a: ln.a, b: ln.b });
+      // Release 258 (Sebastian: "an der Seitenkante der Stufe ein (sehr kleines) T ... wird nicht als horizontale
+      // Bearbeitung erkannt"): Querbalken ab 0,2 mm (vorher mind. 1 mm - ein Ø-1-mm-T mit 0,99999… mm Zeichnungslänge
+      // fiel durch). Mittigkeit: 0,3 mm bzw. 3 %, bei sehr kleinen T höchstens ein Viertel der Balkenlänge.
+      const MIN_BAR = 0.2;
+      const midTol = len => Math.min(Math.max(0.3, len * 0.03), len * 0.25);
+      const lineDir = q => ({ x: (q.b.x - q.a.x) / q.len, y: (q.b.y - q.a.y) / q.len });
+      // Release 258: liegt am Punkt P das Ende einer Linie mittig auf einem senkrechten Querbalken (eigenes T)?
+      const hasCenteredBarAt = (P, self) => {
+        const sd = lineDir(self);
+        for (const r of lines) {
+          if (r === self || r.len < MIN_BAR) continue;
+          const rd = lineDir(r);
+          if (Math.abs(rd.x * sd.x + rd.y * sd.y) > 0.02) continue;
+          const info = segInfo(P, lineSeg(r));
+          if (info.d > TOL * 2) continue;
+          const mid = { x: (r.a.x + r.b.x) / 2, y: (r.a.y + r.b.y) / 2 };
+          if (dist(mid, P) <= midTol(r.len)) return true;
+        }
+        return false;
+      };
+      // Release 258 (zwei überlappende T): der Stab des Gegen-T läuft auf derselben Achse über das Stabende E hinaus
+      // und endet innerhalb dieses Stabs auf seinem eigenen, mittigen Querbalken - er zählt bei E nicht als Störlinie.
+      const isPartnerStem = (q, stem, E, F, su) => {
+        if (q.len < 1) return false;
+        const qd = lineDir(q);
+        if (Math.abs(qd.x * su.x + qd.y * su.y) < 0.9998) return false;
+        const lat = p => Math.abs((p.x - F.x) * su.y - (p.y - F.y) * su.x);
+        if (lat(q.a) > TOL * 2 || lat(q.b) > TOL * 2) return false;
+        const proj = p => (p.x - F.x) * su.x + (p.y - F.y) * su.y;
+        const tq = [{ p: q.a, t: proj(q.a) }, { p: q.b, t: proj(q.b) }].sort((x, y) => x.t - y.t);
+        // inneres Ende im Stab (zwischen F und E), äußeres Ende jenseits von E
+        if (!(tq[0].t > TOL * 2 && tq[0].t < stem.len - TOL * 2 && tq[1].t > stem.len + TOL * 2)) return false;
+        return hasCenteredBarAt(tq[0].p, q);
+      };
       lines.forEach(stem => {
         [0, 1].forEach(which => {
           const E = which === 0 ? stem.a : stem.b, F = which === 0 ? stem.b : stem.a;
@@ -8886,7 +8925,6 @@
           if (stem.len < 1) return;
           // am freien Stabende (F) darf nichts anderes ansetzen
           if (Fn.segs.some(q => !stem.segs.includes(q))) return;
-          if (Fn.segs.length !== 1) return;
           const su = { x: (E.x - F.x) / stem.len, y: (E.y - F.y) / stem.len };
           // alle Linien, die E berühren (außer dem Stab): genau der Querbalken (1 durchgehende Linie
           // oder 2 Hälften, die am Knoten E enden) und sonst nichts
@@ -8894,7 +8932,7 @@
           for (const q of lines) {
             if (q === stem) continue;
             const info = segInfo(E, lineSeg(q));
-            if (info.d <= TOL * 2) touching.push({ q, t: info.t });
+            if (info.d <= TOL * 2 && !isPartnerStem(q, stem, E, F, su)) touching.push({ q, t: info.t });
           }
           if (!touching.length) return;
           // einzelne Linie, die E im Inneren berührt, oder zwei Linien, die dort enden
@@ -8902,7 +8940,7 @@
           const perp = q => { const u = { x: (q.b.x - q.a.x) / q.len, y: (q.b.y - q.a.y) / q.len }; return Math.abs(u.x * su.x + u.y * su.y) < 0.02; };
           if (touching.length === 1) {
             const q = touching[0].q, t = touching[0].t;
-            if (!perp(q) || q.len < 1) return;
+            if (!perp(q) || q.len < MIN_BAR) return;
             // E muss im Inneren des Querbalkens liegen (nicht an seinem Ende)
             if (!(t > 0.01 && t < 0.99)) return;
             barA = q.a; barB = q.b; barSegs = q.segs;
@@ -8915,14 +8953,14 @@
             // gegenüberliegend, nicht gleichgerichtet
             const d1 = { x: e1.x - E.x, y: e1.y - E.y }, d2 = { x: e2.x - E.x, y: e2.y - E.y };
             const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
-            if (l1 < 0.5 || l2 < 0.5 || (d1.x * d2.x + d1.y * d2.y) / (l1 * l2) > -0.9998) return;
+            if (l1 < MIN_BAR / 2 || l2 < MIN_BAR / 2 || (d1.x * d2.x + d1.y * d2.y) / (l1 * l2) > -0.9998) return;
             barA = e1; barB = e2; barSegs = touching[0].q.segs.concat(touching[1].q.segs);
           } else return;
           const barLen = dist(barA, barB);
-          if (barLen < 1) return;
+          if (barLen < MIN_BAR) return;
           // Stabende mittig auf dem Querbalken
           const mid = { x: (barA.x + barB.x) / 2, y: (barA.y + barB.y) / 2 };
-          if (dist(mid, E) > Math.max(0.3, barLen * 0.03)) return;
+          if (dist(mid, E) > midTol(barLen)) return;
           const ax = placeAxis(F, E);
           if (!ax) return;
           const strokes = Array.from(new Set(stem.segs.concat(barSegs).map(q => q.st)));
@@ -10674,8 +10712,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 257;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 07:28 Uhr';
+  const APP_RELEASE_NUMBER = 258;
+  const APP_RELEASE_TIMESTAMP = '21.10.2026, 08:51 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13977,7 +14015,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       parts: {
         undefined: { thickness: DXF_THICKNESS_PREFILL },
         tread: { thickness: DXF_THICKNESS_PREFILL, pocketDepth: 10, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
-        riser: { thickness: DXF_THICKNESS_PREFILL, T: defaultBoreDefaults(), U: defaultBoreDefaults() },
+        riser: { thickness: DXF_THICKNESS_PREFILL, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },   // vpocket seit Release 258
         stringer: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
         handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() }
       }
@@ -15654,8 +15692,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const hbDet = ((dxfHBoreCfg.T.enabled || dxfHBoreCfg.U.enabled) && dxfThickness) ? getHBoreDetection() : null;
     const hbKinds = hbDet ? [['T', hbDet.ts], ['U', hbDet.us]].filter(([k, list]) => dxfHBoreCfg[k].enabled && list.length) : [];
     const wantBores = hbKinds.length > 0;
-    // Release 253: vertikale Taschen (Kreise) bei Stufe, Wange und Handlauf
-    const vCircles = (dxfVPocketEnabled && dxfPartType !== 'riser') ? getVerticalCircles() : [];
+    // Release 253: vertikale Taschen (Kreise) bei Stufe, Wange und Handlauf; Release 258 (Sebastian: "Bei Setzstufen bitte
+    // auch 'Vertikale Bohrungen' ermöglichen"): auch bei der Setzstufe
+    const vCircles = dxfVPocketEnabled ? getVerticalCircles() : [];
     const wantV = vCircles.length > 0;
     const pocketsOn = dxfPartType === 'tread' && dxfPocketEnabled && dxfPockets.size;   // Taschen nur bei der Stufe (Release 253)
     if (stringer && !dxfMortiseInfo && !wantBores && !wantV) return;
@@ -18985,7 +19024,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // hintersten Rückseite zb). Bei Transparenz < 100 % kommt die Austrittsfläche auch dann als zweite Schicht hinzu,
     // wenn der Zylinder ganz im Inneren liegt (Röntgenblick).
     const carveMask = bores ? new Uint8Array(W * H) : null, cylMask = bores ? new Uint8Array(W * H) : null, faceMask = bores ? new Uint8Array(W * H) : null;
-    let boreCarved = 0, boreCyl = 0, boreSkipped = 0;
+    let boreCarved = 0, boreCyl = 0, boreSkipped = 0, boreOverlapPx = 0;
+    const boreIv = new Map();
     const seeThroughB = alpha < 0.999;
     if (bores) {
       const S = (x, y, z) => { const pp = projU(toRender({ x, y, z })); return [m.a * pp.x + m.e, m.d * pp.y + m.f, pp.depth]; };
@@ -19069,17 +19109,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             } else if (qu < -ext || qu > Lc) continue;
             const t0 = lo, t1 = hi;
             if (!(t1 > t0) || t1 <= NEAR) continue;
-            // vorderste Flächen im Ausschnitt entfernen
-            let carved = false;
-            const f2 = z2[i];
-            if (f1 > t0 && f1 < t1) {
-              if (f2 > t0 && f2 < t1) { z1[i] = Infinity; z2[i] = Infinity; c1[i] = 0; c2[i] = 0; }
-              else { z1[i] = f2; c1[i] = c2[i]; z2[i] = Infinity; c2[i] = 0; }
-              carved = true;
-            } else if (f2 > t0 && f2 < t1) { z2[i] = Infinity; c2[i] = 0; }
-            // dahinter Material? dann ist die Austrittsfläche sichtbar
-            const hasMat = f1 <= t1 + 1e-4 && t1 <= zb[i] + 1e-4 && (exitK !== 2 || capEnd);
-            if (hasMat) {
+            // Farbe der Austrittsfläche (t1) und - für den Röntgenblick - der Eintrittsfläche (t0)
+            let exitCol = 0, entryCol = 0;
+            {
               let nx, ny, nz, k = 0.62;
               if (exitK === 1) {
                 const pxv = qx + t1 * rx, pyv = qy + t1 * ry, pzv = qz + t1 * rz;
@@ -19089,17 +19121,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
               } else if (exitK === 2) { nx = -ux; ny = -uy; nz = 0; k = 0.5; }
               else if (exitK === 4 || exitK === 5) { const sg = exitK === 4 ? -1 : 1; nx = vx * sg; ny = vy * sg; nz = 0; }
               else { nx = 0; ny = 0; nz = exitK === 6 ? -1 : 1; }
-              const facing = (nx * rx + ny * ry + nz * rz) / rl;
-              const col = shade(Math.min(facing, -0.05), k);
-              if (t1 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t1; c1[i] = col; }
-              else if (t1 < z2[i]) { z2[i] = t1; c2[i] = col; }
-              cylMask[i] = 1; faceMask[i] = exitK; boreCyl++;
-              if (carved) { carveMask[i] = 1; boreCarved++; }
-            } else if (carved) { carveMask[i] = 1; faceMask[i] = 3; boreCarved++; }
-            // Release 253 (Röntgenblick): tritt der Strahl hinter der Bohrung schon wieder aus dem Körper aus (Austritt
-            // außerhalb des Materials, z. B. nahe der Öffnung auf der abgewandten Seite), zeigt die Transparenz die
-            // vordere Bohrungswand (Eintritt t0), damit die Bohrung als ganzer Zylinder bzw. Quader sichtbar bleibt.
-            if (!hasMat && seeThroughB && t0 > NEAR && f1 <= t0 + 1e-4 && t0 <= zb[i] + 1e-4 && entryK !== 0) {
+              exitCol = shade(Math.min((nx * rx + ny * ry + nz * rz) / rl, -0.05), k);
+            }
+            if (seeThroughB && entryK !== 0) {
               let nx, ny, nz, k = 0.62;
               if (entryK === 1) {
                 const pxv = qx + t0 * rx, pyv = qy + t0 * ry, pzv = qz + t0 * rz;
@@ -19109,15 +19133,60 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
               } else if (entryK === 2) { nx = ux; ny = uy; nz = 0; k = 0.5; }
               else if (entryK === 4 || entryK === 5) { const sg = entryK === 4 ? 1 : -1; nx = vx * sg; ny = vy * sg; nz = 0; }
               else { nx = 0; ny = 0; nz = entryK === 6 ? 1 : -1; }
-              const facing = -Math.abs((nx * rx + ny * ry + nz * rz) / rl);
-              const col = shade(Math.min(facing, -0.05), k);
-              if (t0 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t0; c1[i] = col; }
-              else if (t0 < z2[i]) { z2[i] = t0; c2[i] = col; }
-              cylMask[i] = 1; faceMask[i] = entryK; boreCyl++;
+              entryCol = shade(Math.min(-Math.abs((nx * rx + ny * ry + nz * rz) / rl), -0.05), k);
             }
+            let lst = boreIv.get(i);
+            if (!lst) { lst = []; boreIv.set(i, lst); }
+            lst.push({ t0, t1, exitK, capEnd, exitCol, entryK, entryCol });
           }
         }
       }
+      // Release 258 (Sebastian: "zwei Bohrungen, die sich in der Mitte des Bauteils treffen und überlappen"): die
+      // Strahl-Intervalle aller Bohrungen je Pixel werden vereinigt - überlappende Bohrungen bilden EINEN Hohlraum, die
+      // flachen Enden im Inneren der jeweils anderen Bohrung verschwinden. Eintritt = vorderstes, Austritt = hinterstes
+      // Teilintervall einer zusammenhängenden Gruppe.
+      boreIv.forEach((lst, i) => {
+        if (lst.length > 1) lst.sort((p, q) => p.t0 - q.t0);
+        const groups = [];
+        for (const iv of lst) {
+          const g = groups[groups.length - 1];
+          if (g && iv.t0 <= g.t1 + 1e-4) {
+            if (iv.t1 > g.t1) { g.t1 = iv.t1; g.exitK = iv.exitK; g.capEnd = iv.capEnd; g.exitCol = iv.exitCol; }
+            if (lst.length > 1) boreOverlapPx++;
+          } else groups.push(Object.assign({}, iv));
+        }
+        for (const gr of groups) {
+          const t0 = gr.t0, t1 = gr.t1, exitK = gr.exitK, entryK = gr.entryK;
+          const f1 = z1[i];
+          if (f1 === Infinity) break;
+          // vorderste Flächen im Ausschnitt entfernen
+          let carved = false;
+          const f2 = z2[i];
+          if (f1 > t0 && f1 < t1) {
+            if (f2 > t0 && f2 < t1) { z1[i] = Infinity; z2[i] = Infinity; c1[i] = 0; c2[i] = 0; }
+            else { z1[i] = f2; c1[i] = c2[i]; z2[i] = Infinity; c2[i] = 0; }
+            carved = true;
+          } else if (f2 > t0 && f2 < t1) { z2[i] = Infinity; c2[i] = 0; }
+          // dahinter Material? dann ist die Austrittsfläche sichtbar
+          const hasMat = f1 <= t1 + 1e-4 && t1 <= zb[i] + 1e-4 && (exitK !== 2 || gr.capEnd);
+          if (hasMat) {
+            const col = gr.exitCol;
+            if (t1 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t1; c1[i] = col; }
+            else if (t1 < z2[i]) { z2[i] = t1; c2[i] = col; }
+            cylMask[i] = 1; faceMask[i] = exitK; boreCyl++;
+            if (carved) { carveMask[i] = 1; boreCarved++; }
+          } else if (carved) { carveMask[i] = 1; faceMask[i] = 3; boreCarved++; }
+          // Release 253 (Röntgenblick): tritt der Strahl hinter der Bohrung schon wieder aus dem Körper aus (Austritt
+          // außerhalb des Materials, z. B. nahe der Öffnung auf der abgewandten Seite), zeigt die Transparenz die
+          // vordere Bohrungswand (Eintritt t0), damit die Bohrung als ganzer Zylinder bzw. Quader sichtbar bleibt.
+          if (!hasMat && seeThroughB && t0 > NEAR && f1 <= t0 + 1e-4 && t0 <= zb[i] + 1e-4 && entryK !== 0) {
+            const col = gr.entryCol;
+            if (t0 < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = t0; c1[i] = col; }
+            else if (t0 < z2[i]) { z2[i] = t0; c2[i] = col; }
+            cylMask[i] = 1; faceMask[i] = entryK; boreCyl++;
+          }
+        }
+      });
     }
     // Zusammensetzen: vorderste Fläche mit Deckkraft alpha, darunter ggf. die zweite
     const img = ctx.createImageData(W, H);
@@ -19203,7 +19272,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.setLineDash([]);
     ctx.drawImage(mortiseOffCanvas, 0, 0);
     ctx.restore();
-    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped };
+    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped, boreOverlapPx };
   }
 
   function drawDxf(proj) {
@@ -27175,12 +27244,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   dxfVPocketCheckbox.addEventListener('change', updateDxfVPocketHint);
   // Release 253 (Sebastian, Punkt 8): Sichtbarkeit je Bauteilart - "- undefiniert -": nur Stärke (+ Füll-Transparenz
-  // und darunter); Stufe: Schmiege, vertikal (Taschen + Kreise), horizontal; Setzstufe: Schmiege, horizontal;
+  // und darunter); Stufe: Schmiege, vertikal (Taschen + Kreise), horizontal; Setzstufe: Schmiege, vertikal (Kreise, seit Release 258), horizontal;
   // Wange/Handlauf: vertikal (Einstemmung + Kreise), horizontal. Vor jedem Abschnitt ein Trennstrich.
   function updateDxfPartTypeUI() {
     const t = dxfPartTypeSelect.value;
     const mortise = isMortisePart(t), step = isStepPart(t);
-    const vertical = mortise || t === 'tread', horizontal = t !== 'undefined';
+    const vertical = mortise || t === 'tread' || t === 'riser', horizontal = t !== 'undefined';   // Setzstufe vertikal seit Release 258
     dxfMortiseRow.hidden = !mortise;
     dxfPocketRow.hidden = t !== 'tread';
     el('dxfVPocketRow').hidden = !vertical;
