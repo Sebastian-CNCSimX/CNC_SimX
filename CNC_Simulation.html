@@ -7139,6 +7139,19 @@
     return Math.max(MIN_SEGMENTS, Math.min(MAX_SEGMENTS, segments));
   }
 
+  // Release 267 (Sebastian zur Messfunktion: "Bögen: da nichts fangen außer die Endpunkte quasi.
+  // Wenn die Bogenmitte fangbar ist, fangen. Wenn Kreise aber in Linien aufgelöst werden, nicht
+  // fangen."): JEDER von einer Bogen-Tessellierung erzeugte ZWISCHENpunkt (nicht Start-/Endpunkt des
+  // Bogens) wird mit einer NICHT aufzählbaren Eigenschaft __arcInner markiert. Die Messfunktion
+  // (computeSnapGeometry() in app.js) lässt diese Punkte als Fang-Endpunkte weg und erkennt daran
+  // die zusammenhängenden Bögen (für den echten Bogen-Mittelpunkt). Nicht aufzählbar, damit
+  // JSON/Vergleiche/Kopien ({...p}) die Punkte unverändert sehen - geht die Markierung bei einer
+  // Kopie verloren, gilt der Punkt schlicht wieder als normaler Endpunkt (bisheriges Verhalten).
+  function markArcInner(p) {
+    Object.defineProperty(p, '__arcInner', { value: true, enumerable: false, configurable: true, writable: true });
+    return p;
+  }
+
   function tessellateArc(sx, sy, ex, ey, cx, cy, direction) {
     const radius = Math.hypot(sx - cx, sy - cy);
     if (radius < 1e-9) return null;
@@ -7151,7 +7164,7 @@
     for (let s = 1; s <= segments; s++) {
       if (s === segments) { pts.push({ x: ex, y: ey }); break; }
       const angle = a0 + dirSign * sweep * (s / segments);
-      pts.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+      pts.push(markArcInner({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) }));
     }
     return pts;
   }
@@ -7451,7 +7464,7 @@
     for (let s = 1; s <= segments; s++) {
       if (s === segments) { pts.push({ x: fillet.t2.x, y: fillet.t2.y }); break; }
       const angle = a0 + dirSign * sweep * (s / segments);
-      pts.push({ x: c.x + r * Math.cos(angle), y: c.y + r * Math.sin(angle) });
+      pts.push(markArcInner({ x: c.x + r * Math.cos(angle), y: c.y + r * Math.sin(angle) }));
     }
     return pts;
   }
@@ -7476,7 +7489,11 @@
   function applyCornerFillets(points) {
     const n = points.length;
     const result = [];
-    const strip = p => ({ x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, lineIdx: p.lineIdx, f: p.f });
+    const strip = p => {
+      const q = { x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, lineIdx: p.lineIdx, f: p.f };
+      if (p.__arcInner) markArcInner(q); // Release 267
+      return q;
+    };
     for (let i = 0; i < n; i++) {
       const p = points[i];
       if (p.cornerRadius && i > 0 && i < n - 1) {
@@ -7485,7 +7502,9 @@
           const base = strip(p);
           result.push(Object.assign({}, base, { x: fillet.t1.x, y: fillet.t1.y }));
           tessellateFillet(fillet).forEach(pt => {
-            result.push(Object.assign({}, base, { x: pt.x, y: pt.y }));
+            const q = Object.assign({}, base, { x: pt.x, y: pt.y });
+            if (pt.__arcInner) markArcInner(q); // Release 267
+            result.push(q);
           });
           continue;
         }
@@ -7559,7 +7578,7 @@
       if (s === segCount) { pts.push({ x: b.x, y: b.y, z: bz }); break; }
       const t = s / segCount;
       const angle = a0 + dirSign * sweep * t;
-      pts.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), z: az + (bz - az) * t });
+      pts.push(markArcInner({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), z: az + (bz - az) * t }));
     }
     return pts;
   }
@@ -7603,7 +7622,9 @@
     const pts = [];
     for (let s = 0; s <= segCount; s++) {
       const angle = startRad + sweepRad * (s / segCount);
-      pts.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), z: cz });
+      const pt = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), z: cz };
+      if (s > 0 && s < segCount) markArcInner(pt); // Release 267
+      pts.push(pt);
     }
     return pts;
   }
@@ -9216,7 +9237,7 @@
     // offenen Kette sein, die am eigentlichen Werkzeugkörper-Rand entlangläuft.
     const segs = strokes
       .filter(s => !s.closed && s.points && s.points.length >= 2)
-      .map(s => ({ pts: s.points.map(p => ({ x: p.x, y: p.y })), used: false }));
+      .map(s => ({ pts: s.points.map(p => { const q = { x: p.x, y: p.y }; if (p.__arcInner) markArcInner(q); return q; }), used: false }));
     if (segs.length === 0) {
       throw new Error('Keine verwendbaren Linien-/Bogen-Elemente auf dem gewählten Layer gefunden.');
     }
@@ -9304,7 +9325,9 @@
         const r = Math.abs(p.x - ax);
         const last = profile[profile.length - 1];
         if (last && Math.abs(last.r - r) <= CHAIN_MATCH_TOLERANCE && Math.abs(last.dist - p.y) <= CHAIN_MATCH_TOLERANCE) return;
-        profile.push({ r: r, dist: p.y });
+        const q = { r: r, dist: p.y };
+        if (p.__arcInner) markArcInner(q); // Release 267: Bogen-Zwischenpunkt (Messfunktion)
+        profile.push(q);
       });
       return profile;
     }
@@ -9444,7 +9467,7 @@
     const result = buildProfileChainFromStrokes(strokesToUse);
     function applyScale(profile) {
       if (!profile || scale === 1) return profile;
-      return profile.map(p => ({ r: p.r * scale, dist: p.dist * scale }));
+      return profile.map(p => { const q = { r: p.r * scale, dist: p.dist * scale }; if (p.__arcInner) markArcInner(q); return q; });
     }
     return {
       profile: applyScale(result.profile),
@@ -9851,7 +9874,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -10897,8 +10920,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 266;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 13:31 Uhr';
+  const APP_RELEASE_NUMBER = 267;
+  const APP_RELEASE_TIMESTAMP = '21.10.2026, 15:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13525,11 +13548,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (arcPts && arcPts.length) {
           arcPts.forEach((pt, idx) => {
             const t = (idx + 1) / arcPts.length; // Bruchteil entlang des Bogens, für die Z-Interpolation
-            points.push({
+            const q = {
               x: pt.x, y: pt.y, z: prevZ + (endZ - prevZ) * t,
               a: state.a, b: state.b, c: state.c,
               rapid: state.rapid, comp: state.comp, lineIdx: startLineIdx + i, f: state.f
-            });
+            };
+            if (pt.__arcInner) markArcInner(q); // Release 267: Bogen-Zwischenpunkt (Messfunktion)
+            points.push(q);
           });
         } else {
           // Eckenverrundung "P71:" (Release 124, siehe ausführliche Dokumentation bei
@@ -13654,7 +13679,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // parseConfiguredCornerRadius() in parser.js): beide NEUEN Bezeichner hier mit aufgenommen -
   // nach der in der Release-129-Notiz direkt darüber dokumentierten Lehre, dass das Vergessen
   // genau dieses Schritts jeden extractMotion()-Aufruf zum Absturz bringt.
-  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, applyCornerFillets } = window.CNCParser;
+  const { splitAtOriginResets, ORIGIN_RESET_RE, parseArcParams, interpolateArc, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, applyCornerFillets, markArcInner } = window.CNCParser;
 
   // ============================================================
   // App-Zustand
@@ -18281,36 +18306,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // bleiben.
     if (measureHoverPoint) {
       const s = proj(toRender(measureHoverPoint));
-      if (s) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 9, 0, Math.PI * 2);
-        ctx.fillStyle = cssVar('--accent') + '33'; // dezente, halbtransparente Füllung (Hex-Alpha)
-        ctx.fill();
-        ctx.lineWidth = 2.2;
-        ctx.strokeStyle = cssVar('--accent');
-        ctx.stroke();
-        // Kleiner Mittelpunkt zusätzlich zum Ring - macht auf einen Blick klar, welcher exakte
-        // Punkt getroffen würde (nicht nur "irgendwo in diesem Kreis").
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = cssVar('--accent');
-        ctx.fill();
-        ctx.restore();
-      }
+      // Release 267: Ringfarbe nach Fang-Art (grün Endpunkt/Schnittpunkt, gelb Mitte, rot Rest),
+      // siehe drawSnapHoverRing(); inkl. kleinem Mittelpunkt (exakter Treffpunkt).
+      if (s) drawSnapHoverRing(ctx, s.x, s.y, measureHoverPoint.kind);
     }
     [measureStart, measureEnd].filter(Boolean).forEach(p => {
       const s = proj(toRender(p));
       if (!s) return;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = cssVar('--accent');
-      ctx.fill();
-      ctx.lineWidth = 2;
       // Randfarbe des Mess-Punkts soll optisch zum tatsächlichen 3D-Hintergrund passen (39.
       // Runde: bei Benutzerfarben ist das --viewer-bg statt des früher fest verwendeten --panel).
-      ctx.strokeStyle = cssVar('--viewer-bg') || cssVar('--panel');
-      ctx.stroke();
+      // Release 267: der gesetzte Punkt behält die Farbe seiner Fang-Art.
+      drawSnapSetPoint(ctx, s.x, s.y, p.kind, 5, cssVar('--viewer-bg') || cssVar('--panel'), 2);
     });
     if (measureStart && measureEnd) {
       const a = proj(toRender(measureStart));
@@ -18364,31 +18370,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!angleMeasureActive) return;
     if (angleHoverPoint) {
       const s = proj(toRender(angleHoverPoint));
-      if (s) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 9, 0, Math.PI * 2);
-        ctx.fillStyle = cssVar('--accent') + '33';
-        ctx.fill();
-        ctx.lineWidth = 2.2;
-        ctx.strokeStyle = cssVar('--accent');
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = cssVar('--accent');
-        ctx.fill();
-        ctx.restore();
-      }
+      if (s) drawSnapHoverRing(ctx, s.x, s.y, angleHoverPoint.kind); // Release 267
     }
-    const screenPts = anglePoints.map(p => proj(toRender(p))).filter(Boolean);
-    screenPts.forEach(s => {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = cssVar('--accent');
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = cssVar('--viewer-bg') || cssVar('--panel');
-      ctx.stroke();
+    anglePoints.forEach(p => {
+      const s = proj(toRender(p));
+      if (s) drawSnapSetPoint(ctx, s.x, s.y, p.kind, 5, cssVar('--viewer-bg') || cssVar('--panel'), 2); // Release 267
     });
     if (anglePoints.length >= 2) {
       const vertexS = proj(toRender(anglePoints[1]));
@@ -18534,6 +18520,171 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t, z: p0.z + (p1.z - p0.z) * t };
   }
 
+  // ============================================================
+  // Release 267 - Fang-Arten der Messfunktion (Sebastian: "Überall wo es die Messfunktion gibt (3D
+  // Sim oder aber auch bei den DXF Profilen für Spannzangen und Werkzeugprofilen) soll die
+  // Messfunktion nicht nur an die Endpunkte von Linien springen können, sondern auch an den
+  // Mittelpunkt einer Linie. ... Fangendpunkt = grüner Kreis / Fangmittelpunkt = gelber Kreis /
+  // "Rest" = roter Kreis." Nach der Vorschau: "1. Schnittpunkte = grün 2. Bögen: da nichts fangen
+  // außer die Endpunkte quasi. Wenn die Bogenmitte fangbar ist, fangen. Wenn Kreise aber in Linien
+  // aufgelöst werden, nicht fangen. Der min. Abstand für die Mitte zw. zwei Punkten soll min. 5mm
+  // betragen. 3. Ja, die Farbe sollen sie behalten 4. Die Endpunktmarkierungen "[]" bitte beim DXF
+  // (Profil und Spannzange) entfernen."). Gemeinsam für die 3D-Messung (hitTest3D) UND die beiden
+  // DXF-Profil-Dialoge (createDxfPreviewMeasureTool). Fang-Arten: 'end' (Endpunkt), 'inter'
+  // (Schnittpunkt), 'mid' (Linien-/Bogenmitte), 'line' (irgendwo auf der Linie, Lot-Fußpunkt).
+  // ============================================================
+  const SNAP_COLOR_END = '#1fae4b', SNAP_COLOR_MID = '#f2c200';
+  const SNAP_MID_MIN_MM = 5; // Mitte erst ab 5 mm Abstand der beiden Endpunkte
+  function snapKindColor(kind) {
+    if (kind === 'end' || kind === 'inter') return SNAP_COLOR_END;
+    if (kind === 'mid') return SNAP_COLOR_MID;
+    return cssVar('--accent');
+  }
+  // Hover-Ring (Radius 9, halbtransparente Füllung, Mittelpunkt-Punkt) in der Farbe der Fang-Art,
+  // mit feinem dunklem Außenrand (auch Gelb auf hellem Grund bzw. Rot auf roter Kontur sichtbar).
+  function drawSnapHoverRing(c, x, y, kind) {
+    const col = snapKindColor(kind);
+    c.save();
+    c.beginPath();
+    c.arc(x, y, 10.4, 0, Math.PI * 2);
+    c.lineWidth = 1;
+    c.strokeStyle = 'rgba(0,0,0,0.45)';
+    c.stroke();
+    c.beginPath();
+    c.arc(x, y, 9, 0, Math.PI * 2);
+    c.fillStyle = col + '33';
+    c.fill();
+    c.lineWidth = 2.2;
+    c.strokeStyle = col;
+    c.stroke();
+    c.beginPath();
+    c.arc(x, y, 2, 0, Math.PI * 2);
+    c.fillStyle = col;
+    c.fill();
+    c.restore();
+  }
+  // Gesetzter (angeklickter) Messpunkt: gefüllter Punkt, behält die Farbe seiner Fang-Art.
+  function drawSnapSetPoint(c, x, y, kind, radius, rimColor, rimWidth) {
+    c.save();
+    c.beginPath();
+    c.arc(x, y, radius, 0, Math.PI * 2);
+    c.fillStyle = snapKindColor(kind);
+    c.fill();
+    c.lineWidth = rimWidth;
+    c.strokeStyle = rimColor;
+    c.stroke();
+    c.restore();
+  }
+  function snapCircumcenter(A, B, C) {
+    const ux = B.x - A.x, uy = B.y - A.y, uz = (B.z || 0) - (A.z || 0);
+    const vx = C.x - A.x, vy = C.y - A.y, vz = (C.z || 0) - (A.z || 0);
+    const wx = uy * vz - uz * vy, wy = uz * vx - ux * vz, wz = ux * vy - uy * vx;
+    const w2 = wx * wx + wy * wy + wz * wz;
+    if (w2 < 1e-18) return null;
+    const u2 = ux * ux + uy * uy + uz * uz, v2 = vx * vx + vy * vy + vz * vz;
+    // P = A + (|u|² (v×w) + |v|² (w×u)) / (2|w|²)
+    const vwx = vy * wz - vz * wy, vwy = vz * wx - vx * wz, vwz = vx * wy - vy * wx;
+    const wux = wy * uz - wz * uy, wuy = wz * ux - wx * uz, wuz = wx * uy - wy * ux;
+    return {
+      x: A.x + (u2 * vwx + v2 * wux) / (2 * w2),
+      y: A.y + (u2 * vwy + v2 * wuy) / (2 * w2),
+      z: (A.z || 0) + (u2 * vwz + v2 * wuz) / (2 * w2)
+    };
+  }
+  // Echter Mittelpunkt eines tessellierten Bogens pts[i]..pts[j] (i/j = Bogen-Endpunkte, dazwischen
+  // nur __arcInner-Punkte). Die Tessellierung ist gleichmäßig (gleicher Winkelschritt): bei gerader
+  // Sehnenzahl liegt ein Stützpunkt exakt auf der Bogenmitte, sonst wird die Mitte der mittleren
+  // Sehne radial auf den Bogen geschoben (Mittelpunkt aus Start/Stützpunkt/Ende).
+  function snapArcRunMidpoint(pts, i, j) {
+    const n = j - i;
+    if (n % 2 === 0) { const m = pts[i + n / 2]; return { x: m.x, y: m.y, z: m.z || 0 }; }
+    const P1 = pts[i + (n - 1) / 2], P2 = pts[i + (n + 1) / 2];
+    const m = { x: (P1.x + P2.x) / 2, y: (P1.y + P2.y) / 2, z: ((P1.z || 0) + (P2.z || 0)) / 2 };
+    const C = snapCircumcenter(pts[i], P1, pts[j]);
+    if (!C) return m;
+    const r = Math.hypot(P1.x - C.x, P1.y - C.y, (P1.z || 0) - C.z);
+    const d = Math.hypot(m.x - C.x, m.y - C.y, m.z - C.z);
+    if (d < 1e-9) return m;
+    return { x: C.x + (m.x - C.x) * r / d, y: C.y + (m.y - C.y) * r / d, z: C.z + (m.z - C.z) * r / d };
+  }
+  // Fang-Geometrie aus einer Liste von Punktketten ({x,y,z}, Bogen-Zwischenpunkte per __arcInner
+  // markiert, siehe markArcInner() in parser.js):
+  //  - ends: alle Ketten-Endpunkte und alle Punkte, die KEIN Bogen-Zwischenpunkt sind,
+  //  - mids: Mitte jeder geraden Linie bzw. jedes Bogens, sofern die beiden Endpunkte mindestens
+  //    SNAP_MID_MIN_MM auseinanderliegen (Vollkreise: Abstand 0 -> keine Mitte). Gerade Linien, die
+  //    erkennbar ein in Linien aufgelöster Kreis/Bogen sind (Nachbarlinie am gemeinsamen Punkt gleich
+  //    lang ±2 % mit kleinem Knick 0,05°..30°, auch über getrennte LINE-Elemente hinweg), bekommen
+  //    keine Mitte.
+  function computeSnapGeometry(polylines) {
+    const ends = [], mids = [], straight = [];
+    polylines.forEach(pts => {
+      const n = pts ? pts.length : 0;
+      if (!n) return;
+      const anchors = [];
+      for (let i = 0; i < n; i++) if (i === 0 || i === n - 1 || !pts[i].__arcInner) anchors.push(i);
+      anchors.forEach(i => ends.push(pts[i]));
+      for (let k = 0; k < anchors.length - 1; k++) {
+        const i = anchors[k], j = anchors[k + 1];
+        const A = pts[i], B = pts[j];
+        const L = Math.hypot(B.x - A.x, B.y - A.y, (B.z || 0) - (A.z || 0));
+        if (j === i + 1) {
+          if (L > 1e-9) straight.push({ A: A, B: B, L: L });
+        } else if (L >= SNAP_MID_MIN_MM - 1e-9) {
+          mids.push(snapArcRunMidpoint(pts, i, j));
+        }
+      }
+    });
+    const key = p => Math.round(p.x * 100) + '|' + Math.round(p.y * 100) + '|' + Math.round((p.z || 0) * 100);
+    const byKey = new Map();
+    straight.forEach((sp, idx) => {
+      [sp.A, sp.B].forEach(p => {
+        const k = key(p);
+        let list = byKey.get(k);
+        if (!list) { list = []; byKey.set(k, list); }
+        list.push(idx);
+      });
+    });
+    function otherEnd(sp, p) { return key(sp.A) === key(p) ? sp.B : sp.A; }
+    straight.forEach((sp, idx) => {
+      if (sp.L < SNAP_MID_MIN_MM - 1e-9) return;
+      let chordLike = false;
+      [sp.A, sp.B].forEach(p => {
+        if (chordLike) return;
+        (byKey.get(key(p)) || []).forEach(o => {
+          if (chordLike || o === idx) return;
+          const op = straight[o];
+          if (Math.abs(op.L - sp.L) > Math.max(op.L, sp.L) * 0.02) return;
+          const q1 = otherEnd(sp, p), q2 = otherEnd(op, p);
+          const v1 = [q1.x - p.x, q1.y - p.y, (q1.z || 0) - (p.z || 0)], v2 = [q2.x - p.x, q2.y - p.y, (q2.z || 0) - (p.z || 0)];
+          const cosA = (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]) / (sp.L * op.L);
+          const turn = 180 - Math.acos(Math.max(-1, Math.min(1, cosA))) * 180 / Math.PI;
+          if (turn > 0.05 && turn < 30) chordLike = true;
+        });
+      });
+      if (!chordLike) mids.push({ x: (sp.A.x + sp.B.x) / 2, y: (sp.A.y + sp.B.y) / 2, z: ((sp.A.z || 0) + (sp.B.z || 0)) / 2 });
+    });
+    return { ends: ends, mids: mids };
+  }
+  // Zwischenspeicher: die Fang-Geometrie ändert sich nur mit dem Programm/der DXF bzw. den
+  // ausgeblendeten Layern - nicht bei jeder Mausbewegung neu berechnen.
+  let snapGeoCncCache = { ref: null, len: -1, geo: null };
+  function cncSnapGeometry() {
+    if (snapGeoCncCache.ref !== segments || snapGeoCncCache.len !== segments.length) {
+      snapGeoCncCache = { ref: segments, len: segments.length, geo: computeSnapGeometry(segments.map(s => s.points)) };
+    }
+    return snapGeoCncCache.geo;
+  }
+  let snapGeoDxfCache = { ref: null, hidden: null, geo: null };
+  function dxfSnapGeometry() {
+    if (!dxfGeometry || !dxfVisible) return { ends: [], mids: [] };
+    const hiddenKey = Array.from(dxfHiddenLayers).sort().join('\u0001');
+    if (snapGeoDxfCache.ref !== dxfGeometry || snapGeoDxfCache.hidden !== hiddenKey) {
+      const strokes = dxfGeometry.strokes.filter(s => !dxfHiddenLayers.has(s.layer));
+      snapGeoDxfCache = { ref: dxfGeometry, hidden: hiddenKey, geo: computeSnapGeometry(strokes.map(s => s.points)) };
+    }
+    return snapGeoDxfCache.geo;
+  }
+
   // Sucht am Klickpunkt (mx/my, Canvas-lokale Koordinaten) den nächstgelegenen sichtbaren
   // Bahnpunkt ODER Linien-Schnittpunkt (70. Runde); liegt keiner von beiden nah genug,
   // stattdessen den nächsten Punkt auf einer nahen Bahn-Linie (Lot-Fußpunkt) - "wenn man auf
@@ -18544,18 +18695,33 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const basis = buildBasis(camPos);
     const proj = p => project(p, camPos, basis, w, h);
 
-    let bestPt = null, bestDist = MEASURE_PICK_PX;
+    let bestPt = null, bestDist = MEASURE_PICK_PX, bestKind = null;
     // DXF-Punkte (Sebastian: "Die Messfunktion soll auch beim DXF gehen") - dieselbe
     // Punktprüfung wie bei der Kontur, inkl. der um dxfOffset verschobenen Koordinaten;
     // dxfPointsForBounds() liefert bereits ein leeres Array, wenn kein DXF geladen ODER es
     // gerade ausgeblendet ist (siehe dort) - ein ausgeblendetes DXF lässt sich damit auch
     // konsequent nicht anmessen.
-    viewPoints.concat(dxfPointsForBounds(), toolSnapPoints).forEach(p => {
+    // Release 267: Endpunkte (grün) ohne Bogen-Zwischenpunkte, dazu Linien-/Bogenmitten (gelb) -
+    // siehe computeSnapGeometry(). Endpunkte und Mitten konkurrieren gleichberechtigt (der am
+    // Bildschirm nähere gewinnt; bei exakt gleichem Abstand bleibt der Endpunkt, da "<").
+    function trySnap(p, kind) {
       const s = proj(toRender(p));
       if (!s) return;
       const d = Math.hypot(s.x - mx, s.y - my);
-      if (d < bestDist) { bestDist = d; bestPt = p; }
-    });
+      if (d < bestDist) { bestDist = d; bestPt = p; bestKind = kind; }
+    }
+    const cncGeo = cncSnapGeometry();
+    const dxfGeo = dxfSnapGeometry();
+    function tryDxf(p, kind) {
+      const tp = dxfTransformPoint(p);
+      trySnap(tp, kind);
+      if (dxfThickness) trySnap({ x: tp.x, y: tp.y, z: tp.z + dxfThickness }, kind);
+    }
+    cncGeo.ends.forEach(p => trySnap(p, 'end'));
+    dxfGeo.ends.forEach(p => tryDxf(p, 'end'));
+    toolSnapPoints.forEach(p => trySnap(p, 'end'));
+    cncGeo.mids.forEach(p => trySnap(p, 'mid'));
+    dxfGeo.mids.forEach(p => tryDxf(p, 'mid'));
 
     // Schnittpunkte zweier Linien (70. Runde, direkte Folgemeldung: "Die Messfunktion soll auch
     // an Schnittpunkte bei Linien 'snappen'. Aktuell macht sie das nur bei Endpunkten der
@@ -18597,16 +18763,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const L1 = nearLines[i], L2 = nearLines[j];
         const inter = screenSegmentIntersect(L1.a.x, L1.a.y, L1.b.x, L1.b.y, L2.a.x, L2.a.y, L2.b.x, L2.b.y);
         if (!inter) continue;
+        // Release 267: zwei Linien, die sich nur an ihren ENDEN berühren (Eckpunkt einer Kontur,
+        // Stützpunkt eines tessellierten Bogens), sind kein Schnittpunkt - echte Endpunkte fängt
+        // bereits die Endpunkt-Suche oben, Bogen-Zwischenpunkte sollen gar nicht fangen.
+        const atEndT = inter.t < 1e-4 || inter.t > 1 - 1e-4, atEndU = inter.u < 1e-4 || inter.u > 1 - 1e-4;
+        if (atEndT && atEndU) continue;
         const d = Math.hypot(inter.x - mx, inter.y - my);
         if (d < bestDist) {
           const P1 = lerp3(L1.p0, L1.p1, inter.t);
           const P2 = lerp3(L2.p0, L2.p1, inter.u);
           bestDist = d;
           bestPt = { x: (P1.x + P2.x) / 2, y: (P1.y + P2.y) / 2, z: (P1.z + P2.z) / 2 };
+          bestKind = 'inter';
         }
       }
     }
-    if (bestPt) return { x: bestPt.x, y: bestPt.y, z: bestPt.z };
+    if (bestPt) return { x: bestPt.x, y: bestPt.y, z: bestPt.z, kind: bestKind };
 
     let bestSeg = null, bestSegDist = MEASURE_PICK_PX, bestT = 0;
     segments.forEach(seg => {
@@ -18651,7 +18823,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       return {
         x: p0.x + (p1.x - p0.x) * bestT,
         y: p0.y + (p1.y - p0.y) * bestT,
-        z: p0.z + (p1.z - p0.z) * bestT
+        z: p0.z + (p1.z - p0.z) * bestT,
+        kind: 'line'
       };
     }
     return null;
@@ -18736,7 +18909,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return { x: base.x + basis.fwd.x * t, y: base.z + basis.fwd.z * t };
   }
   function setMeasureLiveCursor(mx, my, snap) {
-    if (snap) measureLiveCursor = { x: snap.x, y: snap.y, z: snap.z, snapped: true };
+    if (snap) measureLiveCursor = { x: snap.x, y: snap.y, z: snap.z, snapped: true, kind: snap.kind };
     else {
       const q = cursorToWorkPlane(mx, my);
       measureLiveCursor = q ? { x: q.x, y: q.y, z: null, snapped: false } : null;
@@ -18749,9 +18922,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} X</span><span class="v">${fmt(c.x)} mm</span></div>` +
       `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} Y</span><span class="v">${fmt(c.y)} mm</span></div>` +
       (c.z != null ? `<div class="readout-row"><span class="k">${T('Cursor', 'Cursor')} Z</span><span class="v">${fmt(c.z)} mm</span></div>` : '') +
-      `<div class="measure-hint">${c.snapped ? T('Fangpunkt', 'Snap point') : T('auf Arbeitsebene Z = 0', 'on work plane Z = 0')}</div>`;
+      `<div class="measure-hint">${c.snapped ? snapKindLabel(c.kind) : T('auf Arbeitsebene Z = 0', 'on work plane Z = 0')}</div>`;
   }
   // Nur der Live-Block wird neu geschrieben (nicht das ganze Messfenster), siehe updateMeasureOutput().
+  // Release 267: Hinweiszeile nennt die Fang-Art (gleiche Farben wie der Hover-Ring).
+  function snapKindLabel(kind) {
+    if (kind === 'end') return T('Fangpunkt: Endpunkt', 'Snap point: endpoint');
+    if (kind === 'mid') return T('Fangpunkt: Mittelpunkt', 'Snap point: midpoint');
+    if (kind === 'inter') return T('Fangpunkt: Schnittpunkt', 'Snap point: intersection');
+    if (kind === 'line') return T('Fangpunkt: auf Linie', 'Snap point: on line');
+    return T('Fangpunkt', 'Snap point');
+  }
   function refreshMeasureLive() {
     const box = measurePanel.querySelector('.measure-live');
     if (box) box.innerHTML = measureLiveHtml();
@@ -23940,6 +24121,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   //  - getMapping(): MUSS bei JEDEM Aufruf frisch die aktuelle Zuordnung liefern (Profil und
   //    Canvas-Größe können sich jederzeit ändern) - { toScreen(rMm,distMm)->{x,y}|null,
   //    points: [{r,dist}, ...] (ALLE Fangpunkte, beide Seiten der gespiegelten Silhouette) }.
+  //    Release 267: zusätzlich outline (geschlossene Silhouette inkl. __arcInner-Markierung der
+  //    Bogen-Zwischenpunkte). Gefangen werden seither - wie in der 3D-Sim - Endpunkte (grün),
+  //    Linien-/Bogenmitten ab 5 mm (gelb) und jede Stelle auf der Silhouette (rot); die früheren
+  //    "[]"-Marker entfallen (siehe computeSnapGeometry()/nearestSnap()).
   // Release 230 (Sebastian: "Wenn das messen bei Spannfutter bzw. Werkzeugprofil bearbeiten aktiv
   // ist (Winkel oder Länge), verlässt Esc drücken nicht das Fenster, sondern beendet erst mal das
   // messen.") - Sammelstelle für den globalen Escape-Handler (siehe dort): jedes der beiden
@@ -24086,15 +24271,46 @@ Sebastian Bäcker (Anschrift wie oben)`,
     let anglePts = [];  // bis zu 3 {r,dist}
     let hoverPt = null;
 
+    // Release 267: Fang-Geometrie der Silhouette (Endpunkte ohne Bogen-Zwischenpunkte, Linien-/
+    // Bogenmitten ab 5 mm) - je Silhouette (outline-Array) einmal berechnet.
+    let snapGeoCache = { ref: null, geo: null };
+    function outlineSnapGeometry(map) {
+      const ol = map.outline || [];
+      if (snapGeoCache.ref !== ol) {
+        const pts = ol.map(p => { const q = { x: p.r, y: p.dist, z: 0 }; if (p.__arcInner) markArcInner(q); return q; });
+        const g = computeSnapGeometry([pts]);
+        snapGeoCache = { ref: ol, geo: { ends: g.ends.map(p => ({ r: p.x, dist: p.y })), mids: g.mids.map(p => ({ r: p.x, dist: p.y })) } };
+      }
+      return snapGeoCache.geo;
+    }
+
+    // Endpunkt (grün) / Mitte (gelb) gleichberechtigt nach Bildschirmabstand; nur wenn keiner in
+    // Reichweite ist, der nächste Punkt auf einer Silhouetten-Linie (rot) - wie in der 3D-Sim.
     function nearestSnap(canvasX, canvasY) {
       const map = getMapping();
       let best = null, bestDist = PICK_PX;
-      map.points.forEach(function (pt) {
+      const geo = outlineSnapGeometry(map);
+      function trySnap(pt, kind) {
         const s = map.toScreen(pt.r, pt.dist);
         if (!s) return;
         const d = Math.hypot(s.x - canvasX, s.y - canvasY);
-        if (d < bestDist) { bestDist = d; best = pt; }
-      });
+        if (d < bestDist) { bestDist = d; best = { r: pt.r, dist: pt.dist, kind: kind }; }
+      }
+      geo.ends.forEach(pt => trySnap(pt, 'end'));
+      geo.mids.forEach(pt => trySnap(pt, 'mid'));
+      if (best) return best;
+      const ol = map.outline || [];
+      let bestLineDist = PICK_PX;
+      for (let i = 0; i < ol.length - 1; i++) {
+        const a = ol[i], b = ol[i + 1];
+        const sa = map.toScreen(a.r, a.dist), sb = map.toScreen(b.r, b.dist);
+        if (!sa || !sb) continue;
+        const hit = pointToSegmentDist(canvasX, canvasY, sa.x, sa.y, sb.x, sb.y);
+        if (hit.dist < bestLineDist) {
+          bestLineDist = hit.dist;
+          best = { r: a.r + (b.r - a.r) * hit.t, dist: a.dist + (b.dist - a.dist) * hit.t, kind: 'line' };
+        }
+      }
       return best;
     }
 
@@ -24174,54 +24390,25 @@ Sebastian Bäcker (Anschrift wie oben)`,
       hoverPt = mode ? nearestSnap(canvasX, canvasY) : null;
     }
 
-    // Zeichnet "[]"-Fangpunkt-Marker an JEDEM Profil-Eckpunkt (Sebastian: "Die Fangpunkte fallen
-    // automatisch an das Ende vom Linien und sind mit [] markiert, so wie in der 3D Sim" - dort
-    // über denselben Textglyph-Ansatz wie bei der Codesprung-Linienmarkierung, siehe
-    // drawLineSelection() weiter oben), dazu Hover-Ring und bereits gesetzte Mess-Punkte/-Linien -
-    // wird vom jeweiligen draw() der beiden Dialoge direkt im Anschluss an die Silhouette
-    // aufgerufen, nur solange ein Messwerkzeug aktiv ist.
+    // Zeichnet Hover-Ring und bereits gesetzte Mess-Punkte/-Linien - wird vom jeweiligen draw() der
+    // beiden Dialoge direkt im Anschluss an die Silhouette aufgerufen, nur solange ein Messwerkzeug
+    // aktiv ist. Release 267 (Sebastian: "Die Endpunktmarkierungen "[]" bitte beim DXF (Profil und
+    // Spannzange) entfernen. Das sind zu viele Punkte."): die früheren "[]"-Marker an jedem
+    // Profil-Eckpunkt (Release 229) entfallen; Hover-Ring und gesetzte Punkte in der Farbe der
+    // Fang-Art (grün Endpunkt / gelb Mitte / rot auf Linie).
     function drawOverlay(ctx) {
       if (!mode) return;
       const map = getMapping();
-      ctx.save();
-      ctx.fillStyle = cssVar('--accent');
-      ctx.font = '600 13px "Open Sans", ui-sans-serif, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      map.points.forEach(function (pt) {
-        const s = map.toScreen(pt.r, pt.dist);
-        if (s) ctx.fillText('[]', s.x, s.y);
-      });
-      ctx.restore();
 
       if (hoverPt) {
         const s = map.toScreen(hoverPt.r, hoverPt.dist);
-        if (s) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, 9, 0, Math.PI * 2);
-          ctx.fillStyle = cssVar('--accent') + '33';
-          ctx.fill();
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = cssVar('--accent');
-          ctx.stroke();
-          ctx.restore();
-        }
+        if (s) drawSnapHoverRing(ctx, s.x, s.y, hoverPt.kind);
       }
 
       const activePts = mode === 'length' ? lengthPts : anglePts;
       activePts.forEach(function (pt) {
         const s = map.toScreen(pt.r, pt.dist);
-        if (!s) return;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = cssVar('--accent');
-        ctx.fill();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = cssVar('--panel-2');
-        ctx.stroke();
-        ctx.restore();
+        if (s) drawSnapSetPoint(ctx, s.x, s.y, pt.kind, 4.5, cssVar('--panel-2'), 1.5);
       });
       if (mode === 'length' && lengthPts.length === 2) {
         const a = map.toScreen(lengthPts[0].r, lengthPts[0].dist);
@@ -24258,6 +24445,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       panelEl.hidden = true;
     }
 
+    canvas.__measureTool = { nearestSnap: nearestSnap, getMapping: getMapping }; // nur Diagnose/Tests (Release 267)
     lengthBtn.addEventListener('click', function () { setMode('length'); });
     angleBtn.addEventListener('click', function () { setMode('angle'); });
 
@@ -24314,7 +24502,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
         points.push({ r: p.r, dist: p.dist });
         if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
       });
-      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points };
+      // Release 267: dieselbe geschlossene Silhouette wie in draw() (rechte Kontur hoch, gespiegelte
+      // linke wieder runter, zurück zum Start) - für End-/Mittelpunkt- und "auf Linie"-Fang. Die
+      // Bogen-Zwischenpunkte (__arcInner, siehe markArcInner() in parser.js) bleiben markiert.
+      const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
+      const outline = ordered.map(p => { const q = { r: p.r, dist: p.dist }; if (p.__arcInner) markArcInner(q); return q; });
+      for (let i = ordered.length - 1; i >= 0; i--) {
+        const q = { r: -ordered[i].r, dist: ordered[i].dist };
+        if (ordered[i].__arcInner) markArcInner(q);
+        outline.push(q);
+      }
+      outline.push({ r: outline[0].r, dist: outline[0].dist });
+      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points, outline: outline };
     }
     const measureTool = createDxfPreviewMeasureTool({
       lengthBtn: el('toolDxfMeasureLengthBtn'),
@@ -24877,7 +25076,18 @@ Sebastian Bäcker (Anschrift wie oben)`,
         points.push({ r: p.r, dist: p.dist });
         if (p.r !== 0) points.push({ r: -p.r, dist: p.dist });
       });
-      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points };
+      // Release 267: dieselbe geschlossene Silhouette wie in draw() (rechte Kontur hoch, gespiegelte
+      // linke wieder runter, zurück zum Start) - für End-/Mittelpunkt- und "auf Linie"-Fang. Die
+      // Bogen-Zwischenpunkte (__arcInner, siehe markArcInner() in parser.js) bleiben markiert.
+      const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
+      const outline = ordered.map(p => { const q = { r: p.r, dist: p.dist }; if (p.__arcInner) markArcInner(q); return q; });
+      for (let i = ordered.length - 1; i >= 0; i--) {
+        const q = { r: -ordered[i].r, dist: ordered[i].dist };
+        if (ordered[i].__arcInner) markArcInner(q);
+        outline.push(q);
+      }
+      outline.push({ r: outline[0].r, dist: outline[0].dist });
+      return { toScreen: (r, dist) => ({ x: view.x(xOf(r)), y: view.y(yOf(dist)) }), points: points, outline: outline };
     }
     const measureTool = createDxfPreviewMeasureTool({
       lengthBtn: el('chuckDxfMeasureLengthBtn'),
