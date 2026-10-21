@@ -2185,6 +2185,10 @@
   /* Release 253: der Dialog "DXF-Bauteil definieren" ist mit allen Abschnitten höher als manches Fenster - er scrollt
      dann in sich (Ok/Abbrechen bleiben erreichbar) */
   #dxfThicknessPanel .paste-card, #dxfPartDefaultsPanel .paste-card { max-height: calc(100vh - 48px); overflow-y: auto; }
+  /* Release 257: "DXF-Bauteil definieren" verschiebbar, Hintergrund frei (Bauteil sichtbar/drehbar) */
+  #dxfThicknessPanel { background: transparent; pointer-events: none; }
+  #dxfThicknessPanel .paste-card { pointer-events: auto; }
+  #dxfThicknessPanel .paste-card > h3 { cursor: move; user-select: none; touch-action: none; }
   /* Release 254: Hinweis bei mehreren Durchmessern */
   .dxf-dia-warn { color: var(--warn); font-weight: 600; }
   /* Release 253: Trennstriche im Dialog "DXF-Bauteil definieren" */
@@ -4060,7 +4064,7 @@
 <div class="paste-panel" id="dxfThicknessPanel">
   <div class="paste-card">
     <h3 data-i18n-en="DXF drawing settings">DXF-Bauteil definieren</h3>
-    <p class="panel-hint" data-i18n-en="Defines the part represented by the DXF: part type and thickness (mm). For a value other than 0, a second contour offset by the thickness is shown in addition to the existing contour (as a filled body when the transparency is below 100%). Positive values offset upward, negative values downward.">Definiert das durch das DXF dargestellte Bauteil: Bauteilart und Stärke (mm). Bei einem Wert ungleich 0 wird zusätzlich zur bestehenden Kontur eine zweite, um die Stärke versetzte Kontur dargestellt (bei einer Transparenz unter 100 % als gefüllter Körper). Positive Werte versetzen nach oben, negative Werte nach unten.</p>
+    <p class="panel-hint" data-i18n-en="Defines the thickness of the DXF, input in mm.">Definiert die dargestellte Bauteilstärke im DXF, Eingaben in mm.</p>
     <!-- Release 253 (Sebastian, Punkt 8 "Anordnung der Seite ändern"): Bauteil, Stärke, Trennstrich, je nach
          Bauteilart Schmiegenerkennung (Stufe/Setzstufe), "Vertikale Bearbeitungen" (Stufe: Taschen + vertikale
          Taschen aus Kreisen; Wange/Handlauf: Einstemmungs-Layer + Einstemmungstiefe, vertikale Taschen), "Horizontale
@@ -4134,16 +4138,16 @@
         <div class="tool-data-row">
           <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
             <select id="dxfHBoreShapeSelect" class="filename-input">
-              <option value="round" data-i18n-en="Round (diameter = crossbar of the T)">Rund (Durchmesser = Querbalken des T)</option>
-              <option value="rect" data-i18n-en="Rectangular (length from the drawing × height)">Eckig (Länge aus der Zeichnung × Höhe)</option>
+              <option value="round" data-i18n-en="Round">Rund</option>
+              <option value="rect" data-i18n-en="Rectangular">Eckig</option>
             </select>
           </label>
-          <label class="tool-data-field"><span data-i18n-en="Position in Z: centre above underside (mm, empty = centred)">Position in Z: Mitte über Unterseite (mm, leer = mittig)</span>
+          <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
             <input type="text" id="dxfHBoreHeightInput" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
           </label>
         </div>
         <div class="tool-data-row" id="dxfHBoreRectFields" hidden>
-          <label class="tool-data-field"><span data-i18n-en="Height (mm, in the thickness, empty = length)">Höhe (mm, in der Stärke, leer = Länge)</span>
+          <label class="tool-data-field"><span data-i18n-en="Height (mm, empty = length)">Höhe (mm, leer = Länge)</span>
             <input type="text" id="dxfHBoreRectHeightInput" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
           <span class="tool-data-field" id="dxfHBoreRectLenInfo"></span>
@@ -4156,16 +4160,16 @@
         <div class="tool-data-row">
           <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
             <select id="dxfUBoreShapeSelect" class="filename-input">
-              <option value="round" data-i18n-en="Round (diameter = base line of the U)">Rund (Durchmesser = Grundlinie des U)</option>
-              <option value="rect" data-i18n-en="Rectangular (length from the drawing × height)">Eckig (Länge aus der Zeichnung × Höhe)</option>
+              <option value="round" data-i18n-en="Round">Rund</option>
+              <option value="rect" data-i18n-en="Rectangular">Eckig</option>
             </select>
           </label>
-          <label class="tool-data-field"><span data-i18n-en="Position in Z: centre above underside (mm, empty = centred)">Position in Z: Mitte über Unterseite (mm, leer = mittig)</span>
+          <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
             <input type="text" id="dxfUBoreHeightInput" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
           </label>
         </div>
         <div class="tool-data-row" id="dxfUBoreRectFields" hidden>
-          <label class="tool-data-field"><span data-i18n-en="Height (mm, in the thickness, empty = length)">Höhe (mm, in der Stärke, leer = Länge)</span>
+          <label class="tool-data-field"><span data-i18n-en="Height (mm, empty = length)">Höhe (mm, leer = Länge)</span>
             <input type="text" id="dxfUBoreRectHeightInput" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
           <span class="tool-data-field" id="dxfUBoreRectLenInfo"></span>
@@ -4182,7 +4186,7 @@
         <input type="range" id="dxfThicknessTransparencySlider" min="0" max="100" step="1" value="100">
         <span class="slider-pct-label">100%</span>
       </div>
-      <p class="panel-hint" data-i18n-en="Only affects the automatically detected contour layer (layer name contains &quot;*Kont*&quot;/&quot;*Cont*&quot; anywhere, case-insensitive; otherwise the first layer in the file). 0% = opaque, shown as a filled solid body. 100% (default, unchanged behavior) = fully transparent, pure wireframe as before.">Wirkt nur auf den automatisch erkannten Kontur-Layer (Layername enthält "*Kont*"/"*Cont*" irgendwo im Namen, unabhängig von Groß-/Kleinschreibung; sonst der erste Layer der Datei). 0% = undurchsichtig, als gefüllter Körper dargestellt. 100% (Standard, unverändertes Verhalten) = komplett durchsichtig, reines Drahtgitter wie bisher.</p>
+      <p class="panel-hint" data-i18n-en="0% = opaque, 100% = transparent display.">0% = undurchsichtig, 100% = transparente Darstellung.</p>
     </div>
     <div class="color-field-row" id="dxfThicknessColorRow" hidden>
       <span data-i18n-en="Fill color">Füllfarbe</span>
@@ -4208,6 +4212,7 @@
     <p class="panel-hint" id="dxfOutlineColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnDxfThicknessCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn ghost" id="btnDxfThicknessApply" type="button" data-i18n-en="Apply">Übernehmen</button>
       <button class="btn primary" id="btnDxfThicknessConfirm" type="button">Ok</button>
     </div>
   </div>
@@ -4218,17 +4223,12 @@
 <div class="paste-panel" id="dxfPartDefaultsPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Part definition (defaults)">Bauteildefinition (Standardwerte)</h3>
-    <p class="panel-hint" data-i18n-en="Defaults for &quot;DXF drawing settings&quot;. When a DXF is imported, the part type is preselected from the file name and the dialog is filled with these values; they can still be changed in the dialog as usual. The depth of a bore always comes from the T or U symbol.">Standardwerte für „DXF-Bauteil definieren“. Beim Import einer DXF wird das Bauteil aus dem Dateinamen vorgewählt und der Dialog mit diesen Werten vorbelegt; im Dialog lassen sie sich wie gewohnt anpassen. Die Tiefe einer Bohrung kommt immer aus dem T- bzw. U-Symbol.</p>
-    <label class="scale-option"><input type="checkbox" id="dpdByName"> <span data-i18n-en="Preselect the part type from the file name (Stufe/Tread, Setzstufe/Riser, Wange/Stringer, Handlauf/Handrail)">Bauteil aus dem Dateinamen vorwählen (Stufe, Setzstufe, Wange, Handlauf)</span></label>
-    <label class="scale-option"><input type="checkbox" id="dpdAutoApply"> <span data-i18n-en="Apply automatically with these values when a DXF is imported">Beim Import einer DXF automatisch mit diesen Werten anwenden</span></label>
-    <div class="tool-data-row">
-      <label class="tool-data-field"><span data-i18n-en="Fill transparency (%)">Füll-Transparenz (%)</span>
-        <input type="text" id="dpdTransparency" class="filename-input" inputmode="decimal" spellcheck="false">
-      </label>
-    </div>
+    <p class="panel-hint" data-i18n-en="Defaults for &quot;DXF drawing settings&quot; on import.">Standardwerte für „DXF-Bauteil definieren“ beim Import.</p>
+    <label class="scale-option"><input type="checkbox" id="dpdByName"> <span data-i18n-en="Preselect part type from file name">Bauteil aus dem Dateinamen vorwählen</span></label>
+    <label class="scale-option"><input type="checkbox" id="dpdAutoApply"> <span data-i18n-en="Apply automatically on import">Beim Import automatisch anwenden</span></label>
     <hr class="dxf-part-sep">
     <div class="tool-data-row">
-      <label class="tool-data-field"><span data-i18n-en="Defaults for part type">Standardwerte für Bauteil</span>
+      <label class="tool-data-field"><span data-i18n-en="Part type">Bauteil</span>
         <select id="dpdPartSelect" class="filename-input">
           <option value="undefined" data-i18n-en="- undefined -">- undefiniert -</option>
           <option value="tread" data-i18n-en="Tread">Stufe</option>
@@ -4241,31 +4241,44 @@
         <input type="text" id="dpdThickness" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
+    <!-- Release 257 (Sebastian: "nicht nur Fülltransparenz eingebbar machen, sondern auch die Füllfarbe und Outline. Das
+         kann auch für jedes Bauteil individuell sein") -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Fill transparency (%)">Füll-Transparenz (%)</span>
+        <input type="text" id="dpdTransparency" class="filename-input" inputmode="decimal" spellcheck="false">
+      </label>
+      <label class="tool-data-field"><span data-i18n-en="Fill color">Füllfarbe</span>
+        <span class="color-field-inputs"><input type="color" id="dpdFillColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color"><input type="text" id="dpdFillColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false"></span>
+      </label>
+      <label class="tool-data-field"><span data-i18n-en="Outline color">Outline-Farbe</span>
+        <span class="color-field-inputs"><input type="color" id="dpdOutlineColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color"><input type="text" id="dpdOutlineColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false"></span>
+      </label>
+    </div>
     <div id="dpdVertical">
       <div class="scale-group-title"><span data-i18n-en="Vertical machining:">Vertikale Bearbeitungen:</span></div>
       <div id="dpdMortise">
-        <label class="scale-option"><input type="checkbox" id="dpdMortiseOn"> <span data-i18n-en="Mortises preselected (first layer with closed contours)">Einstemmungen vorausgewählt (erster Layer mit geschlossenen Konturen)</span></label>
+        <label class="scale-option"><input type="checkbox" id="dpdMortiseOn"> <span data-i18n-en="Mortises preselected">Einstemmungen vorausgewählt</span></label>
         <div class="tool-data-row">
           <label class="tool-data-field"><span data-i18n-en="Depth of mortise (mm)">Einstemmungstiefe (mm)</span>
             <input type="text" id="dpdMortiseDepth" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
-          <label class="tool-data-field"><span data-i18n-en="Named layers: tread (mm)">Benannte Layer: Stufe (mm)</span>
+          <label class="tool-data-field"><span data-i18n-en="Tread layer (mm)">Layer Stufe (mm)</span>
             <input type="text" id="dpdMortiseDepthTread" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
-          <label class="tool-data-field"><span data-i18n-en="Named layers: riser (mm)">Benannte Layer: Setzstufe (mm)</span>
+          <label class="tool-data-field"><span data-i18n-en="Riser layer (mm)">Layer Setzstufe (mm)</span>
             <input type="text" id="dpdMortiseDepthRiser" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
         </div>
       </div>
       <div id="dpdPocket" class="tool-data-row">
-        <label class="tool-data-field"><span data-i18n-en="Default depth for pocket layers (mm, negative = from below)">Vorgabe Tiefe für Taschen-Layer (mm, negativ = von unten)</span>
+        <label class="tool-data-field"><span data-i18n-en="Depth pocket layers (mm)">Tiefe Taschen-Layer (mm)</span>
           <input type="text" id="dpdPocketDepth" class="filename-input" inputmode="decimal" spellcheck="false">
         </label>
       </div>
       <div id="dpdVPocket">
         <label class="scale-option"><input type="checkbox" id="dpdVPocketOn"> <span data-i18n-en="Vertical pockets (circles) preselected">Vertikale Taschen (Kreise) vorausgewählt</span></label>
         <div class="tool-data-row">
-          <label class="tool-data-field"><span data-i18n-en="Pocket depth (mm, negative = from below):">Taschentiefe (mm, negativ = von unten):</span>
+          <label class="tool-data-field"><span data-i18n-en="Pocket depth (mm):">Taschentiefe (mm):</span>
             <input type="text" id="dpdVPocketDepth" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
         </div>
@@ -4274,7 +4287,7 @@
     <div id="dpdHorizontal">
       <div class="scale-group-title"><span data-i18n-en="Horizontal machining:">Horizontale Bearbeitungen:</span></div>
         <div class="dpd-bore" data-kind="T">
-          <label class="scale-option"><input type="checkbox" id="dpdTOn"> <span data-i18n-en="Bores from T symbols preselected">Bohrungen aus T-Symbolen vorausgewählt</span></label>
+          <label class="scale-option"><input type="checkbox" id="dpdTOn"> <span data-i18n-en="Bores from T preselected">Bohrungen aus T vorausgewählt</span></label>
           <div class="tool-data-row">
             <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
               <select id="dpdTShape" class="filename-input">
@@ -4282,16 +4295,16 @@
                 <option value="rect" data-i18n-en="Rectangular">Eckig</option>
               </select>
             </label>
-            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm, empty = centred)">Position in Z (mm, leer = mittig)</span>
+            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
               <input type="text" id="dpdTHeight" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
             </label>
-            <label class="tool-data-field"><span data-i18n-en="Height if rectangular (mm, empty = length)">Höhe bei eckig (mm, leer = Länge)</span>
+            <label class="tool-data-field"><span data-i18n-en="Height if rectangular (mm)">Höhe bei eckig (mm)</span>
               <input type="text" id="dpdTRectHeight" class="filename-input" inputmode="decimal" spellcheck="false">
             </label>
           </div>
         </div>
         <div class="dpd-bore" data-kind="U">
-          <label class="scale-option"><input type="checkbox" id="dpdUOn"> <span data-i18n-en="Bores from U symbols preselected">Bohrungen aus U-Symbolen vorausgewählt</span></label>
+          <label class="scale-option"><input type="checkbox" id="dpdUOn"> <span data-i18n-en="Bores from U preselected">Bohrungen aus U vorausgewählt</span></label>
           <div class="tool-data-row">
             <label class="tool-data-field"><span data-i18n-en="Shape">Form</span>
               <select id="dpdUShape" class="filename-input">
@@ -4299,10 +4312,10 @@
                 <option value="rect" data-i18n-en="Rectangular">Eckig</option>
               </select>
             </label>
-            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm, empty = centred)">Position in Z (mm, leer = mittig)</span>
+            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
               <input type="text" id="dpdUHeight" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
             </label>
-            <label class="tool-data-field"><span data-i18n-en="Height if rectangular (mm, empty = length)">Höhe bei eckig (mm, leer = Länge)</span>
+            <label class="tool-data-field"><span data-i18n-en="Height if rectangular (mm)">Höhe bei eckig (mm)</span>
               <input type="text" id="dpdURectHeight" class="filename-input" inputmode="decimal" spellcheck="false">
             </label>
           </div>
@@ -10661,8 +10674,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 256;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 05:27 Uhr';
+  const APP_RELEASE_NUMBER = 257;
+  const APP_RELEASE_TIMESTAMP = '21.10.2026, 07:28 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13960,7 +13973,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const mortise = () => ({ on: true, depth: 15, depthTread: 15, depthRiser: 15 });
     const vpocket = () => ({ on: false, depth: 10 });
     return {
-      byName: true, autoApply: false, transparency: DXF_THICKNESS_TRANSPARENCY_PREFILL,
+      byName: true, autoApply: false,
       parts: {
         undefined: { thickness: DXF_THICKNESS_PREFILL },
         tread: { thickness: DXF_THICKNESS_PREFILL, pocketDepth: 10, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
@@ -13970,6 +13983,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     };
   }
+  // (die eingebauten Werte immer über normalizeDxfPartDefaults() beziehen - ergänzt Transparenz/Farben je Bauteil)
   // robustes Zusammenführen mit den eingebauten Werten (fehlende/ungültige Felder -> Standard)
   function normalizeDxfPartDefaults(data) {
     const base = builtinDxfPartDefaults();
@@ -13979,11 +13993,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const bool = (v, def) => (typeof v === 'boolean' ? v : def);
     base.byName = bool(d.byName, base.byName);
     base.autoApply = bool(d.autoApply, base.autoApply);
-    base.transparency = Math.max(0, Math.min(100, Math.round(num(d.transparency, base.transparency))));
+    // Release 257: Füll-Transparenz, Füllfarbe und Outline-Farbe je Bauteil (älteres globales "transparency" als Vorgabe)
+    const globalTr = Math.max(0, Math.min(100, Math.round(num(d.transparency, DXF_THICKNESS_TRANSPARENCY_PREFILL))));
+    const hex = (v, def) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : def);
     const dp = (d.parts && typeof d.parts === 'object') ? d.parts : {};
     Object.keys(base.parts).forEach(t => {
       const b = base.parts[t], s = (dp[t] && typeof dp[t] === 'object') ? dp[t] : {};
       b.thickness = num(s.thickness, b.thickness, true);
+      b.transparency = Math.max(0, Math.min(100, Math.round(num(s.transparency, globalTr))));
+      b.fillColor = hex(s.fillColor, '#3399ff');
+      b.outlineColor = hex(s.outlineColor, '#000000');
       if ('pocketDepth' in b) b.pocketDepth = num(s.pocketDepth, b.pocketDepth, true);
       if (b.mortise) { const m = s.mortise || {}; b.mortise = { on: bool(m.on, b.mortise.on), depth: num(m.depth, b.mortise.depth), depthTread: num(m.depthTread, b.mortise.depthTread), depthRiser: num(m.depthRiser, b.mortise.depthRiser) }; }
       if (b.vpocket) { const v = s.vpocket || {}; b.vpocket = { on: bool(v.on, b.vpocket.on), depth: num(v.depth, b.vpocket.depth, true) }; }
@@ -13993,7 +14012,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function loadPersistedDxfPartDefaults() {
     try { const raw = window.localStorage.getItem(LS_KEY_DXF_PART_DEFAULTS); if (raw) return normalizeDxfPartDefaults(JSON.parse(raw)); } catch (e) { /* s. Maschinentyp-Persistenz */ }
-    return builtinDxfPartDefaults();
+    return normalizeDxfPartDefaults(null);
   }
   let dxfPartDefaults = loadPersistedDxfPartDefaults();
   function applyDxfPartDefaults(data) {
@@ -14013,6 +14032,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Standardwerte einer Bauteilart in den (noch nicht bestätigten) Zustand übernehmen - Vorbelegung des Dialogs
   function applyPartDefaultsToState(type) {
     const pd = dxfPartDefaults.parts[type] || dxfPartDefaults.parts.undefined;
+    dxfThicknessColor = pd.fillColor; dxfOutlineColor = pd.outlineColor;   // Release 257 (erst nach Ok sichtbar)
     if (pd.mortise) {
       dxfMortiseDepth = pd.mortise.depth; dxfMortiseDepthTread = pd.mortise.depthTread; dxfMortiseDepthRiser = pd.mortise.depthRiser;
       dxfMortiseLayer = pd.mortise.on ? defaultMortiseLayer() : '';
@@ -15820,6 +15840,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     updateDxfUI();
     frameCamera();
     requestRender();
+    dxfThicknessPanel.classList.remove('open');   // Release 257: offener Dialog gehört zur vorigen Datei
     // Release 256: "beim Import automatisch anwenden" - derselbe Weg wie Öffnen + Ok im Dialog
     if (dxfPartDefaults.autoApply) { openDxfThicknessPanel(); confirmDxfThickness(); }
   }
@@ -15829,6 +15850,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function clearDxf() {
     if (!dxfGeometry) return;
     dxfGeometry = null;
+    dxfThicknessPanel.classList.remove('open'); // Release 257
     dxfEntities = null; // Release 208, siehe dessen Deklaration oben
     dxfFilename = null;
     dxfOffset = { x: 0, y: 0, z: 0 };
@@ -26907,13 +26929,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
     dxfSchmiegeLayerList.hidden = !(dxfSchmiegeCheckbox.checked && cands.length);
     if (!cands.length) {
-      dxfSchmiegeHint.textContent = T('Nur wählbar, wenn die DXF mehrere Layer enthält.', 'Only available if the DXF contains several layers.');
+      dxfSchmiegeHint.textContent = T('Nur mit weiteren Layern möglich.', 'Only possible with further layers.');
     } else if (!dxfSchmiegeCheckbox.checked) {
-      dxfSchmiegeHint.textContent = T('Aus: das Bauteil wird einfach mit der eingegebenen Stärke dargestellt.', 'Off: the part is simply shown with the entered thickness.');
+      dxfSchmiegeHint.textContent = '';
     } else if (!dxfSchmiegeLayerList.querySelector('input:checked')) {
-      dxfSchmiegeHint.textContent = T('Bitte die Layer wählen, die Schmiegen enthalten, und je Layer angeben, ob die Schmiege sichtbar oder nicht sichtbar ist.', 'Please select the layers that contain bevels and state for each whether the bevel is visible or not visible.');
+      dxfSchmiegeHint.textContent = T('Layer mit Schmiegen wählen, je Layer sichtbar/nicht sichtbar.', 'Select layers with bevels, visible/not visible per layer.');
     } else {
-      dxfSchmiegeHint.textContent = T('Schmiege sichtbar = die Linie ist die obere Kante, nicht sichtbar = die Linie ist die untere (verdeckte) Kante; von dort läuft die Schmiege nach außen zur Kontur. Was nicht berechenbar ist, wird beim Schließen des Dialogs gemeldet. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'Bevel visible = the line is the upper edge, not visible = the line is the lower (hidden) edge; the bevel runs from there outwards to the contour. Anything that cannot be computed is reported when the dialog is closed. Shown in the filled view (transparency below 100%).');
+      dxfSchmiegeHint.textContent = T('Sichtbar = Linie ist die Oberkante, nicht sichtbar = Unterkante.', 'Visible = line is the top edge, not visible = bottom edge.');
     }
   }
   dxfSchmiegeCheckbox.addEventListener('change', updateDxfSchmiegeHint);
@@ -26941,13 +26963,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!r.loops.length) return T('keine geschlossene Kontur', 'no closed contour');
     let t = r.loops.length + ' ' + T(r.loops.length > 1 ? 'geschlossene Konturen' : 'geschlossene Kontur', r.loops.length > 1 ? 'closed contours' : 'closed contour');
     if (r.bridged) t += ' (' + T('gestrichelt ergänzt', 'dashed lines completed') + ')';
-    if (r.open) t += ', ' + r.open + ' ' + T(r.open > 1 ? 'offene Linienzüge ignoriert' : 'offener Linienzug ignoriert', r.open > 1 ? 'open polylines ignored' : 'open polyline ignored');
     // Release 254: runde Taschen auf dem Layer mit Durchmesser; mehrere Durchmesser -> Hinweis mit allen Werten
     const dias = r.loops.map(circleDiameterOf).filter(d => d > 0);
     if (dias.length) {
       const gs = diaGroups(dias);
       t += ' – ' + (gs.length > 1
-        ? T('Hinweis: mehrere Taschendurchmesser: ', 'note: several pocket diameters: ') + gs.map(g => 'Ø ' + g.d.toFixed(1) + ' mm (' + g.n + '×)').join(', ')
+        ? T('Achtung, mehrere Durchmesser: ', 'note, several diameters: ') + gs.map(g => 'Ø ' + g.d.toFixed(1) + ' mm (' + g.n + '×)').join(', ')
         : T(dias.length > 1 ? 'Kreise ' : 'Kreis ', dias.length > 1 ? 'circles ' : 'circle ') + 'Ø ' + gs[0].d.toFixed(1) + ' mm');
     }
     return t;
@@ -26992,10 +27013,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function updateDxfPocketHint() {
     const names = listPocketLayers();
     dxfPocketLayerList.hidden = !(dxfPocketCheckbox.checked && names.length);
-    if (!names.length) dxfPocketHint.textContent = T('Nur wählbar, wenn die DXF weitere Layer enthält.', 'Only available if the DXF contains further layers.');
-    else if (!dxfPocketCheckbox.checked) dxfPocketHint.textContent = T('Aus: keine Taschen.', 'Off: no pockets.');
-    else if (!dxfPocketLayerList.querySelector('input[type=checkbox]:checked')) dxfPocketHint.textContent = T('Bitte die Layer wählen, die Taschen enthalten, und je Layer die Tiefe angeben.', 'Please select the layers that contain pockets and enter the depth for each.');
-    else dxfPocketHint.textContent = T('Positive Tiefe = Tasche von oben (Bauteiloberkante), negative Tiefe = Tasche von unten (Unterseite); eine Tiefe von 0 zeigt nur den Umriss in der Outline-Farbe. Taschen können rund, eckig oder vieleckig sein, die Linien durchgehend oder gestrichelt. Was über die Bauteilkontur hinausragt, wird abgeschnitten. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %).', 'Positive depth = pocket from the top of the part, negative depth = pocket from below (underside); a depth of 0 shows only the outline in the outline colour. Pockets can be round, rectangular or polygonal, with solid or dashed lines. Anything extending beyond the part contour is cut off. Shown in the filled view (transparency below 100%).');
+    if (!names.length) dxfPocketHint.textContent = T('Nur mit weiteren Layern möglich.', 'Only possible with further layers.');
+    else if (!dxfPocketCheckbox.checked) dxfPocketHint.textContent = '';
+    else if (!dxfPocketLayerList.querySelector('input[type=checkbox]:checked')) dxfPocketHint.textContent = T('Layer mit Taschen wählen und Tiefe angeben.', 'Select layers with pockets and enter the depth.');
+    else dxfPocketHint.textContent = T('Tiefe: positiv = von oben, negativ = von unten, 0 = nur Umriss.', 'Depth: positive = from top, negative = from bottom, 0 = outline only.');
   }
   dxfPocketCheckbox.addEventListener('change', updateDxfPocketHint);
   // Release 251/252/253: horizontale Bearbeitungen - je Symbolart (T, U) Checkbox "Bohrungen aus ..." (nur aktivierbar, wenn
@@ -27039,9 +27060,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const list = hbList(getHBoreDetection(), k);
     const ds = list.length ? diaSummary(list.map(t => ({ layer: t.layer, val: t.width })), 'Ø') : null;
     warnEl.hidden = !(ds && ds.multi);
-    if (ds && ds.multi) warnEl.textContent = (k === 'T'
-      ? T('Hinweis: Die T-Symbole haben mehrere Bohrdurchmesser – ', 'Note: the T symbols have several bore diameters – ')
-      : T('Hinweis: Die U-Symbole haben mehrere Bohrdurchmesser (Breite des U) – ', 'Note: the U symbols have several bore diameters (width of the U) – ')) + ds.warn + '.';
+    if (ds && ds.multi) warnEl.textContent = T('Achtung, mehrere Bohrdurchmesser: ', 'Note, several bore diameters: ') + ds.warn + '.';
   }
   const fmtOpt = v => (v == null ? '' : String(v));
   function refreshDxfHBoreUI() {
@@ -27066,16 +27085,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // Release 253 (Sebastian: "Bei der Auswahl Eckig wird die vorhandene Ausdehnung Länge genommen"): Länge nur Anzeige
       if (n) {
         const ws = hbList(det, k).map(t => t.width), lo = Math.min(...ws), hi = Math.max(...ws);
-        ui.rectLenInfo.textContent = T('Länge (aus der Zeichnung): ', 'Length (from the drawing): ') + fmtDiaList(diaGroups(ws)) + ' mm';
+        ui.rectLenInfo.textContent = T('Länge: ', 'Length: ') + fmtDiaList(diaGroups(ws)) + T(' mm (aus Zeichnung)', ' mm (from drawing)');
       } else ui.rectLenInfo.textContent = '';
-      if (!n) ui.hint.textContent = k === 'T'
-        ? T('Keine T-Symbole gefunden. Ein T besteht aus einem Stab und einem Querbalken, der den Stab am Ende mittig quer berührt (in jedem Layer außer dem Kontur-Layer).', 'No T symbols found. A T is a stem plus a crossbar that meets the end of the stem at its centre, at right angles (on any layer except the contour layer).')
-        : T('Keine U-Symbole gefunden. Ein U besteht aus zwei gleich langen, parallelen Schenkeln und einer Grundlinie quer dazu; die offene Seite liegt an der Bauteilkante.', 'No U symbols found. A U consists of two parallel legs of equal length and a base line across them; the open side lies at the edge of the part.');
-      else if (!ui.cb.checked) ui.hint.textContent = describeHBoreDetection(k) + '. ' + T('Aus: keine Bohrungen aus ' + k + '.', 'Off: no bores from ' + k + '.');
-      else ui.hint.textContent = describeHBoreDetection(k) + '. ' + (k === 'T'
-        ? T('Der Stab ist die Bohrung: sie beginnt an der Bauteilkante und endet flach am Ende des Stabs (Bohrungstiefe). Rund: Durchmesser = Querbalken. ', 'The stem is the bore: it starts at the edge of the part and ends flat at the end of the stem (bore depth). Round: diameter = crossbar. ')
-        : T('Die Mittellinie des U ist die Bohrung: sie beginnt an der Bauteilkante und endet flach an der Grundlinie (Bohrungstiefe). Rund: Durchmesser = Breite des U. ', 'The centre line of the U is the bore: it starts at the edge of the part and ends flat at the base line (bore depth). Round: diameter = width of the U. '))
-        + T('Eckig: Länge = ' + (k === 'T' ? 'Querbalken des T' : 'Grundlinie des U') + ' (quer zur Bohrrichtung), Höhe in der Stärke eingeben (leer = Länge). Position in Z = Mitte der Bohrung über der Unterseite, leer = mittig. Sichtbar in der gefüllten Darstellung (Transparenz unter 100 %), bei Transparenz auch im Inneren.', 'Rectangular: length = ' + (k === 'T' ? 'crossbar of the T' : 'base line of the U') + ' (across the bore), enter the height in the thickness (empty = length). Position in Z = centre of the bore above the underside, empty = centred. Shown in the filled view (transparency below 100%), and inside the part when transparent.');
+      if (!n) ui.hint.textContent = T('Keine ' + k + '-Symbole gefunden -> keine Bearbeitungsdarstellung.', 'No ' + k + ' symbols found -> no processing shown.');
+      else if (!ui.cb.checked) ui.hint.textContent = describeHBoreDetection(k) + '.';
+      else ui.hint.textContent = describeHBoreDetection(k) + '. ' + T('Position in Z -> leer = mittig, sonst Eingabe Mitte der Bohrung von Bauteilunterkante gemessen.', 'Position in Z -> empty = in the centre, if a value is put in drilling is measured from bottom of part.');
     });
   }
   ['T', 'U'].forEach(k => { HB_UI[k].cb.addEventListener('change', updateDxfHBoreHint); HB_UI[k].shape.addEventListener('change', updateDxfHBoreHint); });
@@ -27084,9 +27098,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const parts = [];
     if (c.loops.length) parts.push(c.loops.length + ' ' + T(c.loops.length > 1 ? 'geschlossene Konturen' : 'geschlossene Kontur', c.loops.length > 1 ? 'closed contours' : 'closed contour'));
     else parts.push(T('keine geschlossene Kontur', 'no closed contour'));
-    if (c.circles) parts.push(c.circles + ' ' + T(c.circles > 1 ? 'Kreise ignoriert' : 'Kreis ignoriert', c.circles > 1 ? 'circles ignored' : 'circle ignored'));
-    if (c.open) parts.push(c.open + ' ' + T(c.open > 1 ? 'offene Linienzüge ignoriert' : 'offener Linienzug ignoriert', c.open > 1 ? 'open polylines ignored' : 'open polyline ignored'));
-    return parts.join(', ');
+    return parts.join(', ');   // Release 257: kürzer (ignorierte Kreise/offene Linien werden nicht mehr aufgezählt)
   }
   // Baut die Einstemmungs-Einstellungen passend zur Datei auf: gibt es benannte Layer
   // ("Stufeneinstemmung"/"Setzstufeneinstemmung"), erscheint je Layer ein Tiefenfeld und KEINE
@@ -27129,10 +27141,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfMortiseDepth2Field.hidden = true;
     }
     dxfMortiseHint.textContent = isNamed
-      ? T('Die Layer "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '" werden als Einstemmungen erkannt. Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise werden hier ignoriert (siehe "Vertikale Taschen").',
-          'The layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '" are recognised as mortises. The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles are ignored here (see "Vertical pockets").')
-      : T('Den Layer wählen, der die Einstemmungen enthält (oder "- keiner -"). Die Tiefe wird von der Oberseite des Bauteils aus gemessen; die Gesamtstärke bleibt die oben eingegebene Stärke. Kreise werden hier ignoriert (siehe "Vertikale Taschen").',
-          'Select the layer that contains the mortises (or "- none -"). The depth is measured from the top surface of the part; the total thickness stays the thickness entered above. Circles are ignored here (see "Vertical pockets").');
+      ? T('Einstemmungen aus den Layern "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '". Tiefe von Bauteiloberkante gemessen.', 'Mortises from the layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '". Depth is measured from top.')
+      : T('Layer wählen, der die Einstemmungen enthält, bei "- keiner -" werden Einstemmungen nicht dargestellt. Tiefe von Bauteiloberkante gemessen.', "Select Layer with tread mortises, if you select '- none -' no mortises are displayed. Depth is measured from top.");
     updateDxfMortiseDepthVisibility();
   }
   // Release 253: "Einstemmungstiefe" steht neben dem Layer und erscheint nur, wenn ein Layer gewählt ist
@@ -27155,15 +27165,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const cs = getVerticalCircles();
     dxfVPocketBody.hidden = !(dxfVPocketCheckbox.checked && cs.length);
     const vWarn = el('dxfVPocketDiaWarn');
-    if (!cs.length) { dxfVPocketHint.textContent = T('Keine Kreise gefunden.', 'No circles found.'); vWarn.hidden = true; return; }
+    if (!cs.length) { dxfVPocketHint.textContent = T('Keine Kreise gefunden -> keine Bearbeitungsdarstellung.', 'No circles found -> no processing shown.'); vWarn.hidden = true; return; }
     const dsum = diaSummary(cs.map(c => ({ layer: c.layer, val: c.diameter })), 'Ø');
     const layers = Array.from(new Set(cs.map(c => c.layer))).join(', ');
     const found = cs.length + ' ' + T(cs.length > 1 ? 'Kreise' : 'Kreis', cs.length > 1 ? 'circles' : 'circle') + ' ' + T('erkannt', 'detected') + ' (' + T('Layer', 'layer') + ' ' + layers + '): Ø ' + dsum.list + ' mm';
     vWarn.hidden = !dsum.multi;
-    if (dsum.multi) vWarn.textContent = T('Hinweis: Die Kreise haben mehrere Taschendurchmesser – ', 'Note: the circles have several pocket diameters – ') + dsum.warn + T('. Alle bekommen dieselbe Taschentiefe.', '. All get the same pocket depth.');
-    dxfVPocketHint.textContent = found + '. ' + (dxfVPocketCheckbox.checked
-      ? T('Durchmesser der Tasche = größte Ausdehnung des Kreises in der DXF. Positive Taschentiefe = Tasche von oben (Bauteiloberkante), negative Taschentiefe = Tasche von unten (Unterseite), 0 = nur Umriss.', 'Pocket diameter = largest extent of the circle in the DXF. Positive pocket depth = pocket from the top (top of the part), negative pocket depth = pocket from below (underside), 0 = outline only.')
-      : T('Aus: keine vertikalen Taschen.', 'Off: no vertical pockets.'));
+    if (dsum.multi) vWarn.textContent = T('Achtung, mehrere Taschendurchmesser: ', 'Note, several pocket diameters: ') + dsum.warn + T(' (gleiche Tiefe für alle).', ' (same depth for all).');
+    dxfVPocketHint.textContent = found + '.' + (dxfVPocketCheckbox.checked ? ' ' + T('Taschentiefe: Eingabe positiv = Tasche von oben gemessen, negativ = Tasche von unten.', 'Pocket depth: Input positive = pocket from top, negative = pocket from bottom.') : '');
   }
   dxfVPocketCheckbox.addEventListener('change', updateDxfVPocketHint);
   // Release 253 (Sebastian, Punkt 8): Sichtbarkeit je Bauteilart - "- undefiniert -": nur Stärke (+ Füll-Transparenz
@@ -27189,7 +27197,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfThicknessEverConfirmed && dxfGeometry) {
       const t = dxfPartTypeSelect.value;
       applyPartDefaultsToState(t);
-      dxfThicknessInput.value = String((dxfPartDefaults.parts[t] || dxfPartDefaults.parts.undefined).thickness);
+      const pdt = dxfPartDefaults.parts[t] || dxfPartDefaults.parts.undefined;
+      dxfThicknessInput.value = String(pdt.thickness);
+      dxfThicknessTransparencySlider.value = String(pdt.transparency); dxfThicknessTransparencyValue.textContent = pdt.transparency + '%';
+      dxfThicknessColorPicker.value = pdt.fillColor; dxfThicknessColorHex.value = pdt.fillColor;
+      dxfOutlineColorPicker.value = pdt.outlineColor; dxfOutlineColorHex.value = pdt.outlineColor;
+      updateDxfThicknessColorRowVisibility();
       refreshDxfMortiseUI(); refreshDxfVPocketUI(); refreshDxfHBoreUI();
     }
     updateDxfPartTypeUI();
@@ -27214,7 +27227,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // dieser Runde.
     // Release 256: Vorbefüllung aus der Bauteildefinition (Stärke je Bauteilart, Füll-Transparenz)
     const prefillThickness = dxfThicknessEverConfirmed ? dxfThickness : (dxfPartDefaults.parts[dxfPartType] || dxfPartDefaults.parts.undefined).thickness;
-    const prefillTransparency = dxfThicknessEverConfirmed ? dxfThicknessTransparency : dxfPartDefaults.transparency;
+    const prefillTransparency = dxfThicknessEverConfirmed ? dxfThicknessTransparency : (dxfPartDefaults.parts[dxfPartType] || dxfPartDefaults.parts.undefined).transparency;
     dxfThicknessInput.value = String(prefillThickness);
     dxfThicknessTransparencySlider.value = String(prefillTransparency);
     dxfThicknessTransparencyValue.textContent = prefillTransparency + '%';
@@ -27227,6 +27240,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfOutlineColorHexWarning.hidden = true;
     updateDxfThicknessColorRowVisibility();
     dxfThicknessPanel.classList.add('open');
+    if (window.__dxfThicknessPanelReclamp) window.__dxfThicknessPanelReclamp();
     dxfThicknessInput.focus();
     dxfThicknessInput.select();
   }
@@ -27237,7 +27251,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // selbst lautet laut Sebastians Vorgabe "Bauteilhöhe").
   btnDxfThicknessMenu.addEventListener('click', openDxfThicknessPanel);
   el('btnDxfThicknessCancel').addEventListener('click', () => dxfThicknessPanel.classList.remove('open'));
-  function confirmDxfThickness() {
+  // Release 257: keepOpen === true -> "Übernehmen" (Werte anwenden, Fenster bleibt offen)
+  function confirmDxfThickness(keepOpen) {
+    keepOpen = keepOpen === true;
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
@@ -27312,7 +27328,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     recomputeMortise(); // Release 249
     updateDxfUI();
     requestRender();
-    dxfThicknessPanel.classList.remove('open');
+    if (!keepOpen) dxfThicknessPanel.classList.remove('open');
     // Release 249: dasselbe für die Einstemmungen der gestemmten Wange.
     if (dxfMortiseProblems.length) {
       const msg = (isMortisePart(dxfPartType) ? T('Einstemmung:\n', 'Mortise:\n') : (dxfPartType === 'tread' ? T('Taschen:\n', 'Pockets:\n') : T('Bearbeitungen:\n', 'Machining:\n'))) + dxfMortiseProblems.join('\n');
@@ -27324,7 +27340,41 @@ Sebastian Bäcker (Anschrift wie oben)`,
       setTimeout(() => alert(msg), 0);
     }
   }
-  el('btnDxfThicknessConfirm').addEventListener('click', confirmDxfThickness);
+  el('btnDxfThicknessConfirm').addEventListener('click', () => confirmDxfThickness(false));
+  // Release 257 (Sebastian: "Neben Abbrechen und Ok ein Übernehmen einbauen. Übernehmen ändert die eingegebenen Werte,
+  // schließt das Fenster aber nicht. Ok reagiert weiter nur auf die Eingabe von Enter. Übernehmen ist ein manueller Klick")
+  el('btnDxfThicknessApply').addEventListener('click', () => confirmDxfThickness(true));
+  // Release 257 (Sebastian: "Fenster für DXF-Bauteil definieren verschiebbar machen - über den ganzen Screen"): an der
+  // Titelzeile ziehen; das Fenster bleibt immer ganz im sichtbaren Bereich. Der Hintergrund ist nicht mehr abgedunkelt und
+  // lässt Mausaktionen durch, damit man das Bauteil bei "Übernehmen" sieht und drehen kann.
+  (function makeDxfThicknessPanelDraggable() {
+    const card = dxfThicknessPanel.querySelector('.paste-card'), handle = card.querySelector('h3');
+    let dx = 0, dy = 0, start = null;
+    const apply = () => { card.style.transform = (dx || dy) ? 'translate(' + dx + 'px, ' + dy + 'px)' : ''; };
+    const clamp = () => {
+      const r = card.getBoundingClientRect();
+      const baseL = r.left - dx, baseT = r.top - dy, W = window.innerWidth, H = window.innerHeight;
+      // das ganze Fenster bleibt im sichtbaren Bereich (Ok/Abbrechen immer erreichbar)
+      dx = Math.min(Math.max(dx, -baseL), Math.max(-baseL, W - r.width - baseL));
+      dy = Math.min(Math.max(dy, -baseT), Math.max(-baseT, H - r.height - baseT));
+    };
+    handle.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      start = { x: e.clientX, y: e.clientY, dx, dy };
+      try { handle.setPointerCapture(e.pointerId); } catch (err) { /* ältere Browser */ }
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', e => {
+      if (!start) return;
+      dx = start.dx + e.clientX - start.x; dy = start.dy + e.clientY - start.y;
+      apply(); clamp(); apply();
+    });
+    const end = () => { start = null; };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+    window.addEventListener('resize', () => { if (dxfThicknessPanel.classList.contains('open')) { clamp(); apply(); } });
+    window.__dxfThicknessPanelReclamp = () => { clamp(); apply(); };
+  })();
 
   // Release 256: "Einstellungen -> DXF -> Bauteildefinition" - Arbeitskopie der Standardwerte; beim Wechsel des Bauteils
   // werden die Felder des bisherigen Bauteils in die Kopie übernommen und die des neuen geladen. Ok speichert (localStorage).
@@ -27336,6 +27386,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function dpdLoadPart(t) {
     const pd = dpdWork.parts[t];
     el('dpdThickness').value = String(pd.thickness);
+    el('dpdTransparency').value = String(pd.transparency);
+    el('dpdFillColorPicker').value = pd.fillColor; el('dpdFillColorHex').value = pd.fillColor;
+    el('dpdOutlineColorPicker').value = pd.outlineColor; el('dpdOutlineColorHex').value = pd.outlineColor;
     el('dpdVertical').hidden = !(pd.mortise || pd.vpocket || 'pocketDepth' in pd);
     el('dpdMortise').hidden = !pd.mortise;
     el('dpdPocket').hidden = !('pocketDepth' in pd);
@@ -27353,6 +27406,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const req = (id, signed, label) => { const n = dpdNum(id, signed); if (n === null || Number.isNaN(n)) { bad.push(label); return null; } return n; };
     const opt = (id, label) => { const n = dpdNum(id, false); if (Number.isNaN(n)) { bad.push(label); return null; } return n; };
     const th = req('dpdThickness', true, T('Stärke', 'thickness')); if (th !== null) pd.thickness = th;
+    const tr = req('dpdTransparency', false, T('Füll-Transparenz', 'fill transparency'));
+    if (tr !== null) { if (tr > 100) bad.push(T('Füll-Transparenz (0-100)', 'fill transparency (0-100)')); else pd.transparency = Math.round(tr); }
+    const fc = normalizeHex(el('dpdFillColorHex').value), oc = normalizeHex(el('dpdOutlineColorHex').value);
+    if (fc) pd.fillColor = fc; else bad.push(T('Füllfarbe', 'fill color'));
+    if (oc) pd.outlineColor = oc; else bad.push(T('Outline-Farbe', 'outline color'));
     if (pd.mortise) {
       pd.mortise.on = el('dpdMortiseOn').checked;
       const a = req('dpdMortiseDepth', false, T('Einstemmungstiefe', 'mortise depth')), b = req('dpdMortiseDepthTread', false, T('Einstemmungstiefe Stufe', 'mortise depth tread')), c = req('dpdMortiseDepthRiser', false, T('Einstemmungstiefe Setzstufe', 'mortise depth riser'));
@@ -27372,7 +27430,6 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dpdWork = normalizeDxfPartDefaults(JSON.parse(JSON.stringify(dxfPartDefaults)));
     el('dpdByName').checked = dpdWork.byName;
     el('dpdAutoApply').checked = dpdWork.autoApply;
-    el('dpdTransparency').value = String(dpdWork.transparency);
     dpdCurrent = DXF_PART_TYPES.includes(dxfPartType) && dxfGeometry ? dxfPartType : 'undefined';
     dpdPartSelect.value = dpdCurrent;
     dpdLoadPart(dpdCurrent);
@@ -27388,11 +27445,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
   function confirmDxfPartDefaults() {
     const err = dpdStorePart(dpdCurrent);
-    const tr = dpdNum('dpdTransparency', false);
-    if (err || tr === null || Number.isNaN(tr)) { el('dpdWarning').textContent = err || T('Bitte eine gültige Füll-Transparenz (0-100) eingeben.', 'Please enter a valid fill transparency (0-100).'); el('dpdWarning').hidden = false; return; }
+    if (err) { el('dpdWarning').textContent = err; el('dpdWarning').hidden = false; return; }
     dpdWork.byName = el('dpdByName').checked;
     dpdWork.autoApply = el('dpdAutoApply').checked;
-    dpdWork.transparency = tr;
     applyDxfPartDefaults(dpdWork);
     dxfPartDefaultsPanel.classList.remove('open');
   }
@@ -27400,9 +27455,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('btnDxfPartDefaultsConfirm').addEventListener('click', confirmDxfPartDefaults);
   el('btnDxfPartDefaultsCancel').addEventListener('click', () => dxfPartDefaultsPanel.classList.remove('open'));
   el('btnDxfPartDefaultsReset').addEventListener('click', () => {
-    dpdWork = builtinDxfPartDefaults();
-    el('dpdByName').checked = dpdWork.byName; el('dpdAutoApply').checked = dpdWork.autoApply; el('dpdTransparency').value = String(dpdWork.transparency);
+    dpdWork = normalizeDxfPartDefaults(null);
+    el('dpdByName').checked = dpdWork.byName; el('dpdAutoApply').checked = dpdWork.autoApply;
     dpdLoadPart(dpdCurrent); el('dpdWarning').hidden = true;
+  });
+  // Farbwähler <-> Hexfeld (Release 257)
+  [['dpdFillColorPicker', 'dpdFillColorHex'], ['dpdOutlineColorPicker', 'dpdOutlineColorHex']].forEach(([pk, hx]) => {
+    el(pk).addEventListener('input', () => { el(hx).value = el(pk).value; });
+    el(hx).addEventListener('input', () => { const n = normalizeHex(el(hx).value); if (n) el(pk).value = n; });
   });
   dxfThicknessInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfThickness(); } });
 
