@@ -3411,6 +3411,9 @@
     <div class="transport-row transport-row2">
       <div class="speed-group" id="speedGroup">
         <span class="speed-caption" data-i18n-en="Speed">Geschwindigkeit</span>
+        <!-- Release 259 (Sebastian: "Bitte Geschwindigkeit "0,5x" einbauen. Manchmal ist 1x schon sehr schnell."):
+             0,5x = 1 Punkt alle zwei Ticks (doppeltes Zeitintervall) -->
+        <button class="speed-btn" data-speed="0.5" type="button" data-i18n-en="0.5x">0,5x</button>
         <button class="speed-btn active" data-speed="1" type="button">1x</button>
         <button class="speed-btn" data-speed="5" type="button">5x</button>
         <button class="speed-btn" data-speed="10" type="button">10x</button>
@@ -8765,7 +8768,9 @@
   function detectHorizontalTs(geo, konturLayerName, konturLoop) {
     const out = { ts: [], us: [], skippedOutside: 0, skippedInside: 0 };
     if (!geo || !geo.strokes) return out;
-    const TOL = 0.05;
+    // Knoten-Toleranz 0,02 mm (bis Release 258: 0,05 mm) - sonst fielen die Enden eines 0,1-mm-Querbalkens
+    // (je 0,05 mm vom Stabende) mit dem Stabende zu einem Knoten zusammen (Release 259)
+    const TOL = 0.02;
     const byLayer = new Map();
     geo.strokes.forEach(st => {
       if (!st || st.closed || !st.points || st.points.length < 2) return;
@@ -8885,9 +8890,11 @@
       // 2) T-Suche: Stabende E (Knoten) liegt auf der Querbalken-Mitte
       const lineSeg = ln => ({ a: ln.a, b: ln.b });
       // Release 258 (Sebastian: "an der Seitenkante der Stufe ein (sehr kleines) T ... wird nicht als horizontale
-      // Bearbeitung erkannt"): Querbalken ab 0,2 mm (vorher mind. 1 mm - ein Ø-1-mm-T mit 0,99999… mm Zeichnungslänge
-      // fiel durch). Mittigkeit: 0,3 mm bzw. 3 %, bei sehr kleinen T höchstens ein Viertel der Balkenlänge.
-      const MIN_BAR = 0.2;
+      // Bearbeitung erkannt"): Querbalken ab 0,1 mm (vorher mind. 1 mm - ein Ø-1-mm-T mit 0,99999… mm Zeichnungslänge
+      // fiel durch; Sebastian: "Kannst du das minimale T oben auf 0,1mm stellen? Kleiner ist unrealistisch. Beim U dann
+      // auch auf 0,1."). Gilt für den Querbalken des T und die Grundlinie des U (mit Rundungsreserve für 0,0999999…).
+      // Mittigkeit: 0,3 mm bzw. 3 %, bei sehr kleinen T höchstens ein Viertel der Balkenlänge.
+      const MIN_BAR = 0.1 - 1e-6;
       const midTol = len => Math.min(Math.max(0.3, len * 0.03), len * 0.25);
       const lineDir = q => ({ x: (q.b.x - q.a.x) / q.len, y: (q.b.y - q.a.y) / q.len });
       // Release 258: liegt am Punkt P das Ende einer Linie mittig auf einem senkrechten Querbalken (eigenes T)?
@@ -8979,7 +8986,7 @@
         return ls.length === 1 ? ls[0] : null;
       };
       lines.forEach(base => {
-        if (base.len < 1) return;
+        if (base.len < MIN_BAR) return;   // Release 258: Grundlinie ab 0,1 mm (vorher 1 mm)
         const legA = otherLineAt(base.na, base), legB = otherLineAt(base.nb, base);
         if (!legA || !legB || legA === legB) return;
         const far = (leg, node) => (leg.na === node ? { p: leg.b, n: leg.nb } : (leg.nb === node ? { p: leg.a, n: leg.na } : null));
@@ -10712,8 +10719,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 258;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 08:51 Uhr';
+  const APP_RELEASE_NUMBER = 259;
+  const APP_RELEASE_TIMESTAMP = '21.10.2026, 09:08 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13833,7 +13840,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let hasStarted = false;
   let playing = false;
   let playTimer = null;
-  let playSpeed = 1;    // Wiedergabe-Multiplikator: 1x / 5x / 10x / 20x (Anzahl Punkte pro Tick)
+  let playSpeed = 1;    // Wiedergabe-Multiplikator: 0,5x (Release 259, doppeltes Intervall) / 1x / 5x / 10x / 20x (Anzahl Punkte pro Tick)
   let showRapid = true; // G0/Eilgang-Layer im 3D-Bereich ein-/ausblenden
   // Werkzeug-3D-Darstellung (Benutzer: "Darstellung des Werkzeugs kann deaktiviert werden: Neben
   // 'Messen' Augensymbol für 'Werkzeug' zum aus-/einblenden") - startet sichtbar (true), siehe
@@ -20931,12 +20938,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function stepPlayback(ts) {
     if (!playing) return;
     if (!stepPlayback._last) stepPlayback._last = ts;
-    if (ts - stepPlayback._last > 130) {
+    // Release 259: unter 1x (0,5x) wird das Zeitintervall verlängert (0,5x = 260 ms je Punkt)
+    if (ts - stepPlayback._last > 130 / Math.min(1, playSpeed)) {
       stepPlayback._last = ts;
       if (scrubIdx < points.length - 1) {
         // Geschwindigkeit (1x/5x/10x/20x): pro Tick werden entsprechend mehr Punkte übersprungen,
         // statt das Zeitintervall zu verändern - so bleibt die Wiedergabe gleichmäßig flüssig.
-        scrubIdx = Math.min(scrubIdx + playSpeed, points.length - 1);
+        scrubIdx = Math.min(scrubIdx + Math.max(1, Math.round(playSpeed)), points.length - 1);
         scrubEl.value = String(scrubIdx);
         updateReadoutAndHighlight();
         requestRender();
@@ -25946,7 +25954,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   speedButtons.forEach(b => {
     b.addEventListener('click', () => {
-      playSpeed = parseInt(b.dataset.speed, 10) || 1;
+      playSpeed = parseFloat(b.dataset.speed) || 1;   // Release 259: auch 0,5
       speedButtons.forEach(x => x.classList.toggle('active', x === b));
     });
   });
