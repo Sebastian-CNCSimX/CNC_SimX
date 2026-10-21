@@ -2189,6 +2189,9 @@
   #dxfThicknessPanel { background: transparent; pointer-events: none; }
   #dxfThicknessPanel .paste-card { pointer-events: auto; }
   #dxfThicknessPanel .paste-card > h3 { cursor: move; user-select: none; touch-action: none; }
+  /* Release 260: das Fenster ist höher geworden (Füllung/Textur) - bei kleinem Bildschirm scrollt es; die Titelzeile bleibt
+     oben stehen, damit man es immer verschieben kann */
+  #dxfThicknessPanel .paste-card > h3 { position: sticky; top: -16px; z-index: 3; background: var(--panel); margin-top: -16px; padding: 16px 0 6px; }
   /* Release 254: Hinweis bei mehreren Durchmessern */
   .dxf-dia-warn { color: var(--warn); font-weight: 600; }
   /* Release 253: Trennstriche im Dialog "DXF-Bauteil definieren" */
@@ -2199,6 +2202,9 @@
      Kartenbreite (siehe media query weiter unten) auf eine einzelne Spalte um, damit das Fenster
      auch bei schmaleren Fenstern/kleineren exe-Fensterbreiten benutzbar bleibt. */
   .tool-dxf-import-body { display: flex; gap: 20px; align-items: flex-start; }
+  /* Release 260: Textur-Verwaltung (Einstellungen -> DXF -> Textur) */
+  #dxfTexturePanel .paste-card.wide { width: min(720px, 96vw); }
+  #dxfTexturePreviewCanvas { width: 260px; height: auto; border: 1px solid var(--border, #ccd); border-radius: 6px; background: #f4f4f4; }
   .tool-dxf-import-controls { flex: 1 1 320px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .tool-dxf-import-preview { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
   /* Hilfebild (Release 202, Sebastian: "In der 'Werkzeugprofil bearbeiten'-Funktion ein Hilfebild
@@ -2887,6 +2893,9 @@
             <button class="menu-item submenu-trigger" id="submenuDxfSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuDxfSettingsDropdown" hidden>
               <button class="menu-item" id="btnDxfPartDefaults" type="button" title="Standardwerte für &quot;DXF-Bauteil definieren&quot;: Bauteil aus dem Dateinamen, Stärke je Bauteil, Tiefen und Vorauswahl der Bearbeitungen, automatisches Anwenden beim Import" data-i18n-en="Part definition" data-i18n-en-title="Defaults for &quot;DXF drawing settings&quot;: part type from the file name, thickness per part type, depths and preselection of the machining, automatic application on import">Bauteildefinition</button>
+              <!-- Release 260 (Sebastian: "Import einer Textur unter Einstellungen -> DXF -> Textur. Die Textur wird wie ein
+                   Spannfutterprofil bzw. Werkzeugprofil abgelegt und auch exportiert beim Einstellungsexport") -->
+              <button class="menu-item" id="btnDxfTextures" type="button" title="Texturen (Bilddateien BMP/JPG/PNG) für die DXF-Bauteile verwalten: importieren, benennen, löschen" data-i18n-en="Texture" data-i18n-en-title="Manage textures (image files BMP/JPG/PNG) for the DXF parts: import, name, delete">Textur</button>
             </div>
           </div>
           <!-- Trennstrich vor "Einstellungen importieren" (Release 167, Sebastian, Punkt 4: "Vor
@@ -4182,6 +4191,15 @@
       <p class="panel-hint dxf-dia-warn" id="dxfUBoreDiaWarn" hidden></p>
     </div>
     <hr class="dxf-part-sep" id="dxfSepFill">
+    <!-- Release 260 (Sebastian: "In der Definition der DXF-Bauteilstärke kann die Textur ggf. auch noch geändert werden. Da
+         taucht die Auswahl aus 2) ganz unten im Menü auf, wo aktuell nur Füll-Transparenz zur Auswahl steht") -->
+    <div class="color-field-row" id="dxfFillModeRow">
+      <span data-i18n-en="Fill">Füllung</span>
+      <select id="dxfFillModeSelect" class="filename-input">
+        <option value="color" data-i18n-en="Fill color">Füllfarbe</option>
+        <option value="texture" data-i18n-en="Texture">Textur</option>
+      </select>
+    </div>
     <div class="scale-group" id="dxfThicknessTransparencyRow">
       <div class="scale-group-title"><span data-i18n-en="Fill transparency">Füll-Transparenz</span>: <span id="dxfThicknessTransparencyValue">100%</span></div>
       <div class="slider-row">
@@ -4199,6 +4217,11 @@
       </span>
     </div>
     <p class="panel-hint" id="dxfThicknessColorHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+    <div class="color-field-row" id="dxfTextureRow" hidden>
+      <span data-i18n-en="Texture">Textur</span>
+      <select id="dxfTextureSelect" class="filename-input"></select>
+    </div>
+    <p class="panel-hint dxf-dia-warn" id="dxfTextureMissingHint" hidden data-i18n-en="No texture saved yet - import one under Settings → DXF → Texture.">Noch keine Textur vorhanden – unter Einstellungen → DXF → Textur importieren.</p>
     <!-- Release 227 (Sebastian: "Bau mal bitte bei der DXF Bauteilstärke ein, dass die Farbe der
          Outline einstellbar ist. Aktuell ist sie schwarz, aber die soll doch besser einstellbar
          sein."): zweites Farbfeld für die in Release 226 eingeführte schwarze Umrisslinie (siehe
@@ -4223,6 +4246,52 @@
 
 <!-- "Bauteildefinition" (Release 256): Standardwerte für den Dialog "DXF-Bauteil definieren" - siehe
      openDxfPartDefaultsPanel()/confirmDxfPartDefaults() in app.js und Konzept_DXF_Bauteil_definieren.md. -->
+<!-- Release 260 (Sebastian: "Es gibt in dem Importfenster ein Importbereich bei dem die Datei gewählt wird (.bmp, .jpg/jpeg,
+     .png ermöglichen). Dann kann man der Textur einen Namen geben (in der Auswahl später als Klartext verfügbar machen!). Die
+     Textur kann auch gelöscht werden. Kopieren ist stand jetzt nicht nötig.") -->
+<div class="paste-panel" id="dxfTexturePanel">
+  <div class="paste-card wide">
+    <h3 data-i18n-en="Texture">Textur</h3>
+    <p class="panel-hint" data-i18n-en="Image file (BMP, JPG, PNG) as a texture for DXF parts. It is tiled in its real size (not stretched); select it per part under Settings → DXF → Part definition or in &quot;DXF drawing settings&quot;.">Bilddatei (BMP, JPG, PNG) als Textur für DXF-Bauteile. Sie wird in Originalgröße aneinandergereiht (nicht gestreckt); Auswahl je Bauteil unter Einstellungen → DXF → Bauteildefinition bzw. in „DXF-Bauteil definieren“.</p>
+    <div class="tool-dxf-import-body">
+      <div class="tool-dxf-import-controls">
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="Saved textures">Gespeicherte Texturen</div>
+          <select id="dxfTextureListSelect" size="6" class="tool-dxf-profile-select"></select>
+          <div class="tool-dxf-profile-list-actions">
+            <button class="btn ghost small" id="btnDxfTextureNew" type="button" data-i18n-en="New">Neu</button>
+            <button class="btn ghost small" id="btnDxfTextureDelete" type="button" data-i18n-en="Delete">Löschen</button>
+          </div>
+        </div>
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="Image file">Bilddatei</div>
+          <input type="file" id="dxfTextureFileInput" hidden accept=".bmp,.jpg,.jpeg,.png,image/bmp,image/jpeg,image/png">
+          <button class="btn ghost" id="btnDxfTextureChooseFile" type="button" data-i18n-en="Choose file…">Datei auswählen…</button>
+          <span class="tool-dxf-import-filename" id="dxfTextureFileName" data-i18n-en="No file selected">Keine Datei ausgewählt</span>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Name">Name</span>
+          <input type="text" id="dxfTextureNameInput" class="filename-input" maxlength="60" placeholder="z. B. Eiche rustikal" data-i18n-en-placeholder="e.g. rustic oak">
+        </div>
+        <div class="color-field-row" title="Wie breit das Bild in Wirklichkeit ist - danach richtet sich die Größe der Maserung auf dem Bauteil." data-i18n-en-title="How wide the image is in reality - this sets the size of the grain on the part.">
+          <span data-i18n-en="Tile width (mm)">Kachelbreite (mm)</span>
+          <input type="text" id="dxfTextureTileInput" class="filename-input" inputmode="decimal" spellcheck="false">
+        </div>
+        <p class="panel-hint" id="dxfTextureInfo"></p>
+        <p class="panel-hint dxf-dia-warn" id="dxfTextureError" hidden></p>
+      </div>
+      <div class="tool-dxf-import-preview">
+        <canvas id="dxfTexturePreviewCanvas" width="260" height="260"></canvas>
+        <p class="panel-hint" data-i18n-en="Preview: 2 × 2 tiles as on the part (every second tile mirrored, so no hard edges appear).">Vorschau: 2 × 2 Kacheln wie auf dem Bauteil (jede zweite Kachel gespiegelt, damit keine harten Kanten entstehen).</p>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnDxfTextureClose" type="button" data-i18n-en="Close">Schließen</button>
+      <button class="btn primary" id="btnDxfTextureSave" type="button" data-i18n-en="Save">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="paste-panel" id="dxfPartDefaultsPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Part definition (defaults)">Bauteildefinition (Standardwerte)</h3>
@@ -4245,12 +4314,24 @@
       </label>
     </div>
     <!-- Release 257 (Sebastian: "nicht nur Fülltransparenz eingebbar machen, sondern auch die Füllfarbe und Outline. Das
-         kann auch für jedes Bauteil individuell sein") -->
+         kann auch für jedes Bauteil individuell sein"); Release 260 (Sebastian: "Es gibt ein Dropdownmenü unter dem Bereich
+         wo das Bauteil und die Stärke festgelegt wird: Füllfarbe / Textur") -->
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Fill">Füllung</span>
+        <select id="dpdFillMode" class="filename-input">
+          <option value="color" data-i18n-en="Fill color">Füllfarbe</option>
+          <option value="texture" data-i18n-en="Texture">Textur</option>
+        </select>
+      </label>
+    </div>
     <div class="tool-data-row">
       <label class="tool-data-field"><span data-i18n-en="Fill transparency (%)">Füll-Transparenz (%)</span>
         <input type="text" id="dpdTransparency" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
-      <label class="tool-data-field"><span data-i18n-en="Fill color">Füllfarbe</span>
+      <label class="tool-data-field" id="dpdTextureField" hidden><span data-i18n-en="Texture">Textur</span>
+        <select id="dpdTextureSelect" class="filename-input"></select>
+      </label>
+      <label class="tool-data-field" id="dpdFillColorField"><span data-i18n-en="Fill color">Füllfarbe</span>
         <span class="color-field-inputs"><input type="color" id="dpdFillColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color"><input type="text" id="dpdFillColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false"></span>
       </label>
       <label class="tool-data-field"><span data-i18n-en="Outline color">Outline-Farbe</span>
@@ -10719,8 +10800,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 259;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 09:08 Uhr';
+  const APP_RELEASE_NUMBER = 260;
+  const APP_RELEASE_TIMESTAMP = '21.10.2026, 09:55 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13918,6 +13999,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // drawDxf()) - die neue Farbzeile teilt sich deshalb dieselbe Sichtbarkeits-Bedingung wie
   // #dxfThicknessColorRow (updateDxfThicknessColorRowVisibility() unten).
   let dxfOutlineColor = '#000000';
+  // Release 260: Füllung des Bauteils - 'color' (Füllfarbe) oder 'texture' (Textur aus Einstellungen -> DXF -> Textur)
+  let dxfFillMode = 'color';
+  let dxfTextureId = null;
   // Release 222 (Sebastian: "Die DXF soll flach dargestellt werden, aber wenn man ins Menü
   // 'Bauteilstärke' geht, soll da schon 45mm voreingetragen sein, bei 25% Transparenz. Wie gesagt:
   // Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte drin."): das BAUTEIL selbst
@@ -14013,6 +14097,103 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Gespeichert in localStorage (LS_KEY_DXF_PART_DEFAULTS) und im Einstellungsexport (Feld dxfPartDefaults).
   // Die Bohrungstiefe kommt immer aus dem Symbol (T/U) und ist deshalb keine Einstellung.
   const LS_KEY_DXF_PART_DEFAULTS = 'cncsim.dxfPartDefaults';
+  // Release 260 (Sebastian: "Import einer Textur unter Einstellungen -> DXF -> Textur. Die Textur wird wie ein
+  // Spannfutterprofil bzw. Werkzeugprofil abgelegt und auch exportiert beim Einstellungsexport."): Texturliste in
+  // localStorage (LS_KEY_DXF_TEXTURES) und im Einstellungsexport (Feld dxfTextures). Das Bild wird beim Import auf
+  // höchstens DXF_TEXTURE_MAX_PX Pixel (längste Seite) verkleinert und als JPEG-Daten-URL gespeichert (Speicherplatz).
+  // Kachelbreite = wie breit das Bild in Wirklichkeit ist (mm); Standard 1,5 mm je Pixel.
+  const LS_KEY_DXF_TEXTURES = 'cncsim.dxfTextures';
+  const DXF_TEXTURE_MAX_PX = 1024;
+  const DXF_TEXTURE_DEFAULT_MM_PER_PX = 1.5;
+  function normalizeDxfTexture(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
+    const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 60) : '';
+    const dataUrl = typeof raw.dataUrl === 'string' && /^data:image\//.test(raw.dataUrl) ? raw.dataUrl : '';
+    const w = Math.round(Number(raw.w)), h = Math.round(Number(raw.h));
+    if (!id || !name || !dataUrl || !(w > 0) || !(h > 0)) return null;
+    let tile = Number(raw.tileWidthMm);
+    if (!(Number.isFinite(tile) && tile > 0)) tile = w * DXF_TEXTURE_DEFAULT_MM_PER_PX;
+    const now = Date.now();
+    return { id, name, dataUrl, w, h, tileWidthMm: tile, fileName: typeof raw.fileName === 'string' ? raw.fileName : '', createdAt: Number(raw.createdAt) || now, updatedAt: Number(raw.updatedAt) || now };
+  }
+  function normalizeDxfTextureList(data) {
+    if (!Array.isArray(data)) return [];
+    const seen = new Set();
+    return data.map(normalizeDxfTexture).filter(t => { if (!t || seen.has(t.id)) return false; seen.add(t.id); return true; });
+  }
+  function loadPersistedDxfTextures() {
+    try { const raw = window.localStorage.getItem(LS_KEY_DXF_TEXTURES); if (raw) return normalizeDxfTextureList(JSON.parse(raw)); } catch (e) { /* s. Maschinentyp-Persistenz */ }
+    return [];
+  }
+  function persistDxfTextures(list) {
+    try { window.localStorage.setItem(LS_KEY_DXF_TEXTURES, JSON.stringify(list)); return true; } catch (e) { return false; }
+  }
+  let dxfTextures = loadPersistedDxfTextures();
+  const getDxfTextureById = id => (id && dxfTextures.find(t => t.id === id)) || null;
+  const sortedDxfTextures = () => dxfTextures.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const isDxfTextureActive = () => dxfFillMode === 'texture' && !!getDxfTextureById(dxfTextureId);
+  // Laufzeit-Cache: decodierte Pixel und Mip-Stufen (Box-Filter) je Textur; dxfTexVersion zählt hoch, sobald eine Textur
+  // fertig decodiert ist (Bake-Cache, siehe computeBakeParams()).
+  const dxfTexRenderCache = new Map();
+  let dxfTexVersion = 0;
+  function buildDxfTextureLevels(img) {
+    const c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+    const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let w = c.width, h = c.height;
+    const r = new Float32Array(w * h), gg = new Float32Array(w * h), b = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { r[i] = d[4 * i]; gg[i] = d[4 * i + 1]; b[i] = d[4 * i + 2]; }
+    const levels = [{ w, h, r, g: gg, b }];
+    while (w > 1 && h > 1 && levels.length < 12) {
+      const nw = w >> 1, nh = h >> 1, L = levels[levels.length - 1];
+      const R = new Float32Array(nw * nh), G = new Float32Array(nw * nh), B = new Float32Array(nw * nh);
+      for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
+        const i0 = (2 * y) * w + 2 * x, i1 = i0 + 1, i2 = i0 + w, i3 = i2 + 1, o = y * nw + x;
+        R[o] = (L.r[i0] + L.r[i1] + L.r[i2] + L.r[i3]) / 4; G[o] = (L.g[i0] + L.g[i1] + L.g[i2] + L.g[i3]) / 4; B[o] = (L.b[i0] + L.b[i1] + L.b[i2] + L.b[i3]) / 4;
+      }
+      levels.push({ w: nw, h: nh, r: R, g: G, b: B }); w = nw; h = nh;
+    }
+    return levels;
+  }
+  // liefert { levels, mmpx } der Textur id, sobald sie decodiert ist (sonst null und Decodieren anstoßen)
+  function getDxfTextureRender(id) {
+    const tex = getDxfTextureById(id);
+    if (!tex) return null;
+    let e = dxfTexRenderCache.get(id);
+    if (e && e.dataUrl === tex.dataUrl) { if (e.status !== 'ready') return null; e.mmpx = tex.tileWidthMm / e.levels[0].w; return e; }
+    e = { status: 'loading', dataUrl: tex.dataUrl, levels: [], mmpx: 1 };
+    dxfTexRenderCache.set(id, e);
+    const img = new Image();
+    img.onload = () => {
+      if (dxfTexRenderCache.get(id) !== e) return;
+      try { e.levels = buildDxfTextureLevels(img); e.status = 'ready'; } catch (err) { e.status = 'error'; }
+      dxfTexVersion++;
+      requestRender();
+    };
+    img.onerror = () => { e.status = 'error'; };
+    img.src = tex.dataUrl;
+    return null;
+  }
+  // Texturfarbe an (u, v) in mm mal Licht; lv = Mip-Stufe; bilinear; aneinandergereiht, jede zweite Kachel gespiegelt
+  // (keine harten Kachelkanten bei nicht nahtlosen Bildern)
+  function dxfTexSample(TX, u, v, lv, light) {
+    const L = TX.levels[lv], sc = 1 / (TX.mmpx * (1 << lv));
+    const x = u * sc - 0.5, y = v * sc - 0.5;
+    const xf = Math.floor(x), yf = Math.floor(y), fx = x - xf, fy = y - yf;
+    const W2 = 2 * L.w, H2 = 2 * L.h;
+    let a = ((xf % W2) + W2) % W2; const x0 = a < L.w ? a : W2 - 1 - a;
+    a = (((xf + 1) % W2) + W2) % W2; const x1 = a < L.w ? a : W2 - 1 - a;
+    a = ((yf % H2) + H2) % H2; const y0 = a < L.h ? a : H2 - 1 - a;
+    a = (((yf + 1) % H2) + H2) % H2; const y1 = a < L.h ? a : H2 - 1 - a;
+    const i00 = y0 * L.w + x0, i10 = y0 * L.w + x1, i01 = y1 * L.w + x0, i11 = y1 * L.w + x1;
+    const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+    const r = Math.min(255, Math.round((L.r[i00] * w00 + L.r[i10] * w10 + L.r[i01] * w01 + L.r[i11] * w11) * light));
+    const g = Math.min(255, Math.round((L.g[i00] * w00 + L.g[i10] * w10 + L.g[i01] * w01 + L.g[i11] * w11) * light));
+    const b = Math.min(255, Math.round((L.b[i00] * w00 + L.b[i10] * w10 + L.b[i01] * w01 + L.b[i11] * w11) * light));
+    return (r | (g << 8) | (b << 16) | (255 << 24)) >>> 0;
+  }
+  const dxfTexLevel = (TX, texelsPerPx) => (texelsPerPx > 1 ? Math.min(TX.levels.length - 1, Math.floor(Math.log2(texelsPerPx))) : 0);
   const defaultBoreDefaults = () => ({ on: false, shape: 'round', height: null, rectHeight: null });
   function builtinDxfPartDefaults() {
     const mortise = () => ({ on: true, depth: 15, depthTread: 15, depthRiser: 15 });
@@ -14048,6 +14229,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       b.transparency = Math.max(0, Math.min(100, Math.round(num(s.transparency, globalTr))));
       b.fillColor = hex(s.fillColor, '#3399ff');
       b.outlineColor = hex(s.outlineColor, '#000000');
+      // Release 260: Füllung 'color' | 'texture' und gewählte Textur (id; eine gelöschte Textur fällt beim Zeichnen auf die Füllfarbe zurück)
+      b.fillMode = s.fillMode === 'texture' ? 'texture' : 'color';
+      b.textureId = typeof s.textureId === 'string' && s.textureId ? s.textureId : null;
       if ('pocketDepth' in b) b.pocketDepth = num(s.pocketDepth, b.pocketDepth, true);
       if (b.mortise) { const m = s.mortise || {}; b.mortise = { on: bool(m.on, b.mortise.on), depth: num(m.depth, b.mortise.depth), depthTread: num(m.depthTread, b.mortise.depthTread), depthRiser: num(m.depthRiser, b.mortise.depthRiser) }; }
       if (b.vpocket) { const v = s.vpocket || {}; b.vpocket = { on: bool(v.on, b.vpocket.on), depth: num(v.depth, b.vpocket.depth, true) }; }
@@ -14078,6 +14262,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function applyPartDefaultsToState(type) {
     const pd = dxfPartDefaults.parts[type] || dxfPartDefaults.parts.undefined;
     dxfThicknessColor = pd.fillColor; dxfOutlineColor = pd.outlineColor;   // Release 257 (erst nach Ok sichtbar)
+    dxfFillMode = pd.fillMode === 'texture' ? 'texture' : 'color'; dxfTextureId = pd.textureId || null;   // Release 260
     if (pd.mortise) {
       dxfMortiseDepth = pd.mortise.depth; dxfMortiseDepthTread = pd.mortise.depthTread; dxfMortiseDepthRiser = pd.mortise.depthRiser;
       dxfMortiseLayer = pd.mortise.on ? defaultMortiseLayer() : '';
@@ -15694,7 +15879,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfVPocketHidden = null;
     const stringer = isMortisePart(dxfPartType);   // Wange oder Handlauf (Release 253)
     if (!dxfKonturLoop) return;
-    if (dxfPartType === 'undefined') return;       // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
+    // Release 260: die Textur wird nur im Netz-Renderer (drawMortiseBody) gezeichnet - bei aktiver Textur deshalb immer ein
+    // Netz erzeugen, auch ohne Bearbeitungen (glatter Körper).
+    const wantTex = isDxfTextureActive() && !!dxfThickness;
+    if (dxfPartType === 'undefined') {             // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
+      if (wantTex) { try { dxfMortiseMesh = buildMortiseMesh(dxfKonturLoop, [], dxfThickness, null, { allowPlain: true }); } catch (e) { dxfMortiseMesh = null; } if (dxfMortiseMesh) { dxfMortiseMesh.info.boreCount = 0; window.__lastMortiseInfo = dxfMortiseMesh.info; } }
+      return;
+    }
     // Release 251: horizontale Bohrungen (T) - brauchen immer das Netz (auch ohne Einstemmungen/Taschen)
     const hbDet = ((dxfHBoreCfg.T.enabled || dxfHBoreCfg.U.enabled) && dxfThickness) ? getHBoreDetection() : null;
     const hbKinds = hbDet ? [['T', hbDet.ts], ['U', hbDet.us]].filter(([k, list]) => dxfHBoreCfg[k].enabled && list.length) : [];
@@ -15704,8 +15895,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const vCircles = dxfVPocketEnabled ? getVerticalCircles() : [];
     const wantV = vCircles.length > 0;
     const pocketsOn = dxfPartType === 'tread' && dxfPocketEnabled && dxfPockets.size;   // Taschen nur bei der Stufe (Release 253)
-    if (stringer && !dxfMortiseInfo && !wantBores && !wantV) return;
-    if (!stringer && !pocketsOn && !wantBores && !wantV) return;
+    if (stringer && !dxfMortiseInfo && !wantBores && !wantV && !wantTex) return;
+    if (!stringer && !pocketsOn && !wantBores && !wantV && !wantTex) return;
     const problems = dxfMortiseProblems;
     const what = stringer ? T('Einstemmung', 'mortise') : T('Tasche', 'pocket');
     if (!dxfThickness) { problems.push(stringer ? T('Die Stärke ist 0 - es gibt nichts auszustemmen.', 'The thickness is 0 - there is nothing to mortise.') : T('Die Stärke ist 0 - Taschen werden erst bei einer Stärke ungleich 0 dargestellt.', 'The thickness is 0 - pockets are only shown for a thickness other than 0.')); return; }
@@ -15716,7 +15907,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       pockets.push({ loops, depth, layer: name });
       used.push(name);
     };
-    if (stringer) {
+    if (stringer && dxfMortiseInfo) {   // Release 260: Wange ohne Einstemmungs-Layer mit Textur -> nur glattes Netz
       const named = dxfMortiseInfo.names;
       const loopsOf = n => { const c = dxfMortiseInfo.candidates.find(q => q.name === n); return c ? c.loops : []; };
       if (named.tread || named.riser) {
@@ -15740,13 +15931,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         vCircles.forEach(c => c.strokes.forEach(st => dxfVPocketHidden.add(st)));
       }
     }
-    if (!pockets.length && !wantBores) return;
+    if (!pockets.length && !wantBores && !wantTex) return;
     // Stufe/Setzstufe mit Schmiege: untere/obere Kontur der Schmiege, sonst eine Kontur
     const rings = stringer ? null : getActiveSchmiegeRings();
     const botLoop = rings && rings.untenLoop && rings.obenLoop && rings.untenLoop.length === rings.obenLoop.length ? rings.untenLoop : dxfKonturLoop;
     const topLoop = botLoop !== dxfKonturLoop ? rings.obenLoop : null;
     let mesh = null;
-    try { mesh = buildMortiseMesh(botLoop, pockets, dxfThickness, topLoop, { allowPlain: wantBores || wantV }); } catch (e) { mesh = null; }
+    try { mesh = buildMortiseMesh(botLoop, pockets, dxfThickness, topLoop, { allowPlain: wantBores || wantV || wantTex }); } catch (e) { mesh = null; }
     const empty = (buildMortiseMesh.lastEmpty || []).slice();
     empty.forEach(n => problems.push(n + ': ' + T('liegt außerhalb der Bauteilkontur', 'lies outside the part contour')));
     if (!mesh) { if (!empty.length) problems.push(T('Keine ' + what + ' liegt innerhalb der Bauteilkontur.', 'No ' + what + ' lies inside the part contour.')); problems.push(T('Das Bauteil wird ohne ' + what + ' dargestellt.', 'The part is shown without a ' + what + '.')); return; }
@@ -15820,6 +16011,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
     dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben - dieselbe Nicht-Persistenz/Rücksetzung pro Import wie dxfThicknessColor direkt oberhalb
+    dxfFillMode = 'color'; dxfTextureId = null; // Release 260 (danach Bauteildefinition, siehe applyPartDefaultsToState())
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfScale = 1;
     // "DXF-Bauteilstärke 'ausfüllen'" (Release 216): Kontur-Layer EINMALIG pro Import ermitteln
@@ -15908,6 +16100,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfThicknessTransparency = 100;
     dxfThicknessColor = '#3399ff';
     dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben
+    dxfFillMode = 'color'; dxfTextureId = null; // Release 260
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
     dxfAnchorLayerName = null; // Release 234
     dxfKonturLayerName = null;
@@ -17763,6 +17956,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // erkannt und die neue Farbe bliebe auf dem Bake-Canvas unsichtbar, bis ein ohnehin fälliger
       // Rebake aus anderem Grund erfolgt.
       dxfOutlineColor,
+      dxfTexKey: dxfFillMode + '|' + dxfTextureId + '|' + dxfTexVersion, // Release 260
       // "DXF-Layer" (78. Runde): dxfHiddenLayersVersion statt des Set-Inhalts selbst (analog zu
       // hiddenOpsVersion oben) - ein Checkbox-Klick zählt sie hoch, damit ein Umschalten eines
       // einzelnen Layers zuverlässig einen Rebake auslöst, ohne den kompletten Set-Inhalt
@@ -17787,7 +17981,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
       a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings &&
       a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType &&
-      a.dxfOutlineColor === b.dxfOutlineColor &&
+      a.dxfOutlineColor === b.dxfOutlineColor && a.dxfTexKey === b.dxfTexKey &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
   }
@@ -18910,6 +19104,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const baseR = parseInt(hex.slice(1, 3), 16), baseG = parseInt(hex.slice(3, 5), 16), baseB = parseInt(hex.slice(5, 7), 16);
     const alpha = Math.max(0, Math.min(1, 1 - dxfThicknessTransparency / 100));
     const fwd = cam.orient.fwd;
+    // Release 260: Textur (Einstellungen -> DXF -> Textur), sobald decodiert - sonst (noch) Füllfarbe
+    const TX = dxfFillMode === 'texture' ? getDxfTextureRender(dxfTextureId) : null;
+    let texPixels = 0;
     const z1 = new Float32Array(W * H).fill(Infinity), z2 = new Float32Array(W * H).fill(Infinity);
     const c1 = new Uint32Array(W * H), c2 = new Uint32Array(W * H);
     // Release 251: horizontale Bohrungen (mesh.bores) werden pro Pixel aus dem Körper "ausgeschnitten" (siehe
@@ -18942,11 +19139,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     function pack(r, g, b) { return (r | (g << 8) | (b << 16) | (255 << 24)) >>> 0; }
     let triDrawn = 0, triCulled = 0;
-    function tri(a, b, c, col, back) {
+    // Release 260: uv = [[u,v] je Ecke (mm), Licht] - die Projektion ist orthografisch, uv lässt sich deshalb affin über das
+    // Dreieck interpolieren; die Mip-Stufe ergibt sich aus den (je Dreieck konstanten) Ableitungen.
+    function tri(a, b, c, col, back, uv) {
       const area = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
       if (Math.abs(area) < 1e-6) return;
       const gx = ((b.d - a.d) * (c.y - a.y) - (c.d - a.d) * (b.y - a.y)) / area;
       const gy = ((b.x - a.x) * (c.d - a.d) - (c.x - a.x) * (b.d - a.d)) / area;
+      let tx = null;
+      if (uv && TX && !back) {
+        const G = k => [((uv[1][k] - uv[0][k]) * (c.y - a.y) - (uv[2][k] - uv[0][k]) * (b.y - a.y)) / area, ((b.x - a.x) * (uv[2][k] - uv[0][k]) - (c.x - a.x) * (uv[1][k] - uv[0][k])) / area];
+        const gu = G(0), gv = G(1);
+        const tpp = Math.max(Math.hypot(gu[0], gv[0]), Math.hypot(gu[1], gv[1])) / TX.mmpx;
+        tx = { gu, gv, lv: dxfTexLevel(TX, tpp), light: uv[3] };
+      }
       const minY = Math.max(0, Math.ceil(Math.min(a.y, b.y, c.y) - 0.5));
       const maxY = Math.min(H - 1, Math.ceil(Math.max(a.y, b.y, c.y) - 0.5) - 1);
       const P = [a, b, c];
@@ -18972,8 +19178,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         for (let x = xs; x <= xe; x++, i++, d += gx) {
           if (d <= NEAR) continue;
-          if (d < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = d; c1[i] = col; }
-          else if (d < z2[i]) { z2[i] = d; c2[i] = col; }
+          if (d < z2[i]) {
+            let cc = col;
+            if (tx) { const ox = x + 0.5 - a.x, oy = py - a.y; cc = dxfTexSample(TX, uv[0][0] + tx.gu[0] * ox + tx.gu[1] * oy, uv[0][1] + tx.gv[0] * ox + tx.gv[1] * oy, tx.lv, tx.light); texPixels++; }
+            if (d < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = d; c1[i] = cc; }
+            else { z2[i] = d; c2[i] = cc; }
+          }
         }
       }
     }
@@ -18982,6 +19192,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       return pack(Math.min(255, Math.round(baseR * light)), Math.min(255, Math.round(baseG * light)), Math.min(255, Math.round(baseB * light)));
     };
     const EPSF = 1e-4;
+    const lightOf = (facing, k) => (0.62 + 0.45 * Math.max(0, -facing)) * k;   // Release 260: Licht als Faktor für die Textur
     // Dreiecke (Kappen/Böden): Normale (0,0,nz) in Arbeitskoordinaten
     for (const t of mesh.tris) {
       const facing = t.nz * fwd.y;
@@ -18992,7 +19203,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
       const a = vert(t.v[0][0], t.v[0][1], t.z), b = vert(t.v[1][0], t.v[1][1], t.z), c = vert(t.v[2][0], t.v[2][1], t.z);
       if (!a || !b || !c) continue;
-      tri(a, b, c, shade(facing, t.kind === 'floor' ? 0.82 : 1));
+      // Release 260: Ober-/Unterseite und Taschenböden: u = X, v = Y (Maserung entlang der Bauteillänge)
+      const kf = t.kind === 'floor' ? 0.82 : 1;
+      tri(a, b, c, shade(facing, kf), false, TX ? [[t.v[0][0], t.v[0][1]], [t.v[1][0], t.v[1][1]], [t.v[2][0], t.v[2][1]], lightOf(facing, kf)] : null);
     }
     // Wände: Normale aus dem transformierten Punktpaar (gilt auch bei Spiegeln/Drehen/Skalieren)
     for (const w of mesh.walls) {
@@ -19020,9 +19233,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         continue;
       }
       if (!p00 || !p01 || !p10 || !p11) continue;
-      const col = shade(facing, w.kind === 'pocket' ? 0.92 : 1);
-      tri(p00, p10, p11, col);
-      tri(p00, p11, p01, col);
+      const kw = w.kind === 'pocket' ? 0.92 : 1;
+      const col = shade(facing, kw);
+      if (TX) {
+        // Release 260: Wände: u = Lauflänge (X bzw. Y je nach Wandrichtung), v = Z (versetzt, damit sich Kanten nicht spiegeln)
+        const along = Math.abs(w.b[0] - w.a[0]) >= Math.abs(w.b[1] - w.a[1]) ? 0 : 1;
+        const U = pt => pt[along] + (along ? 337 : 0), V = z => z + 91;
+        const uv00 = [U(w.a), V(w.z0)], uv10 = [U(w.b), V(w.z0)], uv01 = [U(aTop), V(w.z1)], uv11 = [U(bTop), V(w.z1)];
+        const lw = lightOf(facing, kw);
+        tri(p00, p10, p11, col, false, [uv00, uv10, uv11, lw]);
+        tri(p00, p11, p01, col, false, [uv00, uv11, uv01, lw]);
+      } else {
+        tri(p00, p10, p11, col);
+        tri(p00, p11, p01, col);
+      }
     }
     // Release 251 (horizontale Bohrungen, "T"): jede Bohrung ist ein waagerechter Zylinder mit flachem Ende. Pro Pixel
     // wird der Sehstrahl mit dem Zylinder geschnitten (Intervall t0..t1 in Tiefeneinheiten): liegt die vorderste Fläche
@@ -19129,6 +19353,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
               else if (exitK === 4 || exitK === 5) { const sg = exitK === 4 ? -1 : 1; nx = vx * sg; ny = vy * sg; nz = 0; }
               else { nx = 0; ny = 0; nz = exitK === 6 ? -1 : 1; }
               exitCol = shade(Math.min((nx * rx + ny * ry + nz * rz) / rl, -0.05), k);
+              if (TX) {
+                // Release 260: Bohrungswand mit Textur - u entlang der Bohrachse, v = Umfangswinkel x Radius
+                const pxv = qx + t1 * rx, pyv = qy + t1 * ry, pzv = qz + t1 * rz, pu = pxv * ux + pyv * uy, pv = pxv * vx + pyv * vy;
+                const lt = (0.62 + 0.45 * Math.max(0, -Math.min((nx * rx + ny * ry + nz * rz) / rl, -0.05))) * k * 0.9;
+                exitCol = dxfTexSample(TX, te.x + pu + 500, Math.atan2(pzv, pv) * Math.max(ha, 1) + 200, 0, lt);
+              }
             }
             if (seeThroughB && entryK !== 0) {
               let nx, ny, nz, k = 0.62;
@@ -19279,7 +19509,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.setLineDash([]);
     ctx.drawImage(mortiseOffCanvas, 0, 0);
     ctx.restore();
-    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped, boreOverlapPx };
+    return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped, boreOverlapPx, texture: TX ? { id: dxfTextureId, pixels: texPixels, mmpx: TX.mmpx } : null };
   }
 
   function drawDxf(proj) {
@@ -22223,7 +22453,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // das in den Einstellungsexport reinfließt."), siehe eigene "axisColors"/
     // "axisLabelFontSize"/"gridStep"-Felder weiter unten.
     LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP,
-    LS_KEY_SHOW_TOOL_HOLDER // Release 192, siehe eigenes "showToolHolder"-Feld weiter unten
+    LS_KEY_SHOW_TOOL_HOLDER, // Release 192, siehe eigenes "showToolHolder"-Feld weiter unten
+    LS_KEY_DXF_TEXTURES // Release 260, siehe eigenes "dxfTextures"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -22337,6 +22568,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfThicknessTransparency,
       dxfThicknessColor,
       dxfOutlineColor,
+      // Release 260: Füllung/Textur des aktuellen Bauteils und die Texturliste (Einstellungen -> DXF -> Textur)
+      dxfFillMode,
+      dxfTextureId,
+      dxfTextures: dxfTextures.map(t => Object.assign({}, t)),
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -22542,6 +22777,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // aufgerufen) fängt dabei zusätzlich unvollständige/ungültige Teilobjekte ab (fällt dann
       // feldweise auf den jeweiligen Standard zurück statt den ganzen Import abzubrechen).
       // Release 256: Bauteildefinition (fehlt = unangetastet)
+      // Release 260: Texturliste vor der Bauteildefinition übernehmen (ersetzt die vorhandene Liste)
+      if (Array.isArray(data.dxfTextures)) {
+        const list = normalizeDxfTextureList(data.dxfTextures);
+        if (persistDxfTextures(list)) { dxfTextures = list; dxfTexRenderCache.clear(); dxfTexVersion++; if (dxfTexturePanel.classList.contains('open')) openDxfTexturePanel(); }
+        else alert(T('Die Texturen konnten nicht gespeichert werden - der Speicher des Browsers ist voll.', 'The textures could not be saved - the browser storage is full.'));
+      }
       if (data.dxfPartDefaults && typeof data.dxfPartDefaults === 'object') applyDxfPartDefaults(data.dxfPartDefaults);
       if (data.toolAppearanceSaw && typeof data.toolAppearanceSaw === 'object') {
         applyToolAppearance('saw', data.toolAppearanceSaw);
@@ -22588,10 +22829,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
         const normOutlineColor = normalizeHex(data.dxfOutlineColor);
         if (normOutlineColor) { dxfOutlineColor = normOutlineColor; dxfThicknessSettingsChanged = true; }
       }
+      // Release 260: Füllung und Textur
+      if (data.dxfFillMode === 'color' || data.dxfFillMode === 'texture') { dxfFillMode = data.dxfFillMode; dxfThicknessSettingsChanged = true; }
+      if (data.dxfTextureId === null || typeof data.dxfTextureId === 'string') { dxfTextureId = data.dxfTextureId || null; dxfThicknessSettingsChanged = true; }
       if (dxfThicknessSettingsChanged) {
         dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben - importierte Werte gelten als "bestätigt", ein erneutes Öffnen des Dialogs zeigt sie direkt statt der Vorbefüllung
         if (dxfThicknessPanel.classList.contains('open')) openDxfThicknessPanel();
-        if (dxfGeometry) { updateDxfUI(); requestRender(); }
+        if (dxfGeometry) { recomputeMortise(); updateDxfUI(); requestRender(); }   // recomputeMortise: Release 260 (Textur braucht das Netz)
       }
       // Buttonfarbe (53. Runde): fehlt eines der beiden Felder oder ist die Paarung ungültig/
       // identisch, bleibt die aktuell aktive Farbe unangetastet (applyMenuHighlightColor() liefert
@@ -26919,11 +27163,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Release 227, siehe Deklaration von dxfOutlineColor weiter oben: #dxfOutlineColorRow teilt sich
   // dieselbe Sichtbarkeits-Bedingung wie #dxfThicknessColorRow (die Outline wird wie die Füllung
   // selbst nur gezeichnet, solange fillActive gilt, siehe drawDxf()).
+  // Release 260: Füllung "Füllfarbe" -> Farbzeile, "Textur" -> Texturauswahl (Outline und Transparenz bei beiden)
   function updateDxfThicknessColorRowVisibility() {
     const hide = Number(dxfThicknessTransparencySlider.value) >= 100;
-    dxfThicknessColorRow.hidden = hide;
+    const tex = el('dxfFillModeSelect').value === 'texture';
+    dxfThicknessColorRow.hidden = hide || tex;
     dxfOutlineColorRow.hidden = hide;
+    el('dxfTextureRow').hidden = hide || !tex;
+    el('dxfTextureMissingHint').hidden = hide || !tex || dxfTextures.length > 0;
   }
+  el('dxfFillModeSelect').addEventListener('change', updateDxfThicknessColorRowVisibility);
   dxfThicknessTransparencySlider.addEventListener('input', () => {
     dxfThicknessTransparencyValue.textContent = dxfThicknessTransparencySlider.value + '%';
     updateDxfThicknessColorRowVisibility();
@@ -27279,6 +27528,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfThicknessTransparencySlider.value = String(pdt.transparency); dxfThicknessTransparencyValue.textContent = pdt.transparency + '%';
       dxfThicknessColorPicker.value = pdt.fillColor; dxfThicknessColorHex.value = pdt.fillColor;
       dxfOutlineColorPicker.value = pdt.outlineColor; dxfOutlineColorHex.value = pdt.outlineColor;
+      el('dxfFillModeSelect').value = pdt.fillMode === 'texture' ? 'texture' : 'color'; fillDxfTextureSelect(el('dxfTextureSelect'), pdt.textureId);   // Release 260
       updateDxfThicknessColorRowVisibility();
       refreshDxfMortiseUI(); refreshDxfVPocketUI(); refreshDxfHBoreUI();
     }
@@ -27315,6 +27565,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfOutlineColorPicker.value = dxfOutlineColor;
     dxfOutlineColorHex.value = dxfOutlineColor;
     dxfOutlineColorHexWarning.hidden = true;
+    el('dxfFillModeSelect').value = dxfFillMode; fillDxfTextureSelect(el('dxfTextureSelect'), dxfTextureId);   // Release 260
     updateDxfThicknessColorRowVisibility();
     dxfThicknessPanel.classList.add('open');
     if (window.__dxfThicknessPanelReclamp) window.__dxfThicknessPanelReclamp();
@@ -27377,6 +27628,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfThicknessColor = norm;
       dxfOutlineColor = outlineNorm;
     }
+    // Release 260: Füllung und Textur (ohne gespeicherte Textur bleibt "Textur" gewählt, gezeichnet wird dann die Füllfarbe)
+    dxfFillMode = el('dxfFillModeSelect').value === 'texture' ? 'texture' : 'color';
+    if (dxfFillMode === 'texture') dxfTextureId = el('dxfTextureSelect').value || null;
     dxfThicknessTransparency = transparencyVal;
     dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
     dxfLayerSchmiegeEnabled = pendingSchmiegeEnabled; // Release 243
@@ -27466,6 +27720,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el('dpdTransparency').value = String(pd.transparency);
     el('dpdFillColorPicker').value = pd.fillColor; el('dpdFillColorHex').value = pd.fillColor;
     el('dpdOutlineColorPicker').value = pd.outlineColor; el('dpdOutlineColorHex').value = pd.outlineColor;
+    el('dpdFillMode').value = pd.fillMode === 'texture' ? 'texture' : 'color';   // Release 260
+    fillDxfTextureSelect(el('dpdTextureSelect'), pd.textureId);
+    updateDpdFillModeUI();
     el('dpdVertical').hidden = !(pd.mortise || pd.vpocket || 'pocketDepth' in pd);
     el('dpdMortise').hidden = !pd.mortise;
     el('dpdPocket').hidden = !('pocketDepth' in pd);
@@ -27488,6 +27745,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const fc = normalizeHex(el('dpdFillColorHex').value), oc = normalizeHex(el('dpdOutlineColorHex').value);
     if (fc) pd.fillColor = fc; else bad.push(T('Füllfarbe', 'fill color'));
     if (oc) pd.outlineColor = oc; else bad.push(T('Outline-Farbe', 'outline color'));
+    // Release 260: Füllfarbe oder Textur
+    let texErr = '';
+    pd.fillMode = el('dpdFillMode').value === 'texture' ? 'texture' : 'color';
+    if (pd.fillMode === 'texture') {
+      const tid = el('dpdTextureSelect').value;
+      if (tid) pd.textureId = tid;
+      else texErr = T('Noch keine Textur vorhanden - bitte zuerst unter Einstellungen → DXF → Textur importieren.', 'No texture saved yet - please import one first under Settings → DXF → Texture.');
+    }
     if (pd.mortise) {
       pd.mortise.on = el('dpdMortiseOn').checked;
       const a = req('dpdMortiseDepth', false, T('Einstemmungstiefe', 'mortise depth')), b = req('dpdMortiseDepthTread', false, T('Einstemmungstiefe Stufe', 'mortise depth tread')), c = req('dpdMortiseDepthRiser', false, T('Einstemmungstiefe Setzstufe', 'mortise depth riser'));
@@ -27501,8 +27766,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const h = opt('dpd' + k + 'Height', T('Position in Z', 'position in Z') + ' (' + k + ')'), rh = opt('dpd' + k + 'RectHeight', T('Höhe', 'height') + ' (' + k + ')');
       pd[k].height = h; pd[k].rectHeight = rh === 0 ? null : rh;
     });
-    return bad.length ? T('Bitte gültige Zahlen eingeben: ', 'Please enter valid numbers: ') + bad.join(', ') : '';
+    const numErr = bad.length ? T('Bitte gültige Zahlen eingeben: ', 'Please enter valid numbers: ') + bad.join(', ') : '';
+    return [texErr, numErr].filter(Boolean).join(' ');
   }
+  function updateDpdFillModeUI() {
+    const tex = el('dpdFillMode').value === 'texture';
+    el('dpdTextureField').hidden = !tex;
+    el('dpdFillColorField').hidden = tex;
+  }
+  el('dpdFillMode').addEventListener('change', updateDpdFillModeUI);
   function openDxfPartDefaultsPanel() {
     dpdWork = normalizeDxfPartDefaults(JSON.parse(JSON.stringify(dxfPartDefaults)));
     el('dpdByName').checked = dpdWork.byName;
@@ -27542,6 +27814,157 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el(hx).addEventListener('input', () => { const n = normalizeHex(el(hx).value); if (n) el(pk).value = n; });
   });
   dxfThicknessInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDxfThickness(); } });
+
+  // ===== Release 260: Einstellungen -> DXF -> Textur =====
+  // Sebastian: "Es gibt in dem Importfenster ein Importbereich bei dem die Datei gewählt wird (.bmp, .jpg/jpeg, .png
+  // ermöglichen). Dann kann man der Textur einen Namen geben (in der Auswahl später als Klartext verfügbar machen!). Die
+  // Textur kann auch gelöscht werden. Kopieren ist stand jetzt nicht nötig."
+  const dxfTexturePanel = el('dxfTexturePanel');
+  const dxfTextureListSelect = el('dxfTextureListSelect');
+  let texEdit = null;   // Formularzustand: { id (null = neue Textur), dataUrl, w, h, fileName }
+  // Auswahlliste (Bauteildefinition bzw. DXF-Dialog) mit den Texturnamen im Klartext füllen
+  function fillDxfTextureSelect(sel, selectedId) {
+    const list = sortedDxfTextures();
+    sel.innerHTML = '';
+    if (!list.length) {
+      const o = document.createElement('option'); o.value = ''; o.textContent = T('- keine Textur -', '- no texture -'); sel.appendChild(o); sel.value = ''; return;
+    }
+    list.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; sel.appendChild(o); });
+    sel.value = list.some(t => t.id === selectedId) ? selectedId : list[0].id;
+  }
+  function drawDxfTexturePreview(dataUrl) {
+    const cv = el('dxfTexturePreviewCanvas'), g = cv.getContext('2d');
+    g.clearRect(0, 0, cv.width, cv.height);
+    if (!dataUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      if (!texEdit || texEdit.dataUrl !== dataUrl) return;
+      const tw = cv.width / 2, th = tw * img.height / img.width;
+      cv.height = Math.max(20, Math.min(520, Math.round(2 * th)));   // 2 x 2 Kacheln im Seitenverhältnis des Bildes
+      g.clearRect(0, 0, cv.width, cv.height);
+      for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {
+        g.save(); g.translate((i + i % 2) * tw, (j + j % 2) * th); g.scale(i % 2 ? -1 : 1, j % 2 ? -1 : 1); g.drawImage(img, 0, 0, tw, th); g.restore();
+      }
+    };
+    img.src = dataUrl;
+  }
+  const texTileValue = () => parseFloat(normalizeToolValue(el('dxfTextureTileInput').value, 0));
+  function updateDxfTextureInfo() {
+    const info = el('dxfTextureInfo');
+    if (!texEdit || !texEdit.dataUrl) { info.textContent = T('Noch kein Bild gewählt.', 'No image chosen yet.'); return; }
+    const tile = texTileValue();
+    info.textContent = texEdit.w + ' × ' + texEdit.h + ' px' + (tile > 0 ? ' · ' + T('Kachel ', 'tile ') + Math.round(tile) + ' × ' + Math.round(tile * texEdit.h / texEdit.w) + ' mm' : '');
+  }
+  function loadDxfTextureIntoForm(id) {
+    const t = getDxfTextureById(id);
+    el('dxfTextureError').hidden = true;
+    if (!t) {
+      texEdit = { id: null, dataUrl: '', w: 0, h: 0, fileName: '' };
+      dxfTextureListSelect.value = '';
+      el('dxfTextureNameInput').value = ''; el('dxfTextureTileInput').value = '';
+      el('dxfTextureFileName').textContent = T('Keine Datei ausgewählt', 'No file selected');
+    } else {
+      texEdit = { id: t.id, dataUrl: t.dataUrl, w: t.w, h: t.h, fileName: t.fileName };
+      dxfTextureListSelect.value = t.id;
+      el('dxfTextureNameInput').value = t.name;
+      el('dxfTextureTileInput').value = String(Math.round(t.tileWidthMm * 100) / 100).replace('.', currentLang === 'en' ? '.' : ',');
+      el('dxfTextureFileName').textContent = t.fileName || T('(gespeichert)', '(saved)');
+    }
+    el('btnDxfTextureDelete').disabled = !texEdit.id;
+    drawDxfTexturePreview(texEdit.dataUrl);
+    updateDxfTextureInfo();
+  }
+  function refreshDxfTextureList() {
+    dxfTextureListSelect.innerHTML = '';
+    sortedDxfTextures().forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; dxfTextureListSelect.appendChild(o); });
+  }
+  // nach jeder Änderung der Texturliste: offene Auswahllisten und die Darstellung aktualisieren
+  function onDxfTexturesChanged() {
+    if (dxfPartDefaultsPanel.classList.contains('open')) { const v = el('dpdTextureSelect').value; fillDxfTextureSelect(el('dpdTextureSelect'), v || (dpdWork && dpdWork.parts[dpdCurrent].textureId)); }
+    if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value || dxfTextureId); updateDxfThicknessColorRowVisibility(); }
+    dxfTexVersion++;
+    if (dxfGeometry) { recomputeMortise(); updateDxfUI(); }
+    requestRender();
+  }
+  function openDxfTexturePanel() {
+    refreshDxfTextureList();
+    const list = sortedDxfTextures();
+    loadDxfTextureIntoForm(list.length ? list[0].id : null);
+    dxfTexturePanel.classList.add('open');
+  }
+  el('btnDxfTextures').addEventListener('click', openDxfTexturePanel);
+  dxfTextureListSelect.addEventListener('change', () => loadDxfTextureIntoForm(dxfTextureListSelect.value));
+  el('btnDxfTextureNew').addEventListener('click', () => loadDxfTextureIntoForm(null));
+  el('btnDxfTextureChooseFile').addEventListener('click', () => el('dxfTextureFileInput').click());
+  el('dxfTextureTileInput').addEventListener('input', updateDxfTextureInfo);
+  const dxfTextureError = msg => { el('dxfTextureError').textContent = msg; el('dxfTextureError').hidden = false; };
+  el('dxfTextureFileInput').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    if (!/\.(bmp|jpe?g|png)$/i.test(f.name)) { dxfTextureError(T('Bitte eine BMP-, JPG- oder PNG-Datei wählen.', 'Please choose a BMP, JPG or PNG file.')); return; }
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const sw = img.naturalWidth, sh = img.naturalHeight;
+        if (!(sw > 0 && sh > 0)) { dxfTextureError(T('Die Bilddatei konnte nicht gelesen werden.', 'The image file could not be read.')); return; }
+        const k = Math.min(1, DXF_TEXTURE_MAX_PX / Math.max(sw, sh));
+        const w = Math.max(1, Math.round(sw * k)), h = Math.max(1, Math.round(sh * k));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+        texEdit = { id: texEdit ? texEdit.id : null, dataUrl: c.toDataURL('image/jpeg', 0.9), w, h, fileName: f.name };
+        el('dxfTextureFileName').textContent = f.name;
+        if (!el('dxfTextureNameInput').value.trim()) el('dxfTextureNameInput').value = f.name.replace(/\.[^.]+$/, '').slice(0, 60);
+        if (!(texTileValue() > 0)) el('dxfTextureTileInput').value = String(Math.round(w * DXF_TEXTURE_DEFAULT_MM_PER_PX));
+        el('dxfTextureError').hidden = true;
+        drawDxfTexturePreview(texEdit.dataUrl);
+        updateDxfTextureInfo();
+      };
+      img.onerror = () => dxfTextureError(T('Die Bilddatei konnte nicht gelesen werden.', 'The image file could not be read.'));
+      img.src = rd.result;
+    };
+    rd.onerror = () => dxfTextureError(T('Die Bilddatei konnte nicht gelesen werden.', 'The image file could not be read.'));
+    rd.readAsDataURL(f);
+  });
+  el('btnDxfTextureSave').addEventListener('click', () => {
+    if (!texEdit || !texEdit.dataUrl) { dxfTextureError(T('Bitte zuerst eine Bilddatei wählen.', 'Please choose an image file first.')); return; }
+    const name = el('dxfTextureNameInput').value.trim().slice(0, 60);
+    if (!name) { dxfTextureError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+    if (dxfTextures.some(t => t.id !== texEdit.id && t.name.toLowerCase() === name.toLowerCase())) { dxfTextureError(T('Diesen Namen gibt es schon.', 'This name already exists.')); return; }
+    const tile = texTileValue();
+    if (!(tile > 0)) { dxfTextureError(T('Bitte eine Kachelbreite größer 0 eingeben.', 'Please enter a tile width greater than 0.')); return; }
+    const now = Date.now(), old = getDxfTextureById(texEdit.id);
+    const rec = normalizeDxfTexture({ id: old ? old.id : 'tex_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 8), name, dataUrl: texEdit.dataUrl, w: texEdit.w, h: texEdit.h, tileWidthMm: tile, fileName: texEdit.fileName, createdAt: old ? old.createdAt : now, updatedAt: now });
+    const next = old ? dxfTextures.map(t => (t.id === old.id ? rec : t)) : dxfTextures.concat([rec]);
+    if (!persistDxfTextures(next)) { dxfTextureError(T('Speichern nicht möglich - der Speicher des Browsers ist voll. Bitte eine kleinere Bilddatei verwenden oder eine Textur löschen.', 'Cannot save - the browser storage is full. Please use a smaller image file or delete a texture.')); return; }
+    dxfTextures = next;
+    onDxfTexturesChanged();
+    refreshDxfTextureList();
+    loadDxfTextureIntoForm(rec.id);
+    el('dxfTextureInfo').textContent += ' · ' + T('gespeichert', 'saved');
+  });
+  el('btnDxfTextureDelete').addEventListener('click', () => {
+    const t = getDxfTextureById(texEdit && texEdit.id);
+    if (!t) return;
+    if (!confirm(T('Textur „' + t.name + '“ löschen? Bauteile, die sie verwenden, werden wieder mit der Füllfarbe dargestellt.', 'Delete texture "' + t.name + '"? Parts using it are shown with the fill color again.'))) return;
+    const next = dxfTextures.filter(x => x.id !== t.id);
+    persistDxfTextures(next);
+    dxfTextures = next;
+    dxfTexRenderCache.delete(t.id);
+    // Verweise in der Bauteildefinition und im aktuellen Bauteil entfernen (zurück auf Füllfarbe)
+    const pdc = JSON.parse(JSON.stringify(dxfPartDefaults));
+    let changed = false;
+    Object.keys(pdc.parts).forEach(k => { if (pdc.parts[k].textureId === t.id) { pdc.parts[k].textureId = null; pdc.parts[k].fillMode = 'color'; changed = true; } });
+    if (changed) applyDxfPartDefaults(pdc);
+    if (dpdWork) Object.keys(dpdWork.parts).forEach(k => { if (dpdWork.parts[k].textureId === t.id) { dpdWork.parts[k].textureId = null; dpdWork.parts[k].fillMode = 'color'; } });
+    if (dxfTextureId === t.id) { dxfTextureId = null; dxfFillMode = 'color'; }
+    onDxfTexturesChanged();
+    refreshDxfTextureList();
+    const list = sortedDxfTextures();
+    loadDxfTextureIntoForm(list.length ? list[0].id : null);
+  });
+  el('btnDxfTextureClose').addEventListener('click', () => dxfTexturePanel.classList.remove('open'));
 
   // "DXF skalieren" (Release 84, Sebastian: "DXF Skalier Icon rechts neben
   // DXF-Bauteilstärke-Icon. Eingabefeld ist eine Multiplikator. Wenn ich in dem Feld 10 eintrage,
