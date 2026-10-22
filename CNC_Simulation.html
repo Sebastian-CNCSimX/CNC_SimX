@@ -10663,6 +10663,18 @@
     }
     return null;
   }
+  // Release 276 (Sebastian: "FORMAT4 {}#"-Problem ... "SWIVELANGLE sollte hier greifen, da das auch ein kardanischer Kopf
+  // ist"): weitere Kardankopf-Parameter nach demselben Muster - SWIVELZERO=<Grad> (Richtung der geneigten Schwenkachse
+  // bei C=0: 0 = +X, 90 = +Y, 180 = -X, 270 = -Y; ohne Angabe 270 = Reichenbacher), SWIVELADIR=1|-1 (Drehsinn des
+  // Kippwinkels A/B) und SWIVELCDIR=1|-1 (Drehsinn von C), je ohne Angabe 1 (= Reichenbacher). `null`, wenn nicht gesetzt.
+  function parseSwivelParam(blockLines, key) {
+    const re = new RegExp('^' + key + '\\s*=\\s*(-?\\d+(?:\\.\\d+)?)$', 'i');
+    for (let i = 0; i < blockLines.length; i++) {
+      const m = re.exec(blockLines[i].trim());
+      if (m) return parseFloat(m[1]);
+    }
+    return null;
+  }
 
   // Parst einen optionalen "IJMODE=incremental"/"IJMODE=absolute"-Parameter direkt innerhalb eines
   // [MACHINETYPE ...]-Blocks (Release 123, Sebastian: "Nächster Versuch I und J für
@@ -10795,6 +10807,9 @@
         // SWIVELANGLE (45. Runde) - siehe parseSwivelAngle oben. `null`, wenn der Block keine
         // (gültige) SWIVELANGLE-Zeile enthält - app.js fällt dann auf 45° zurück.
         swivelAngleDeg: parseSwivelAngle(blockLines),
+        swivelZeroDeg: parseSwivelParam(blockLines, 'SWIVELZERO'),   // Release 276
+        swivelADir: parseSwivelParam(blockLines, 'SWIVELADIR'),
+        swivelCDir: parseSwivelParam(blockLines, 'SWIVELCDIR'),
         // IJMODE (Release 123) - siehe parseIJMode oben. `null`, wenn der Block keine (gültige)
         // IJMODE-Zeile enthält - app.js fällt dann auf 'incremental' zurück.
         ijMode: parseIJMode(blockLines),
@@ -11218,8 +11233,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 275;
-  const APP_RELEASE_TIMESTAMP = '22.10.2026, 11:56 Uhr';
+  const APP_RELEASE_NUMBER = 277;
+  const APP_RELEASE_TIMESTAMP = '22.10.2026, 13:59 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11549,6 +11564,8 @@ W#2101 { ::WTa #34=1->G3
 #2008=->F
 #31=->I
 #32=->J
+W#2001->;W#2001
+W#102{->;W#102{
 [/SWITCHCASEMACHINE]
 [CALCMACHINE]
 X*1
@@ -11556,6 +11573,8 @@ Y*1
 Z*1
 [/CALCMACHINE]
 CORNERRADIUS=R
+SWIVELANGLE=50
+SWIVELZERO=180
 [/MACHINETYPE Name="FORMAT4 {}#"]
 
 [MACHINETYPE Name="HolzHer"]
@@ -11741,7 +11760,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateBiesseCixBlock(saved) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -11749,6 +11768,55 @@ CORNERRADIUS=GFIL r=
   // Release 275: eine bereits gespeicherte (ggf. selbst angepasste) Konfiguration bekommt EINMALIG einen Block
   // "Biesse CIX" als Kopie des dort vorhandenen "Biesse"-Blocks (mit allen eigenen Austauschwerten), direkt danach
   // eingefügt. Danach nie wieder (Merker), damit ein bewusst gelöschter Block nicht zurückkommt.
+  // Release 276: der Block "FORMAT4 {}#" einer gespeicherten Konfiguration bekommt EINMALIG die Kardankopf-Zeilen
+  // SWIVELANGLE=50/SWIVELZERO=180 vor dem schließenden Marker (nur wenn dort noch keine SWIVELANGLE-Zeile steht).
+  const LS_KEY_MIGRATION_FORMAT4_SWIVEL = 'cncsim.migration.format4Swivel276';
+  function migrateFormat4SwivelBlock(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_FORMAT4_SWIVEL)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="FORMAT4 {}#"]', endTag = '[/MACHINETYPE Name="FORMAT4 {}#"]';
+    const start = out.indexOf(openTag);
+    const end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1 && !/^\s*SWIVELANGLE\s*=/im.test(out.slice(start, end))) {
+      const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+      let ins = end;
+      while (ins > start && (out[ins - 1] === '\n' || out[ins - 1] === '\r')) ins--;
+      out = out.slice(0, ins) + nl + 'SWIVELANGLE=50' + nl + 'SWIVELZERO=180' + out.slice(ins);
+      try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_FORMAT4_SWIVEL, '1'); } catch (e) { /* s.o. */ }
+    return out;
+  }
+  // Release 277 (Sebastian: "Bitte in die Maschinenaustauschdatei "FORMAT4 {}#": W#2001->;W#2001 / W#102{->;W#102{
+  // aufnehmen, angeordnet unter #32=->J"): eine gespeicherte Konfiguration bekommt die fehlenden Regeln EINMALIG direkt
+  // unter "#32=->J" (ohne diese Zeile vor [/SWITCHCASEMACHINE]) im Block "FORMAT4 {}#".
+  const LS_KEY_MIGRATION_FORMAT4_W = 'cncsim.migration.format4WRules277';
+  function migrateFormat4WRules(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_FORMAT4_W)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="FORMAT4 {}#"]', endTag = '[/MACHINETYPE Name="FORMAT4 {}#"]';
+    const start = out.indexOf(openTag);
+    const end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+      const blk = out.slice(start, end);
+      const lines = blk.split(/\r?\n/).map(l => l.trim());
+      const missing = ['W#2001->;W#2001', 'W#102{->;W#102{'].filter(r => lines.indexOf(r) === -1);
+      if (missing.length) {
+        const ls = blk.split(nl);
+        let at = ls.findIndex(l => l.trim() === '#32=->J');
+        if (at !== -1) at += 1;
+        else at = ls.findIndex(l => /^\[\/SWITCHCASEMACHINE\]$/i.test(l.trim()));
+        if (at !== -1) {
+          ls.splice(at, 0, ...missing);
+          out = out.slice(0, start) + ls.join(nl) + out.slice(end);
+          try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+        }
+      }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_FORMAT4_W, '1'); } catch (e) { /* s.o. */ }
+    return out;
+  }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
   function migrateBiesseCixBlock(text) {
     try { if (window.localStorage.getItem(LS_KEY_MIGRATION_BIESSE_CIX)) return text; } catch (e) { return text; }
@@ -15539,7 +15607,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // *REICHENBACHER* Ausschau gehalten werden."), NICHT als exakter Namensvergleich - siehe auch
   // isReichenbacherTypeName() weiter unten, die dieselbe Prüfung für andere Aufrufstellen bündelt.
   function updateReichenbacherSwitch() {
-    const isReichenbacher = isReichenbacherTypeName(activeMachineTypeName);
+    // Release 276: Kardankopf auch bei jedem Maschinentyp mit SWIVELANGLE-Zeile (z. B. "FORMAT4 {}#")
+    const isReichenbacher = isReichenbacherTypeName(activeMachineTypeName) || activeMachineTypeHasSwivel();
     const wasHidden = reichenbacherSwitchWrap.hidden;
     reichenbacherSwitchWrap.hidden = !isReichenbacher;
     if (isReichenbacher && wasHidden) {
@@ -15550,6 +15619,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Gemeinsame Teilstring-Prüfung "enthält 'reichenbacher' (Groß-/Kleinschreibung egal)" für
   // Maschinentyp-Namen - siehe Kommentar bei updateReichenbacherSwitch() oben für den Anlass
   // (46. Runde). Liefert false für null/undefined/leeren Namen statt abzustürzen.
+  function getActiveMachineTypeEntry() {
+    return activeMachineTypeName ? machineTypes.find(mt => mt.name.toLowerCase() === activeMachineTypeName.toLowerCase()) || null : null;
+  }
+  function activeMachineTypeHasSwivel() {
+    const mt = getActiveMachineTypeEntry();
+    return !!(mt && typeof mt.swivelAngleDeg === 'number' && isFinite(mt.swivelAngleDeg));
+  }
   function isReichenbacherTypeName(name) {
     return !!name && name.toLowerCase().includes('reichenbacher');
   }
@@ -20978,7 +21054,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // p.a bleibt bei reinen Reichenbacher-Programmen 0, da dort kein "A"-Wort vorkommt).
   function reichenbacherToolAxisDirection(p) {
     const rad = deg => deg * Math.PI / 180;
-    const b = rad(p.b || 0), c = rad(p.c || 0);
+    // Release 276: Kippwinkel aus B (Reichenbacher) oder - wenn kein B programmiert ist - aus A (z. B. FORMAT4)
+    const tiltDeg = p.b ? p.b : (p.a || 0);
+    const mt = getActiveMachineTypeEntry();
+    const zero = mt && typeof mt.swivelZeroDeg === 'number' ? mt.swivelZeroDeg : null;
+    const aDir = mt && typeof mt.swivelADir === 'number' ? (mt.swivelADir < 0 ? -1 : 1) : 1;
+    const cDir = mt && typeof mt.swivelCDir === 'number' ? (mt.swivelCDir < 0 ? -1 : 1) : 1;
+    if (zero !== null || aDir !== 1 || cDir !== 1) {
+      // Allgemeiner Kardankopf: Drehung von (0,0,1) um die geneigte Schwenkachse e (Winkel S zur Z-Achse, Richtung
+      // SWIVELZERO bei C=0) um -aDir*Kippwinkel (Rodrigues), danach Drehung um Z um cDir*C. Mit SWIVELZERO=270 und
+      // aDir = cDir = 1 ist das exakt die Reichenbacher-Formel unten.
+      const S = rad(getReichenbacherSwivelAngleDeg()), phi = rad(zero === null ? 270 : zero);
+      const e = { x: Math.sin(S) * Math.cos(phi), y: Math.sin(S) * Math.sin(phi), z: Math.cos(S) };
+      const th = -aDir * rad(tiltDeg), ct = Math.cos(th), st = Math.sin(th);
+      const v = { x: e.y * st + e.x * e.z * (1 - ct), y: -e.x * st + e.y * e.z * (1 - ct), z: ct + e.z * e.z * (1 - ct) };
+      const cc = cDir * rad(p.c || 0);
+      return { x: Math.cos(cc) * v.x - Math.sin(cc) * v.y, y: Math.sin(cc) * v.x + Math.cos(cc) * v.y, z: v.z };
+    }
+    const b = rad(tiltDeg), c = rad(p.c || 0);
     const s = rad(getReichenbacherSwivelAngleDeg());
     const sinS = Math.sin(s), cosS = Math.cos(s);
     const xpp = sinS * Math.sin(b);
