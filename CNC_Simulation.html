@@ -681,7 +681,13 @@
      alten "Datei laden"-Gruppe - die frühere separate ".machine-type-manage-group" für
      "Maschinentypen bearbeiten"/"Maschinentypdatei laden" entfällt, diese beiden Aktionen sind
      jetzt normale Einträge im "Bearbeiten"-Dropdown. */
-  .machine-type-quick-group { display: flex; align-items: center; gap: 8px; }
+  .machine-type-quick-group { display: flex; align-items: center; gap: 8px; position: relative; }
+  /* Release 274: Hinweis nach "Abbrechen" in der Maschinentyp-Abfrage beim Laden eines CNC-Programms */
+  .mt-pending-hint { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; padding: 6px 10px; border-radius: 7px;
+    border: 1px solid var(--warn); background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 600;
+    white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.18); cursor: pointer; }
+  .mt-pending-hint::before { content: ''; position: absolute; top: -6px; left: 24px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--warn); }
+  .machine-type-quick-group.mt-pending select { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-soft); }
   .machine-type-label {
     font-size: 11px;
     text-transform: uppercase;
@@ -3186,6 +3192,8 @@
       <button class="sidebar-edit-btn" id="btnMachineTypeSettings" type="button" title="Maschinentypen bearbeiten" data-i18n-en-title="Edit machine types">⚙</button>
       <select id="machineTypeSelect" title="Maschinentyp auswählen - wird erst nach Klick auf 'Ok' auf das geladene Programm angewendet" data-i18n-en-title="Select machine type - only applied to the loaded program after clicking 'Ok'"></select>
       <button class="btn ghost" id="btnMachineTypeOk" type="button" disabled title="Ausgewählten Maschinentyp auf das geladene Programm anwenden (Austausch + Achsberechnung)" data-i18n-en-title="Apply the selected machine type to the loaded program (replacement + axis calculation)">Ok</button>
+      <!-- Release 274 (Sebastian: "Bei Abbruch kommt ein Hinweis, dass man noch den Maschinentyp auswählen müsste.") -->
+      <div class="mt-pending-hint" id="machineTypePendingHint" hidden data-i18n-en="Please select the machine type and confirm with Ok." title="Klicken zum Ausblenden" data-i18n-en-title="Click to hide">Bitte noch den Maschinentyp auswählen und mit Ok bestätigen.</div>
     </div>
     <span class="topbar-sep"></span>
     <div class="file-status-row">
@@ -3783,6 +3791,25 @@
   </div>
 </div>
 
+<!-- Release 274 (Sebastian: "Beim Import/Öffnen einer CNC-Datei (nur bei CNC, nicht DXF) kommt eine Abfrage nach dem
+     Maschinentyp. Es wird, wenn erkannt ein Maschinentyp vorgeschlagen. Wenn dann mit Ok bestätigt wird, schließt sich der
+     Dialog und der Maschinentyp wird benutzt. Bei Abbruch kommt ein Hinweis, dass man noch den Maschinentyp auswählen
+     müsste."): Abfrage nach jedem Laden eines CNC-Programms (loadText()), Ok = wie der "Ok"-Knopf im Menüband. -->
+<div class="paste-panel" id="machineTypePromptPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Select machine type">Maschinentyp auswählen</h3>
+    <p class="panel-hint" id="machineTypePromptFile"></p>
+    <label class="tool-data-field"><span data-i18n-en="Machine type">Maschinentyp</span>
+      <select id="machineTypePromptSelect" class="filename-input"></select>
+    </label>
+    <p class="panel-hint" id="machineTypePromptHint"></p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnMachineTypePromptCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnMachineTypePromptConfirm" type="button">Ok</button>
+    </div>
+  </div>
+</div>
+
 <div class="paste-panel" id="opNamesEditPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</h3>
@@ -3842,6 +3869,8 @@
       <div class="shortcut-row"><span class="shortcut-key">F9</span><span class="shortcut-desc" data-i18n-en="Knowledge Base">Knowledge Base</span></div>
       <div class="shortcut-row"><span class="shortcut-key">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</span></div>
       <div class="shortcut-row"><span class="shortcut-key">F11</span><span class="shortcut-desc" data-i18n-en="Empty everything">Simulation leeren</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + F5">Strg + F5</span><span class="shortcut-desc" data-i18n-en="Reload page">Seite neu laden</span></div>
     </div>
     <div class="shortcut-col" id="shortcutColSim">
       <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
@@ -4193,6 +4222,8 @@
     </div>
     <hr class="dxf-part-sep" id="dxfSepSchmiege">
     <div class="scale-group" id="dxfSchmiegeRow">
+      <!-- Release 270: benannte Schmiege-Layer (Schmiege_vorn/Schmiege_hinten) zur Auswahl - vorher immer automatisch -->
+      <label class="scale-option" id="dxfNamedSchmiegeRow" hidden><input type="checkbox" id="dxfNamedSchmiegeCheckbox"> <span id="dxfNamedSchmiegeLabel"></span></label>
       <label class="scale-option"><input type="checkbox" id="dxfSchmiegeCheckbox"> <span data-i18n-en="Bevel detection">Schmiegenerkennung</span></label>
       <div id="dxfSchmiegeLayerList" hidden></div>
       <p class="panel-hint" id="dxfSchmiegeHint"></p>
@@ -4212,6 +4243,9 @@
             <input type="text" id="dxfMortiseDepth2Input" class="filename-input" inputmode="decimal" spellcheck="false">
           </label>
         </div>
+        <!-- Release 273 (Sebastian: "Bei dem Bauteil werden keine Taschen für die Stufeneinstemmungen (die großen Rechtecke)
+             erkannt."): ohne benannte Layer je Layer ein Haken + eigene Einstemmungstiefe statt genau EINES Layers. -->
+        <div id="dxfMortiseLayerList" hidden></div>
         <p class="panel-hint" id="dxfMortiseHint"></p>
       </div>
       <div id="dxfPocketRow">
@@ -8514,10 +8548,45 @@
       // geschrieben wird. padAnchorFirst() hängt reale Kettenpunkte (anker-seitig zuerst sortiert,
       // s.o.) ggf. mit Wiederholungen des eigenen Landepunkts auf maxLen auf - IMMER am
       // landepunkt-seitigen (nicht anker-seitigen) Ende, exakt wie im Release-222-Fix.
-      function padAnchorFirst(innerAnchorFirst, landingPt, maxLen) {
-        const out = innerAnchorFirst.slice();
-        while (out.length < maxLen) out.push(landingPt);
-        return out;
+      // Release 271 (Sebastian: "Die Schmiegen werden wieder nicht korrekt dargestellt" - Sattelwange A mit Schmiege vorn
+      // Schmiege hinten.DXF): bisher wurden die beiden Seiten Punkt für Punkt nach Index gepaart (kürzere Seite mit ihrem
+      // Landepunkt aufgefüllt). Typische Stufen-Schmiege: unten Anker -> Ecke (Wand hoch) -> Landepunkt (Stück der
+      // Oberkante), oben Anker -> Ecke (Stück der Trittkante) -> Landepunkt (Wand hoch) - die Reihenfolge der beiden Kanten
+      // ist vertauscht. Nach Index gepaart wurde "Wand hoch" (unten) mit "Trittkante" (oben) verbunden: verdrehte Flächen,
+      // in der 3D-Ansicht als Fächer/Spitzen sichtbar. Jetzt werden die beiden Linienzüge ausgerichtet (dynamische
+      // Programmierung): zwei Kanten bilden nur dann ein Viereck, wenn sie (nahezu) parallel sind; sonst wird eine Kante mit
+      // dem gegenüberliegenden Punkt zu einem Dreieck verbunden. Ergebnis für das Beispiel: Dreieck in der Trittkante, ebene
+      // schräge Wand (Viereck), Dreieck in der Oberkante - genau die Schmiege. Beide Ringe haben weiter gleich viele Punkte.
+      function alignSchmiegePaths(U, O) {
+        const m = U.length, k = O.length;
+        const len = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+        const quadCost = (a0, a1, b0, b1) => {
+          const ex = a1.x - a0.x, ey = a1.y - a0.y, fx = b1.x - b0.x, fy = b1.y - b0.y;
+          const le = Math.hypot(ex, ey), lf = Math.hypot(fx, fy);
+          if (le < 1e-9 || lf < 1e-9) return 0.5 * (le + lf) + 1e-6;
+          const cos = (ex * fx + ey * fy) / (le * lf);
+          return (1 - cos) * (le + lf) + 1e-6;
+        };
+        const dp = [], from = [];
+        for (let a = 0; a < m; a++) { dp.push(new Array(k).fill(Infinity)); from.push(new Array(k).fill(null)); }
+        dp[0][0] = 0;
+        for (let a = 0; a < m; a++) for (let b = 0; b < k; b++) {
+          if (a === 0 && b === 0) continue;
+          let best = Infinity, bf = null;
+          if (a > 0 && b > 0) { const c = dp[a - 1][b - 1] + quadCost(U[a - 1], U[a], O[b - 1], O[b]); if (c < best) { best = c; bf = 'q'; } }
+          if (a > 0) { const c = dp[a - 1][b] + 0.5 * len(U[a - 1], U[a]) + 2e-6; if (c < best) { best = c; bf = 'u'; } }
+          if (b > 0) { const c = dp[a][b - 1] + 0.5 * len(O[b - 1], O[b]) + 2e-6; if (c < best) { best = c; bf = 'o'; } }
+          dp[a][b] = best; from[a][b] = bf;
+        }
+        const pairs = [];
+        let a = m - 1, b = k - 1;
+        while (a > 0 || b > 0) {
+          pairs.push([U[a], O[b]]);
+          const f = from[a][b];
+          if (f === 'q') { a--; b--; } else if (f === 'u') a--; else b--;
+        }
+        pairs.push([U[0], O[0]]);
+        return pairs.reverse();
       }
       if (zone.forward) {
         // Anker = niedrigerer Grenz-Index: wie bisher - Anker-Vertex zuerst (für unten/oben
@@ -8533,12 +8602,10 @@
         const obenLanding = zone.vorn ? zone.vorn.landing : sharedLandingWhenInactive;
         const untenInner = zone.hinten ? zone.hinten.inner : origInner;
         const obenInner = zone.vorn ? zone.vorn.inner : origInner;
-        const maxLen = Math.max(untenInner.length, obenInner.length);
-        const untenSeq = padAnchorFirst(untenInner, untenLanding, maxLen);
-        const obenSeq = padAnchorFirst(obenInner, obenLanding, maxLen);
-        for (let k = 0; k < maxLen; k++) { untenLoop.push(untenSeq[k]); obenLoop.push(obenSeq[k]); }
-        untenLoop.push(untenLanding);
-        obenLoop.push(obenLanding);
+        // Release 271: ausgerichtet statt nach Index gepaart (siehe alignSchmiegePaths()); das erste Paar ist der Anker
+        const anchorPt = konturLoop[zone.anchorIdx];
+        const pairs = alignSchmiegePaths([anchorPt].concat(untenInner, [untenLanding]), [anchorPt].concat(obenInner, [obenLanding]));
+        for (let k = 1; k < pairs.length; k++) { untenLoop.push(pairs[k][0]); obenLoop.push(pairs[k][1]); }
         i = zone.landingSeg + 1;
       } else {
         // NEU, Release 231. Anker = höherer Grenz-Index (loIdx = landingSeg, hiIdx = anchorIdx):
@@ -8557,14 +8624,11 @@
         const obenEntry = zone.vorn ? zone.vorn.landing : sharedEntryWhenInactive;
         const untenInnerAnchorFirst = zone.hinten ? zone.hinten.inner : origInnerAnchorFirst;
         const obenInnerAnchorFirst = zone.vorn ? zone.vorn.inner : origInnerAnchorFirst;
-        const maxLen = Math.max(untenInnerAnchorFirst.length, obenInnerAnchorFirst.length);
-        const untenSeq = padAnchorFirst(untenInnerAnchorFirst, untenEntry, maxLen).reverse();
-        const obenSeq = padAnchorFirst(obenInnerAnchorFirst, obenEntry, maxLen).reverse();
-        untenLoop.push(untenEntry);
-        obenLoop.push(obenEntry);
-        for (let k = 0; k < maxLen; k++) { untenLoop.push(untenSeq[k]); obenLoop.push(obenSeq[k]); }
-        untenLoop.push(konturLoop[zone.anchorIdx]);
-        obenLoop.push(konturLoop[zone.anchorIdx]);
+        // Release 271: ausgerichtet (siehe alignSchmiegePaths()), vom Anker aus berechnet und dann in Ring-Richtung
+        // (Eintrittspunkt zuerst, Anker zuletzt) übernommen
+        const anchorPt = konturLoop[zone.anchorIdx];
+        const pairs = alignSchmiegePaths([anchorPt].concat(untenInnerAnchorFirst, [untenEntry]), [anchorPt].concat(obenInnerAnchorFirst, [obenEntry])).reverse();
+        for (let k = 0; k < pairs.length; k++) { untenLoop.push(pairs[k][0]); obenLoop.push(pairs[k][1]); }
         i = zone.anchorIdx + 1;
       }
     }
@@ -8590,6 +8654,145 @@
       // nur "Layer2 und folgende".
       return true;
     });
+  }
+
+  // Release 272 (Sebastian: "Schmiegenerkennung wenn Bohrungen und Schmiegen auf einem Layer ... Gibt es die Möglichkeit,
+  // dass du die "L" (sehen so aus, in dem Fall ein umgedrehtes L, könnten aber auch echte L sein) erkennst neben den
+  // Bohrungen? Die Ls wären dann Schmiegen. Wenn die Bohrungen mit den "negativen Schmiegen" auf einem Layer liegen würden,
+  // wären das "gestrichelte L"."): erkennt auf EINEM Layer Schmiegen in L-Form. Ein L besteht aus
+  //  - einem kurzen Schenkel, der an einem Kontur-Eckpunkt beginnt (Anker) - oder auf der Verlängerung einer dort
+  //    anliegenden Konturkante kurz dahinter - und ins Bauteil hinein zur Ecke C läuft,
+  //  - einem langen Schenkel ab C bis auf eine Konturkante (Landepunkt) - durchgezogen = sichtbare Schmiege (Oberseite),
+  //    gestrichelt (mehrere Striche auf einer Linie durch C, regelmäßige Lücken) = nicht sichtbare Schmiege (Unterseite);
+  //    beim gestrichelten Schenkel wird der Landepunkt als Schnitt der Linie mit der Kontur bestimmt (der letzte Strich
+  //    muss nicht exakt auf der Kontur enden, höchstens eine Lückenlänge davor).
+  // Ergebnis je L: Linienzug [Anker, (Punkt auf der Kantenverlängerung,) C, Landepunkt] - dasselbe Format wie die Ketten der benannten Layer
+  // Schmiege_vorn/_hinten, damit buildSchmiegeKonturRings() die Ringe baut. T-Symbole (Bohrungen) werden vorher vom Aufrufer
+  // entfernt; Linien, die genau auf der Kontur liegen, werden ignoriert. Liefert { ls:[{chain, dashed}], usedStrokes:Set,
+  // onContour }.
+  function detectLayerSchmiegeLs(strokes, konturLoop) {
+    const out = { ls: [], usedStrokes: new Set(), onContour: 0 };
+    if (!konturLoop || konturLoop.length < 3 || !strokes || !strokes.length) return out;
+    const TOL = 0.05, LTOL = 0.1, n = konturLoop.length;
+    const segs = [];
+    strokes.forEach(st => {
+      const p = st.points || [];
+      for (let i = 0; i + 1 < p.length; i++) {
+        const a = p[i], b = p[i + 1], L = Math.hypot(b.x - a.x, b.y - a.y);
+        if (L > 1e-6) segs.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, L, st });
+      }
+    });
+    const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+    const segDist = (p, A, B) => {
+      const dx = B.x - A.x, dy = B.y - A.y, l2 = dx * dx + dy * dy;
+      let t = l2 > 1e-12 ? ((p.x - A.x) * dx + (p.y - A.y) * dy) / l2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(p.x - (A.x + t * dx), p.y - (A.y + t * dy));
+    };
+    const vIdx = p => { for (let i = 0; i < n; i++) if (dist(p, konturLoop[i]) <= TOL) return i; return -1; };
+    // Anker des kurzen Schenkels: ein Kontur-Eckpunkt - oder ein Punkt auf der VERLÄNGERUNG einer der beiden an einem
+    // Eckpunkt anliegenden Konturkanten über den Eckpunkt hinaus (bei nicht sichtbaren Schmiegen ist die Aussparung auf
+    // der Unterseite tiefer: die Kante läuft dort erst ein Stück weiter, dann beginnt das L). Liefert { vi, ext }.
+    function anchorOf(p) {
+      const vi = vIdx(p);
+      if (vi !== -1) return { vi, ext: null };
+      for (let i = 0; i < n; i++) {
+        const V = konturLoop[i];
+        for (const W of [konturLoop[(i + n - 1) % n], konturLoop[(i + 1) % n]]) {
+          const ex = V.x - W.x, ey = V.y - W.y, el = Math.hypot(ex, ey);
+          if (el < 1e-9) continue;
+          const ux = ex / el, uy = ey / el;
+          const along = (p.x - V.x) * ux + (p.y - V.y) * uy, perp = Math.abs((p.x - V.x) * uy - (p.y - V.y) * ux);
+          if (along > TOL && along <= Math.min(200, el) && perp <= LTOL) return { vi: i, ext: { x: p.x, y: p.y } };
+        }
+      }
+      return null;
+    }
+    const onEdge = p => { for (let i = 0; i < n; i++) if (segDist(p, konturLoop[i], konturLoop[(i + 1) % n]) <= TOL) return i; return -1; };
+    const used = new Set();
+    // Linien genau auf der Kontur (z. B. eine Schmiege der Breite 0) ignorieren
+    segs.forEach((s, i) => {
+      const m = { x: (s.a.x + s.b.x) / 2, y: (s.a.y + s.b.y) / 2 };
+      if (onEdge(s.a) !== -1 && onEdge(s.b) !== -1 && onEdge(m) !== -1) { used.add(i); out.onContour++; out.usedStrokes.add(s.st); }
+    });
+    const unit = (p, q) => { const L = dist(p, q) || 1; return { x: (q.x - p.x) / L, y: (q.y - p.y) / L }; };
+    const angleOk = (u, v) => Math.abs(u.x * v.y - u.y * v.x) > Math.sin(10 * Math.PI / 180);
+    // erster Schnitt des Strahls C + t*d (t > tMin) mit der Kontur
+    function rayHit(C, d, tMin) {
+      let best = null;
+      for (let i = 0; i < n; i++) {
+        const A = konturLoop[i], B = konturLoop[(i + 1) % n];
+        const ex = B.x - A.x, ey = B.y - A.y, den = d.x * ey - d.y * ex;
+        if (Math.abs(den) < 1e-12) continue;
+        const t = ((A.x - C.x) * ey - (A.y - C.y) * ex) / den;
+        const u = ((A.x - C.x) * d.y - (A.y - C.y) * d.x) / den;
+        if (u < -1e-9 || u > 1 + 1e-9 || t <= tMin) continue;
+        if (!best || t < best.t) best = { t, p: { x: C.x + d.x * t, y: C.y + d.y * t } };
+      }
+      return best;
+    }
+    segs.forEach((s, si) => {
+      if (used.has(si)) return;
+      for (const [S, C] of [[s.a, s.b], [s.b, s.a]]) {
+        const an = anchorOf(S);
+        if (!an || onEdge(C) !== -1) continue;
+        const vi = an.vi, V = konturLoop[vi];
+        const head = an.ext ? [{ x: V.x, y: V.y }, an.ext] : [{ x: V.x, y: V.y }];
+        const dShort = unit(S, C);
+        // durchgezogener langer Schenkel: beginnt in C, endet auf der Kontur
+        let found = null;
+        segs.forEach((t, ti) => {
+          if (found || ti === si || used.has(ti)) return;
+          for (const [P, Q] of [[t.a, t.b], [t.b, t.a]]) {
+            if (dist(P, C) > TOL || vIdx(Q) === vi || onEdge(Q) === -1) continue;
+            if (!angleOk(dShort, unit(P, Q))) continue;
+            found = { ti, landing: { x: Q.x, y: Q.y } };
+            return;
+          }
+        });
+        if (found) {
+          used.add(si); used.add(found.ti);
+          out.usedStrokes.add(s.st); out.usedStrokes.add(segs[found.ti].st);
+          out.ls.push({ chain: head.concat([{ x: C.x, y: C.y }, found.landing]), dashed: false });
+          return;
+        }
+        // gestrichelter langer Schenkel: Striche auf einer Linie durch C, alle auf derselben Seite
+        const groups = new Map();
+        segs.forEach((t, ti) => {
+          if (ti === si || used.has(ti)) return;
+          const dt = unit(t.a, t.b);
+          if (!angleOk(dShort, dt)) return;
+          const cr = Math.abs((C.x - t.a.x) * dt.y - (C.y - t.a.y) * dt.x);
+          if (cr > LTOL) return;
+          const pa = (t.a.x - C.x) * dt.x + (t.a.y - C.y) * dt.y, pb = (t.b.x - C.x) * dt.x + (t.b.y - C.y) * dt.y;
+          const sign = (pa + pb) > 0 ? 1 : -1;
+          const d = { x: dt.x * sign, y: dt.y * sign };
+          const key = Math.round(Math.atan2(d.y, d.x) * 100);
+          let g = groups.get(key);
+          if (!g) { g = { d, items: [] }; groups.set(key, g); }
+          g.items.push({ ti, near: Math.min(pa * sign, pb * sign), far: Math.max(pa * sign, pb * sign) });
+        });
+        for (const g of groups.values()) {
+          if (g.items.length < 2) continue;
+          const it = g.items.slice().sort((p, q) => p.near - q.near);
+          if (it[0].near < -TOL) continue;
+          const dashes = it.map(q => q.far - q.near), gaps = [];
+          for (let k = 1; k < it.length; k++) gaps.push(it[k].near - it[k - 1].far);
+          if (gaps.some(x => x < -TOL)) continue;
+          const maxGap = Math.max(...gaps, ...dashes) * 1.6 + 1;
+          if (it[0].near > maxGap || gaps.some(x => x > maxGap)) continue;
+          const last = it[it.length - 1].far;
+          const hit = rayHit(C, g.d, Math.max(TOL, it[0].near - TOL));
+          if (!hit || hit.t < last - TOL || hit.t - last > maxGap) continue;
+          if (vIdx(hit.p) === vi) continue;
+          used.add(si); it.forEach(q => used.add(q.ti));
+          out.usedStrokes.add(s.st); it.forEach(q => out.usedStrokes.add(segs[q.ti].st));
+          out.ls.push({ chain: head.concat([{ x: C.x, y: C.y }, hit.p]), dashed: true });
+          return;
+        }
+      }
+    });
+    return out;
   }
 
   // detectLayerSchmiegeChords(strokes, konturLoop): analysiert die Linien EINES Layers. Kollineare
@@ -9961,7 +10164,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -11007,8 +11210,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 269;
-  const APP_RELEASE_TIMESTAMP = '22.10.2026, 07:49 Uhr';
+  const APP_RELEASE_NUMBER = 274;
+  const APP_RELEASE_TIMESTAMP = '22.10.2026, 11:39 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -14286,6 +14489,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // dxfLayerSchmiegeProblems - Meldungen zu nicht berechenbaren Schmiegen (Hinweis beim Verlassen).
   // Hat Vorrang vor dxfSchmiegeRings (benannte Schmiege_vorn/hinten-Layer), siehe getActiveSchmiegeRings().
   let dxfLayerSchmiegeEnabled = false;
+  // Release 270: Checkbox "Schmiege aus Layer Schmiege_vorn/_hinten" (Standard an, pro Import) - vorher immer automatisch.
+  let dxfNamedSchmiegeEnabled = true;
   let dxfLayerSchmiegeLayers = new Map();
   let dxfLayerSchmiegeProblems = [];
   let dxfLayerSchmiegeInfo = null;
@@ -14296,7 +14501,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Schmiegenerkennung, dafür Einstemmungen: dxfMortiseInfo = einmalig pro Import ermittelte Kandidaten-
   // Layer (mit geschlossenen Konturen, ignorierten Kreisen/offenen Linienzügen) und die optional
   // benannten Layer "Stufeneinstemmung"/"Setzstufeneinstemmung" (dann je Layer eine eigene Tiefe, keine
-  // Layer-Auswahl). dxfMortiseLayer/dxfMortiseDepth = Einzel-Layer-Modus (Bediener wählt EINEN Layer,
+  // Layer-Auswahl). dxfMortiseLayers/dxfMortiseDepth = Layer-Modus (seit Release 273 je Layer ein Haken + eigene Tiefe, vorher EIN Layer,
   // Tiefe von der Oberseite aus), dxfMortiseDepthTread/-Riser = benannter Modus. dxfMortiseMesh =
   // buildMortiseMesh()-Ergebnis (rohe DXF-Koordinaten, z relativ zur Original-Z-Ebene) oder null,
   // dxfMortiseUsedLayers = Layer, die als Netz dargestellt werden (kein Drahtgitter mehr),
@@ -14545,7 +14750,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfFillMode = pd.fillMode === 'texture' ? 'texture' : 'color'; dxfTextureId = pd.textureId || null;   // Release 260
     if (pd.mortise) {
       dxfMortiseDepth = pd.mortise.depth; dxfMortiseDepthTread = pd.mortise.depthTread; dxfMortiseDepthRiser = pd.mortise.depthRiser;
-      dxfMortiseLayer = pd.mortise.on ? defaultMortiseLayer() : '';
+      dxfMortiseLayers = pd.mortise.on ? defaultMortiseLayers(pd.mortise.depth) : new Map();   // Release 273: alle Layer mit geschlossenen Konturen
     }
     if (pd.vpocket) { dxfVPocketEnabled = pd.vpocket.on; dxfVPocketDepth = pd.vpocket.depth; }
     const cfg = newHBoreCfg();
@@ -14554,7 +14759,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   const pocketDepthPrefill = () => (dxfPartDefaults.parts.tread.pocketDepth);
   let dxfMortiseInfo = null;
-  let dxfMortiseLayer = null;
+  // Release 273: dxfMortiseLayers = Map Layername -> Einstemmungstiefe (ohne benannte Layer, beliebig viele Layer);
+  // dxfMortiseDepth = Vorgabe-Tiefe für neu angehakte Layer (aus der Bauteildefinition).
+  let dxfMortiseLayers = new Map();
   let dxfMortiseDepth = 15;
   let dxfMortiseDepthTread = 15;
   let dxfMortiseDepthRiser = 15;
@@ -14595,7 +14802,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     return dxfHBoreCache;
   }
-  function getActiveSchmiegeRings() { return !isStepPart(dxfPartType) ? null : (dxfLayerSchmiegeRings || dxfSchmiegeRings); }   // Release 253: nur Stufe/Setzstufe
+  // Release 270 (Sebastian: "In der Wange gibt es den Layer "Schmiege_vorn", aber ich hab die Bearbeitung nicht mehr zur
+  // Auswahl."): seit Release 253 hatten nur Stufe/Setzstufe Schmiegen. Jetzt alle Bauteile außer "- undefiniert -" (dort laut
+  // Release 253 nur die Stärke) - also auch Wange und Handlauf ("Auswahl wie bei Wangen").
+  function hasSchmiegePart(t) { return t !== 'undefined'; }
+  function getActiveSchmiegeRings() { return !hasSchmiegePart(dxfPartType) ? null : (dxfLayerSchmiegeRings || (dxfNamedSchmiegeEnabled ? dxfSchmiegeRings : null)); }
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
   // 98mm. Da müsste man um den Faktor 10 skalieren. Umgekehrt gibt es das Problem auch.") - reiner
@@ -15213,8 +15424,41 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function applyActiveMachineType() {
     activeMachineTypeName = machineTypeSelect.value || 'ISO';
     persistActiveMachineTypeName(activeMachineTypeName);
+    setMachineTypePending(false);   // Release 274
     displayCurrentProgram();
   }
+
+  // Release 274: Maschinentyp-Abfrage beim Laden eines CNC-Programms (siehe #machineTypePromptPanel)
+  const machineTypePromptPanel = el('machineTypePromptPanel');
+  const machineTypePromptSelect = el('machineTypePromptSelect');
+  function setMachineTypePending(on) {
+    const h = el('machineTypePendingHint');
+    h.hidden = !on;
+    if (on) h.style.left = machineTypeSelect.offsetLeft + 'px';   // Pfeil zeigt auf das Dropdown
+    el('machineTypeQuickGroup').classList.toggle('mt-pending', !!on);
+  }
+  function openMachineTypePrompt(suggestion, filename) {
+    machineTypePromptSelect.innerHTML = machineTypeSelect.innerHTML;   // dieselbe Liste (ISO zuerst, dann A-Z)
+    machineTypePromptSelect.value = machineTypeSelect.value;
+    const detected = suggestion && suggestion.toLowerCase() !== 'iso';
+    el('machineTypePromptFile').textContent = filename ? T('Programm: ', 'Program: ') + filename : '';
+    el('machineTypePromptHint').textContent = detected
+      ? T('Erkannter Maschinentyp: ' + suggestion + '. Mit Ok wird der CNC-Code an diesen Maschinentyp angepasst.', 'Detected machine type: ' + suggestion + '. Ok adapts the CNC code to this machine type.')
+      : T('Kein Maschinentyp erkannt - bitte auswählen. Mit Ok wird der CNC-Code an den gewählten Maschinentyp angepasst.', 'No machine type detected - please select one. Ok adapts the CNC code to the selected machine type.');
+    machineTypePromptPanel.classList.add('open');
+    setTimeout(() => { if (machineTypePromptPanel.classList.contains('open')) machineTypePromptSelect.focus(); }, 0);
+  }
+  el('btnMachineTypePromptConfirm').addEventListener('click', () => {
+    machineTypePromptPanel.classList.remove('open');
+    if (rawProgramText == null) return;
+    machineTypeSelect.value = machineTypePromptSelect.value;
+    applyActiveMachineType();
+  });
+  el('btnMachineTypePromptCancel').addEventListener('click', () => {
+    machineTypePromptPanel.classList.remove('open');
+    if (rawProgramText != null) setMachineTypePending(true);
+  });
+  el('machineTypePendingHint').addEventListener('click', () => setMachineTypePending(false));
 
   // Reichenbacher-Winkelkorrektur-Schalter (Sebastian, 44. Runde: "Bau bitte einen eigenen
   // Schalter ein, der aktiv/anklickbar wird, sobald 'Maschinentyp: Reichenbacher' im Menü
@@ -15333,8 +15577,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const suggestion = suggestMachineType(text, machineTypes.map(mt => mt.name));
     populateMachineTypeSelect(suggestion);
     btnMachineTypeOk.disabled = false;
+    setMachineTypePending(false);   // Release 274
     displayCurrentProgram();
     updateSidebarHeader();
+    // Release 274: Abfrage nach dem Maschinentyp (Vorschlag aus suggestMachineType()) - die Testumgebung kann sie über
+    // window.__cncsimNoMachineTypePrompt abschalten
+    if (window.__cncsimNoMachineTypePrompt !== true) openMachineTypePrompt(suggestion, filename);
     // Release 208: "DXF speichern als..."/"DXF Polylinien auflösen" sind nur aktivierbar, solange
     // KEIN CNC-Programm geladen ist (siehe updateDxfUI(), Sebastian Punkt 7) - ein neu geladenes
     // Programm muss sie deshalb sofort ausgrauen, auch wenn sich dxfGeometry/dxfEntities selbst
@@ -15723,6 +15971,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     activeMachineTypeName = 'ISO';
     populateMachineTypeSelect('ISO');
     btnMachineTypeOk.disabled = true;
+    setMachineTypePending(false);   // Release 274
+    machineTypePromptPanel.classList.remove('open');
     // Reichenbacher-Winkelkorrektur-Schalter (44. Runde): ausblenden - displayCurrentProgram()
     // (die sonstige zentrale Anlaufstelle für updateReichenbacherSwitch()) kehrt bei
     // rawProgramText===null sofort zurück und wird hier daher NICHT mehr aufgerufen.
@@ -16076,8 +16326,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const info = { candidates: [], perLayer: {} };
     if (!dxfGeometry || !dxfKonturLoop) return info;
     info.candidates = CNCParser.listLayerSchmiegeCandidates(dxfGeometry, dxfKonturLayerName);
+    // Release 272: zusätzlich L-förmige Schmiegen (Wange/Handlauf) - die T-Striche (Bohrungen) desselben Layers werden
+    // dafür vorher herausgenommen. Die geraden Schmiege-Linien (Stufe/Setzstufe) bleiben unverändert wie bisher.
+    dxfHBoreCache = null; dxfHBoreStrokeSet = null;   // gehört zur gerade geladenen DXF
+    const hb = getHBoreStrokeSet();
     info.candidates.forEach(name => {
-      info.perLayer[name] = CNCParser.detectLayerSchmiegeChords(dxfGeometry.strokes.filter(s => s.layer === name), dxfKonturLoop);
+      const all = dxfGeometry.strokes.filter(s => s.layer === name);
+      const r = CNCParser.detectLayerSchmiegeChords(all, dxfKonturLoop);
+      const noT = all.filter(s => !hb.has(s));
+      const L = CNCParser.detectLayerSchmiegeLs(noT, dxfKonturLoop);
+      r.ls = L.ls;
+      r.lOnContour = L.onContour;
+      r.tStrokeCount = all.length - noT.length;
+      info.perLayer[name] = r;
     });
     return info;
   }
@@ -16088,11 +16349,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function recomputeLayerSchmiegeRings() {
     dxfLayerSchmiegeRings = null;
     dxfLayerSchmiegeProblems = [];
-    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo || !isStepPart(dxfPartType)) return; // Release 249/253: nur Stufe/Setzstufe haben die Schmiegenerkennung
+    if (!dxfLayerSchmiegeEnabled || !dxfKonturLoop || !dxfLayerSchmiegeInfo || !hasSchmiegePart(dxfPartType)) return; // Release 249/253/270: alle Bauteile außer "- undefiniert -"
     const chords = [];
+    const useLs = isMortisePart(dxfPartType);   // Release 272: Wange/Handlauf
+    const lVorn = [], lHinten = [];   // Release 272: L-Schmiegen (durchgezogen = sichtbar/vorn, gestrichelt = nicht sichtbar/hinten)
     const problems = dxfLayerSchmiegeProblems;
     dxfLayerSchmiegeLayers.forEach((type, name) => {
       const r = dxfLayerSchmiegeInfo.perLayer[name];
+      // Release 272 (Sebastian: "Nur die L nehmen bei Wangen. Die geraden Linien gibt es nur bei Stufen und Setzstufen. Da gibt
+      // es keine L."): Wange/Handlauf -> nur die L dieses Layers, Stufe/Setzstufe -> wie bisher nur die geraden Linien.
+      if (useLs) {
+        if (r && r.ls && r.ls.length) r.ls.forEach(l => (l.dashed ? lHinten : lVorn).push(l.chain));
+        else problems.push(name + ': ' + T('keine L-Schmiege gefunden', 'no L-bevel found'));
+        return;
+      }
       if (!r || !r.groups.length) { problems.push(name + ': ' + T('keine Linien auf diesem Layer', 'no lines on this layer')); return; }
       r.groups.forEach(g => {
         if (!g.chord) problems.push(name + ': ' + T('Linie nicht berechenbar', 'line not computable') + (g.reason ? ' (' + T(g.reason, g.reasonEn || g.reason) + ')' : ''));
@@ -16104,7 +16374,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     problems.forEach(m => counts.set(m, (counts.get(m) || 0) + 1));
     problems.length = 0;
     counts.forEach((c, m) => problems.push(c > 1 ? c + '× ' + m : m));
-    if (chords.length) {
+    if (lVorn.length || lHinten.length) {
+      // Release 272: L-Schmiegen -> dieselben Ringe wie bei Schmiege_vorn/_hinten (inkl. ebener Seitenflächen, Release 271)
+      const res = CNCParser.buildSchmiegeKonturRings(dxfKonturLoop, lHinten, lVorn);
+      if (res && res.zoneCount > 0) dxfLayerSchmiegeRings = res;
+      const lost = lVorn.length + lHinten.length - (res ? res.zoneCount : 0);
+      if (lost > 0) problems.push(T(lost + ' L-Schmiege(n) nicht berechenbar (überlappen sich mit einer anderen Schmiege)', lost + ' L-bevel(s) not computable (overlapping another bevel)'));
+    } else if (chords.length) {
       const res = CNCParser.buildLayerSchmiegeRings(dxfKonturLoop, chords);
       if (res && res.zoneCount > 0) dxfLayerSchmiegeRings = res;
       ((res && res.skipped) || []).forEach(c => problems.push(c.layer + ': ' + T('Schmiege nicht berechenbar (Linie liegt auf einer Konturkante, überlappt mit einer anderen Schmiege oder umschließt die ganze Kontur)', 'bevel not computable (line lies on a contour edge, overlaps another bevel or encloses the whole contour)')));
@@ -16123,9 +16399,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     return info;
   }
-  function defaultMortiseLayer() {
-    const c = dxfMortiseInfo && dxfMortiseInfo.candidates.find(q => q.loops.length);
-    return c ? c.name : null;
+  // Release 273: Vorbelegung = ALLE Layer mit geschlossenen Konturen (bisher nur der erste), je mit der Vorgabe-Tiefe
+  function defaultMortiseLayers(depth) {
+    const m = new Map();
+    if (dxfMortiseInfo) dxfMortiseInfo.candidates.forEach(q => { if (q.loops.length) m.set(q.name, depth); });
+    return m;
   }
   // Release 250: geschlossene Konturen eines beliebigen Layers für Taschen (Kreise sind gültig, gestrichelte
   // Linien werden zu Ringen ergänzt) - je Import und Layer einmalig.
@@ -16193,9 +16471,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (named.tread || named.riser) {
         if (named.tread) addPocket(named.tread, dxfMortiseDepthTread, loopsOf(named.tread));
         if (named.riser) addPocket(named.riser, dxfMortiseDepthRiser, loopsOf(named.riser));
-      } else if (dxfMortiseLayer) {
-        addPocket(dxfMortiseLayer, dxfMortiseDepth, loopsOf(dxfMortiseLayer));
-      }   // Release 253: "- keiner -" gewählt bzw. kein Layer vorhanden -> keine Einstemmung (keine Meldung)
+      } else {
+        // Release 273: alle angehakten Layer, je mit eigener Tiefe (in der Reihenfolge der Layer-Liste)
+        dxfMortiseInfo.candidates.forEach(c => { if (dxfMortiseLayers.has(c.name)) addPocket(c.name, dxfMortiseLayers.get(c.name), c.loops); });
+      }   // Release 253/273: kein Layer angehakt bzw. kein Layer vorhanden -> keine Einstemmung (keine Meldung)
     } else if (pocketsOn) {
       dxfPockets.forEach((depth, name) => {
         const r = getPocketLoops(name);
@@ -16213,7 +16492,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     if (!pockets.length && !wantBores && !wantTex) return;
     // Stufe/Setzstufe mit Schmiege: untere/obere Kontur der Schmiege, sonst eine Kontur
-    const rings = stringer ? null : getActiveSchmiegeRings();
+    const rings = getActiveSchmiegeRings();   // Release 270: auch Wange/Handlauf
     const botLoop = rings && rings.untenLoop && rings.obenLoop && rings.untenLoop.length === rings.obenLoop.length ? rings.untenLoop : dxfKonturLoop;
     const topLoop = botLoop !== dxfKonturLoop ? rings.obenLoop : null;
     let mesh = null;
@@ -16323,6 +16602,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     // Release 243: Schmiegenerkennung über Layer2 und folgende - startet pro Import immer aus.
     dxfLayerSchmiegeEnabled = false;
+    dxfNamedSchmiegeEnabled = true;   // Release 270
     dxfLayerSchmiegeLayers = new Map();
     dxfLayerSchmiegeProblems = [];
     dxfLayerSchmiegeRings = null;
@@ -16330,7 +16610,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Release 249: Bauteilart startet pro Import immer als "Stufe" (Altverhalten), Einstemmungen aus.
     dxfPartType = 'undefined'; // Release 253: Standard "- undefiniert -"
     dxfMortiseInfo = computeMortiseInfo();
-    dxfMortiseLayer = defaultMortiseLayer();
+    dxfMortiseLayers = defaultMortiseLayers(15);   // Release 273
     dxfMortiseDepth = 15; dxfMortiseDepthTread = 15; dxfMortiseDepthRiser = 15;
     dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = [];
     dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
@@ -16389,7 +16669,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfSchmiegeHintenLayerName = null;
     dxfSchmiegeRings = null;
     dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Map(); dxfLayerSchmiegeProblems = []; dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
-    dxfPartType = 'undefined'; dxfMortiseInfo = null; dxfMortiseLayer = null; dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
+    dxfNamedSchmiegeEnabled = true;   // Release 270
+    dxfPartType = 'undefined'; dxfMortiseInfo = null; dxfMortiseLayers = new Map(); dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
     dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
     dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
     dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
@@ -18228,6 +18509,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfThicknessTransparency, dxfThicknessColor,
       // Release 243: Layer-Schmiegen (Ringe werden bei jeder Änderung neu erzeugt -> Objektidentität reicht)
       dxfLayerSchmiegeRings,
+      dxfNamedSchmiegeEnabled,   // Release 270: Checkbox "Schmiege aus Layer Schmiege_vorn/_hinten"
       dxfMortiseMesh, dxfPartType, // Release 249
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
@@ -18260,7 +18542,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
-      a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings &&
+      a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings && a.dxfNamedSchmiegeEnabled === b.dxfNamedSchmiegeEnabled &&
       a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType &&
       a.dxfOutlineColor === b.dxfOutlineColor && a.dxfTexKey === b.dxfTexKey && a.mortiseScale === b.mortiseScale &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
@@ -20297,7 +20579,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           { color: dxfThicknessColor, transparency: dxfThicknessTransparency },
           { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
           { x: 0, y: 1, z: 0 },
-          { disableSideCull: true, triangulateDegenerate: !!dxfLayerSchmiegeRings }); // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody(); triangulateDegenerate: Release 243
+          { disableSideCull: true, triangulateDegenerate: !!getActiveSchmiegeRings() });   // Release 271: auch benannte Schmiege_vorn/_hinten (Dreiecke aus alignSchmiegePaths()) // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody(); triangulateDegenerate: Release 243
         // Release 226 (Sebastian, nach 9.8s: "Was zur Erkennung für den Bediener helfen würde ist
         // eine schwarze 'Outline' der Konturen vom Bauteil oben und unten. Da dann natürlich die
         // Kontur jeweils so wie die Schmiege ist, also das was man sieht. ... Wenn es keine
@@ -22413,8 +22695,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     machineTypeEditPanel.classList.add('open');
     machineTypeEditArea.focus();
     let jumped = false;
-    if (activeMachineTypeName && activeMachineTypeName.toLowerCase() !== 'iso') {
-      const marker = '[machinetype name="' + activeMachineTypeName.toLowerCase() + '"]';
+    // Release 274 (Sebastian: "Wenn Maschinentyp ausgewählt worden ist und der Bearbeitungsbutton bei "Maschinentyp"
+    // (Menüband oben) geklickt wird, springt die Datei nicht direkt an die Stelle, wenn kein CNC Programm geladen worden
+    // ist."): ohne Programm gibt es kein "Ok" - dann zählt die Auswahl im Dropdown.
+    const jumpName = rawProgramText != null ? activeMachineTypeName : machineTypeSelect.value;
+    if (jumpName && jumpName.toLowerCase() !== 'iso') {
+      const marker = '[machinetype name="' + jumpName.toLowerCase() + '"]';
       const idx = machineTypeEditArea.value.toLowerCase().indexOf(marker);
       if (idx !== -1) {
         machineTypeEditArea.setSelectionRange(idx, idx);
@@ -22443,7 +22729,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         jumped = true;
       }
     }
-    if (!jumped) machineTypeEditArea.setSelectionRange(0, 0);
+    if (!jumped) { machineTypeEditArea.setSelectionRange(0, 0); machineTypeEditArea.scrollTop = 0; }   // Release 274: auch nach oben scrollen
     syncMachineTypeHighlightScroll();
   });
   // Release 193, Punkt 1+2: neues Zahnrad-Icon direkt im Menüband neben "Maschinentyp"
@@ -25995,6 +26281,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
     F10: () => btnEditOpNames.click(),
     F11: () => emptySimulation()
   };
+  // Release 271 (Sebastian: "Ich Schussel hab durch die Shortcuts den Pagerefresh zerstört. Bitte ein Page Refresh (so wie F5
+  // vorher) einbauen: Strg + F5"): Strg + F5 lädt die Seite neu - immer, auch bei offenem Dialog (wie früher F5). Bewusst
+  // selbst ausgelöst statt der Browser-/WebView2-Standardwirkung zu überlassen, damit es in jedem Host gleich funktioniert.
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'F5' || !e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    window.location.reload();
+  });
   window.addEventListener('keydown', (e) => {
     const act = FKEY_ACTIONS[e.key];
     if (!act || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
@@ -27890,8 +28185,22 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const dxfSchmiegeCheckbox = el('dxfSchmiegeCheckbox');
   const dxfSchmiegeLayerList = el('dxfSchmiegeLayerList');
   const dxfSchmiegeHint = el('dxfSchmiegeHint');
+  // Release 272: L-Schmiegen eines Layers (nur bei Wange/Handlauf ausgewertet)
+  function layerSchmiegeLs(name) {
+    const r = dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.perLayer[name];
+    return (r && r.ls) || [];
+  }
   function describeLayerSchmiege(name) {
     const r = dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.perLayer[name];
+    if (isMortisePart(dxfPartTypeSelect.value)) {   // Release 272: Wange/Handlauf -> L-Schmiegen
+      const ls = layerSchmiegeLs(name);
+      if (!ls.length) return T('keine L-Schmiege', 'no L-bevel');
+      const nD = ls.filter(l => l.dashed).length, nS = ls.length - nD;
+      const parts = [];
+      if (nS) parts.push(nS + ' ' + T('L durchgezogen (sichtbar)', 'L solid (visible)'));
+      if (nD) parts.push(nD + ' ' + T('L gestrichelt (nicht sichtbar)', 'L dashed (not visible)'));
+      return parts.join(', ') + (r && r.tStrokeCount ? T(' – T-Symbole bleiben Bohrungen', ' – T symbols stay drillings') : '');
+    }
     if (!r || !r.groups.length) return T('keine Linien', 'no lines');
     const ok = r.groups.filter(g => g.chord);
     const bad = r.groups.length - ok.length;
@@ -27914,7 +28223,16 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const g = r && r.groups.find(q => q.chord);
     return g && g.type === 'unten' ? 'unten' : 'oben';
   }
+  // Release 270: Namen der benannten Schmiege-Layer (Schmiege_vorn/_hinten), sofern daraus eine Schmiege berechenbar ist
+  function namedSchmiegeLayerList() {
+    return [dxfSchmiegeVornLayerName, dxfSchmiegeHintenLayerName].filter(Boolean);
+  }
   function refreshDxfSchmiegeUI() {
+    const named = namedSchmiegeLayerList();
+    el('dxfNamedSchmiegeRow').hidden = !named.length;
+    el('dxfNamedSchmiegeCheckbox').checked = dxfNamedSchmiegeEnabled;
+    el('dxfNamedSchmiegeLabel').textContent = T('Schmiege aus Layer ', 'Bevel from layer ') + named.join(' / ') +
+      (named.length && !(dxfSchmiegeRings && dxfSchmiegeRings.zoneCount > 0) ? T(' (nicht berechenbar - erreicht die Kontur nicht)', ' (not computable - does not reach the contour)') : '');
     const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
     dxfSchmiegeCheckbox.disabled = !cands.length;
     dxfSchmiegeCheckbox.checked = !!(cands.length && dxfLayerSchmiegeEnabled);
@@ -27937,8 +28255,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
         sel.appendChild(op);
       });
       sel.value = dxfLayerSchmiegeLayers.get(name) || defaultLayerSchmiegeType(name);
-      sel.hidden = !cb.checked;
-      cb.addEventListener('change', () => { sel.hidden = !cb.checked; updateDxfSchmiegeHint(); });
+      // Release 272: bei Wange/Handlauf ergibt sich sichtbar/nicht sichtbar aus dem L (durchgezogen/gestrichelt)
+      sp.classList.add('dxf-schmiege-desc');
+      sp.dataset.layer = name;
+      sel.hidden = !cb.checked || isMortisePart(dxfPartTypeSelect.value);
+      cb.addEventListener('change', () => { sel.hidden = !cb.checked || isMortisePart(dxfPartTypeSelect.value); updateDxfSchmiegeHint(); });
       lab.appendChild(cb);
       lab.appendChild(sp);
       lab.appendChild(sel);
@@ -27950,20 +28271,42 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const cands = (dxfLayerSchmiegeInfo && dxfLayerSchmiegeInfo.candidates) || [];
     dxfSchmiegeLayerList.hidden = !(dxfSchmiegeCheckbox.checked && cands.length);
     if (!cands.length) {
-      dxfSchmiegeHint.textContent = T('Nur mit weiteren Layern möglich.', 'Only possible with further layers.');
+      dxfSchmiegeHint.textContent = T('Schmiegenerkennung nur mit weiteren Layern möglich.', 'Bevel detection only possible with further layers.');
     } else if (!dxfSchmiegeCheckbox.checked) {
       dxfSchmiegeHint.textContent = '';
     } else if (!dxfSchmiegeLayerList.querySelector('input:checked')) {
       dxfSchmiegeHint.textContent = T('Layer mit Schmiegen wählen, je Layer sichtbar/nicht sichtbar.', 'Select layers with bevels, visible/not visible per layer.');
     } else {
-      dxfSchmiegeHint.textContent = T('Sichtbar = Linie ist die Oberkante, nicht sichtbar = Unterkante.', 'Visible = line is the top edge, not visible = bottom edge.');
+      dxfSchmiegeHint.textContent = isMortisePart(dxfPartTypeSelect.value)
+        ? T('L durchgezogen = Schmiege sichtbar (Oberseite), L gestrichelt = nicht sichtbar (Unterseite). T-Symbole bleiben Bohrungen.', 'Solid L = bevel visible (top), dashed L = not visible (bottom). T symbols stay drillings.')
+        : T('Sichtbar = Linie ist die Oberkante, nicht sichtbar = Unterkante.', 'Visible = line is the top edge, not visible = bottom edge.');
     }
   }
-  dxfSchmiegeCheckbox.addEventListener('change', updateDxfSchmiegeHint);
+  // Release 272 (Sebastian: "Ja, bitte automatisch aktivieren, wenn Schmiegenerkennung = an"): Einschalten der
+  // Schmiegenerkennung hakt alle Layer mit erkannten L-Schmiegen an (Wange/Handlauf).
+  dxfSchmiegeCheckbox.addEventListener('change', () => {
+    if (dxfSchmiegeCheckbox.checked && isMortisePart(dxfPartTypeSelect.value)) {
+      Array.from(dxfSchmiegeLayerList.querySelectorAll('input[type=checkbox]')).forEach(cb => {
+        if (!cb.checked && layerSchmiegeLs(cb.dataset.layer).length) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
+    }
+    updateDxfSchmiegeHint();
+  });
+  // Release 272: Beschreibung und sichtbar/nicht-sichtbar-Auswahl je Layer hängen vom Bauteil ab (Wange/Handlauf: L)
+  function updateDxfSchmiegeLayerTexts() {
+    const mort = isMortisePart(dxfPartTypeSelect.value);
+    Array.from(dxfSchmiegeLayerList.querySelectorAll('span.dxf-schmiege-desc')).forEach(sp => { sp.textContent = ' ' + sp.dataset.layer + ' – ' + describeLayerSchmiege(sp.dataset.layer) + ' '; });
+    Array.from(dxfSchmiegeLayerList.querySelectorAll('select.dxf-schmiege-type')).forEach(sel => {
+      const cb = dxfSchmiegeLayerList.querySelector('input[data-layer="' + sel.dataset.layer.replace(/"/g, '\\"') + '"]');
+      sel.hidden = !(cb && cb.checked) || mort;
+    });
+    updateDxfSchmiegeHint();
+  }
 
   // Release 249: Bauteilart-Dropdown + Einstemmungs-Einstellungen im Dialog "DXF-Bauteil definieren".
   const dxfMortiseRow = el('dxfMortiseRow');
   const dxfMortiseLayerRow = el('dxfMortiseLayerRow');
+  const dxfMortiseLayerList = el('dxfMortiseLayerList');   // Release 273
   const dxfMortiseLayerSelect = el('dxfMortiseLayerSelect');
   const dxfMortiseDepthInput = el('dxfMortiseDepthInput');
   const dxfMortiseDepth2Input = el('dxfMortiseDepth2Input');
@@ -28128,20 +28471,45 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const info = dxfMortiseInfo || { names: { tread: null, riser: null }, candidates: [] };
     const named = info.names;
     const isNamed = !!(named.tread || named.riser);
-    dxfMortiseLayerRow.hidden = isNamed;
+    // Release 273: die Einzel-Auswahl (Dropdown + ein Tiefenfeld) gibt es nur noch für benannte Layer nicht mehr - ohne
+    // benannte Layer erscheint je Layer ein Haken mit eigener Tiefe (wie bei den Taschen).
+    dxfMortiseLayerRow.hidden = true;
     dxfMortiseLayerSelect.innerHTML = '';
+    dxfMortiseLayerList.innerHTML = '';
+    dxfMortiseLayerList.hidden = isNamed;
     if (!isNamed) {
-      // Release 253: "- keiner -" als erste Auswahl (z. B. Handlauf ohne Einstemmungen); ohne weitere Layer nur diese
-      const op0 = document.createElement('option');
-      op0.value = ''; op0.textContent = info.candidates.length ? T('- keiner -', '- none -') : T('- keiner (kein weiterer Layer vorhanden) -', '- none (no further layer available) -');
-      dxfMortiseLayerSelect.appendChild(op0);
+      const ttl = document.createElement('div');
+      ttl.className = 'tool-data-field dxf-mortise-list-title';
+      const ttlSp = document.createElement('span'); ttlSp.textContent = T('Einstemmungs-Layer', 'Mortise layers');
+      ttl.appendChild(ttlSp); dxfMortiseLayerList.appendChild(ttl);
+      if (!info.candidates.length) {
+        const p = document.createElement('div');
+        p.className = 'dxf-mortise-none';
+        p.textContent = T('Kein weiterer Layer vorhanden.', 'No further layer available.');
+        dxfMortiseLayerList.appendChild(p);
+      }
       info.candidates.forEach(c => {
-        const op = document.createElement('option');
-        op.value = c.name;
-        op.textContent = c.name + ' – ' + describeMortiseCandidate(c);
-        dxfMortiseLayerSelect.appendChild(op);
+        const lab = document.createElement('label');
+        lab.className = 'scale-option';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.dataset.layer = c.name;
+        cb.disabled = !c.loops.length;
+        cb.checked = !!(c.loops.length && dxfMortiseLayers.has(c.name));
+        const sp = document.createElement('span');
+        sp.textContent = ' ' + c.name + ' – ' + describeMortiseCandidate(c) + ' ';
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'filename-input dxf-mortise-depth'; inp.dataset.layer = c.name;
+        inp.setAttribute('inputmode', 'decimal'); inp.spellcheck = false; inp.style.width = '70px';
+        inp.title = T('Einstemmungstiefe in mm, von der Bauteiloberkante gemessen', 'Depth of mortise in mm, measured from the top of the part');
+        inp.value = String(dxfMortiseLayers.has(c.name) ? dxfMortiseLayers.get(c.name) : dxfMortiseDepth);
+        const unit = document.createElement('span'); unit.textContent = ' mm';
+        const grp = document.createElement('span'); grp.className = 'dxf-pocket-depth-group dxf-mortise-depth-group'; grp.dataset.layer = c.name;
+        grp.appendChild(document.createTextNode(T('Tiefe', 'Depth') + ' ')); grp.appendChild(inp); grp.appendChild(unit);
+        grp.hidden = !cb.checked;
+        cb.addEventListener('change', () => { grp.hidden = !cb.checked; });   // Vorschau: 'change' am Dialog (scheduleDxfDefPreview)
+        lab.appendChild(cb); lab.appendChild(sp); lab.appendChild(grp);
+        dxfMortiseLayerList.appendChild(lab);
       });
-      dxfMortiseLayerSelect.value = dxfMortiseLayer === '' ? '' : (dxfMortiseLayer && info.candidates.some(c => c.name === dxfMortiseLayer) ? dxfMortiseLayer : (defaultMortiseLayer() || ''));
     }
     const depthWord = T('Einstemmungstiefe', 'Depth of mortise');   // EN von Sebastian vorgegeben (Release 249)
     dxfMortiseDepth2Label.textContent = depthWord + ' ' + T('Setzstufe', 'riser') + ' (mm)';   // Release 253: immer in der aktuellen Sprache
@@ -28163,16 +28531,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     dxfMortiseHint.textContent = isNamed
       ? T('Einstemmungen aus den Layern "' + [named.tread, named.riser].filter(Boolean).join('" und "') + '". Tiefe von Bauteiloberkante gemessen.', 'Mortises from the layer(s) "' + [named.tread, named.riser].filter(Boolean).join('" and "') + '". Depth is measured from top.')
-      : T('Layer wählen, der die Einstemmungen enthält, bei "- keiner -" werden Einstemmungen nicht dargestellt. Tiefe von Bauteiloberkante gemessen.', "Select Layer with tread mortises, if you select '- none -' no mortises are displayed. Depth is measured from top.");
+      : T('Layer mit Einstemmungen anhaken und je Layer die Tiefe angeben, ohne Haken werden keine Einstemmungen dargestellt. Tiefe von Bauteiloberkante gemessen.', 'Tick the layers with mortises and enter the depth for each layer, without a tick no mortises are displayed. Depth is measured from top.');
     updateDxfMortiseDepthVisibility();
   }
   // Release 253: "Einstemmungstiefe" steht neben dem Layer und erscheint nur, wenn ein Layer gewählt ist
   function updateDxfMortiseDepthVisibility() {
     const info = dxfMortiseInfo || { names: { tread: null, riser: null } };
     const isNamed = !!(info.names.tread || info.names.riser);
-    el('dxfMortiseDepthField').hidden = !isNamed && !dxfMortiseLayerSelect.value;
+    el('dxfMortiseDepthField').hidden = !isNamed;   // Release 273: ohne benannte Layer steht die Tiefe je Layer in der Liste
   }
-  dxfMortiseLayerSelect.addEventListener('change', updateDxfMortiseDepthVisibility);
   // Release 253: vertikale Taschen aus Kreisen
   const dxfVPocketCheckbox = el('dxfVPocketCheckbox'), dxfVPocketBody = el('dxfVPocketBody'), dxfVPocketDepthInput = el('dxfVPocketDepthInput'), dxfVPocketHint = el('dxfVPocketHint');
   function refreshDxfVPocketUI() {
@@ -28205,8 +28572,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfMortiseRow.hidden = !mortise;
     dxfPocketRow.hidden = t !== 'tread';
     el('dxfVPocketRow').hidden = !vertical;
-    el('dxfSchmiegeRow').hidden = !step;
-    el('dxfSepSchmiege').hidden = !step;
+    el('dxfSchmiegeRow').hidden = !hasSchmiegePart(t);   // Release 270: auch Wange/Handlauf
+    updateDxfSchmiegeLayerTexts();   // Release 272
+    el('dxfSepSchmiege').hidden = !hasSchmiegePart(t);
     el('dxfVerticalGroup').hidden = !vertical;
     el('dxfSepVertical').hidden = !vertical;
     el('dxfHBoreRow').hidden = !horizontal;
@@ -28290,7 +28658,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (mortiseNames.tread && mortiseNames.riser) { dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput); dxfMortiseDepthRiser = parseDepth(dxfMortiseDepth2Input); }
       else if (mortiseNames.tread) dxfMortiseDepthTread = parseDepth(dxfMortiseDepthInput);
       else if (mortiseNames.riser) dxfMortiseDepthRiser = parseDepth(dxfMortiseDepthInput);
-      else { dxfMortiseDepth = parseDepth(dxfMortiseDepthInput); dxfMortiseLayer = dxfMortiseLayerSelect.value || ''; }   // '' = bewusst "- keiner -" (Release 253)
+      else {   // Release 273: alle angehakten Layer mit ihrer Tiefe (kein Haken = bewusst keine Einstemmung)
+        const m = new Map();
+        Array.from(dxfMortiseLayerList.querySelectorAll('input[type=checkbox]:checked')).forEach(cb => {
+          const inp = dxfMortiseLayerList.querySelector('input.dxf-mortise-depth[data-layer="' + cb.dataset.layer.replace(/"/g, '\\"') + '"]');
+          m.set(cb.dataset.layer, inp ? parseDepth(inp) : dxfMortiseDepth);
+        });
+        dxfMortiseLayers = m;
+      }
     }
     // Release 243: Schmiegenerkennung übernehmen (erst nach erfolgreicher Validierung unten wirksam
     // wäre ein Teil-Zustand möglich - deshalb hier vorab nur die Auswahl merken, die Ringe werden am
@@ -28330,6 +28705,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfThicknessTransparency = transparencyVal;
     dxfThicknessEverConfirmed = true; // Release 222, siehe Deklaration oben
     dxfLayerSchmiegeEnabled = pendingSchmiegeEnabled; // Release 243
+    dxfNamedSchmiegeEnabled = el('dxfNamedSchmiegeRow').hidden || el('dxfNamedSchmiegeCheckbox').checked;   // Release 270
     dxfLayerSchmiegeLayers = pendingSchmiegeLayers;
     dxfPartType = pendingPartType; // Release 249 (erst nach der Validierung)
     // Release 253: vertikale Taschen (Kreise) - Tiefe 0 gültig, leere/ungültige Eingabe zählt als 0
@@ -28419,12 +28795,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const layerStrokes = name => dxfGeometry.strokes.filter(st => st.layer === name);
     const t = dxfPartTypeSelect.value;
     const vis = id => { const e = el(id); return e && !e.hidden; };
+    if (vis('dxfSchmiegeRow') && vis('dxfNamedSchmiegeRow') && el('dxfNamedSchmiegeCheckbox').checked) {   // Release 270
+      namedSchmiegeLayerList().forEach(n => out.push({ label: T('Schmiege: ', 'Bevel: ') + n, strokes: layerStrokes(n) }));
+    }
     if (vis('dxfSchmiegeRow') && dxfSchmiegeCheckbox.checked) {
       Array.from(dxfSchmiegeLayerList.querySelectorAll('input[type=checkbox]:checked')).forEach(cb => out.push({ label: T('Schmiege: ', 'Bevel: ') + cb.dataset.layer, strokes: layerStrokes(cb.dataset.layer) }));
     }
     if (isMortisePart(t) && vis('dxfMortiseRow')) {
       const names = (dxfMortiseInfo && dxfMortiseInfo.names) || {};
-      const ls = (names.tread || names.riser) ? [names.tread, names.riser].filter(Boolean) : (dxfMortiseLayerSelect.value ? [dxfMortiseLayerSelect.value] : []);
+      const ls = (names.tread || names.riser) ? [names.tread, names.riser].filter(Boolean) : Array.from(dxfMortiseLayerList.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.dataset.layer);   // Release 273
       ls.forEach(n => out.push({ label: T('Einstemmung: ', 'Mortise: ') + n, strokes: layerStrokes(n) }));
     }
     if (vis('dxfPocketRow') && dxfPocketCheckbox.checked) {
