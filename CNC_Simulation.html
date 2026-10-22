@@ -6990,6 +6990,14 @@
   // Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen. Fehlt der Parameter
   // (alle bisherigen Aufrufe/Node-Tests mit 1-2 Argumenten), verhält sich MACHINES.NAMED wie
   // "nicht vorhanden" (findet nichts) - das Verhalten aller anderen Stile ist davon unberührt.
+  // Release 275: Zeilenindex des ersten erkannten Arbeitsgangs (dieselbe Erkennung wie parse(), aber ohne Bewegungs-
+  // Extraktion) oder -1
+  function findFirstOpStartIdx(text, opNames) {
+    const lines = text.replace(/\r\n/g, '\n').split('\n').map(stripN);
+    const found = findGenericOpStart(lines, 0, detectMachine(lines), Array.isArray(opNames) ? opNames : []);
+    return found ? found.start.startIdx : -1;
+  }
+
   function parse(text, detectionText, opNames) {
     const opNameList = Array.isArray(opNames) ? opNames : [];
     const rawLines = text.replace(/\r\n/g, '\n').split('\n');
@@ -10164,7 +10172,7 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -11210,8 +11218,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 274;
-  const APP_RELEASE_TIMESTAMP = '22.10.2026, 11:39 Uhr';
+  const APP_RELEASE_NUMBER = 275;
+  const APP_RELEASE_TIMESTAMP = '22.10.2026, 11:56 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -11455,6 +11463,9 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // - falls dort noch die alte SCM-Regel "O ->G91" steht, müsste sie händisch in "Maschinentypen
   // bearbeiten" nachgezogen oder der SCM-Block über "Maschinentypen zurücksetzen" neu geladen
   // werden.
+  // Release 275 (Sebastian: "Neuer Maschinentyp "Biesse CIX". Kopie von "Biesse" mit allen Austauschwerten usw."): eigener
+  // Block direkt nach "Biesse" - zusätzlich entfernt displayCurrentProgram() bei genau diesem Namen (case-sensitiv) den
+  // Makro-Vorspann zwischen "END MAINDATA" und dem ersten Arbeitsgang, siehe trimBiesseCixPreamble().
   const DEFAULT_MACHINETYPES_TEXT = `[MACHINETYPE Name="Biesse"]
 [SWITCHCASEMACHINE]
 C1=->C
@@ -11479,6 +11490,31 @@ C*-1
 IJMODE=absolute
 CORNERRADIUS=BR=
 [/MACHINETYPE Name="Biesse"]
+
+[MACHINETYPE Name="Biesse CIX"]
+[SWITCHCASEMACHINE]
+C1=->C
+B1=->A
+CR=->R
+OPTI->BLA
+N X->/
+O ->G92
+BEGIN MACRO->/
+NAME=ISO->/
+PARAM,NAME=ISO,VALUE="->/
+END MACRO->/
+G42->G41
+G41->G42
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*-1
+Z*-1
+C*-1
+[/CALCMACHINE]
+IJMODE=absolute
+CORNERRADIUS=BR=
+[/MACHINETYPE Name="Biesse CIX"]
 
 [MACHINETYPE Name="FORMAT4"]
 [SWITCHCASEMACHINE]
@@ -11705,10 +11741,32 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? saved : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateBiesseCixBlock(saved) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
+  }
+  // Release 275: eine bereits gespeicherte (ggf. selbst angepasste) Konfiguration bekommt EINMALIG einen Block
+  // "Biesse CIX" als Kopie des dort vorhandenen "Biesse"-Blocks (mit allen eigenen Austauschwerten), direkt danach
+  // eingefügt. Danach nie wieder (Merker), damit ein bewusst gelöschter Block nicht zurückkommt.
+  const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
+  function migrateBiesseCixBlock(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_BIESSE_CIX)) return text; } catch (e) { return text; }
+    let out = text;
+    if (out.indexOf('[MACHINETYPE Name="Biesse CIX"]') === -1) {
+      const start = out.indexOf('[MACHINETYPE Name="Biesse"]');
+      const endTag = '[/MACHINETYPE Name="Biesse"]';
+      const end = start === -1 ? -1 : out.indexOf(endTag, start);
+      if (start !== -1 && end !== -1) {
+        const blk = out.slice(start, end + endTag.length);
+        const copy = blk.split('[MACHINETYPE Name="Biesse"]').join('[MACHINETYPE Name="Biesse CIX"]').split(endTag).join('[/MACHINETYPE Name="Biesse CIX"]');
+        const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+        out = out.slice(0, end + endTag.length) + nl + nl + copy + out.slice(end + endTag.length);
+        try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+      }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_BIESSE_CIX, '1'); } catch (e) { /* s.o. */ }
+    return out;
   }
   function loadPersistedActiveMachineTypeName() {
     try {
@@ -15406,6 +15464,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const lines = rawText.replace(/\r\n/g, '\n').split('\n');
     const detected = CNCParser.detectMachine(lines);
     const key = MACHINE_DETECT_TO_NAME_KEY[detected];
+    // Release 275: CIX-Programme schlagen bevorzugt den eigenen Maschinentyp "Biesse CIX" vor (exakter Name)
+    if (detected === 'CIX' && configuredNames.indexOf('Biesse CIX') !== -1) return 'Biesse CIX';
     if (key) {
       const match = configuredNames.find(n => n.toLowerCase() === key || n.toLowerCase().startsWith(key));
       if (match) return match;
@@ -16693,8 +16753,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // aufgerufen, wenn die Maschinentyp-Konfiguration nachträglich bearbeitet/geladen wird, damit
   // ein bereits geladenes Programm sofort mit den neuen Regeln neu angezeigt wird.
   let braceCommentsOff = false; // Release 234, siehe displayCurrentProgram()
+  // Release 275 (Sebastian: "Am Anfang vom Biesse CIX-CNC Programm steht ein "END MAINDATA". Direkt danach kommt ein
+  // "BEGIN MACRO". Zwischen diesem "BEGIN MACRO" und dem ersten erkannten Arbeitsgang soll alles gelöscht werden. Das sind
+  // immer tausende von Zeilen, die die Simulation extrem langsam machen. Nicht austauschen, sondern wirklich entfernen und
+  // das nur bei Biesse CIX ... Der Name ist auch so festgelegt, case sensitive und exakt so."): entfernt die Zeilen ab dem
+  // ersten "BEGIN MACRO" nach "END MAINDATA" bis vor den ersten erkannten Arbeitsgang aus dem Programm selbst
+  // (rawProgramText) - danach stimmen alle Zeilennummern (Codeansicht, Bearbeiten, Speichern) mit dem schlanken Programm
+  // überein. Ein zweiter Aufruf ändert nichts mehr (der Arbeitsgang folgt dann direkt).
+  const BIESSE_CIX_NAME = 'Biesse CIX';
+  let lastBiesseCixRemoved = 0;
+  function trimBiesseCixPreamble(text) {
+    const eol = text.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+    const lines = text.replace(/\r\n/g, '\n').split('\n');
+    const endMain = lines.findIndex(l => /^\s*END\s+MAINDATA\s*$/i.test(l));
+    if (endMain === -1) return { text, removed: 0 };
+    let b = -1;
+    for (let i = endMain + 1; i < lines.length; i++) if (/^\s*BEGIN\s+MACRO\s*$/i.test(lines[i])) { b = i; break; }
+    if (b === -1) return { text, removed: 0 };
+    const first = CNCParser.findFirstOpStartIdx(text, opNameList);
+    if (first <= b) return { text, removed: 0 };
+    lines.splice(b, first - b);
+    return { text: lines.join(eol), removed: first - b };
+  }
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
+    if (activeMachineTypeName === BIESSE_CIX_NAME) {   // exakt so (case-sensitiv)
+      const r = trimBiesseCixPreamble(rawProgramText);
+      if (r.removed) { rawProgramText = r.text; lastBiesseCixRemoved = r.removed; }
+    }
     // Aktiver Maschinentyp (31. Runde, ersetzt die frühere einzelne Austauschdatei): erst
     // SWITCHCASEMACHINE (Suchtext->Ersatztext, wie zuvor applySwapRules), danach CALCMACHINE
     // (Achsberechnung, applyAxisCalc) - exakt die Reihenfolge aus DropdownMachinetype.txt Punkt
