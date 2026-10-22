@@ -98,6 +98,9 @@
     --ok: #157a4d;
     --ok-soft: #e1f3ea;
     --warn: #a85a00;
+    --mt-tag-switch: #c62828;   /* Release 269: [SWITCHCASEMACHINE] rot */
+    --mt-tag-calc: #1b7a2c;     /* Release 269: [CALCMACHINE] dunkelgrün */
+    --mt-tag-other: #1f5fbf;    /* Release 269: weitere Tags */
     --warn-soft: #fbead2;
     --danger: #b3261e;
     --danger-soft: #fbe2e0;
@@ -158,6 +161,9 @@
       --ok: #49d191;
       --ok-soft: #123425;
       --warn: #f0b429;
+      --mt-tag-switch: #ff6b6b;
+      --mt-tag-calc: #4cc26a;
+      --mt-tag-other: #6fa8ff;
       --warn-soft: #3a2b0a;
       --danger: #ff7a72;
       --danger-soft: #3a1614;
@@ -197,6 +203,9 @@
     --ok: #49d191;
     --ok-soft: #123425;
     --warn: #f0b429;
+    --mt-tag-switch: #ff6b6b;
+    --mt-tag-calc: #4cc26a;
+    --mt-tag-other: #6fa8ff;
     --warn-soft: #3a2b0a;
     --danger: #ff7a72;
     --danger-soft: #3a1614;
@@ -2113,6 +2122,16 @@
   .shortcut-sep { border-top: 1px solid var(--border); margin: 6px 0; }
   .shortcut-key { font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; white-space: nowrap; }
   .shortcut-desc { color: var(--ink-muted); font-size: 13px; text-align: right; }
+  /* Release 269 (Sebastian: "Umsortierung Shortcuts in 3 Spalten: Linke Spalte: alle F-Tasten Funktionen, Mittlere Spalte:
+     Simulationsoptionen ..., Rechte Spalte: Strg + O ..."): drei gleich breite Spalten mit feiner Trennlinie dazwischen;
+     bei schmalem Fenster untereinander. */
+  #shortcutsPanel .paste-card { width: min(1180px, 96vw); }
+  .shortcut-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; align-items: stretch; }
+  .shortcut-col + .shortcut-col { border-left: 1px solid var(--border); padding-left: 24px; }
+  @media (max-width: 900px) {
+    .shortcut-cols { grid-template-columns: minmax(0, 1fr); }
+    .shortcut-col + .shortcut-col { border-left: 0; padding-left: 0; border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+  }
   /* Warnung bei doppelt vergebenen Maschinentyp-Namen (DropdownMachinetype.txt Punkt 5) - nicht
      blockierend, daher als auffällige, aber nicht rote (keine echte Fehlermeldung) Warnfarbe. */
   #machineTypeDupWarning { color: var(--warn); font-weight: 600; }
@@ -2140,6 +2159,23 @@
      eine eigene, von der gemeinsamen Zentrierung abweichende Positionierung nötig gemacht, was
      Sebastian hier nicht ausdrücklich verlangt hat. */
   #machineTypeEditArea { height: 476px; }
+  /* Release 269 (Sebastian: "Erste Zeile z.B [MACHINETYPE Name="MAKA"] soll fett sein, abschließende Zeile
+     [/MACHINETYPE Name="MAKA"] auch. Jeder weitere "Tag" darunter kriegt eine andere Farbe. [SWITCHCASEMACHINE] Anfangs und
+     End-Tag = rot, [CALCMACHINE], [/CALCMACHINE] = dunkelgrün. Der Text dazwischen ... bleibt einfach weiß (im Darkmode) bzw.
+     in der eingestellten Farbe"): eine Textarea kann keine einzelnen Zeilen einfärben - die farbige Darstellung liegt
+     deshalb als <pre> deckungsgleich HINTER der Textarea (gleiche Schrift, Größe, Zeilenhöhe, Innenabstand), die Textarea
+     selbst hat durchsichtige Schrift und einen sichtbaren Cursor. Kein Zeilenumbruch (wrap="off"), damit beide Ebenen
+     exakt dieselben Zeilen haben; gescrollt wird synchron. "Fett" ohne breitere Buchstaben (Kontur statt Fettschnitt),
+     damit Cursor und Markierung exakt auf den Zeichen bleiben. */
+  .mt-hl-wrap { position: relative; border-radius: 8px; background: var(--panel-2); }
+  .mt-hl-wrap #machineTypeEditArea { position: relative; z-index: 1; display: block; background: transparent; color: transparent; caret-color: var(--ink); white-space: pre; overflow: auto; line-height: 18px; }
+  .mt-hl-wrap #machineTypeEditArea::placeholder { color: var(--ink-faint); }
+  .mt-hl { position: absolute; inset: 0; margin: 0; padding: 10px; border: 1px solid transparent; border-radius: 8px; overflow: hidden; pointer-events: none;
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; font-size: 12.5px; line-height: 18px; white-space: pre; color: var(--ink); background: transparent; }
+  .mt-hl .mt-name { -webkit-text-stroke: 0.5px currentColor; }
+  .mt-hl .mt-sw { color: var(--mt-tag-switch); }
+  .mt-hl .mt-calc { color: var(--mt-tag-calc); }
+  .mt-hl .mt-tag { color: var(--mt-tag-other); }
   /* Warnung bei einem Knowledge-Base-Eintrag, der nicht mit "[" beginnt bzw. nicht mit "]" endet
      (Release 106, Sebastian: "Warnung ausgeben, wenn neuer Hilfeeintrag in Knowledge Base nicht
      mit [ oder ] gestartet bzw. beendet worden ist. Jetzt fällt der Eintrag einfach unter den
@@ -2204,6 +2240,18 @@
   .dxf-def-legend { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--ink-muted); }
   .dxf-def-legend .chip { display: inline-block; width: 18px; height: 4px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
   .paste-actions .dxf-preview-toggle { margin-right: auto; align-self: center; }
+  /* Release 268 (Sebastian: "Beim "DXF-Bauteil definieren" und "Bauteildefinition" (in den Einstellungen) sollte es eine
+     Vorschau geben wenn eine Textur geladen wird wie die ausschaut."): Texturbild unter der DXF-Vorschau (Breite wie die
+     Vorschau, 380 px) bzw. rechts in der Bauteildefinition (170 px) */
+  .dxf-tex-thumb { display: flex; flex-direction: column; gap: 4px; }
+  .dxf-tex-thumb[hidden] { display: none; }
+  .dxf-tex-thumb canvas { display: block; border: 1px solid var(--border); border-radius: 6px; background: #f4f4f4; }
+  .dxf-tex-thumb-info { font-size: 11.5px; color: var(--ink-muted); white-space: pre-line; }
+  #dxfDefTexturePreview { margin-top: 6px; }
+  .dpd-layout { display: flex; gap: 18px; align-items: flex-start; }
+  .dpd-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .dpd-tex-preview { flex: 0 0 170px; width: 170px; position: sticky; top: 0; }
+  #dxfPartDefaultsPanel .paste-card.dpd-with-tex { width: min(828px, 96vw); }
   /* Release 260: das Fenster ist höher geworden (Füllung/Textur) - bei kleinem Bildschirm scrollt es; die Titelzeile bleibt
      oben stehen, damit man es immer verschieben kann */
   #dxfThicknessPanel .paste-card > h3 { position: sticky; top: -16px; z-index: 3; background: var(--panel); margin-top: -16px; padding: 16px 0 6px; }
@@ -3707,7 +3755,11 @@
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
     <p class="panel-hint" data-i18n-en-html="One block per machine type: &lt;span class=&quot;k&quot;&gt;[MACHINETYPE Name=&quot;…&quot;]&lt;/span&gt;, containing &lt;span class=&quot;k&quot;&gt;[SWITCHCASEMACHINE]&lt;/span&gt; (replacement rules as in the former exchange file: &lt;span class=&quot;k&quot;&gt;search text-&gt;replacement text&lt;/span&gt; per line; comments stay untouched unless the search text itself contains a “;” or the rule starts with &lt;span class=&quot;k&quot;&gt;!&lt;/span&gt; – e.g. &lt;span class=&quot;k&quot;&gt;!___-&gt;/&lt;/span&gt; also removes underscores in comments) and &lt;span class=&quot;k&quot;&gt;[CALCMACHINE]&lt;/span&gt; (axis calculation, per line &lt;span class=&quot;k&quot;&gt;axis*factor&lt;/span&gt; to multiply, e.g. &lt;span class=&quot;k&quot;&gt;Y*-1&lt;/span&gt;, OR &lt;span class=&quot;k&quot;&gt;axis+number&lt;/span&gt;/&lt;span class=&quot;k&quot;&gt;axis-number&lt;/span&gt; to add/subtract, e.g. &lt;span class=&quot;k&quot;&gt;C+90&lt;/span&gt; – applies to every axis letter, including the rotation/tilt angles A/B/C, and multiple lines per axis are applied one after another), closed with &lt;span class=&quot;k&quot;&gt;[/MACHINETYPE Name=&quot;…&quot;]&lt;/span&gt;. Is only applied to a loaded program after selecting it in the dropdown and clicking “Ok”.">Je Maschinentyp ein Block: <span class="k">[MACHINETYPE Name="…"]</span>, darin <span class="k">[SWITCHCASEMACHINE]</span> (Ersetzungsregeln wie bei der früheren Austauschdatei: <span class="k">Suchtext-&gt;Ersatztext</span> je Zeile; Kommentare bleiben unangetastet, außer der Suchtext enthält selbst ein „;“ oder die Regel beginnt mit <span class="k">!</span> – z.&nbsp;B. <span class="k">!___-&gt;/</span> entfernt Unterstriche auch in Kommentaren) und <span class="k">[CALCMACHINE]</span> (Achsberechnung, je Zeile <span class="k">Achse*Faktor</span> zum Multiplizieren, z.&nbsp;B. <span class="k">Y*-1</span>, ODER <span class="k">Achse+Zahl</span>/<span class="k">Achse-Zahl</span> zum Addieren/Subtrahieren, z.&nbsp;B. <span class="k">C+90</span> – gilt für jeden Achsbuchstaben, also auch für die Dreh-/Kippwinkel A/B/C, und mehrere Zeilen je Achse werden nacheinander angewendet), abgeschlossen mit <span class="k">[/MACHINETYPE Name="…"]</span>. Wird erst nach Auswahl im Dropdown und Klick auf „Ok" auf ein geladenes Programm angewendet.</p>
-    <textarea id="machineTypeEditArea" placeholder='[MACHINETYPE Name="Biesse"]&#10;[SWITCHCASEMACHINE]&#10;CR=->R&#10;[/SWITCHCASEMACHINE]&#10;[CALCMACHINE]&#10;Y*-1&#10;Z*-1&#10;[/CALCMACHINE]&#10;[/MACHINETYPE Name="Biesse"]' spellcheck="false"></textarea>
+    <!-- Release 269 (Sebastian: "Maschinentypen bearbeiten ergänzen um A, B, C, D usw. wie bei der Knowledge Base. Das triggert
+         auf das, was nach "MASCHINETYPE Name=" steht") + farbige Tags (siehe .mt-hl im CSS) -->
+    <div class="kb-az-bar" id="machineTypeAzBar"></div>
+    <div class="mt-hl-wrap"><pre class="mt-hl" id="machineTypeEditHl" aria-hidden="true"></pre>
+    <textarea id="machineTypeEditArea" wrap="off" placeholder='[MACHINETYPE Name="Biesse"]&#10;[SWITCHCASEMACHINE]&#10;CR=->R&#10;[/SWITCHCASEMACHINE]&#10;[CALCMACHINE]&#10;Y*-1&#10;Z*-1&#10;[/CALCMACHINE]&#10;[/MACHINETYPE Name="Biesse"]' spellcheck="false"></textarea></div>
     <p class="panel-hint" id="machineTypeDupWarning" hidden></p>
     <!-- "Maschinentypen zurücksetzen" (Release 134, Sebastian: "Einen Reset-Knopf nur für
          Maschinentypen in 'Maschinentypen bearbeiten'" - Antwort auf die Frage, ob sich das manuelle
@@ -3773,29 +3825,49 @@
     <!-- Release 242 (Sebastian: "Bitte die Shortcuts-Liste umordnen ... Bitte auch Trennlinien einbauen!"):
          thematisch gruppiert - Hilfe/Sprache | Simulation/Navigation | 3D-Ansicht | Messen | CNC laden |
          DXF | Profile | Dialoge; zwischen den Gruppen je eine Trennlinie (.shortcut-sep). -->
-    <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open shortcuts list">Shortcuts-Liste öffnen</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow left">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Home">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
-    <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
-    <div class="shortcut-sep"></div>
-    <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
-    <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
+    <!-- Release 269 (Sebastian: "Umsortierung Shortcuts in 3 Spalten: Linke Spalte: alle F-Tasten Funktionen; Mittlere
+         Spalte: Simulationsoptionen (Leertaste runter bis Shift + Pfeiltaste links), Trennstrich, Pos1/Home, Trennstrich,
+         Längenmessung und Winkelmessung; Rechte Spalte: Strg + O, Trennstrich, Shift + O, Shift + B, Trennstrich, Strg + Alt + W,
+         Strg + Alt + S, Trennstrich, Sprache umschalten, Enter und Escape") -->
+    <div class="shortcut-cols">
+    <div class="shortcut-col" id="shortcutColF">
+      <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open shortcuts list">Shortcuts-Liste öffnen</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F2</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F3</span><span class="shortcut-desc" data-i18n-en="Show/hide DXF">DXF aus-/einblenden</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F4</span><span class="shortcut-desc" data-i18n-en="Edit machine type">Maschinentyp bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F5</span><span class="shortcut-desc" data-i18n-en="Edit CNC-Code">CNC-Code bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F6</span><span class="shortcut-desc" data-i18n-en="Approximated milling time">Fräszeitberechnung</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F7</span><span class="shortcut-desc" data-i18n-en="Change background">Hintergrundmodus umschalten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F8</span><span class="shortcut-desc" data-i18n-en="3D area settings">3D Bereichseinstellungen</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F9</span><span class="shortcut-desc" data-i18n-en="Knowledge Base">Knowledge Base</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F11</span><span class="shortcut-desc" data-i18n-en="Empty everything">Simulation leeren</span></div>
+    </div>
+    <div class="shortcut-col" id="shortcutColSim">
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow left">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Home">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
+    </div>
+    <div class="shortcut-col" id="shortcutColFiles">
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
+      <div class="shortcut-sep"></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
+    </div>
+    </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnShortcutsClose" type="button" data-i18n-en="Close">Schließen</button>
     </div>
@@ -4265,6 +4337,12 @@
       <div class="scale-group-title"><span data-i18n-en="Preview">Vorschau</span></div>
       <canvas id="dxfDefPreviewCanvas"></canvas>
       <div class="dxf-def-legend" id="dxfDefPreviewLegend"></div>
+      <!-- Release 268: Bild der gewählten Textur unter der DXF-Vorschau (nur bei Füllung "Textur") -->
+      <div class="dxf-tex-thumb" id="dxfDefTexturePreview" hidden>
+        <div class="scale-group-title"><span data-i18n-en="Texture">Textur</span>: <span id="dxfDefTextureName"></span></div>
+        <canvas id="dxfDefTextureCanvas"></canvas>
+        <div class="dxf-tex-thumb-info" id="dxfDefTextureInfo"></div>
+      </div>
     </div>
     </div>
     <div class="paste-actions">
@@ -4328,6 +4406,8 @@
 <div class="paste-panel" id="dxfPartDefaultsPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Part definition (defaults)">Bauteildefinition (Standardwerte)</h3>
+    <!-- Release 268: zweispaltig - rechts die Texturvorschau (nur bei Füllung "Textur") -->
+    <div class="dpd-layout"><div class="dpd-main">
     <p class="panel-hint" data-i18n-en="Defaults for &quot;DXF drawing settings&quot; on import.">Standardwerte für „DXF-Bauteil definieren“ beim Import.</p>
     <label class="scale-option"><input type="checkbox" id="dpdByName"> <span data-i18n-en="Preselect part type from file name">Bauteil aus dem Dateinamen vorwählen</span></label>
     <label class="scale-option"><input type="checkbox" id="dpdAutoApply"> <span data-i18n-en="Apply automatically on import">Beim Import automatisch anwenden</span></label>
@@ -4437,6 +4517,13 @@
             </label>
           </div>
         </div>
+    </div>
+    </div>
+    <div class="dxf-tex-thumb dpd-tex-preview" id="dpdTexturePreview" hidden>
+      <div class="scale-group-title" data-i18n-en="Texture preview">Texturvorschau</div>
+      <canvas id="dpdTextureCanvas"></canvas>
+      <div class="dxf-tex-thumb-info" id="dpdTextureInfo"></div>
+    </div>
     </div>
     <p class="panel-hint" id="dpdWarning" hidden></p>
     <div class="paste-actions">
@@ -10920,8 +11007,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 267;
-  const APP_RELEASE_TIMESTAMP = '21.10.2026, 15:00 Uhr';
+  const APP_RELEASE_NUMBER = 269;
+  const APP_RELEASE_TIMESTAMP = '22.10.2026, 07:49 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -22153,7 +22240,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const openPanel = topOpenPastePanel();   // Release 264: nur das vorderste Fenster reagiert auf Enter
       if (!openPanel) return;
       const primaryBtn = openPanel.querySelector('.paste-actions .btn.primary');
-      if (primaryBtn) { e.preventDefault(); primaryBtn.click(); }
+      if (primaryBtn) { e.preventDefault(); primaryBtn.click(); return; }
+      // Release 269 (Sebastian: "Shortcuts-Liste Aufruf, kann auch mit Enter verlassen werden."): reine Info-Fenster
+      // ohne Bestätigen-Knopf (nur "Schließen") schließt Enter wie Escape.
+      const closeBtn = openPanel.querySelector(".paste-actions button[id$='Close']");
+      if (closeBtn) { e.preventDefault(); closeBtn.click(); }
     }
   });
 
@@ -22259,8 +22350,65 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // kleinschreibungsunabhängig, wie auch das Dropdown selbst den Namen vergleicht, siehe
   // z. B. setScope()) über den gesamten Marker statt nur den nackten Namen, um nicht versehentlich
   // auf den Namen irgendeiner anderen Stelle im Text (z. B. als Teil eines Kommentars) zu treffen.
+  // Release 269: farbige Darstellung + A-Z-Sprungleiste (siehe .mt-hl im CSS)
+  const machineTypeEditHl = el('machineTypeEditHl');
+  const mtHlEsc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Klasse einer Zeile: nur reine Tag-Zeilen ([NAME ...] bzw. [/NAME ...], ohne "->") werden eingefärbt
+  function machineTypeLineClass(line) {
+    if (line.indexOf('->') !== -1) return '';
+    const m = /^\s*\[\/?([A-Za-z][A-Za-z0-9_]*)(?:\s[^\]]*)?\]\s*$/.exec(line);
+    if (!m) return '';
+    const tag = m[1].toUpperCase();
+    if (tag === 'MACHINETYPE') return 'mt-name';
+    if (tag.indexOf('SWITCHCASE') === 0) return 'mt-sw';
+    if (tag.indexOf('CALC') === 0) return 'mt-calc';
+    return 'mt-tag';
+  }
+  function syncMachineTypeHighlightScroll() {
+    machineTypeEditHl.scrollTop = machineTypeEditArea.scrollTop;
+    machineTypeEditHl.scrollLeft = machineTypeEditArea.scrollLeft;
+  }
+  function renderMachineTypeHighlight() {
+    machineTypeEditHl.innerHTML = machineTypeEditArea.value.split('\n').map(line => {
+      const cls = machineTypeLineClass(line);
+      return cls ? '<span class="' + cls + '">' + mtHlEsc(line) + '</span>' : mtHlEsc(line);
+    }).join('\n') + '\n\n\n';   // Reserve: die Textarea kann wegen ihrer Scrollleisten etwas weiter scrollen
+    syncMachineTypeHighlightScroll();
+  }
+  machineTypeEditArea.addEventListener('input', renderMachineTypeHighlight);
+  machineTypeEditArea.addEventListener('scroll', syncMachineTypeHighlightScroll);
+  // A-Z: springt zum ersten Maschinentyp, dessen Name (nach [MACHINETYPE Name=") mit diesem Buchstaben beginnt - gibt es
+  // keinen, zum nächsten Buchstaben danach (wie bei der Knowledge Base).
+  function jumpToMachineTypeLetter(letter) {
+    const text = machineTypeEditArea.value;
+    const re = /^([ \t]*)\[MACHINETYPE\s+Name\s*=\s*"([^"]*)"[^\]\n]*\]/gim;
+    const list = [];
+    let m;
+    while ((m = re.exec(text))) list.push({ index: m.index + m[1].length, name: m[2].trim() });
+    if (!list.length) return;
+    const sorted = list.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const target = sorted.find(o => o.name.charAt(0).toUpperCase() >= letter) || sorted[sorted.length - 1];
+    const lineIndex = (text.slice(0, target.index).match(/\n/g) || []).length;
+    const lineHeightPx = parseFloat(getComputedStyle(machineTypeEditArea).lineHeight) || 18;
+    machineTypeEditArea.focus();
+    machineTypeEditArea.setSelectionRange(target.index, target.index);
+    machineTypeEditArea.scrollTop = lineIndex * lineHeightPx;
+    syncMachineTypeHighlightScroll();
+  }
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kb-letter-btn';
+    btn.textContent = letter;
+    btn.dataset.letter = letter;
+    btn.title = 'Zum Maschinentyp ab "' + letter + '" springen';   // Sprachwechsel über das generische data-i18n-en-title
+    btn.setAttribute('data-i18n-en-title', 'Jump to the machine type starting with "' + letter + '"');
+    btn.addEventListener('click', () => jumpToMachineTypeLetter(letter));
+    el('machineTypeAzBar').appendChild(btn);
+  });
   btnEditMachineTypes.addEventListener('click', () => {
     machineTypeEditArea.value = machineTypesConfigText;
+    renderMachineTypeHighlight();
     checkMachineTypeDuplicates();
     machineTypeEditPanel.classList.add('open');
     machineTypeEditArea.focus();
@@ -22296,6 +22444,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
     if (!jumped) machineTypeEditArea.setSelectionRange(0, 0);
+    syncMachineTypeHighlightScroll();
   });
   // Release 193, Punkt 1+2: neues Zahnrad-Icon direkt im Menüband neben "Maschinentyp"
   // (#btnMachineTypeSettings, siehe Markup-Kommentar dort) - simuliert einen echten Klick auf
@@ -22347,6 +22496,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     machineTypesConfigText = DEFAULT_MACHINETYPES_TEXT;
     machineTypes = CNCSwap.parseMachineTypes(machineTypesConfigText);
     machineTypeEditArea.value = machineTypesConfigText;
+    renderMachineTypeHighlight();   // Release 269
     checkMachineTypeDuplicates();
     populateMachineTypeSelect(DEFAULT_ACTIVE_MACHINETYPE_NAME);
     activeMachineTypeName = machineTypeSelect.value;
@@ -23423,6 +23573,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     }
     activeColorProfile = applyColorProfile(profile);
     persistColorProfile(activeColorProfile);
+    if (activeColorProfile.mode !== 'dark') rememberLightColorProfile(activeColorProfile);   // Release 269 (F7)
     colorProfilePanel.classList.remove('open');
   });
   // "Standardwerte wiederherstellen" (Release 179, Punkt 1, siehe ausführlichen Markup-Kommentar
@@ -23435,6 +23586,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!window.confirm('Die Hintergrundfarbe wird auf „automatisch" zurückgesetzt. Fortführen?')) return;
     try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) { /* siehe loadPersistedColorProfile() oben */ }
     activeColorProfile = applyColorProfile(null);
+    forgetLightColorProfile();   // Release 269 (F7)
     syncColorProfilePanelFromActive();
     colorProfilePanel.classList.remove('open');
   });
@@ -25823,6 +25975,84 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (document.querySelector('.paste-panel.open')) return;
     shortcutsPanel.classList.add('open');
   });
+  // Release 269 (Sebastian: "Shortcuts einbauen: F2 DXF-Bauteil definieren, F3 DXF aus-/einblenden, F4 Maschinentyp
+  // bearbeiten, F5 CNC-Code bearbeiten, F6 Fräszeitberechnung, F7 Hintergrundmodus umschalten, F8 3D Bereichseinstellungen,
+  // F9 Knowledge Base, F10 Arbeitsgang-Namen bearbeiten, F11 Simulation leeren"): jede Taste löst exakt denselben Knopf
+  // bzw. dieselbe Funktion aus wie der zugehörige Menüpunkt - deren eigene Sperren (z. B. "kein DXF geladen") gelten
+  // damit automatisch mit (.click() auf einen deaktivierten Knopf bewirkt nichts). Wie bei F1: nur ohne Strg/Alt/Shift
+  // (Alt+F4 & Co. bleiben unberührt), auch aus Eingabefeldern heraus, und bei offenem Dialog passiert nichts. Die
+  // Browser-/WebView2-Standardwirkung (F5 neu laden, F3 Suchen, F7 Textcursor, F10 Menü, F11 Vollbild) wird IMMER
+  // unterdrückt - ein versehentliches F5 darf die Seite samt geladenem Programm nicht neu laden.
+  const FKEY_ACTIONS = {
+    F2: () => openDxfThicknessPanel(),
+    F3: () => btnToggleDxf.click(),
+    F4: () => btnEditMachineTypes.click(),
+    F5: () => btnEditProgramToolbarIcon.click(),
+    F6: () => el('btnMillTime').click(),
+    F7: () => toggleBackgroundMode(),
+    F8: () => el('btnArea3dSettings').click(),
+    F9: () => btnOpenKnowledgeBase.click(),
+    F10: () => btnEditOpNames.click(),
+    F11: () => emptySimulation()
+  };
+  window.addEventListener('keydown', (e) => {
+    const act = FKEY_ACTIONS[e.key];
+    if (!act || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (document.querySelector('.paste-panel.open')) return;
+    act();
+  });
+  // F11 "Simulation leeren" / "Empty everything": löscht DXF und CNC-Programm, wenn vorhanden (ist nur eins von beiden
+  // geladen, nur das). Dieselben Funktionen wie "CNC-Programm löschen" (clearProgram) und "DXF löschen" (clearDxf),
+  // die Programmliste bleibt unverändert. Erst das Programm, dann das DXF.
+  function emptySimulation() {
+    clearProgram();
+    clearDxf();
+  }
+  // F7 "Hintergrundmodus umschalten" / "Change background": wechselt zwischen Dark Mode und der bisherigen Einstellung
+  // (Erscheinungsbild -> Farben -> Hintergrundfarbe). Standard <-> Dark Mode, Benutzerfarben <-> Dark Mode (die
+  // Benutzerfarben bleiben dabei erhalten). Ist Dark Mode aktiv und keine vorherige Einstellung bekannt -> Standard.
+  // Die "vorherige" (helle) Einstellung wird gemerkt, sobald F7 auf Dark Mode schaltet oder im Farbdialog eine helle
+  // Einstellung übernommen wird; sie übersteht einen Neustart (localStorage). "Automatisch" (nie eingestellt) zählt
+  // als hell, außer das System selbst steht auf dunkel.
+  const LS_KEY_COLOR_PROFILE_LIGHT = 'cncsim.colorProfileLight';
+  function rememberLightColorProfile(profile) {
+    try { window.localStorage.setItem(LS_KEY_COLOR_PROFILE_LIGHT, JSON.stringify(profile && profile.mode !== 'dark' ? profile : { mode: 'auto' })); } catch (e) { /* s. loadPersistedColorProfile() */ }
+  }
+  function forgetLightColorProfile() {
+    try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE_LIGHT); } catch (e) { /* s.o. */ }
+  }
+  function loadLightColorProfile() {
+    try {
+      const d = JSON.parse(window.localStorage.getItem(LS_KEY_COLOR_PROFILE_LIGHT) || 'null');
+      if (d && (d.mode === 'standard' || d.mode === 'custom' || d.mode === 'auto')) return d;
+    } catch (e) { /* s.o. */ }
+    return null;
+  }
+  function isBackgroundDark() {
+    const mode = activeColorProfile ? activeColorProfile.mode : 'auto';
+    if (mode === 'dark') return true;
+    if (mode === 'auto' && window.matchMedia) return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false;
+  }
+  function toggleBackgroundMode() {
+    if (isBackgroundDark()) {
+      const prev = loadLightColorProfile();
+      if (prev && prev.mode === 'auto' && !(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) { /* s.o. */ }
+        activeColorProfile = applyColorProfile(null);
+      } else {
+        activeColorProfile = applyColorProfile(prev && prev.mode !== 'auto' ? prev : { mode: 'standard' });
+        persistColorProfile(activeColorProfile);
+      }
+    } else {
+      rememberLightColorProfile(activeColorProfile || { mode: 'auto' });
+      activeColorProfile = applyColorProfile({ mode: 'dark' });
+      persistColorProfile(activeColorProfile);
+    }
+    requestRender();
+  }
   // Release 237 (Sebastian: "In der Shortcuts-Liste ist eine Verlinkung zur "Knowledge Base" rechts
   // oben im Fenster"): schließt die Liste und löst denselben Klick wie der Menüpunkt "Knowledge Base"
   // aus (befüllt den Editor in der aktuellen Sprache, siehe btnOpenKnowledgeBase-Handler).
@@ -28250,6 +28480,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     lg.innerHTML = '';
     if (!hl.length) { const d = document.createElement('div'); d.textContent = T('Aktivierte Bearbeitungen werden hier farbig hervorgehoben.', 'Activated machining is highlighted here in colour.'); lg.appendChild(d); }
     hl.forEach(h => { const d = document.createElement('div'); const c = document.createElement('span'); c.className = 'chip'; c.style.background = h.color; d.appendChild(c); d.appendChild(document.createTextNode(h.label)); lg.appendChild(d); });
+    updateDxfDefTexturePreview();   // Release 268: Texturbild unter der Vorschau
     window.__lastDxfDefPreview = { shown: true, highlights: hl.map(h => ({ label: h.label, color: h.color, strokes: h.strokes.length })) };
   }
   function scheduleDxfDefPreview() { if (!dxfDefPreviewRaf) dxfDefPreviewRaf = requestAnimationFrame(drawDxfDefPreview); }
@@ -28327,6 +28558,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const tex = el('dpdFillMode').value === 'texture';
     el('dpdTextureField').hidden = !tex;
     el('dpdFillColorField').hidden = tex;
+    updateDpdTexturePreview();   // Release 268
   }
   // Release 263 (Sebastian: "Voreingestellte Werte bei der Bauteildefinition: Wenn Textur ausgewählt -> Transparenz 0%, Wenn
   // Füllfarbe ausgewählt -> Transparenz 25%")
@@ -28422,6 +28654,68 @@ Sebastian Bäcker (Anschrift wie oben)`,
     };
     img.src = dataUrl;
   }
+  // Release 268 (Sebastian: "Beim "DXF-Bauteil definieren" und "Bauteildefinition" (in den Einstellungen) sollte es eine
+  // Vorschau geben wenn eine Textur geladen wird wie die ausschaut. Beim "DXF-Bauteil definieren" kann nur ein Bild der
+  // Textur unter der DXF-Vorschau gezeigt werden. An die bisherige Fensterbreite angepasst. Bei der "Bauteildefinition"
+  // sollte es rechts eine Vorschau geben. Nicht zu groß."): kleines Texturbild, aneinandergereiht wie auf dem Bauteil (jede
+  // zweite Kachel gespiegelt, siehe dxfTexSample()). Breite fest (cssW), Höhe nach Seitenverhältnis bis maxH; bei hohen
+  // Bildern werden die Kacheln kleiner und es kommen weitere Spalten dazu - die Fläche ist immer ganz gefüllt, nie verzerrt.
+  const dxfTexThumbImgs = new Map();   // dataUrl -> Image
+  function drawDxfTextureThumb(cv, texId, cssW, maxH, redraw) {
+    const tex = getDxfTextureById(texId);
+    if (!tex || !tex.dataUrl) return false;
+    let img = dxfTexThumbImgs.get(tex.dataUrl);
+    if (!img) {
+      img = new Image();
+      img.onload = () => { img.__ready = true; redraw(); };
+      img.src = tex.dataUrl;
+      dxfTexThumbImgs.set(tex.dataUrl, img);
+    }
+    const iw = img.__ready ? img.naturalWidth : (tex.w || 1), ih = img.__ready ? img.naturalHeight : (tex.h || 1);
+    let tw = cssW / 2, th = tw * ih / iw;
+    if (2 * th > maxH) { th = maxH / 2; tw = th * iw / ih; }
+    const cssH = Math.max(20, Math.round(Math.min(maxH, 2 * th)));
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+    cv.style.width = cssW + 'px'; cv.style.height = cssH + 'px';
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, cssW, cssH);
+    if (!img.__ready) return true;
+    for (let j = 0; j * th < cssH; j++) for (let i = 0; i * tw < cssW; i++) {
+      g.save(); g.translate((i + i % 2) * tw, (j + j % 2) * th); g.scale(i % 2 ? -1 : 1, j % 2 ? -1 : 1); g.drawImage(img, 0, 0, tw, th); g.restore();
+    }
+    cv.__texThumb = { id: tex.id, cssW: cssW, cssH: cssH, ready: true };   // nur Diagnose/Tests
+    return true;
+  }
+  function dxfTextureThumbInfo(tex) {
+    const tile = tex.tileWidthMm || 0;
+    return (tile > 0 ? T('Kachel ', 'Tile ') + Math.round(tile) + ' × ' + Math.round(tile * (tex.h || 1) / (tex.w || 1)) + ' mm, ' : '') +
+      T('aneinandergereiht wie auf dem Bauteil', 'tiled as on the part');
+  }
+  // "DXF-Bauteil definieren": unter der DXF-Vorschau, nur bei sichtbarer Textur-Auswahl
+  function updateDxfDefTexturePreview() {
+    const box = el('dxfDefTexturePreview');
+    const tid = el('dxfTextureSelect').value;
+    const tex = el('dxfTextureRow').hidden || !tid ? null : getDxfTextureById(tid);
+    box.hidden = !tex;
+    if (!tex) return;
+    el('dxfDefTextureName').textContent = tex.name;
+    el('dxfDefTextureInfo').textContent = dxfTextureThumbInfo(tex);
+    drawDxfTextureThumb(el('dxfDefTextureCanvas'), tid, 380, 190, () => { if (dxfThicknessPanel.classList.contains('open')) scheduleDxfDefPreview(); });
+  }
+  // "Bauteildefinition": rechte Spalte, das Fenster wird dafür breiter
+  function updateDpdTexturePreview() {
+    const box = el('dpdTexturePreview');
+    const tid = el('dpdTextureSelect').value;
+    const tex = el('dpdFillMode').value === 'texture' && tid ? getDxfTextureById(tid) : null;
+    box.hidden = !tex;
+    dxfPartDefaultsPanel.querySelector('.paste-card').classList.toggle('dpd-with-tex', !!tex);
+    if (!tex) return;
+    el('dpdTextureInfo').textContent = tex.name + '\n' + dxfTextureThumbInfo(tex);
+    drawDxfTextureThumb(el('dpdTextureCanvas'), tid, 170, 170, () => { if (dxfPartDefaultsPanel.classList.contains('open')) updateDpdTexturePreview(); });
+  }
+  el('dpdTextureSelect').addEventListener('change', updateDpdTexturePreview);
   const texTileValue = () => parseFloat(normalizeToolValue(el('dxfTextureTileInput').value, 0));
   function updateDxfTextureInfo() {
     const info = el('dxfTextureInfo');
@@ -28461,8 +28755,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   // nach jeder Änderung der Texturliste: offene Auswahllisten und die Darstellung aktualisieren
   function onDxfTexturesChanged() {
-    if (dxfPartDefaultsPanel.classList.contains('open')) { const v = el('dpdTextureSelect').value; fillDxfTextureSelect(el('dpdTextureSelect'), v || (dpdWork && dpdWork.parts[dpdCurrent].textureId)); }
-    if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value || dxfTextureId); updateDxfThicknessColorRowVisibility(); }
+    if (dxfPartDefaultsPanel.classList.contains('open')) { const v = el('dpdTextureSelect').value; fillDxfTextureSelect(el('dpdTextureSelect'), v || (dpdWork && dpdWork.parts[dpdCurrent].textureId)); updateDpdTexturePreview(); }
+    if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value || dxfTextureId); updateDxfThicknessColorRowVisibility(); scheduleDxfDefPreview(); }
     dxfTexVersion++;
     if (dxfGeometry) { recomputeMortise(); updateDxfUI(); }
     requestRender();
@@ -28550,7 +28844,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Release 263: Sprachwechsel - die Namen der Standardtexturen in offenen Auswahllisten nachziehen
   ['langBtnDe', 'langBtnEn'].forEach(id => { const b = el(id); if (b) b.addEventListener('click', () => setTimeout(() => {
     if (dxfTexturePanel.classList.contains('open')) { const cur = texEdit && texEdit.id; refreshDxfTextureList(); if (cur && texEdit.std) loadDxfTextureIntoForm(cur); else if (cur) dxfTextureListSelect.value = cur; }
-    if (dxfPartDefaultsPanel.classList.contains('open')) fillDxfTextureSelect(el('dpdTextureSelect'), el('dpdTextureSelect').value);
+    if (dxfPartDefaultsPanel.classList.contains('open')) { fillDxfTextureSelect(el('dpdTextureSelect'), el('dpdTextureSelect').value); updateDpdTexturePreview(); }
     if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value); drawDxfDefPreview(); }   // R264: Legende der Vorschau
   }, 0)); });
 
