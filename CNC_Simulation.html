@@ -4241,16 +4241,17 @@
         </select>
       </label>
     </div>
-    <!-- Release 280: "Profil" (nur im Krümmling-Modus); Trennstrich danach = #dxfSepFill vor der Füllung -->
+    <div class="tool-data-row" id="dxfThicknessRow">
+      <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
+        <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
+      </label>
+    </div>
+    <!-- Release 280/281: "Profil" beim Krümmling und beim Handlauf; Trennstrich danach = #dxfSepSchmiege (Handlauf) bzw.
+         #dxfSepFill vor der Füllung (Krümmling) -->
     <hr class="dxf-part-sep" id="dxfSepProfile" hidden>
     <div class="tool-data-row" id="dxfProfileRow" hidden>
       <label class="tool-data-field"><span data-i18n-en="Profile">Profil</span>
         <select id="dxfProfileSelect" class="filename-input"></select>
-      </label>
-    </div>
-    <div class="tool-data-row" id="dxfThicknessRow">
-      <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
-        <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
     <hr class="dxf-part-sep" id="dxfSepSchmiege">
@@ -10395,9 +10396,10 @@
       st.push({ a: A[i], U: [B[i][0] - A[i][0], B[i][1] - A[i][1], B[i][2] - A[i][2]], V: [D[i][0] - A[i][0], D[i][1] - A[i][1], D[i][2] - A[i][2]],
         c: [(A[i][0] + C[i][0]) / 2, (A[i][1] + C[i][1]) / 2, (A[i][2] + C[i][2]) / 2] });
     }
-    const fa = y => (roundAtAD ? (ymax - y) / h : (y - ymin) / h), fb = x => (x - xmin) / w;
+    // Release 281: "gedreht" = 180° um die Längsachse (auch die Profilbreite kehrt sich um, wichtig bei unsymmetrischen Profilen)
+    const fa = y => (roundAtAD ? (ymax - y) / h : (y - ymin) / h), fb = x => (rotated ? (xmax - x) / w : (x - xmin) / w);
     const map = (s, x, y) => { const a = fa(y), b = fb(x); return [s.a[0] + s.U[0] * a + s.V[0] * b, s.a[1] + s.U[1] * a + s.V[1] * b, s.a[2] + s.U[2] * a + s.V[2] * b]; };
-    const dir = (s, nx, ny) => { const da = (roundAtAD ? -ny : ny) / h, db = nx / w; return [s.U[0] * da + s.V[0] * db, s.U[1] * da + s.V[1] * db, s.U[2] * da + s.V[2] * db]; };
+    const dir = (s, nx, ny) => { const da = (roundAtAD ? -ny : ny) / h, db = (rotated ? -nx : nx) / w; return [s.U[0] * da + s.V[0] * db, s.U[1] * da + s.V[1] * db, s.U[2] * da + s.V[2] * db]; };
     const M = P.length;
     // Stationen einmal abbilden
     const G = st.map(s => P.map(p => map(s, p[0], p[1])));
@@ -10453,6 +10455,162 @@
     const zTop = map(st[0], xm, ymax)[2], zBottom = map(st[0], xm, ymin)[2];
     const mesh = { tris: [], walls: [], faces3, rings, ringLayer: krm.layer, levels: [], bores: null, kruemmling: true, profile: true };
     return { ok: true, mesh, info: { width: w, height: h, rotated, roundUp: zTop > zBottom, zDxfTop: zTop, zDxfBottom: zBottom, points: M, creases: creases.length, faces: faces3.length } };
+  }
+
+  // Release 281 (Sebastian: "1 Das Handlaufprofil soll auch beim Bauteil "Handlauf" auswählbar sein 2 Das Profil soll dann
+  // über den Handlauf gelegt werden 3 Die Profildrehung ist auch möglich und wird berücksichtig ... weil die Richtung aus dem
+  // es gefräst wird, anders sein kann"): Handlauf = Band in der DXF (zwei Längskanten im Abstand der Handlaufhöhe, zwei
+  // Enden), Stärke = Handlaufbreite. Die vier Ecken werden aus den Knickpunkten der Kontur gesucht (die zwei längsten,
+  // gleich weit voneinander entfernten Kantenzüge sind die Längskanten). Stationen = Eckpunkte beider Längskanten, jeweils
+  // mit dem Fußpunkt auf der anderen Kante; der Querschnitt ist die Strecke dazwischen (bei parallelen Kanten liegt jeder
+  // Punkt darauf im richtigen Abstand, auch schräg - die Enden sind so genau die Endkanten der Kontur). Profilhöhe ->
+  // quer zum Band, Profilbreite -> z. Ohne Drehung liegt die DXF-Oberkante (Rundung) an der unteren Längskante, gedreht an
+  // der oberen. Liefert { ok, faces3, rings, info } oder { ok: false, error, errorEn }.
+  function applyHandrailProfile(loop, profile, thickness) {
+    const fail = (de, en, extra) => Object.assign({ ok: false, error: de, errorEn: en }, extra || {});
+    if (!profile || !Array.isArray(profile.pts) || profile.pts.length < 3) return fail('Kein Profil.', 'No profile.');
+    if (!loop || loop.length < 4 || !thickness) return fail('Der Handlauf hat keine Kontur oder keine Stärke.', 'The handrail has no contour or no thickness.');
+    const R = [];
+    loop.forEach(p => { const l = R[R.length - 1]; if (!l || Math.hypot(l[0] - p.x, l[1] - p.y) > 1e-6) R.push([p.x, p.y]); });
+    while (R.length > 2 && Math.hypot(R[0][0] - R[R.length - 1][0], R[0][1] - R[R.length - 1][1]) <= 1e-6) R.pop();
+    // fast gerade Zwischenpunkte entfernen (z. B. Bogenzerlegung bleibt, nur exakt kollineare Punkte fallen weg)
+    const n = R.length;
+    if (n < 4) return fail('Die Handlauf-Kontur ist zu einfach.', 'The handrail contour is too simple.');
+    const turn = i => { const a = R[(i - 1 + n) % n], b = R[i], c = R[(i + 1) % n]; const ax = b[0] - a[0], ay = b[1] - a[1], bx = c[0] - b[0], by = c[1] - b[1]; const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by); return la < 1e-9 || lb < 1e-9 ? 0 : Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180 / Math.PI; };
+    // Umlaufsinn: Ecken des Bandes sind konvexe Knicke (positiv bei Umlauf gegen den Uhrzeigersinn); ein Knick im Band
+    // selbst (Handlauf mit Abwinklung) ist an einer Längskante positiv, an der anderen negativ
+    let ar = 0;
+    for (let i = 0; i < n; i++) { const a = R[i], b = R[(i + 1) % n]; ar += a[0] * b[1] - b[0] * a[1]; }
+    const sgn = i => { const a = R[(i - 1 + n) % n], b = R[i], c = R[(i + 1) % n]; const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]); return (cr >= 0) === (ar >= 0) ? 1 : -1; };
+    const cand = [];
+    for (let i = 0; i < n; i++) { const t = turn(i) * sgn(i); if (t > 20) cand.push({ i, t }); }
+    const turnAt = new Map(cand.map(c => [c.i, c.t]));
+    cand.sort((a, b) => b.t - a.t);
+    const C = cand.slice(0, 10).map(c => c.i).sort((a, b) => a - b);
+    const BAND_DE = 'Die Handlauf-Kontur wurde nicht als Band erkannt (zwei gleich weit entfernte Längskanten und zwei Enden).';
+    const BAND_EN = 'The handrail contour was not recognised as a band (two equidistant long edges and two ends).';
+    if (C.length < 4) return fail(BAND_DE, BAND_EN);
+    const chain = (i0, i1) => { const out = []; let i = i0; out.push(R[i]); while (i !== i1) { i = (i + 1) % n; out.push(R[i]); } return out; };
+    const plen = pts => { let s = 0; for (let i = 1; i < pts.length; i++) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return s; };
+    const footOn = (p, poly, cum) => {   // nächster Punkt auf dem Linienzug: { d, u (Bogenlänge), q }
+      let best = { d: Infinity, u: 0, q: poly[0] };
+      for (let k = 0; k + 1 < poly.length; k++) {
+        const a = poly[k], b = poly[k + 1], ex = b[0] - a[0], ey = b[1] - a[1], l2 = ex * ex + ey * ey;
+        let t = l2 > 0 ? ((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / l2 : 0; t = Math.max(0, Math.min(1, t));
+        const qx = a[0] + ex * t, qy = a[1] + ey * t, d = Math.hypot(p[0] - qx, p[1] - qy);
+        if (d < best.d) best = { d, u: cum[k] + Math.sqrt(l2) * t, q: [qx, qy] };
+      }
+      return best;
+    };
+    const cumOf = pts => { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return c; };
+    const sample = (pts, m) => { const cum = cumOf(pts), L = cum[cum.length - 1], out = []; let k = 0; for (let j = 1; j < m; j++) { const u = L * j / m; while (k < pts.length - 2 && cum[k + 1] < u) k++; const t = cum[k + 1] > cum[k] ? (u - cum[k]) / (cum[k + 1] - cum[k]) : 0; out.push([pts[k][0] + (pts[k + 1][0] - pts[k][0]) * t, pts[k][1] + (pts[k + 1][1] - pts[k][1]) * t]); } return out; };
+    let best = null;
+    for (let a = 0; a < C.length; a++) for (let b = a + 1; b < C.length; b++) for (let c = b + 1; c < C.length; c++) for (let d = c + 1; d < C.length; d++) {
+      const q = [C[a], C[b], C[c], C[d]];
+      const ch = [chain(q[0], q[1]), chain(q[1], q[2]), chain(q[2], q[3]), chain(q[3], q[0])];
+      const L = ch.map(plen);
+      const pair = L[0] + L[2] >= L[1] + L[3] ? 0 : 1;
+      const A = ch[pair], Bc = ch[pair + 2], La = L[pair], Lb = L[pair + 2], Le = Math.max(L[(pair + 1) % 4], L[(pair + 3) % 4]);
+      if (Math.min(La, Lb) <= Le) continue;
+      const cumB = cumOf(Bc);
+      const ds = sample(A, 60).map(p => footOn(p, Bc, cumB).d).sort((x, y) => x - y);
+      const med = ds[Math.floor(ds.length / 2)];
+      const ok = ds.filter(x => Math.abs(x - med) <= 1).length / ds.length;
+      if (ok < 0.6 || !(med > 1e-3)) continue;
+      const score = q.reduce((t, i) => t + turnAt.get(i), 0);   // die vier stärksten (konvexen) Knicke, die ein gültiges Band ergeben
+      if (!best || score > best.score + 1e-6 || (Math.abs(score - best.score) <= 1e-6 && La + Lb > best.len)) best = { score, len: La + Lb, q, pair, width: med };
+    }
+    if (!best) return fail(BAND_DE, BAND_EN);
+    const P0 = profile.pts.map(p => [Number(p[0]), Number(p[1])]);
+    const xs = P0.map(p => p[0]), ys = P0.map(p => p[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const w = xmax - xmin, h = ymax - ymin, Hh = Math.abs(thickness), Wb = best.width;
+    const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+    if (!(Math.abs(w - Hh) <= 0.1 && Math.abs(h - Wb) <= 0.1)) {
+      return fail('Das Profil (' + f1(w).replace('.', ',') + ' × ' + f1(h).replace('.', ',') + ' mm, Breite × Höhe) passt nicht zum Handlauf (' + f1(Hh).replace('.', ',') + ' × ' + f1(Wb).replace('.', ',') + ' mm, Stärke × Höhe). Der Handlauf wird ohne Profil dargestellt.',
+        'The profile (' + f1(w) + ' × ' + f1(h) + ' mm, width × height) does not match the handrail (' + f1(Hh) + ' × ' + f1(Wb) + ' mm, thickness × height). The handrail is shown without the profile.', { mismatch: true, width: w, height: h, railWidth: Hh, railHeight: Wb });
+    }
+    // Längskanten A (Start an Ecke s0) und B (Start an der über ein Ende benachbarten Ecke)
+    const q = best.q;
+    let A, B;
+    if (best.pair === 0) { A = chain(q[0], q[1]); B = chain(q[2], q[3]).reverse(); }
+    else { A = chain(q[1], q[2]); B = chain(q[3], q[0]).reverse(); }
+    const meanY = pts => pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    const aLower = meanY(A) <= meanY(B);
+    const cumA = cumOf(A), cumB = cumOf(B), LA = cumA[cumA.length - 1], LB = cumB[cumB.length - 1];
+    const at = (pts, cum, u) => { let k = 0; while (k < pts.length - 2 && cum[k + 1] < u) k++; const t = cum[k + 1] > cum[k] ? Math.max(0, Math.min(1, (u - cum[k]) / (cum[k + 1] - cum[k]))) : 0; return [pts[k][0] + (pts[k + 1][0] - pts[k][0]) * t, pts[k][1] + (pts[k + 1][1] - pts[k][1]) * t]; };
+    // Stationen: (uA, uB) - Eckpunkte von A mit Fußpunkt auf B, Eckpunkte von B mit Fußpunkt auf A; monoton
+    const st = [];
+    cumA.forEach((u, k) => st.push([u, footOn(A[k], B, cumB).u]));
+    cumB.forEach((u, k) => st.push([footOn(B[k], A, cumA).u, u]));
+    st.sort((p, r) => p[0] - r[0] || p[1] - r[1]);
+    const S = [[0, 0]];
+    st.forEach(([ua, ub]) => {
+      const l = S[S.length - 1];
+      ua = Math.max(ua, l[0]); ub = Math.max(ub, l[1]);
+      if (ua >= LA - 1e-6 && ub >= LB - 1e-6) return;
+      if (ua - l[0] < 0.05 && ub - l[1] < 0.05) return;
+      S.push([Math.min(ua, LA), Math.min(ub, LB)]);
+    });
+    S.push([LA, LB]);
+    const N = S.length;
+    const botZ = thickness > 0 ? 0 : thickness;
+    const rotated = !!profile.rotated;
+    // Querschnitt je Station: Lp (untere Längskante), Up (obere)
+    const sec = S.map(([ua, ub]) => { const pa = at(A, cumA, ua), pb = at(B, cumB, ub); return aLower ? { L: pa, U: pb, s: ua } : { L: pb, U: pa, s: ua }; });
+    const P = P0.slice();
+    let area = 0;
+    for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    if (area < 0) P.reverse();
+    const M = P.length;
+    const ff = y => (rotated ? (y - ymin) / h : (ymax - y) / h), gg = x => (rotated ? (xmax - x) / w : (x - xmin) / w);
+    const map = (c, x, y) => { const f = ff(y), g = gg(x); return [c.L[0] + (c.U[0] - c.L[0]) * f, c.L[1] + (c.U[1] - c.L[1]) * f, botZ + g * Hh]; };
+    const dfy = rotated ? 1 / h : -1 / h, dgx = rotated ? -1 / w : 1 / w;
+    const dir = (c, nx, ny) => [(c.U[0] - c.L[0]) * dfy * ny, (c.U[1] - c.L[1]) * dfy * ny, Hh * dgx * nx];
+    const G = sec.map(c => P.map(p => map(c, p[0], p[1])));
+    const per = [0];
+    for (let j = 1; j <= M; j++) per.push(per[j - 1] + Math.hypot(P[j % M][0] - P[j - 1][0], P[j % M][1] - P[j - 1][1]));
+    const faces3 = [];
+    for (let j = 0; j < M; j++) {
+      const j2 = (j + 1) % M, ex = P[j2][0] - P[j][0], ey = P[j2][1] - P[j][1], el = Math.hypot(ex, ey);
+      if (el < 1e-9) continue;
+      const nx = ey / el, ny = -ex / el;
+      for (let i = 0; i + 1 < N; i++) {
+        const a = G[i][j], b = G[i][j2], c = G[i + 1][j2], d = G[i + 1][j];
+        const n3 = dir(sec[i], nx, ny), l3 = Math.hypot(n3[0], n3[1], n3[2]) || 1;
+        const r = [0, 1, 2].map(k => (a[k] + b[k] + c[k] + d[k]) / 4 - n3[k] / l3 * 0.5);
+        const s0 = sec[i].s, s1 = sec[i + 1].s;
+        faces3.push({ v: [a, b, c], r, uv: [[s0, per[j]], [s0, per[j + 1]], [s1, per[j + 1]]], kind: 'profile' });
+        faces3.push({ v: [a, c, d], r, uv: [[s0, per[j]], [s1, per[j + 1]], [s1, per[j]]], kind: 'profile' });
+      }
+    }
+    let idx = null;
+    const EC = (typeof earcut !== 'undefined') ? earcut : null;
+    if (EC) { const flat = []; P.forEach(p => flat.push(p[0], p[1])); idx = EC(flat); }
+    if (!idx || idx.length < 3) { idx = []; P.push([(xmin + xmax) / 2, (ymin + ymax) / 2]); for (let j = 0; j < M; j++) idx.push(M, j, (j + 1) % M); }
+    const center = c => [(c.L[0] + c.U[0]) / 2, (c.L[1] + c.U[1]) / 2, botZ + Hh / 2];
+    const cap = (i, ri, kind) => {
+      for (let k = 0; k + 2 < idx.length; k += 3) {
+        const t = [P[idx[k]], P[idx[k + 1]], P[idx[k + 2]]];
+        faces3.push({ v: t.map(p => map(sec[i], p[0], p[1])), r: center(sec[ri]), uv: t.map(p => [p[0] - xmin, p[1] - ymin]), kind });
+      }
+    };
+    cap(0, 1, 'end1'); cap(N - 1, N - 2, 'end2');
+    const rings = [];
+    [0, N - 1].forEach(i => rings.push({ pts: G[i].map(p => p.slice()), open: false, z: 0 }));
+    let creases = 0;
+    for (let j = 0; j < M; j++) {
+      const p0 = P[(j - 1 + M) % M], p1 = P[j], p2 = P[(j + 1) % M];
+      const ax = p1[0] - p0[0], ay = p1[1] - p0[1], bx = p2[0] - p1[0], by = p2[1] - p1[1];
+      const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+      if (la < 1e-9 || lb < 1e-9) continue;
+      if (Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180 / Math.PI > 25) { creases++; rings.push({ pts: G.map(g => g[j].slice()), open: true, z: 0 }); }
+    }
+    // Kontrolle: Lage der DXF-Oberkante (Rundung) - Abstand zur unteren Längskante in der Mitte des Handlaufs
+    const mid = sec[Math.floor(N / 2)], xm = (xmin + xmax) / 2;
+    const pTop = map(mid, xm, ymax), pBot = map(mid, xm, ymin);
+    const dl = p => Math.hypot(p[0] - mid.L[0], p[1] - mid.L[1]);
+    return { ok: true, faces3, rings, info: { width: w, height: h, railHeight: Wb, rotated, roundAtTop: dl(pTop) > dl(pBot), stations: N, points: M, creases, faces: faces3.length, corners: q.map(i => R[i].slice()) } };
   }
 
   // Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling" ... Das öffnet
@@ -10659,7 +10817,7 @@
     return { ok: true, mesh, info, frame, layer, corners: { A: A3, B: B3, C: C3, D: D3 } };
   }
 
-  return { buildKruemmlingFromGeometry, buildPartProfileFromDxfText, applyKruemmlingProfile, detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { buildKruemmlingFromGeometry, buildPartProfileFromDxfText, applyKruemmlingProfile, applyHandrailProfile, detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -11720,8 +11878,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 280;
-  const APP_RELEASE_TIMESTAMP = '23.10.2026, 10:15 Uhr';
+  const APP_RELEASE_NUMBER = 281;
+  const APP_RELEASE_TIMESTAMP = '23.10.2026, 13:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -15395,7 +15553,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         tread: { thickness: DXF_THICKNESS_PREFILL, pocketDepth: 10, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
         riser: { thickness: DXF_THICKNESS_PREFILL, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },   // vpocket seit Release 258
         stringer: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
-        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
+        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults(), profileId: null },   // profileId seit Release 281
         // Release 279 (Sebastian: "Bei der DXF-Bauteildefinition ein neues Bauteil "Krümmling, stehend" ... Stärke -> nicht
         // gebraucht ... Füllung -> wie gehabt ... Bearbeitungen ... nicht gebraucht"): nur Füllung/Farben/Transparenz/Textur
         krmStanding: { profileId: null }   // Release 280: Bauteilprofil (id) oder null
@@ -15471,6 +15629,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfMortiseLayers = pd.mortise.on ? defaultMortiseLayers(pd.mortise.depth) : new Map();   // Release 273: alle Layer mit geschlossenen Konturen
     }
     if (pd.vpocket) { dxfVPocketEnabled = pd.vpocket.on; dxfVPocketDepth = pd.vpocket.depth; }
+    dxfRailProfileId = type === 'handrail' && pd.profileId && getPartProfileById(pd.profileId) ? pd.profileId : null;   // Release 281
     const cfg = newHBoreCfg();
     ['T', 'U'].forEach(k => { if (pd[k]) cfg[k] = { enabled: pd[k].on, shape: pd[k].shape, height: pd[k].height, rectHeight: pd[k].rectHeight }; });
     dxfHBoreCfg = cfg;
@@ -15482,6 +15641,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfKrmFlip = false;
   let dxfKrmLoading = false;
   let dxfKrmProfileId = null;   // Release 280: gewähltes Bauteilprofil (partProfiles) oder null
+  // Release 281: Bauteilprofil beim Handlauf (id oder null) und das Ergebnis der letzten Berechnung
+  let dxfRailProfileId = null;
+  let dxfRailProfileError = null;   // { name, error, errorEn } wenn das Profil nicht passt
+  let dxfRailProfileAlertKey = null;
   // Release 273: dxfMortiseLayers = Map Layername -> Einstemmungstiefe (ohne benannte Layer, beliebig viele Layer);
   // dxfMortiseDepth = Vorgabe-Tiefe für neu angehakte Layer (aus der Bauteildefinition).
   let dxfMortiseLayers = new Map();
@@ -17169,11 +17332,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfMortiseProblems = [];
     dxfHBoreHidden = null;
     dxfVPocketHidden = null;
+    dxfRailProfileError = null;   // Release 281
     const stringer = isMortisePart(dxfPartType);   // Wange oder Handlauf (Release 253)
     if (!dxfKonturLoop) return;
     // Release 260: die Textur wird nur im Netz-Renderer (drawMortiseBody) gezeichnet - bei aktiver Textur deshalb immer ein
     // Netz erzeugen, auch ohne Bearbeitungen (glatter Körper).
-    const wantTex = isDxfTextureActive() && !!dxfThickness;
+    // Release 281: Bauteilprofil beim Handlauf - braucht ebenfalls immer das Netz
+    const railProf = dxfPartType === 'handrail' && dxfRailProfileId && dxfThickness ? getPartProfileById(dxfRailProfileId) : null;
+    const wantTex = (isDxfTextureActive() && !!dxfThickness) || !!railProf;
     if (dxfPartType === 'undefined') {             // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
       if (wantTex) { try { dxfMortiseMesh = buildMortiseMesh(dxfKonturLoop, [], dxfThickness, null, { allowPlain: true }); } catch (e) { dxfMortiseMesh = null; } if (dxfMortiseMesh) { dxfMortiseMesh.info.boreCount = 0; window.__lastMortiseInfo = dxfMortiseMesh.info; } }
       return;
@@ -17264,6 +17430,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (hbDet.skippedOutside) problems.push(T('Bohrungen: ' + hbDet.skippedOutside + ' Symbol(e) liegen mit dem Ende außerhalb der Bauteilkontur und werden ignoriert.', 'Drillings: ' + hbDet.skippedOutside + ' symbol(s) end outside the part contour and are ignored.'));
       if (hbDet.skippedInside) problems.push(T('Bohrungen: ' + hbDet.skippedInside + ' Symbol(e) beginnen nicht an der Bauteilkante und werden ignoriert.', 'Drillings: ' + hbDet.skippedInside + ' symbol(s) do not start at the edge of the part and are ignored.'));
       if (bores.length) mesh.bores = bores; else dxfHBoreHidden = null;
+    }
+    // Release 281: Profil über den Handlauf legen - der Kastenquerschnitt (Ober-/Unterseite, Außenwände) wird durch das
+    // Profil ersetzt; Bohrungen (T/U) werden weiter pro Pixel ausgeschnitten. Einstemmungen und vertikale Taschen werden mit
+    // Profil nicht dargestellt (Hinweis in der Meldung).
+    if (railProf) {
+      const sw = CNCParser.applyHandrailProfile(dxfKonturLoop, railProf, dxfThickness);
+      if (sw.ok) {
+        const hadPockets = pockets.length > 0;
+        mesh.tris = []; mesh.walls = []; mesh.levels = []; mesh.levelsBelow = [];
+        mesh.faces3 = sw.faces3; mesh.rings = sw.rings; mesh.ringLayer = dxfKonturLayerName;
+        mesh.railProfile = Object.assign({ id: railProf.id, name: railProf.name, pocketsHidden: hadPockets }, sw.info);
+        if (hadPockets) { used.length = 0; dxfVPocketHidden = null; }
+      } else dxfRailProfileError = { id: railProf.id, name: railProf.name, error: sw.error, errorEn: sw.errorEn };
     }
     dxfMortiseMesh = mesh;
     dxfMortiseUsedLayers = used;
@@ -17407,6 +17586,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfLayerSchmiegeEnabled = false; dxfLayerSchmiegeLayers = new Map(); dxfLayerSchmiegeProblems = []; dxfLayerSchmiegeInfo = null; dxfLayerSchmiegeRings = null; // Release 243
     dxfNamedSchmiegeEnabled = true;   // Release 270
     dxfPartType = 'undefined'; dxfMortiseInfo = null; dxfMortiseLayers = new Map(); dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
+    dxfRailProfileId = null; dxfRailProfileError = null; dxfRailProfileAlertKey = null;   // Release 281
     dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
     dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
     dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
@@ -29685,7 +29865,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const t = dxfPartTypeSelect.value;
     const krm = t === 'krmStanding';   // Release 279: nur Füllung - keine Stärke, keine Bearbeitungen, keine Vorschau
     el('dxfThicknessRow').hidden = krm;
-    el('dxfSepProfile').hidden = !krm; el('dxfProfileRow').hidden = !krm;   // Release 280
+    el('dxfSepProfile').hidden = !(krm || t === 'handrail'); el('dxfProfileRow').hidden = !(krm || t === 'handrail');   // Release 280/281
     el('dxfDefPreviewToggle').closest('label').hidden = krm;
     if (krm) {
       ['dxfMortiseRow', 'dxfPocketRow', 'dxfVPocketRow', 'dxfSchmiegeRow', 'dxfSepSchmiege', 'dxfVerticalGroup', 'dxfSepVertical', 'dxfHBoreRow', 'dxfSepHorizontal'].forEach(id => { el(id).hidden = true; });
@@ -29719,6 +29899,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       updateDxfThicknessColorRowVisibility();
       refreshDxfMortiseUI(); refreshDxfVPocketUI(); refreshDxfHBoreUI();
     }
+    if (dxfPartTypeSelect.value === 'handrail') fillPartProfileSelect(el('dxfProfileSelect'), dxfThicknessEverConfirmed ? (el('dxfProfileSelect').value || dxfRailProfileId) : dxfRailProfileId);   // Release 281
     updateDxfPartTypeUI();
   });
 
@@ -29727,7 +29908,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     refreshDxfSchmiegeUI(); // Release 243
     dxfPartTypeSelect.value = dxfPartType; // Release 249
     syncKrmPartOption();   // Release 279
-    if (dxfKrm) fillPartProfileSelect(el('dxfProfileSelect'), dxfKrmProfileId);   // Release 280
+    fillPartProfileSelect(el('dxfProfileSelect'), dxfKrm ? dxfKrmProfileId : dxfRailProfileId);   // Release 280/281
     refreshDxfMortiseUI();
     refreshDxfPocketUI(); // Release 250
     refreshDxfHBoreUI(); // Release 251
@@ -29872,11 +30053,21 @@ Sebastian Bäcker (Anschrift wie oben)`,
         if (dxfHBoreCfg[k].rectHeight === 0) dxfHBoreCfg[k].rectHeight = null;
       });
     }
+    dxfRailProfileId = dxfPartType === 'handrail' ? (el('dxfProfileSelect').value || null) : null;   // Release 281
     recomputeLayerSchmiegeRings();
     recomputeMortise(); // Release 249
     updateDxfUI();
     requestRender();
     if (!keepOpen) dxfThicknessPanel.classList.remove('open');
+    // Release 281: Profil passt nicht zum Handlauf -> Meldung (einmal je Profil/Stärke/Datei), Handlauf ohne Profil
+    const railKey = dxfRailProfileId + '|' + dxfThickness + '|' + dxfFilename;
+    if (dxfRailProfileError) {
+      if (dxfRailProfileAlertKey !== railKey) { const er = dxfRailProfileError; setTimeout(() => alert(T('Bauteilprofil „' + er.name + '“: ' + er.error, 'Part profile "' + er.name + '": ' + er.errorEn)), 0); }
+      dxfRailProfileAlertKey = railKey;
+    } else {
+      dxfRailProfileAlertKey = null;
+      if (dxfMortiseMesh && dxfMortiseMesh.railProfile && dxfMortiseMesh.railProfile.pocketsHidden) setTimeout(() => alert(T('Bauteilprofil „' + dxfMortiseMesh.railProfile.name + '“: Einstemmungen und vertikale Taschen werden mit Profil nicht dargestellt (horizontale Bohrungen schon).', 'Part profile "' + dxfMortiseMesh.railProfile.name + '": mortises and vertical pockets are not shown with a profile (horizontal drillings are).')), 0);
+    }
     // Release 249: dasselbe für die Einstemmungen der gestemmten Wange.
     if (dxfMortiseProblems.length) {
       const msg = (isMortisePart(dxfPartType) ? T('Einstemmung:\n', 'Mortise:\n') : (dxfPartType === 'tread' ? T('Taschen:\n', 'Pockets:\n') : T('Bearbeitungen:\n', 'Machining:\n'))) + dxfMortiseProblems.join('\n');
@@ -30134,7 +30325,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Release 280: Bauteilprofile geändert (gespeichert/kopiert/gelöscht/importiert)
   function onPartProfilesChanged() {
     if (dxfKrm && dxfKrmProfileId) { rebuildKruemmling(false); updateKrmPanel(); requestRender(); }
-    if (dxfThicknessPanel.classList.contains('open') && dxfKrm) fillPartProfileSelect(el('dxfProfileSelect'), el('dxfProfileSelect').value || null);
+    if (!dxfKrm && dxfRailProfileId && dxfPartType === 'handrail') { recomputeMortise(); bakeParams = null; requestRender(); }   // Release 281
+    if (dxfThicknessPanel.classList.contains('open')) fillPartProfileSelect(el('dxfProfileSelect'), el('dxfProfileSelect').value || null);
     if (dxfPartDefaultsPanel.classList.contains('open')) fillPartProfileSelect(el('dpdProfileSelect'), el('dpdProfileSelect').value || null);
   }
   // Farbwähler <-> Hexfeld (Release 257)
