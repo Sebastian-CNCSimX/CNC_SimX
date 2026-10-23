@@ -682,6 +682,10 @@
      "Maschinentypen bearbeiten"/"Maschinentypdatei laden" entfällt, diese beiden Aktionen sind
      jetzt normale Einträge im "Bearbeiten"-Dropdown. */
   .machine-type-quick-group { display: flex; align-items: center; gap: 8px; position: relative; }
+  /* Release 278: "DXF CS Krümmling" - kleiner gelber Viertelkreis als Icon, Status im Dialog */
+  .krm-icon { width: 12px; height: 12px; vertical-align: -1px; }
+  #dxfKrmStatus { white-space: pre-line; }
+  #dxfKrmStatus.dxf-krm-error { color: var(--warn); font-weight: 600; }
   /* Release 274: Hinweis nach "Abbrechen" in der Maschinentyp-Abfrage beim Laden eines CNC-Programms */
   .mt-pending-hint { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; padding: 6px 10px; border-radius: 7px;
     border: 1px solid var(--warn); background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 600;
@@ -2311,6 +2315,7 @@
      umbrechen. */
   .tool-dxf-profile-list-actions { display: flex; flex-wrap: wrap; gap: 8px; }
   .tool-dxf-import-filename { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+  #partProfileCanvas { width: 100%; height: auto; aspect-ratio: 260 / 420; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; }   /* Release 280 */
   #toolDxfImportCanvas {
     width: 100%; height: auto; aspect-ratio: 260 / 420;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
@@ -2962,6 +2967,8 @@
             <button class="menu-item submenu-trigger" id="submenuDxfSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuDxfSettingsDropdown" hidden>
               <button class="menu-item" id="btnDxfPartDefaults" type="button" title="Standardwerte für &quot;DXF-Bauteil definieren&quot;: Bauteil aus dem Dateinamen, Stärke je Bauteil, Tiefen und Vorauswahl der Bearbeitungen, automatisches Anwenden beim Import" data-i18n-en="Part definition" data-i18n-en-title="Defaults for &quot;DXF drawing settings&quot;: part type from the file name, thickness per part type, depths and preselection of the machining, automatic application on import">Bauteildefinition</button>
+              <!-- Release 280 (Sebastian: "Unter "Einstellung -> DXF" soll ein neuer Menüpunkt entstehen: "Bauteilprofil"") -->
+              <button class="menu-item" id="btnPartProfiles" type="button" title="Querschnittsprofile (z. B. Omegaprofil) aus DXF-Dateien verwalten: einlesen, benennen, kopieren, löschen - auswählbar beim Krümmling" data-i18n-en="Part profile" data-i18n-en-title="Manage cross-section profiles (e.g. omega profile) from DXF files: read in, name, copy, delete - selectable for the wreath">Bauteilprofil</button>
               <!-- Release 260 (Sebastian: "Import einer Textur unter Einstellungen -> DXF -> Textur. Die Textur wird wie ein
                    Spannfutterprofil bzw. Werkzeugprofil abgelegt und auch exportiert beim Einstellungsexport") -->
               <button class="menu-item" id="btnDxfTextures" type="button" title="Texturen (Bilddateien BMP/JPG/PNG) für die DXF-Bauteile verwalten: importieren, benennen, löschen" data-i18n-en="Texture" data-i18n-en-title="Manage textures (image files BMP/JPG/PNG) for the DXF parts: import, name, delete">Textur</button>
@@ -3244,6 +3251,7 @@
          startNewProgramList() in app.js). -->
     <input type="file" id="fileInputList" hidden multiple>
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
+    <input type="file" id="dxfKrmFileInput" hidden accept=".dxf">
     <input type="file" id="settingsFileInput" hidden accept="application/json,.json">
     <div class="topbar-spacer"></div>
     <!-- "CNC SimX rXXX" oben rechts klickbar machen (170. Runde, Sebastian: "Darunter soll bei
@@ -3370,6 +3378,10 @@
          bisherigen internen Reihenfolge aus der 67./68. Runde. -->
     <div class="toolbar-row" id="toolbarRow2">
       <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
+      <!-- Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling", das Icon
+           dafür ist ein kleiner gelber Viertelkreis, als Text steht da "DXF CS" neben. Das öffnet dann den Modus, bei dem man
+           Krümmlings-DXF importieren kann.") -->
+      <button class="toolbar-btn" id="btnDxfKrmIcon" type="button" title="DXF CS Krümmling: Krümmling-DXF (Rechteck mit Handlauf) importieren und als 3D-Körper darstellen" data-i18n-en-title="DXF CS wreath: import a wreath DXF (rectangle with handrail) and show it as a 3D body"><svg class="krm-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 11 V1 A10 10 0 0 1 11 11 Z" fill="#f5c400" stroke="#b38f00" stroke-width="0.6"/></svg> DXF CS</button>
       <!-- "💾 DXF"/"💣 DXF" (Release 208, Sebastian, Punkte 5+6: "Rechts neben DXF-Laden
            (Symbolleiste) ein 'DXF speichern als...' Symbol (am besten einfach eine Diskette +
            DXF) einbauen" sowie "Rechts neben 'DXF speichern als...' (Symbolleiste) ein 'DXF
@@ -4137,6 +4149,20 @@
      Z ... Da ist auch der Button für 'DXF Verschieben'.") - dieselbe .paste-panel/.paste-card-
      Dialogtechnik wie #toolDataPanel oben, nur mit drei statt zwei Feldern (X/Y/Z statt
      Radius/Länge) - siehe dxfOffset/confirmDxfMove() in app.js. -->
+<!-- Release 278: "DXF CS Krümmling" - Import eines Krümmling-DXF (Rechteck mit Handlauf), 3D-Rekonstruktion -->
+<div class="paste-panel" id="dxfKrmPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="DXF CS wreath">DXF CS Krümmling</h3>
+    <p class="panel-hint" data-i18n-en="Imports a wreath DXF - a rectangle with the handrail inside (two end faces and four edge chains) - and shows the wreath as a 3D body. Fill colour, outline colour, transparency and texture come from the part definition 'Wreath, standing' and can be changed under 'DXF drawing settings'.">Importiert ein Krümmling-DXF - ein Rechteck mit dem Handlauf darin (zwei Stirnseiten und vier Kantenzüge) - und stellt den Krümmling als 3D-Körper dar. Füllfarbe, Outline-Farbe, Transparenz und Textur kommen aus der Bauteildefinition „Krümmling, stehend“ und lassen sich unter „DXF-Bauteil definieren“ ändern.</p>
+    <div class="tool-data-row"><button class="btn ghost" id="btnDxfKrmLoad" type="button" data-i18n-en="Load wreath DXF…">Krümmling-DXF laden…</button></div>
+    <p class="panel-hint" id="dxfKrmStatus"></p>
+    <label class="scale-option"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnDxfKrmClose" type="button" data-i18n-en="Close">Schließen</button>
+    </div>
+  </div>
+</div>
+
 <div class="paste-panel" id="dxfMovePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Move DXF">DXF verschieben</h3>
@@ -4215,7 +4241,14 @@
         </select>
       </label>
     </div>
-    <div class="tool-data-row">
+    <!-- Release 280: "Profil" (nur im Krümmling-Modus); Trennstrich danach = #dxfSepFill vor der Füllung -->
+    <hr class="dxf-part-sep" id="dxfSepProfile" hidden>
+    <div class="tool-data-row" id="dxfProfileRow" hidden>
+      <label class="tool-data-field"><span data-i18n-en="Profile">Profil</span>
+        <select id="dxfProfileSelect" class="filename-input"></select>
+      </label>
+    </div>
+    <div class="tool-data-row" id="dxfThicknessRow">
       <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dxfThicknessInput" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
@@ -4454,12 +4487,23 @@
           <option value="riser" data-i18n-en="Riser">Setzstufe</option>
           <option value="stringer" data-i18n-en="Stringer">Wange</option>
           <option value="handrail" data-i18n-en="Handrail">Handlauf</option>
+          <option value="krmStanding" data-i18n-en="Wreath, standing">Krümmling, stehend</option>
         </select>
       </label>
-      <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
+      <label class="tool-data-field" id="dpdThicknessField"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
         <input type="text" id="dpdThickness" class="filename-input" inputmode="decimal" spellcheck="false">
       </label>
     </div>
+    <!-- Release 280 (Sebastian: "Das eingelesene Profil kann in der "Bauteildefinition" und bei "DXF-Bauteil definieren" ausgewählt
+         werden ... Angeordnet ist das unter der Bauteil-Auswahl, vor dem Block mit der Füllung. Trennstrich davor und danach,
+         Menüpunkt heißt: "Profil"") - nur beim Krümmling ("Krümmling, stehend") -->
+    <hr class="dxf-part-sep" id="dpdSepProfile" hidden>
+    <div class="tool-data-row" id="dpdProfileRow" hidden>
+      <label class="tool-data-field"><span data-i18n-en="Profile">Profil</span>
+        <select id="dpdProfileSelect" class="filename-input"></select>
+      </label>
+    </div>
+    <hr class="dxf-part-sep" id="dpdSepProfile2" hidden>
     <!-- Release 257 (Sebastian: "nicht nur Fülltransparenz eingebbar machen, sondern auch die Füllfarbe und Outline. Das
          kann auch für jedes Bauteil individuell sein"); Release 260 (Sebastian: "Es gibt ein Dropdownmenü unter dem Bereich
          wo das Bauteil und die Stärke festgelegt wird: Füllfarbe / Textur") -->
@@ -5650,6 +5694,73 @@
     </div>
   </div>
 </div>
+
+<!-- Release 280: "Einstellungen -> DXF -> Bauteilprofil" (Sebastian: "Dort kann das Profil, z.B. ein Omegaprofil eingelesen
+     werden. Das Fenster ist so aufgebaut wie bei "Werkzeug-DXF einlesen" (inkl. Neu/Kopieren/Löschen). Messen ist auch möglich.
+     Was es nicht gibt: "Längenreferenzpunkt" und "Radiusreferenzpunkt". Es gibt auch rechts ein Hilfebild") - Verdrahtung
+     siehe #partProfilePanel-IIFE in app.js, Datenmodell partProfiles. -->
+<div class="paste-panel" id="partProfilePanel">
+  <div class="paste-card wide">
+    <h3 data-i18n-en="Part profile">Bauteilprofil</h3>
+    <p class="panel-hint" data-i18n-en="Reads the cross-section profile of a handrail (e.g. an omega profile) from a DXF file. The saved profiles can be selected under &quot;Part definition&quot; and &quot;DXF drawing settings&quot; for the wreath (&quot;Wreath, standing&quot;) and are drawn along the wreath there.">Liest das Querschnittsprofil eines Handlaufs (z. B. ein Omegaprofil) aus einer DXF-Datei. Die gespeicherten Profile sind in der „Bauteildefinition“ und bei „DXF-Bauteil definieren“ für den Krümmling („Krümmling, stehend“) auswählbar und werden dort über den Krümmling gezogen.</p>
+    <div class="tool-dxf-import-body">
+      <div class="tool-dxf-import-controls">
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="Saved part profiles">Gespeicherte Bauteilprofile</div>
+          <select id="partProfileSelect" size="5" class="tool-dxf-profile-select"></select>
+          <div class="tool-dxf-profile-list-actions">
+            <button class="btn ghost small" id="btnPartProfileNew" type="button" data-i18n-en="New">Neu</button>
+            <button class="btn ghost small" id="btnPartProfileCopy" type="button" data-i18n-en="Copy">Kopieren</button>
+            <button class="btn ghost small" id="btnPartProfileDelete" type="button" data-i18n-en="Delete">Löschen</button>
+          </div>
+        </div>
+        <div class="scale-group">
+          <div class="scale-group-title" data-i18n-en="DXF file">DXF-Datei</div>
+          <input type="file" id="partProfileFileInput" hidden accept=".dxf">
+          <button class="btn ghost" id="btnPartProfileChooseFile" type="button" data-i18n-en="Choose file…">Datei auswählen…</button>
+          <span class="tool-dxf-import-filename" id="partProfileFileName" data-i18n-en="No file selected">Keine Datei ausgewählt</span>
+        </div>
+        <div class="color-field-row">
+          <span data-i18n-en="Name">Name</span>
+          <input type="text" id="partProfileNameInput" class="filename-input" maxlength="60" placeholder="z. B. Omega_80x45" data-i18n-en-placeholder="e.g. Omega_80x45">
+        </div>
+        <div class="color-field-row" title="Falls die DXF-Datei in cm statt mm exportiert wurde (zu kleine Werte), hier z. B. 10 eintragen." data-i18n-en-title="If the DXF file was exported in cm instead of mm (values far too small), enter e.g. 10 here.">
+          <span data-i18n-en="Scale factor">Skalierungsfaktor</span>
+          <input type="text" id="partProfileScaleInput" class="filename-input" value="1" inputmode="decimal">
+        </div>
+        <p class="panel-hint" id="partProfileScaleWarning" data-i18n-en="Please enter a value greater than 0." hidden>Bitte einen Wert größer 0 eingeben.</p>
+        <div class="color-field-row" title="Nein (Standard): die Oberkante der DXF (z. B. die Rundung beim Omegaprofil) liegt unten am Krümmling, weil der Fräser von oben bearbeitet. Ja: die Rundung zeigt nach oben." data-i18n-en-title="No (default): the top edge of the DXF (e.g. the rounding of the omega profile) lies at the bottom of the wreath, because the cutter machines from above. Yes: the rounding points upwards.">
+          <span data-i18n-en="Profile rotated">Profil gedreht</span>
+          <select id="partProfileRotatedSelect" class="filename-input">
+            <option value="no" data-i18n-en="No">Nein</option>
+            <option value="yes" data-i18n-en="Yes">Ja</option>
+          </select>
+        </div>
+        <p class="panel-hint" data-i18n-en="Rotated = rounding points upwards. Without rotation the profile lies upside down on the wreath (the cutter machines from above).">Gedreht = Rundung zeigt nach oben. Ohne Drehung liegt das Profil auf dem Krümmling kopfüber (der Fräser bearbeitet von oben).</p>
+        <p class="panel-hint" id="partProfileInfo" hidden></p>
+        <p class="panel-hint" id="partProfileErrorHint" hidden></p>
+      </div>
+      <div class="tool-dxf-import-preview">
+        <div class="dxf-measure-toolrow">
+          <button class="toolbar-btn" id="partProfileMeasureLengthBtn" type="button" title="Messwerkzeug: Abstand zwischen zwei angeklickten Fangpunkten in der Vorschau messen (Direkt, ΔX, ΔY)" data-i18n-en-title="Measurement tool: measure the distance between two clicked snap points in the preview (direct, ΔX, ΔY)">📏</button>
+          <button class="toolbar-btn" id="partProfileMeasureAngleBtn" type="button" title="Winkelmesswerkzeug: Winkel über drei angeklickte Fangpunkte in der Vorschau messen (zweiter Klick = Scheitelpunkt) - zeigt Winkel und Gegenwinkel" data-i18n-en-title="Angle measurement tool: measure the angle via three clicked snap points in the preview (second click = vertex) - shows angle and counter-angle">∠</button>
+          <button class="toolbar-btn" id="partProfileViewHomeBtn" type="button" title="Home: Zeichnung wieder zentrieren (Zoom und Verschiebung zurücksetzen). Zoomen mit dem Mausrad (zum Cursor hin), Verschieben mit der rechten Maustaste." data-i18n-en-title="Home: re-center the drawing (reset zoom and pan). Zoom with the mouse wheel (towards the cursor), pan with the right mouse button.">⌂</button>
+        </div>
+        <canvas id="partProfileCanvas" width="260" height="420"></canvas>
+        <div class="dxf-measure-panel" id="partProfileMeasurePanel" hidden></div>
+      </div>
+      <div class="tool-dxf-import-help">
+        <p class="tool-dxf-import-help-heading" data-i18n-en="The DXF file to be imported must contain the whole profile as a closed contour - not just half of it. The profile must have the size of the handrail (45 mm wide, 80 mm high).">Die einzulesende DXF muss das ganze Profil als geschlossene Kontur enthalten – nicht nur die Hälfte. Das Profil muss so groß sein wie der Handlauf (45 mm breit, 80 mm hoch).</p>
+        <img class="tool-dxf-import-help-img" id="partProfileHelpImg" draggable="false" alt="Beispiel: ganzes Omegaprofil (richtig, Haken) und halbes Profil (falsch, Kreuz)" data-i18n-en-alt="Example: whole omega profile (correct, tick) and half profile (wrong, cross)" src="data:image/jpeg;base64,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">
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnPartProfileCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnPartProfileSave" type="button" data-i18n-en="Save">Speichern</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- "Spalteneinstellungen" (53. Runde, Sebastian: "Separate Skalierung für 'CNC-Programmcode' und
      'Arbeitsgänge'. Auswahl jeweils: 25%, 50%, 75%, 100%") - zwei unabhängige Radiogruppen, je
@@ -10172,7 +10283,383 @@
     return lines.join('\r\n') + '\r\n';
   }
 
-  return { detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  // Release 280 (Sebastian: "Unter "Einstellung -> DXF" soll ein neuer Menüpunkt entstehen: "Bauteilprofil". Dort kann das
+  // Profil, z.B. ein Omegaprofil eingelesen werden."): geschlossene Profilkontur aus einer DXF. Bögen/Kreise/Bulges werden
+  // fein zerlegt (parseDXF() zerlegt für die Zeichnung grob, ca. 10 mm je Segment). Bogen-Zwischenpunkte bekommen das Flag 1
+  // (für Fangpunkte beim Messen). Ergebnis: Punkte gegen den Uhrzeigersinn, ohne doppelten Schlusspunkt.
+  function buildPartProfileFromDxfText(text, opts) {
+    opts = opts || {};
+    const scale = (typeof opts.scale === 'number' && isFinite(opts.scale) && opts.scale > 0) ? opts.scale : 1;
+    const err = (de, en) => Object.assign(new Error(de), { messageEn: en });
+    const raw = parseDxfEntitiesRaw(text);
+    const ents = (raw && raw.entities) || [];
+    const STEP = 5 * Math.PI / 180;
+    const inner = new Set();
+    const key = (x, y) => Math.round(x * 1000) + ',' + Math.round(y * 1000);
+    const arcPts = (cx, cy, r, a0, sweep, markAll) => {
+      const n = Math.max(2, Math.ceil(Math.abs(sweep) / STEP));
+      const out = [];
+      for (let i = 0; i <= n; i++) {
+        const t = a0 + sweep * i / n, x = cx + r * Math.cos(t), y = cy + r * Math.sin(t);
+        out.push({ x, y });
+        if (markAll || (i > 0 && i < n)) inner.add(key(x, y));
+      }
+      return out;
+    };
+    const D = Math.PI / 180;
+    const strokes = [];
+    ents.forEach(e => {
+      if (e.type === 'LINE') strokes.push({ points: [{ x: e.p1.x, y: e.p1.y }, { x: e.p2.x, y: e.p2.y }], closed: false });
+      else if (e.type === 'ARC' && e.r > 1e-9) {
+        let sw = e.a1 - e.a0;
+        while (sw <= 0) sw += 360;
+        while (sw > 360) sw -= 360;
+        strokes.push({ points: arcPts(e.cx, e.cy, e.r, e.a0 * D, sw * D), closed: false });
+      } else if (e.type === 'CIRCLE' && e.r > 1e-9) {
+        const p = arcPts(e.cx, e.cy, e.r, 0, 2 * Math.PI, true);
+        p.pop();
+        strokes.push({ points: p, closed: true });
+      } else if (e.type === 'POLYLINE' && e.verts && e.verts.length >= 2) {
+        const v = e.verts, pts = [{ x: v[0].x, y: v[0].y }];
+        const segN = e.closed ? v.length : v.length - 1;
+        for (let i = 0; i < segN; i++) {
+          const a = v[i], b = v[(i + 1) % v.length], bu = Number(a.bulge) || 0;
+          if (Math.abs(bu) < 1e-9) { pts.push({ x: b.x, y: b.y }); continue; }
+          const th = 4 * Math.atan(bu), dx = b.x - a.x, dy = b.y - a.y, dd = Math.hypot(dx, dy);
+          if (dd < 1e-9) continue;
+          const h = (dd / 2) / Math.tan(th / 2), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          const cx = mx - dy / dd * h, cy = my + dx / dd * h, r = Math.hypot(a.x - cx, a.y - cy);
+          const ap = arcPts(cx, cy, r, Math.atan2(a.y - cy, a.x - cx), th);
+          ap.slice(1).forEach(p => pts.push(p));
+        }
+        if (e.closed) {
+          const f = pts[0], l = pts[pts.length - 1];
+          if (Math.hypot(f.x - l.x, f.y - l.y) < 1e-6) pts.pop();
+          strokes.push({ points: pts, closed: true });
+        } else strokes.push({ points: pts, closed: false });
+      }
+    });
+    if (!strokes.length) throw err('Die DXF-Datei enthält keine Linien oder Bögen.', 'The DXF file contains no lines or arcs.');
+    const loops = buildClosedLoopFromLayerStrokes(strokes);
+    if (!loops.length) throw err('Keine geschlossene Kontur gefunden. Bitte das ganze Profil als geschlossene Kontur zeichnen - nicht nur die Hälfte.', 'No closed contour found. Please draw the whole profile as a closed contour - not just half of it.');
+    const loop = pickLargestLoop(loops);
+    const pts = [];
+    loop.forEach(p => {
+      const q = [p.x * scale, p.y * scale, inner.has(key(p.x, p.y)) ? 1 : 0];
+      const l = pts[pts.length - 1];
+      if (!l || Math.hypot(l[0] - q[0], l[1] - q[1]) > 1e-7) pts.push(q);
+    });
+    while (pts.length > 1 && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) <= 1e-7) pts.pop();
+    if (pts.length < 3) throw err('Die Kontur ist zu klein.', 'The contour is too small.');
+    let area = 0;
+    for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    if (area < 0) pts.reverse();
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    return { pts, width: xmax - xmin, height: ymax - ymin, xmin, xmax, ymin, ymax, loops: loops.length };
+  }
+
+  // Release 280 (Sebastian: "Das einzulesende Profil muss immer in den Dimensionen sein wie der Handlauf ist (Profil ist 80
+  // hoch und 45mm breit ...). Wenn es nicht passt, wird eine Meldung ausgegeben und der dargestellte Handlauf bleibt ohne
+  // Profil!" / "Die Lage beim Krümmling mit Profil muss genau anders herum sein, weil der Fräser am Ende von oben bearbeitet
+  // ... bitte Auswahl beim Einlesen, ob "Profil gedreht" (Ja/Nein). Gedreht = Rundung zeigt nach oben."): zieht das Profil
+  // über den Krümmling (Ergebnis von buildKruemmlingFromGeometry()). Profilbreite = Querschnitt A->D (45), Profilhöhe =
+  // Querschnitt A->B (80). Die DXF-Oberkante (Rundung beim Omega) liegt an der UNTEREN Fläche des Krümmlings, bei
+  // rotated = true an der oberen. Liefert { ok: true, mesh, info } oder { ok: false, error, errorEn }.
+  function applyKruemmlingProfile(krm, profile) {
+    if (!krm || !krm.ok || !krm.corners || !profile || !Array.isArray(profile.pts) || profile.pts.length < 3) return { ok: false, error: 'Kein Profil.', errorEn: 'No profile.' };
+    const P = profile.pts.map(p => [Number(p[0]), Number(p[1]), p[2] ? 1 : 0]);
+    const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const w = xmax - xmin, h = ymax - ymin;
+    const W = krm.info.height, H = krm.info.width;   // Handlauf: Breite (A->D) und Höhe (A->B)
+    const TOL = 0.1;
+    const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+    if (!(Math.abs(w - W) <= TOL && Math.abs(h - H) <= TOL)) {
+      return { ok: false, mismatch: true, width: w, height: h, railWidth: W, railHeight: H,
+        error: 'Das Profil (' + f1(w).replace('.', ',') + ' × ' + f1(h).replace('.', ',') + ' mm, Breite × Höhe) passt nicht zum Handlauf (' + f1(W).replace('.', ',') + ' × ' + f1(H).replace('.', ',') + ' mm). Der Handlauf wird ohne Profil dargestellt.',
+        errorEn: 'The profile (' + f1(w) + ' × ' + f1(h) + ' mm, width × height) does not match the handrail (' + f1(W) + ' × ' + f1(H) + ' mm). The handrail is shown without the profile.' };
+    }
+    let area = 0;
+    for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    if (area < 0) P.reverse();
+    const { A, B, C, D } = krm.corners;
+    const N = A.length;
+    let zAD = 0, zBC = 0;
+    for (let i = 0; i < N; i++) { zAD += A[i][2] + D[i][2]; zBC += B[i][2] + C[i][2]; }
+    const topIsAD = zAD > zBC;
+    const rotated = !!profile.rotated;
+    const roundAtAD = rotated ? topIsAD : !topIsAD;
+    const st = [];
+    for (let i = 0; i < N; i++) {
+      st.push({ a: A[i], U: [B[i][0] - A[i][0], B[i][1] - A[i][1], B[i][2] - A[i][2]], V: [D[i][0] - A[i][0], D[i][1] - A[i][1], D[i][2] - A[i][2]],
+        c: [(A[i][0] + C[i][0]) / 2, (A[i][1] + C[i][1]) / 2, (A[i][2] + C[i][2]) / 2] });
+    }
+    const fa = y => (roundAtAD ? (ymax - y) / h : (y - ymin) / h), fb = x => (x - xmin) / w;
+    const map = (s, x, y) => { const a = fa(y), b = fb(x); return [s.a[0] + s.U[0] * a + s.V[0] * b, s.a[1] + s.U[1] * a + s.V[1] * b, s.a[2] + s.U[2] * a + s.V[2] * b]; };
+    const dir = (s, nx, ny) => { const da = (roundAtAD ? -ny : ny) / h, db = nx / w; return [s.U[0] * da + s.V[0] * db, s.U[1] * da + s.V[1] * db, s.U[2] * da + s.V[2] * db]; };
+    const M = P.length;
+    // Stationen einmal abbilden
+    const G = st.map(s => P.map(p => map(s, p[0], p[1])));
+    const lenAt = [0];
+    for (let i = 1; i < N; i++) lenAt.push(lenAt[i - 1] + Math.hypot(st[i].c[0] - st[i - 1].c[0], st[i].c[1] - st[i - 1].c[1], st[i].c[2] - st[i - 1].c[2]));
+    const per = [0];
+    for (let j = 1; j <= M; j++) per.push(per[j - 1] + Math.hypot(P[j % M][0] - P[j - 1][0], P[j % M][1] - P[j - 1][1]));
+    const faces3 = [];
+    for (let j = 0; j < M; j++) {
+      const j2 = (j + 1) % M, ex = P[j2][0] - P[j][0], ey = P[j2][1] - P[j][1], el = Math.hypot(ex, ey);
+      if (el < 1e-9) continue;
+      const nx = ey / el, ny = -ex / el;   // außen (Profil gegen den Uhrzeigersinn)
+      for (let i = 0; i + 1 < N; i++) {
+        const a = G[i][j], b = G[i][j2], c = G[i + 1][j2], d = G[i + 1][j];
+        const n3 = dir(st[i], nx, ny);
+        const r = [(a[0] + b[0] + c[0] + d[0]) / 4 - n3[0] * 0.5, (a[1] + b[1] + c[1] + d[1]) / 4 - n3[1] * 0.5, (a[2] + b[2] + c[2] + d[2]) / 4 - n3[2] * 0.5];
+        const v0 = per[j], v1 = per[j + 1];
+        faces3.push({ v: [a, b, c], r, uv: [[lenAt[i], v0], [lenAt[i], v1], [lenAt[i + 1], v1]], kind: 'profile' });
+        faces3.push({ v: [a, c, d], r, uv: [[lenAt[i], v0], [lenAt[i + 1], v1], [lenAt[i + 1], v0]], kind: 'profile' });
+      }
+    }
+    // Stirnseiten: Profilfläche trianguliert (earcut, sonst Fächer um den Schwerpunkt)
+    let idx = null;
+    const EC = (typeof earcut !== 'undefined') ? earcut : null;
+    if (EC) { const flat = []; P.forEach(p => flat.push(p[0], p[1])); idx = EC(flat); }
+    if (!idx || idx.length < 3) {
+      idx = [];
+      P.push([xs.reduce((s, v) => s + v, 0) / xs.length, ys.reduce((s, v) => s + v, 0) / ys.length, 0]);
+      for (let j = 0; j < M; j++) idx.push(M, j, (j + 1) % M);
+    }
+    const cap = (i, ri, kind) => {
+      const s = st[i];
+      for (let k = 0; k + 2 < idx.length; k += 3) {
+        const q = [P[idx[k]], P[idx[k + 1]], P[idx[k + 2]]];
+        faces3.push({ v: q.map(p => map(s, p[0], p[1])), r: st[ri].c.slice(), uv: q.map(p => [p[0] - xmin, p[1] - ymin]), kind });
+      }
+    };
+    cap(0, Math.min(1, N - 1), 'end1'); cap(N - 1, Math.max(0, N - 2), 'end2');
+    // Linien: beide Stirnseiten-Umrisse und Längskanten an Knicken des Profils (> 25°)
+    const rings = [];
+    [0, N - 1].forEach(i => rings.push({ pts: G[i].map(p => p.slice()), open: false, z: 0 }));
+    const creases = [];
+    for (let j = 0; j < M; j++) {
+      const p0 = P[(j - 1 + M) % M], p1 = P[j], p2 = P[(j + 1) % M];
+      const ax = p1[0] - p0[0], ay = p1[1] - p0[1], bx = p2[0] - p1[0], by = p2[1] - p1[1];
+      const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+      if (la < 1e-9 || lb < 1e-9) continue;
+      const ang = Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180 / Math.PI;
+      if (ang > 25) { creases.push(j); rings.push({ pts: G.map(g => g[j].slice()), open: true, z: 0 }); }
+    }
+    // Lage der Rundung (DXF-Oberkante) zur Kontrolle: z an Station 0, Profilmitte oben/unten
+    const xm = (xmin + xmax) / 2;
+    const zTop = map(st[0], xm, ymax)[2], zBottom = map(st[0], xm, ymin)[2];
+    const mesh = { tris: [], walls: [], faces3, rings, ringLayer: krm.layer, levels: [], bores: null, kruemmling: true, profile: true };
+    return { ok: true, mesh, info: { width: w, height: h, rotated, roundUp: zTop > zBottom, zDxfTop: zTop, zDxfBottom: zBottom, points: M, creases: creases.length, faces: faces3.length } };
+  }
+
+  // Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling" ... Das öffnet
+  // dann den Modus, bei dem man Krümmlings-DXF importieren kann. Es gehen dann nur DXF zu importieren, die so aufgebaut sind:
+  // Rechteck mit Handlauf drin."): Rekonstruktion des 3D-Körpers aus der Draufsicht (siehe Konzept_Kruemmling_3D_aus_DXF.md).
+  // Erwartet: ein achsparalleles Rechteck (Rahmen) und darin genau zwei geschlossene Vierecke (Stirnseiten) mit vier
+  // Kantenzügen, die die Ecken der beiden Stirnseiten verbinden. Jede Station (Punkt i auf allen vier Kanten) ist die
+  // Draufsicht desselben starren Rechteckquerschnitts; dessen Maße folgen aus den beiden Stirnseiten. Die Höhe der Ecken im
+  // Querschnitt folgt aus den Maßen, die Höhe des Querschnitts aus "Querschnitt senkrecht zur Mittellinie".
+  // Liefert { ok: true, mesh, info, frame, layer } oder { ok: false, error, errorEn }.
+  function buildKruemmlingFromGeometry(geometry, flip) {
+    const fail = (de, en) => ({ ok: false, error: de, errorEn: en });
+    const STRUCT_DE = 'Kein Krümmling erkannt - erwartet wird ein Rechteck mit Handlauf darin (zwei Stirnseiten-Vierecke und vier Kantenzüge). ';
+    const STRUCT_EN = 'No wreath recognised - expected is a rectangle with a handrail inside (two end-face quadrilaterals and four edge chains). ';
+    if (!geometry || !geometry.strokes || !geometry.strokes.length) return fail(STRUCT_DE + 'Die Datei enthält keine Linien.', STRUCT_EN + 'The file contains no lines.');
+    const key = (p) => Math.round(p.x * 1000) + ',' + Math.round(p.y * 1000);
+    const nodes = new Map();   // key -> { p, segs: [] }
+    const segs = [];
+    const seen = new Set();
+    let layer = null;
+    geometry.strokes.forEach(st => {
+      const pts = st.points || [];
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1], ka = key(a), kb = key(b);
+        if (ka === kb) continue;
+        const sk = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+        if (seen.has(sk)) continue;   // doppelte Linien (z. B. Rahmen mehrfach) nur einmal
+        seen.add(sk);
+        const s = { id: segs.length, ka, kb, a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } };
+        segs.push(s);
+        if (!layer) layer = st.layer;
+        [[ka, a], [kb, b]].forEach(([k, p]) => { let n = nodes.get(k); if (!n) { n = { k, p: { x: p.x, y: p.y }, segs: [] }; nodes.set(k, n); } n.segs.push(s); });
+      }
+    });
+    // Zusammenhangskomponenten
+    const comp = new Map();
+    const comps = [];
+    nodes.forEach(n => {
+      if (comp.has(n.k)) return;
+      const c = { nodes: [], segs: new Set() };
+      const stack = [n.k];
+      comp.set(n.k, c);
+      while (stack.length) {
+        const k = stack.pop(), nn = nodes.get(k);
+        c.nodes.push(nn);
+        nn.segs.forEach(s => { c.segs.add(s); const o = s.ka === k ? s.kb : s.ka; if (!comp.has(o)) { comp.set(o, c); stack.push(o); } });
+      }
+      comps.push(c);
+    });
+    const isFrame = c => c.nodes.length === 4 && c.segs.size === 4 && c.nodes.every(n => n.segs.length === 2) && [...c.segs].every(s => Math.abs(s.a.x - s.b.x) < 1e-6 || Math.abs(s.a.y - s.b.y) < 1e-6);
+    const frames = comps.filter(isFrame);
+    const others = comps.filter(c => !isFrame(c));
+    if (frames.length !== 1) return fail(STRUCT_DE + 'Das umgebende Rechteck fehlt.', STRUCT_EN + 'The surrounding rectangle is missing.');
+    if (others.length !== 1) return fail(STRUCT_DE + (others.length ? others.length + ' getrennte Linienzüge im Rechteck gefunden.' : 'Im Rechteck ist kein Handlauf.'), STRUCT_EN + (others.length ? others.length + ' separate line groups found inside the rectangle.' : 'There is no handrail inside the rectangle.'));
+    const fr = frames[0], body = others[0];
+    const fx = fr.nodes.map(n => n.p.x), fy = fr.nodes.map(n => n.p.y);
+    const frame = { x0: Math.min(...fx), y0: Math.min(...fy), x1: Math.max(...fx), y1: Math.max(...fy) };
+    if (!body.nodes.every(n => n.p.x >= frame.x0 - 1e-6 && n.p.x <= frame.x1 + 1e-6 && n.p.y >= frame.y0 - 1e-6 && n.p.y <= frame.y1 + 1e-6)) return fail(STRUCT_DE + 'Der Handlauf liegt nicht im Rechteck.', STRUCT_EN + 'The handrail is not inside the rectangle.');
+    const corners = body.nodes.filter(n => n.segs.length === 3);
+    if (corners.length !== 8 || body.nodes.some(n => n.segs.length !== 3 && n.segs.length !== 2)) return fail(STRUCT_DE + 'Es werden 8 Ecken (je 4 pro Stirnseite) erwartet, gefunden: ' + corners.length + '.', STRUCT_EN + '8 corners (4 per end face) are expected, found: ' + corners.length + '.');
+    // Wege zwischen den Ecken
+    const paths = [];
+    const used = new Set();
+    corners.forEach(c => c.segs.forEach(s0 => {
+      if (used.has(s0.id)) return;
+      const pts = [c.p], ids = [];
+      let k = c.k, s = s0, len = 0;
+      while (true) {
+        used.add(s.id); ids.push(s.id);
+        const o = s.ka === k ? s.kb : s.ka, on = nodes.get(o);
+        len += Math.hypot(on.p.x - nodes.get(k).p.x, on.p.y - nodes.get(k).p.y);
+        pts.push(on.p);
+        if (on.segs.length === 3) { paths.push({ from: c.k, to: o, pts, len, minId: Math.min(...ids), firstSeg: s0 }); break; }
+        const nxt = on.segs.find(q => q.id !== s.id);
+        k = o; s = nxt;
+      }
+    }));
+    if (paths.length !== 12) return fail(STRUCT_DE + 'Die Linien bilden keine zwei Stirnseiten mit vier Kantenzügen.', STRUCT_EN + 'The lines do not form two end faces with four edge chains.');
+    const byCorner = new Map(corners.map(c => [c.k, []]));
+    paths.forEach(p => { byCorner.get(p.from).push(p); byCorner.get(p.to).push(p); });
+    const chainSet = new Set();
+    byCorner.forEach(list => { list.slice().sort((p, q) => q.len - p.len); chainSet.add(list.slice().sort((p, q) => q.len - p.len)[0]); });
+    const chains = [...chainSet];
+    const quadEdges = paths.filter(p => !chainSet.has(p));
+    if (chains.length !== 4 || quadEdges.length !== 8) return fail(STRUCT_DE + 'Die vier Kantenzüge sind nicht eindeutig.', STRUCT_EN + 'The four edge chains are ambiguous.');
+    // Stirnseiten = Komponenten über die kurzen Wege
+    const qAdj = new Map(corners.map(c => [c.k, []]));
+    quadEdges.forEach(p => { qAdj.get(p.from).push(p.to); qAdj.get(p.to).push(p.from); });
+    if ([...qAdj.values()].some(a => a.length !== 2)) return fail(STRUCT_DE + 'Die Stirnseiten sind keine geschlossenen Vierecke.', STRUCT_EN + 'The end faces are not closed quadrilaterals.');
+    const cycleFrom = (start, second) => { const cyc = [start, second]; while (cyc.length < 4) { const last = cyc[cyc.length - 1], prev = cyc[cyc.length - 2]; cyc.push(qAdj.get(last).find(x => x !== prev)); } return qAdj.get(cyc[3]).includes(start) ? cyc : null; };
+    // Stirnseite 1 = Viereck mit der in der Datei zuerst stehenden Linie; Reihenfolge P0 -> P1 = Richtung dieser Linie
+    const firstQE = quadEdges.slice().sort((p, q) => p.minId - q.minId)[0];
+    const fs = segs[firstQE.minId];
+    const q1 = cycleFrom(fs.ka, fs.kb);
+    if (!q1 || new Set(q1).size !== 4) return fail(STRUCT_DE + 'Stirnseite 1 ist kein Viereck.', STRUCT_EN + 'End face 1 is not a quadrilateral.');
+    const chainOf = k => chains.find(p => p.from === k || p.to === k);
+    const chainPts = k => { const p = chainOf(k); return p.from === k ? p.pts.slice() : p.pts.slice().reverse(); };
+    const ends = q1.map(k => { const p = chainOf(k); return p.from === k ? p.to : p.from; });
+    if (new Set(ends).size !== 4 || ends.some(e => q1.includes(e))) return fail(STRUCT_DE + 'Die Kantenzüge verbinden nicht die beiden Stirnseiten.', STRUCT_EN + 'The edge chains do not connect the two end faces.');
+    for (let i = 0; i < 4; i++) { if (!qAdj.get(ends[i]).includes(ends[(i + 1) % 4])) return fail(STRUCT_DE + 'Die Ecken der Stirnseiten passen nicht zueinander.', STRUCT_EN + 'The corners of the end faces do not match.'); }
+    let C4 = q1.map(chainPts);   // 4 Kanten, je Punktliste von Stirnseite 1 nach Stirnseite 2
+    // Stationen: gleiche Punktzahl -> direkt; sonst nach Bogenlänge neu abtasten
+    const resample = (pts, n) => {
+      const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+      const L = cum[cum.length - 1], out = []; let j = 0;
+      for (let i = 0; i < n; i++) { const t = L * i / (n - 1); while (j < pts.length - 2 && cum[j + 1] < t) j++; const u = cum[j + 1] > cum[j] ? (t - cum[j]) / (cum[j + 1] - cum[j]) : 0; out.push({ x: pts[j].x + (pts[j + 1].x - pts[j].x) * u, y: pts[j].y + (pts[j + 1].y - pts[j].y) * u }); }
+      return out;
+    };
+    const parErr = arr => { let m = 0; for (let i = 0; i < arr[0].length; i++) m = Math.max(m, Math.hypot(arr[0][i].x + arr[2][i].x - arr[1][i].x - arr[3][i].x, arr[0][i].y + arr[2][i].y - arr[1][i].y - arr[3][i].y)); return m; };
+    let resampled = false;
+    if (!C4.every(c => c.length === C4[0].length) || parErr(C4) > 0.05) {
+      const n = Math.max(...C4.map(c => c.length), 40);
+      C4 = C4.map(c => resample(c, n)); resampled = true;
+    }
+    const pe = parErr(C4);
+    if (pe > (resampled ? 2 : 0.05)) return fail('Die vier Kantenzüge passen nicht zu einem gleichbleibenden Querschnitt (Abweichung ' + pe.toFixed(2) + ' mm).', 'The four edge chains do not match a constant cross-section (deviation ' + pe.toFixed(2) + ' mm).');
+    const N = C4[0].length;
+    const [EA, EB, EC, ED] = C4;
+    const sub = (p, q) => [p.x - q.x, p.y - q.y];
+    const dot2 = (a, b) => a[0] * b[0] + a[1] * b[1];
+    const face = i => { const ab = sub(EB[i], EA[i]), bc = sub(EC[i], EB[i]); return { ab, bc, a: dot2(ab, ab), b: dot2(bc, bc), d: dot2(ab, bc) }; };
+    // Querschnitt aus beiden Stirnseiten: (W - a1)(H - b1) = d1², (W - a2)(H - b2) = d2²  (W = Breite², H = Höhe²)
+    const f1 = face(0), f2 = face(N - 1);
+    const db = f1.b - f2.b;
+    const qa = db, qb = -db * (f1.a + f2.a) + f1.d * f1.d - f2.d * f2.d, qc = db * f1.a * f2.a - f1.d * f1.d * f2.a + f2.d * f2.d * f1.a;
+    const roots = [];
+    if (Math.abs(qa) < 1e-9) { if (Math.abs(qb) > 1e-12) roots.push(-qc / qb); }
+    else { const disc = qb * qb - 4 * qa * qc; if (disc >= 0) { roots.push((-qb + Math.sqrt(disc)) / (2 * qa), (-qb - Math.sqrt(disc)) / (2 * qa)); } }
+    let W = null, H = null;
+    roots.forEach(Wc => { if (!(Wc > Math.max(f1.a, f2.a) - 1e-6)) return; const Hc = Math.abs(Wc - f1.a) > 1e-9 ? f1.b + f1.d * f1.d / (Wc - f1.a) : NaN; if (Hc > Math.max(f1.b, f2.b) - 1e-6 && (W === null || Wc < W)) { W = Wc; H = Hc; } });
+    if (W === null) return fail('Der Querschnitt lässt sich aus den beiden Stirnseiten nicht bestimmen.', 'The cross-section cannot be determined from the two end faces.');
+    const wS = Math.sqrt(W), hS = Math.sqrt(H);
+    // Querschnitt je Station: U = Kante P0->P1 (Breite wS), V = Kante P1->P2 (Höhe hS); Vorzeichen s = -1 (Oberkante oben)
+    const s = -1;
+    const U = [], V = [];
+    let maxRigid = 0;
+    for (let i = 0; i < N; i++) {
+      const f = face(i);
+      const uz = Math.sqrt(Math.max(0, W - f.a)), vz = Math.sqrt(Math.max(0, H - f.b));
+      maxRigid = Math.max(maxRigid, Math.max(0, f.a - W) / W, Math.max(0, f.b - H) / H);
+      let u = [f.ab[0], f.ab[1], s * uz];
+      let sv = f.d > 0 ? -1 : 1; sv *= s;
+      if (Math.abs(f.d) < 1e-6 * W && V.length) sv = Math.sign(V[V.length - 1][2]) || sv;
+      let v = [f.bc[0], f.bc[1], sv * vz];
+      const lu = Math.hypot(...u) || 1; u = u.map(x => x * wS / lu);
+      const k = (u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) / W; v = [v[0] - u[0] * k, v[1] - u[1] * k, v[2] - u[2] * k];
+      const lv = Math.hypot(...v) || 1; v = v.map(x => x * hS / lv);
+      U.push(u); V.push(v);
+    }
+    if (maxRigid > 0.02) return fail('Die Kantenzüge passen nicht zum Querschnitt ' + wS.toFixed(1) + ' x ' + hS.toFixed(1) + ' mm.', 'The edge chains do not match the cross-section ' + wS.toFixed(1) + ' x ' + hS.toFixed(1) + ' mm.');
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const Nn = U.map((u, i) => { const n = cross(u, V[i]); const l = Math.hypot(...n) || 1; return n.map(x => x / l); });
+    const cen = [];
+    let z0 = 0, maxTilt = 0;
+    for (let i = 0; i < N; i++) {
+      const cx = (EA[i].x + EC[i].x) / 2, cy = (EA[i].y + EC[i].y) / 2;
+      if (i > 0) {
+        const p = cen[i - 1], dx = cx - p[0], dy = cy - p[1];
+        const nm = [(Nn[i][0] + Nn[i - 1][0]) / 2, (Nn[i][1] + Nn[i - 1][1]) / 2, (Nn[i][2] + Nn[i - 1][2]) / 2];
+        const nxy = nm[0] * nm[0] + nm[1] * nm[1];
+        if (nxy > 1e-9) z0 += (dx * nm[0] + dy * nm[1]) / nxy * nm[2];
+      }
+      cen.push([cx, cy, z0]);
+    }
+    const P = (i, a, b) => [cen[i][0] + a * U[i][0] + b * V[i][0], cen[i][1] + a * U[i][1] + b * V[i][1], cen[i][2] + a * U[i][2] + b * V[i][2]];
+    const A3 = [], B3 = [], C3 = [], D3 = [];
+    for (let i = 0; i < N; i++) { A3.push(P(i, -0.5, -0.5)); B3.push(P(i, 0.5, -0.5)); C3.push(P(i, 0.5, 0.5)); D3.push(P(i, -0.5, 0.5)); }
+    let zMin = Infinity, zMax = -Infinity;
+    [A3, B3, C3, D3].forEach(E => E.forEach(p => { zMin = Math.min(zMin, p[2]); zMax = Math.max(zMax, p[2]); }));
+    const fz = z => (flip ? zMax - z : z - zMin);
+    [A3, B3, C3, D3].forEach(E => E.forEach(p => { p[2] = fz(p[2]); }));
+    cen.forEach(c => { c[2] = fz(c[2]); });
+    // Neigung Querschnitt / Mittellinie (Kontrolle)
+    let len3 = 0;
+    const lenAt = [0];
+    for (let i = 1; i < N; i++) {
+      const t = [cen[i][0] - cen[i - 1][0], cen[i][1] - cen[i - 1][1], cen[i][2] - cen[i - 1][2]], lt = Math.hypot(...t) || 1;
+      len3 += lt; lenAt.push(len3);
+      const nm = Nn[i]; maxTilt = Math.max(maxTilt, Math.acos(Math.min(1, Math.abs((t[0] * nm[0] + t[1] * nm[1] + t[2] * nm[2]) / lt))) * 180 / Math.PI);
+    }
+    // Netz für drawMortiseBody(): faces3 (beliebige Dreiecke mit Innenpunkt r für die Außenrichtung), rings mit z je Punkt
+    const faces3 = [];
+    const perim = [0, wS, wS + hS, 2 * wS + hS];   // v-Versatz je Seite (Textur läuft um den Querschnitt herum)
+    const quad = (p00, p10, p11, p01, r, uv00, uv10, uv11, uv01, kind) => {
+      faces3.push({ v: [p00, p10, p11], r, uv: [uv00, uv10, uv11], kind });
+      faces3.push({ v: [p00, p11, p01], r, uv: [uv00, uv11, uv01], kind });
+    };
+    const sides = [[A3, B3, 0, 'side'], [B3, C3, 1, 'bottom'], [C3, D3, 2, 'side2'], [D3, A3, 3, 'top']];
+    for (let i = 0; i + 1 < N; i++) {
+      const r = [(cen[i][0] + cen[i + 1][0]) / 2, (cen[i][1] + cen[i + 1][1]) / 2, (cen[i][2] + cen[i + 1][2]) / 2];
+      sides.forEach(([E0, E1, si, kind]) => {
+        const w0 = perim[si], w1 = perim[si] + (si % 2 ? hS : wS);
+        quad(E0[i], E1[i], E1[i + 1], E0[i + 1], r, [lenAt[i], w0], [lenAt[i], w1], [lenAt[i + 1], w1], [lenAt[i + 1], w0], kind);
+      });
+    }
+    const endFace = (i, ri, kind) => quad(A3[i], B3[i], C3[i], D3[i], cen[ri], [0, 0], [wS, 0], [wS, hS], [0, hS], kind);
+    endFace(0, 1, 'end1'); endFace(N - 1, N - 2, 'end2');
+    const rings = [A3, B3, C3, D3].map(E => ({ pts: E.map(p => p.slice()), open: true, z: 0 }));
+    rings.push({ pts: [A3[0], B3[0], C3[0], D3[0]].map(p => p.slice()), open: false, z: 0 });
+    rings.push({ pts: [A3[N - 1], B3[N - 1], C3[N - 1], D3[N - 1]].map(p => p.slice()), open: false, z: 0 });
+    const mesh = { tris: [], walls: [], faces3, rings, ringLayer: layer, levels: [], bores: null, kruemmling: true };
+    const info = { width: wS, height: hS, stations: N, resampled, length: len3, thickness: zMax - zMin, maxTiltDeg: maxTilt, flip: !!flip,
+      frame: { w: frame.x1 - frame.x0, h: frame.y1 - frame.y0 } };
+    return { ok: true, mesh, info, frame, layer, corners: { A: A3, B: B3, C: C3, D: D3 } };
+  }
+
+  return { buildKruemmlingFromGeometry, buildPartProfileFromDxfText, applyKruemmlingProfile, detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -11233,8 +11720,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 277;
-  const APP_RELEASE_TIMESTAMP = '22.10.2026, 13:59 Uhr';
+  const APP_RELEASE_NUMBER = 280;
+  const APP_RELEASE_TIMESTAMP = '23.10.2026, 10:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12984,6 +13471,107 @@ CORNERRADIUS=GFIL r=
   }
 
   // ============================================================
+  // Release 280: "Bauteilprofil" (Einstellungen -> DXF -> Bauteilprofil) - Datenmodell. Sebastian: "Dort kann das Profil,
+  // z.B. ein Omegaprofil eingelesen werden. Das Fenster ist so aufgebaut wie bei "Werkzeug-DXF einlesen" (inkl.
+  // Neu/Kopieren/Löschen) ... Ein Beispielprofil ist auch hinterlegt: "Omega_80x45.DXF"". Aufbau wie chuckDxfProfiles oben;
+  // gespeichert wird die DXF selbst, der Skalierungsfaktor, "Profil gedreht" und die daraus gewonnene geschlossene Kontur
+  // (pts = [[x, y, Bogen-Zwischenpunkt 0/1]], gegen den Uhrzeigersinn, siehe CNCParser.buildPartProfileFromDxfText()).
+  // Liegt noch gar nichts im localStorage, wird das Beispielprofil "Omega_80x45" angelegt (einmalig - wer es löscht,
+  // bekommt es nicht wieder).
+  // ============================================================
+  const LS_KEY_PART_PROFILES = 'cncsim.partProfiles';
+  const PART_PROFILE_SAMPLE_ID = 'pp_omega_80x45';
+  const PART_PROFILE_SAMPLE_NAME = 'Omega_80x45';
+  const PART_PROFILE_SAMPLE_DXF = "0\r\nSECTION\r\n2\r\nENTITIES\r\n0\r\nLINE\r\n8\r\n0\r\n10\r\n-22.5\r\n20\r\n0\r\n30\r\n0\r\n11\r\n22.5\r\n21\r\n0\r\n31\r\n0\r\n0\r\nLINE\r\n8\r\n0\r\n10\r\n22.5\r\n20\r\n0\r\n30\r\n0\r\n11\r\n22.5\r\n21\r\n24.94841469\r\n31\r\n0\r\n0\r\nARC\r\n8\r\n0\r\n10\r\n35\r\n20\r\n41.1964915\r\n30\r\n0\r\n40\r\n20.5\r\n50\r\n141.33589114\r\n51\r\n232.42813068\r\n0\r\nARC\r\n8\r\n0\r\n10\r\n6.5\r\n20\r\n64\r\n30\r\n0\r\n40\r\n16\r\n50\r\n321.33589114\r\n51\r\n90\r\n0\r\nLINE\r\n8\r\n0\r\n10\r\n6.5\r\n20\r\n80\r\n30\r\n0\r\n11\r\n-6.5\r\n21\r\n80\r\n31\r\n0\r\n0\r\nARC\r\n8\r\n0\r\n10\r\n-6.5\r\n20\r\n64\r\n30\r\n0\r\n40\r\n16\r\n50\r\n90\r\n51\r\n218.66410886\r\n0\r\nARC\r\n8\r\n0\r\n10\r\n-35\r\n20\r\n41.1964915\r\n30\r\n0\r\n40\r\n20.5\r\n50\r\n307.57186932\r\n51\r\n38.66410886\r\n0\r\nLINE\r\n8\r\n0\r\n10\r\n-22.5\r\n20\r\n24.94841469\r\n30\r\n0\r\n11\r\n-22.5\r\n21\r\n0\r\n31\r\n0\r\n0\r\nENDSEC\r\n0\r\nEOF\r\n";
+  function normalizePartProfile(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : null;
+    const name = typeof raw.name === 'string' ? normalizeProfileName(raw.name) : '';
+    const dxfText = typeof raw.dxfText === 'string' ? raw.dxfText : '';
+    if (!id || !name || !dxfText || !Array.isArray(raw.pts)) return null;
+    const pts = [];
+    for (const p of raw.pts) {
+      if (!Array.isArray(p) || p.length < 2) return null;
+      const x = Number(p[0]), y = Number(p[1]);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      pts.push([x, y, p[2] ? 1 : 0]);
+    }
+    if (pts.length < 3) return null;
+    let scale = Number(raw.scale);
+    if (!Number.isFinite(scale) || scale <= 0) scale = 1;
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const now = Date.now();
+    const createdAt = Number(raw.createdAt), updatedAt = Number(raw.updatedAt);
+    return {
+      id: id, name: name, dxfText: dxfText, scale: scale, rotated: !!raw.rotated, pts: pts,
+      width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys),
+      createdAt: Number.isFinite(createdAt) ? createdAt : now,
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : now
+    };
+  }
+  function partProfileSample() {
+    try {
+      const r = CNCParser.buildPartProfileFromDxfText(PART_PROFILE_SAMPLE_DXF, { scale: 1 });
+      return normalizePartProfile({ id: PART_PROFILE_SAMPLE_ID, name: PART_PROFILE_SAMPLE_NAME, dxfText: PART_PROFILE_SAMPLE_DXF, scale: 1, rotated: false, pts: r.pts });
+    } catch (e) { return null; }
+  }
+  function normalizePartProfileList(data) {
+    return Array.isArray(data) ? data.map(normalizePartProfile).filter(Boolean) : [];
+  }
+  function loadPersistedPartProfiles() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_PART_PROFILES);
+      if (raw) return normalizePartProfileList(JSON.parse(raw));
+    } catch (e) { return []; }
+    const s = partProfileSample();
+    const list = s ? [s] : [];
+    persistPartProfiles(list);
+    return list;
+  }
+  function persistPartProfiles(list) {
+    try { window.localStorage.setItem(LS_KEY_PART_PROFILES, JSON.stringify(list)); } catch (e) { /* s.o. */ }
+  }
+  let partProfiles = [];
+  function getPartProfileById(id) {
+    for (let i = 0; i < partProfiles.length; i++) { if (partProfiles[i].id === id) return partProfiles[i]; }
+    return null;
+  }
+  function savePartProfile(data) {
+    const now = Date.now();
+    const incoming = Object.assign({}, data, { updatedAt: now, createdAt: (data && Number.isFinite(Number(data.createdAt))) ? Number(data.createdAt) : now });
+    if (!incoming.id) incoming.id = 'pp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    const normalized = normalizePartProfile(incoming);
+    if (!normalized) return null;
+    const idx = partProfiles.findIndex(p => p.id === normalized.id);
+    if (idx === -1) partProfiles.push(normalized); else partProfiles[idx] = normalized;
+    persistPartProfiles(partProfiles);
+    return normalized;
+  }
+  function deletePartProfile(id) {
+    const idx = partProfiles.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    partProfiles.splice(idx, 1);
+    persistPartProfiles(partProfiles);
+    return true;
+  }
+  function copyPartProfile(id) {
+    const p = getPartProfileById(id);
+    if (!p) return null;
+    const existing = new Set(partProfiles.map(q => q.name));
+    let n = 1;
+    while (existing.has(p.name + '_' + n)) n++;
+    return savePartProfile({ name: p.name + '_' + n, dxfText: p.dxfText, scale: p.scale, rotated: p.rotated, pts: p.pts.map(q => q.slice()) });
+  }
+  function sortedPartProfiles() { return partProfiles.slice().sort((a, b) => a.name.localeCompare(b.name, 'de')); }
+  // Auswahlliste "Profil" (Bauteildefinition / DXF-Bauteil definieren): "- kein Profil -" + alle Profile
+  function fillPartProfileSelect(sel, selectedId) {
+    sel.innerHTML = '';
+    const o0 = document.createElement('option'); o0.value = ''; o0.textContent = T('- kein Profil -', '- no profile -'); sel.appendChild(o0);
+    sortedPartProfiles().forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
+    sel.value = selectedId && getPartProfileById(selectedId) ? selectedId : '';
+  }
+
+  // ============================================================
   // "Buttonfarbe einstellen" ("Ansicht" -> "Buttonfarbe einstellen", 53. Runde, Sebastian:
   // "Highlight-Farbe für 'Datei', 'Bearbeiten' und 'Ansicht', wenn aktiv. Standard bleibt Rot.
   // Schrift- und Hintergrundfarbe dürfen nicht identisch sein. Eine gewählte Farbe gilt für alle
@@ -14663,7 +15251,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Die Bohrungstiefe kommt immer aus dem Symbol (T/U) und ist deshalb keine Einstellung.
   const LS_KEY_DXF_PART_DEFAULTS = 'cncsim.dxfPartDefaults';
   // Release 262: Standard-Füllfarben je Bauteil ("- undefiniert -" bleibt beim bisherigen Blau)
-  const DXF_PART_DEFAULT_FILL = { undefined: '#3399ff', tread: '#aaffaa', riser: '#8cff8c', stringer: '#ffba75', handrail: '#ffffa8' };
+  const DXF_PART_DEFAULT_FILL = { undefined: '#3399ff', tread: '#aaffaa', riser: '#8cff8c', stringer: '#ffba75', handrail: '#ffffa8', krmStanding: '#ffffa8' };
   // Release 260 (Sebastian: "Import einer Textur unter Einstellungen -> DXF -> Textur. Die Textur wird wie ein
   // Spannfutterprofil bzw. Werkzeugprofil abgelegt und auch exportiert beim Einstellungsexport."): Texturliste in
   // localStorage (LS_KEY_DXF_TEXTURES) und im Einstellungsexport (Feld dxfTextures). Das Bild wird beim Import auf
@@ -14807,7 +15395,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         tread: { thickness: DXF_THICKNESS_PREFILL, pocketDepth: 10, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
         riser: { thickness: DXF_THICKNESS_PREFILL, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },   // vpocket seit Release 258
         stringer: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
-        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() }
+        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
+        // Release 279 (Sebastian: "Bei der DXF-Bauteildefinition ein neues Bauteil "Krümmling, stehend" ... Stärke -> nicht
+        // gebraucht ... Füllung -> wie gehabt ... Bearbeitungen ... nicht gebraucht"): nur Füllung/Farben/Transparenz/Textur
+        krmStanding: { profileId: null }   // Release 280: Bauteilprofil (id) oder null
       }
     };
   }
@@ -14834,7 +15425,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     base.colorDefaults = 262;
     Object.keys(base.parts).forEach(t => {
       const b = base.parts[t], s = (dp[t] && typeof dp[t] === 'object') ? dp[t] : {};
-      b.thickness = num(s.thickness, b.thickness, true);
+      if ('thickness' in b) b.thickness = num(s.thickness, b.thickness, true);   // Release 279: Krümmling ohne Stärke
       b.transparency = Math.max(0, Math.min(100, Math.round(num(s.transparency, globalTr))));
       const defFill = DXF_PART_DEFAULT_FILL[t] || '#3399ff';
       b.fillColor = hex(s.fillColor, defFill);
@@ -14844,6 +15435,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       b.fillMode = s.fillMode === 'texture' ? 'texture' : 'color';
       b.textureId = typeof s.textureId === 'string' && s.textureId ? s.textureId : null;
       if ('pocketDepth' in b) b.pocketDepth = num(s.pocketDepth, b.pocketDepth, true);
+      if ('profileId' in b) b.profileId = typeof s.profileId === 'string' && s.profileId ? s.profileId : null;   // Release 280
       if (b.mortise) { const m = s.mortise || {}; b.mortise = { on: bool(m.on, b.mortise.on), depth: num(m.depth, b.mortise.depth), depthTread: num(m.depthTread, b.mortise.depthTread), depthRiser: num(m.depthRiser, b.mortise.depthRiser) }; }
       if (b.vpocket) { const v = s.vpocket || {}; b.vpocket = { on: bool(v.on, b.vpocket.on), depth: num(v.depth, b.vpocket.depth, true) }; }
       ['T', 'U'].forEach(k => { if (!b[k]) return; const q = s[k] || {}; b[k] = { on: bool(q.on, b[k].on), shape: q.shape === 'rect' ? 'rect' : 'round', height: optNum(q.height), rectHeight: optNum(q.rectHeight) }; });
@@ -14885,6 +15477,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   const pocketDepthPrefill = () => (dxfPartDefaults.parts.tread.pocketDepth);
   let dxfMortiseInfo = null;
+  // Release 278: Krümmling-Modus ("DXF CS Krümmling") - Ergebnis von CNCParser.buildKruemmlingFromGeometry() oder null
+  let dxfKrm = null;
+  let dxfKrmFlip = false;
+  let dxfKrmLoading = false;
+  let dxfKrmProfileId = null;   // Release 280: gewähltes Bauteilprofil (partProfiles) oder null
   // Release 273: dxfMortiseLayers = Map Layername -> Einstemmungstiefe (ohne benannte Layer, beliebig viele Layer);
   // dxfMortiseDepth = Vorgabe-Tiefe für neu angehakte Layer (aus der Bauteildefinition).
   let dxfMortiseLayers = new Map();
@@ -16217,7 +16814,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnDxfMirrorX.disabled = !dxfGeometry;
     btnDxfMirrorY.disabled = !dxfGeometry;
     btnDxfRotate.disabled = !dxfGeometry;
-    btnDxfThickness.disabled = !dxfGeometry;
+    btnDxfThickness.disabled = !dxfGeometry;   // Release 279: im Krümmling-Modus wieder verfügbar ("Krümmling, stehend", nur Füllung)
     // "DXF spiegeln X-Achse"/"DXF spiegeln Y-Achse"/"DXF drehen"/"DXF Bauteilhöhe" im
     // "Bearbeiten"->"DXF"-Menü (Release 167) - dieselbe disabled-Logik wie ihre vier
     // gleichwertigen Toolbar-Icons direkt oberhalb.
@@ -16225,6 +16822,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     btnDxfMirrorYMenu.disabled = !dxfGeometry;
     btnDxfRotateMenu.disabled = !dxfGeometry;
     btnDxfThicknessMenu.disabled = !dxfGeometry;
+    if (typeof updateKrmPanel === 'function') updateKrmPanel();
     // "DXF skalieren" (Release 84) - dieselbe disabled-Logik wie die übrigen DXF-Knöpfe.
     btnDxfScale.disabled = !dxfGeometry;
     // Hinweistext im Skalieren-Dialog (Release 85) immer synchron halten, auch wenn dxfScale
@@ -16673,6 +17271,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     window.__lastMortiseInfo = mesh.info;
   }
   function loadDxfText(text, filename) {
+    if (!dxfKrmLoading) dxfKrm = null;   // Release 278: normaler DXF-Import beendet den Krümmling-Modus
     dxfGeometry = CNCParser.parseDXF(text);
     // Release 233 (Sebastian, siehe computeDxfAnchorShift() in parser.js): Kontur-Layer (sonst
     // "Layer1") an X0/Y0 anlegen, damit die Simulation deckungsgleich mit der DXF-Datei liegt. Die
@@ -16776,7 +17375,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     requestRender();
     dxfThicknessPanel.classList.remove('open');   // Release 257: offener Dialog gehört zur vorigen Datei
     // Release 256: "beim Import automatisch anwenden" - derselbe Weg wie Öffnen + Ok im Dialog
-    if (dxfPartDefaults.autoApply) { openDxfThicknessPanel(); confirmDxfThickness(); }
+    if (dxfPartDefaults.autoApply && !dxfKrmLoading) { openDxfThicknessPanel(); confirmDxfThickness(); }
   }
 
   // "DXF löschen" (Sebastian) - entfernt die importierte DXF-Unterlage wieder vollständig, ohne
@@ -16784,6 +17383,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function clearDxf() {
     if (!dxfGeometry) return;
     dxfGeometry = null;
+    dxfKrm = null;   // Release 278
     dxfThicknessPanel.classList.remove('open'); // Release 257
     dxfEntities = null; // Release 208, siehe dessen Deklaration oben
     dxfFilename = null;
@@ -18673,6 +19273,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfLayerSchmiegeRings,
       dxfNamedSchmiegeEnabled,   // Release 270: Checkbox "Schmiege aus Layer Schmiege_vorn/_hinten"
       dxfMortiseMesh, dxfPartType, // Release 249
+      dxfKrm,   // Release 278
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
       // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
@@ -18705,7 +19306,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
       a.dxfThicknessTransparency === b.dxfThicknessTransparency && a.dxfThicknessColor === b.dxfThicknessColor &&
       a.dxfLayerSchmiegeRings === b.dxfLayerSchmiegeRings && a.dxfNamedSchmiegeEnabled === b.dxfNamedSchmiegeEnabled &&
-      a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType &&
+      a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType && a.dxfKrm === b.dxfKrm &&
       a.dxfOutlineColor === b.dxfOutlineColor && a.dxfTexKey === b.dxfTexKey && a.mortiseScale === b.mortiseScale &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.segments === b.segments;
@@ -20055,6 +20656,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
     const addB = v => { if (!v) return; if (v.x < bx0) bx0 = v.x; if (v.x > bx1) bx1 = v.x; if (v.y < by0) by0 = v.y; if (v.y > by1) by1 = v.y; };
     for (const t of mesh.tris) for (const p of t.v) addB(vert(p[0], p[1], t.z));
+    if (mesh.faces3) for (const f of mesh.faces3) for (const p of f.v) addB(vert(p[0], p[1], p[2]));   // Release 278
     for (const w of mesh.walls) { addB(vert(w.a[0], w.a[1], w.z0)); addB(vert(w.b[0], w.b[1], w.z0)); const aT = w.at || w.a, bT = w.bt || w.b; addB(vert(aT[0], aT[1], w.z1)); addB(vert(bT[0], bT[1], w.z1)); }
     const MG = 6;
     const X0 = Math.max(0, Math.floor(bx0) - MG), X1 = Math.min(W - 1, Math.ceil(bx1) + MG), Y0 = Math.max(0, Math.floor(by0) - MG), Y1 = Math.min(H - 1, Math.ceil(by1) + MG);
@@ -20191,6 +20793,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       } else {
         tri(p00, p10, p11, col);
         tri(p00, p11, p01, col);
+      }
+    }
+    // Release 278 (Krümmling): beliebige Dreiecke, jede Ecke mit eigenem z; Außenrichtung über den Innenpunkt r
+    if (mesh.faces3) {
+      const P3f = p => { const q = dxfTransformPoint({ x: p[0], y: p[1], z: 0 }); return [q.x, q.y, p[2]]; };
+      for (const f of mesh.faces3) {
+        const Q0 = P3f(f.v[0]), Q1 = P3f(f.v[1]), Q2 = P3f(f.v[2]), R = P3f(f.r);
+        const ux = Q1[0] - Q0[0], uy = Q1[1] - Q0[1], uz = Q1[2] - Q0[2], vx = Q2[0] - Q0[0], vy = Q2[1] - Q0[1], vz = Q2[2] - Q0[2];
+        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        const nl = Math.hypot(nx, ny, nz);
+        if (nl < 1e-9) continue;
+        nx /= nl; ny /= nl; nz /= nl;
+        const mx = (Q0[0] + Q1[0] + Q2[0]) / 3 - R[0], my = (Q0[1] + Q1[1] + Q2[1]) / 3 - R[1], mz = (Q0[2] + Q1[2] + Q2[2]) / 3 - R[2];
+        if (nx * mx + ny * my + nz * mz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        const fc = nx * fwd.x + ny * fwd.z + nz * fwd.y;
+        const A = vert(f.v[0][0], f.v[0][1], f.v[0][2]), B = vert(f.v[1][0], f.v[1][1], f.v[1][2]), C = vert(f.v[2][0], f.v[2][1], f.v[2][2]);
+        if (!A || !B || !C) continue;
+        if (fc > -EPSF) { triCulled++; if (zb && fc > EPSF) tri(A, B, C, 0, true); continue; }
+        const kf = (f.kind === 'end1' || f.kind === 'end2') ? 0.9 : 1;
+        tri(A, B, C, shade(fc, kf), false, TX && f.uv ? [f.uv[0], f.uv[1], f.uv[2], lightOf(fc, kf)] : null);
       }
     }
     // Release 251 (horizontale Bohrungen, "T"): jede Bohrung ist ein waagerechter Zylinder mit flachem Ende. Pro Pixel
@@ -20410,13 +21032,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const BIAS = 0.75;
     const seeThrough = alpha < 0.999;
     let linePixels = 0;
-    const drawRings = !dxfHiddenLayers.has(dxfKonturLayerName);
+    const drawRings = !dxfHiddenLayers.has(mesh.ringLayer || dxfKonturLayerName);   // Release 278: Krümmling mit eigenem Layer
     if (drawRings) {
       for (const ring of mesh.rings) {
         const n = ring.pts.length;
         for (let k = 0; k < (ring.open ? n - 1 : n); k++) {
           const pa = ring.pts[k], pb = ring.pts[(k + 1) % n];
-          const a = vert(pa[0], pa[1], ring.z), b = vert(pb[0], pb[1], ring.z);
+          const a = vert(pa[0], pa[1], pa.length > 2 ? pa[2] : ring.z), b = vert(pb[0], pb[1], pb.length > 2 ? pb[2] : ring.z);   // Release 278: z je Punkt
           if (!a || !b) continue;
           const steps = Math.max(1, Math.ceil(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y))));
           for (let s = 0; s <= steps; s++) {
@@ -20476,8 +21098,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped, boreOverlapPx, renderScale: RS, ms: performance.now() - tStart, texture: TX ? { id: dxfTextureId, pixels: texPixels, mmpx: TX.mmpx } : null };
   }
 
+  // Release 278: Krümmling-Modus - Rahmen als Linie (z = 0), der Krümmling als Körper (drawMortiseBody mit faces3)
+  function drawKruemmling(proj) {
+    const fr = dxfKrm.frame;
+    const hidden = dxfHiddenLayers.has(dxfKrm.layer);
+    window.__lastKrmRenderInfo = null;
+    if (hidden) return;
+    ctx.save();
+    ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4; ctx.setLineDash(rawProgramText != null ? [6, 4] : []);
+    ctx.strokeStyle = cssVar('--dxf-color') || cssVar('--tool-color');
+    ctx.beginPath();
+    let started = false;
+    [[fr.x0, fr.y0], [fr.x1, fr.y0], [fr.x1, fr.y1], [fr.x0, fr.y1], [fr.x0, fr.y0]].forEach(([x, y]) => {
+      const sp = proj(toRender(dxfTransformPoint({ x, y, z: 0 })));
+      if (!sp) return;
+      if (started) ctx.lineTo(sp.x, sp.y); else { ctx.moveTo(sp.x, sp.y); started = true; }
+    });
+    ctx.stroke();
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+    window.__lastKrmRenderInfo = drawMortiseBody(proj, dxfKrm.mesh, 0);
+    ctx.restore();
+  }
   function drawDxf(proj) {
     if (!dxfGeometry || !dxfVisible) return;
+    if (dxfKrm) { drawKruemmling(proj); return; }   // Release 278
     const defaultColor = cssVar('--dxf-color') || cssVar('--tool-color');
     ctx.globalAlpha = 0.85;
     ctx.lineWidth = 1.4;
@@ -23502,7 +24146,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // "axisLabelFontSize"/"gridStep"-Felder weiter unten.
     LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP,
     LS_KEY_SHOW_TOOL_HOLDER, // Release 192, siehe eigenes "showToolHolder"-Feld weiter unten
-    LS_KEY_DXF_TEXTURES // Release 260, siehe eigenes "dxfTextures"-Feld weiter unten
+    LS_KEY_DXF_TEXTURES, // Release 260, siehe eigenes "dxfTextures"-Feld weiter unten
+    LS_KEY_PART_PROFILES // Release 280, siehe eigenes "partProfiles"-Feld weiter unten
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -23620,6 +24265,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfFillMode,
       dxfTextureId,
       dxfTextures: dxfTextures.map(t => Object.assign({}, t)),
+      // Release 280: Bauteilprofile (Einstellungen -> DXF -> Bauteilprofil)
+      partProfiles: partProfiles.map(p => JSON.parse(JSON.stringify(p))),
       // Generisches Sicherheitsnetz (Release 154, siehe ausführliche Herleitung oben bei
       // buildSettingsExport()/collectOtherCncsimSettings()) - fängt jede künftige, hier oben noch
       // nicht explizit benannte "cncsim."-Einstellung automatisch auf.
@@ -23826,6 +24473,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // feldweise auf den jeweiligen Standard zurück statt den ganzen Import abzubrechen).
       // Release 256: Bauteildefinition (fehlt = unangetastet)
       // Release 260: Texturliste vor der Bauteildefinition übernehmen (ersetzt die vorhandene Liste)
+      if (Array.isArray(data.partProfiles)) { partProfiles = normalizePartProfileList(data.partProfiles); persistPartProfiles(partProfiles); onPartProfilesChanged(); }   // Release 280
       if (Array.isArray(data.dxfTextures)) {
         const list = normalizeDxfTextureList(data.dxfTextures);
         if (persistDxfTextures(list)) { dxfTextures = list; dxfTexRenderCache.clear(); dxfTexVersion++; if (dxfTexturePanel.classList.contains('open')) openDxfTexturePanel(); }
@@ -26089,6 +26737,203 @@ Sebastian Bäcker (Anschrift wie oben)`,
     draw();
   })();
 
+  // ============================================================
+  // Release 280: "Bauteilprofil" (#partProfilePanel) - UI nach dem Vorbild von "Spannfutter bearbeiten" direkt oberhalb
+  // (Liste mit Neu/Kopieren/Löschen, Datei, Name, Skalierungsfaktor, Vorschau mit Messen/Home, Hilfebild rechts). Sebastian:
+  // "Was es nicht gibt: "Längenreferenzpunkt" und "Radiusreferenzpunkt"" - dafür die Auswahl "Profil gedreht" (Ja/Nein,
+  // "Gedreht = Rundung zeigt nach oben"). Die Vorschau zeigt die Kontur so, wie sie in der DXF gezeichnet ist.
+  // ============================================================
+  (function () {
+    const panel = el('partProfilePanel');
+    const profileSelect = el('partProfileSelect');
+    const fileInput = el('partProfileFileInput');
+    const fileNameLabel = el('partProfileFileName');
+    const nameInput = el('partProfileNameInput');
+    const scaleInput = el('partProfileScaleInput');
+    const scaleWarning = el('partProfileScaleWarning');
+    const rotatedSelect = el('partProfileRotatedSelect');
+    const infoLine = el('partProfileInfo');
+    const errorHint = el('partProfileErrorHint');
+    const canvas = el('partProfileCanvas');
+    const ctx = canvas.getContext('2d');
+    const view = createDxfPreviewViewport(canvas, function () { draw(); });
+    let currentId = null, dxfText = null, parsed = null;
+
+    function fit() {
+      const w = canvas.width, h = canvas.height, pad = 24;
+      if (!parsed) return null;
+      const pw = parsed.width || 1, ph = parsed.height || 1;
+      const k = Math.min((w - 2 * pad) / pw, (h - 2 * pad) / ph);
+      const cx = (parsed.xmin + parsed.xmax) / 2, cy = (parsed.ymin + parsed.ymax) / 2;
+      return { xOf: x => w / 2 + (x - cx) * k, yOf: y => h / 2 - (y - cy) * k };
+    }
+    function buildMapping() {
+      const f = fit();
+      if (!f) return { toScreen: () => null, points: [] };
+      const outline = parsed.pts.map(p => { const q = { r: p[0], dist: p[1] }; if (p[2]) markArcInner(q); return q; });
+      outline.push({ r: parsed.pts[0][0], dist: parsed.pts[0][1] });
+      return {
+        toScreen: (r, dist) => ({ x: view.x(f.xOf(r)), y: view.y(f.yOf(dist)) }),
+        points: parsed.pts.filter(p => !p[2]).map(p => ({ r: p[0], dist: p[1] })),
+        outline: outline
+      };
+    }
+    let mappingCache = null;
+    const measureTool = createDxfPreviewMeasureTool({
+      lengthBtn: el('partProfileMeasureLengthBtn'),
+      angleBtn: el('partProfileMeasureAngleBtn'),
+      panelEl: el('partProfileMeasurePanel'),
+      canvas: canvas,
+      getMapping: function () {
+        // Silhouette nur bei neuer Kontur neu aufbauen (Fang-Geometrie wird am outline-Array zwischengespeichert)
+        if (!mappingCache || mappingCache.parsed !== parsed) mappingCache = { parsed: parsed, map: buildMapping() };
+        const f = fit();
+        if (f) mappingCache.map.toScreen = (r, dist) => ({ x: view.x(f.xOf(r)), y: view.y(f.yOf(dist)) });
+        return mappingCache.map;
+      }
+    });
+    dxfPreviewMeasureHandlers.push({ isActive: measureTool.isActive, deactivate: function () { measureTool.reset(); draw(); } });
+    el('partProfileViewHomeBtn').addEventListener('click', function () { view.reset(); draw(); });
+    function canvasXY(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * (canvas.width / r.width), y: (e.clientY - r.top) * (canvas.height / r.height) }; }
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || !measureTool.isActive()) return;   // rechte Maustaste = Verschieben (createDxfPreviewViewport)
+      const p = canvasXY(e); measureTool.handleClick(p.x, p.y); draw(); e.preventDefault();
+    });
+    canvas.addEventListener('mousemove', (e) => { if (!measureTool.isActive()) return; const p = canvasXY(e); measureTool.handleHover(p.x, p.y); draw(); });
+    canvas.addEventListener('mouseleave', () => { if (!measureTool.isActive()) return; measureTool.handleHover(-9999, -9999); draw(); });
+
+    function draw() {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const f = fit();
+      if (!f) {
+        ctx.fillStyle = '#8a93a6'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(T('Keine DXF-Datei geladen', 'No DXF file loaded'), w / 2, h / 2);
+        return;
+      }
+      ctx.beginPath();
+      parsed.pts.forEach((p, i) => { const x = view.x(f.xOf(p[0])), y = view.y(f.yOf(p[1])); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(120,140,170,0.35)'; ctx.fill();
+      ctx.strokeStyle = '#5b6b85'; ctx.lineWidth = 1.5; ctx.stroke();
+      // Lage auf dem Krümmling (Sebastian: "Gedreht = Rundung zeigt nach oben")
+      ctx.fillStyle = '#e0792f'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(rotatedSelect.value === 'yes' ? T('▲ DXF oben = Krümmling oben', '▲ DXF top = wreath top') : T('▼ DXF oben = Krümmling unten', '▼ DXF top = wreath bottom'), w / 2, 14);
+      measureTool.drawOverlay(ctx);
+    }
+    function fmtNum(n) { return (Math.round(n * 1000) / 1000).toString().replace('.', currentLang === 'en' ? '.' : ','); }
+    function parseNum(s) { const n = parseFloat(String(s == null ? '' : s).trim().replace(',', '.')); return Number.isFinite(n) ? n : null; }
+    function showError(msg) { errorHint.textContent = msg; errorHint.hidden = !msg; }
+    function updateInfo() {
+      if (!parsed) { infoLine.textContent = ''; infoLine.hidden = true; return; }
+      const f1 = v => (Math.round(v * 10) / 10).toFixed(1).replace('.', currentLang === 'en' ? '.' : ',');
+      infoLine.hidden = false;
+      infoLine.textContent = T('Profil: ', 'Profile: ') + f1(parsed.width) + ' × ' + f1(parsed.height) + T(' mm (Breite × Höhe) - der Handlauf ist 45 × 80 mm.', ' mm (width × height) - the handrail is 45 × 80 mm.');
+    }
+    function setParsed(p) { parsed = p; mappingCache = null; measureTool.reset(); view.reset(); updateInfo(); draw(); }
+    function reparse() {
+      if (!dxfText) { setParsed(null); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      scaleWarning.hidden = true;
+      try {
+        setParsed(CNCParser.buildPartProfileFromDxfText(dxfText, { scale }));
+        showError('');
+      } catch (err) {
+        setParsed(null);
+        showError(err && err.message ? T(err.message, err.messageEn || err.message) : String(err));
+      }
+    }
+    scaleInput.addEventListener('change', reparse);
+    rotatedSelect.addEventListener('change', draw);
+    el('btnPartProfileChooseFile').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      readFileAsText(file, (text) => {
+        dxfText = text;
+        fileNameLabel.textContent = file.name;
+        if (!nameInput.value.trim()) nameInput.value = file.name.replace(/\.dxf$/i, '');
+        reparse();
+      }, () => showError(T('Die Datei konnte nicht gelesen werden.', 'The file could not be read.')));
+      fileInput.value = '';
+    });
+    function populateProfileSelect(selectId) {
+      profileSelect.innerHTML = '';
+      sortedPartProfiles().forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.name;
+        if (p.id === selectId) opt.selected = true;
+        profileSelect.appendChild(opt);
+      });
+    }
+    function resetForm() {
+      currentId = null; dxfText = null;
+      nameInput.value = ''; scaleInput.value = '1'; scaleWarning.hidden = true; rotatedSelect.value = 'no';
+      fileNameLabel.textContent = T('Keine Datei ausgewählt', 'No file selected');
+      showError('');
+      profileSelect.selectedIndex = -1;
+      setParsed(null);
+    }
+    function loadProfileIntoForm(p) {
+      currentId = p.id; dxfText = p.dxfText;
+      nameInput.value = p.name; scaleInput.value = fmtNum(p.scale); scaleWarning.hidden = true;
+      rotatedSelect.value = p.rotated ? 'yes' : 'no';
+      fileNameLabel.textContent = T('Aus gespeichertem Profil geladen', 'Loaded from saved profile');
+      showError('');
+      const xs = p.pts.map(q => q[0]), ys = p.pts.map(q => q[1]);
+      setParsed({ pts: p.pts.map(q => q.slice()), width: p.width, height: p.height, xmin: Math.min(...xs), xmax: Math.max(...xs), ymin: Math.min(...ys), ymax: Math.max(...ys) });
+    }
+    function changed() { if (typeof onPartProfilesChanged === 'function') onPartProfilesChanged(); }
+    profileSelect.addEventListener('change', () => { const p = getPartProfileById(profileSelect.value); if (p) loadProfileIntoForm(p); });
+    el('btnPartProfileNew').addEventListener('click', resetForm);
+    el('btnPartProfileCopy').addEventListener('click', () => {
+      const id = profileSelect.value;
+      if (!id || !getPartProfileById(id)) return;
+      const copy = copyPartProfile(id);
+      if (!copy) return;
+      populateProfileSelect(copy.id);
+      loadProfileIntoForm(copy);
+      changed();
+    });
+    el('btnPartProfileDelete').addEventListener('click', () => {
+      const id = profileSelect.value;
+      const p = id && getPartProfileById(id);
+      if (!p) return;
+      if (!window.confirm(T('Bauteilprofil "' + p.name + '" wirklich löschen?', 'Really delete the "' + p.name + '" part profile?'))) return;
+      deletePartProfile(id);
+      populateProfileSelect(null);
+      if (currentId === id) resetForm();
+      changed();
+    });
+    function openPartProfilePanel() {
+      resetForm();
+      populateProfileSelect(null);
+      panel.classList.add('open');
+    }
+    el('btnPartProfiles').addEventListener('click', openPartProfilePanel);
+    el('btnPartProfileCancel').addEventListener('click', () => panel.classList.remove('open'));
+    nameInput.addEventListener('input', () => {
+      if (nameInput.value.indexOf('//') !== -1) showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).'));
+      else if (errorHint.textContent && /\/\//.test(errorHint.textContent)) showError('');
+    });
+    el('btnPartProfileSave').addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) { showError(T('Bitte einen Namen eingeben.', 'Please enter a name.')); return; }
+      if (name.indexOf('//') !== -1) { showError(T('Der Name darf „//“ nicht enthalten (ein einzelnes „/“ ist erlaubt).', 'The name must not contain "//" (a single "/" is allowed).')); return; }
+      if (!dxfText || !parsed) { showError(T('Bitte zuerst eine gültige DXF-Datei einlesen.', 'Please read in a valid DXF file first.')); return; }
+      const scale = parseNum(scaleInput.value);
+      if (scale === null || scale <= 0) { scaleWarning.hidden = false; return; }
+      const saved = savePartProfile({ id: currentId, name: name, dxfText: dxfText, scale: scale, rotated: rotatedSelect.value === 'yes', pts: parsed.pts });
+      if (!saved) { showError(T('Das Profil konnte nicht gespeichert werden.', 'The profile could not be saved.')); return; }
+      currentId = saved.id;
+      populateProfileSelect(saved.id);
+      changed();
+      panel.classList.remove('open');
+    });
+    draw();
+  })();
+
   // "Einstellungen" -> "Standardwerte wiederherstellen" (66. Runde, Sebastian: "Dazu ein Button
   // bei den Einstellungen: 'Standardwerte wiederherstellen' (unter 'Spalten' einfügen), der alle
   // Farben zurücksetzt und die Spaltenbreiten auf 'Standard' gesetzt."). Setzt in einem Schritt
@@ -28162,6 +29007,84 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // wie #btnDxfImport oben, nach demselben Muster wie #btnLoadFileIcon neben #btnLoadFile (siehe
   // Kommentar bei #btnDxfImportIcon in template_top.html).
   el('btnDxfImportIcon').addEventListener('click', () => el('dxfFileInput').click());
+  // Release 278: "DXF CS Krümmling" - Dialog, Import (nur Rechteck mit Handlauf), Spiegeln oben/unten
+  const dxfKrmPanel = el('dxfKrmPanel');
+  function setKrmStatus(text, isError) {
+    const st = el('dxfKrmStatus');
+    st.textContent = text;
+    st.classList.toggle('dxf-krm-error', !!isError);
+  }
+  function fmtMm(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', currentLang === 'en' ? '.' : ','); }
+  function updateKrmPanel() {
+    const cb = el('dxfKrmFlip');
+    cb.disabled = !dxfKrm;
+    cb.checked = !!(dxfKrm && dxfKrmFlip);
+    if (dxfKrm) {
+      const i = dxfKrm.info;
+      setKrmStatus(T('Krümmling: ', 'Wreath: ') + (dxfFilename || '') + '\n'
+        + T('Querschnitt ', 'Cross-section ') + fmtMm(i.width) + ' × ' + fmtMm(i.height) + ' mm, '
+        + T('Länge (Mittellinie) ', 'length (centre line) ') + fmtMm(i.length) + ' mm, '
+        + T('Höhe des Rohlings ', 'blank height ') + fmtMm(i.thickness) + ' mm'
+        + (dxfKrm.profile ? '\n' + T('Profil: ', 'Profile: ') + dxfKrm.profile.name + (dxfKrm.profile.rotated ? T(' (gedreht)', ' (rotated)') : '') : '')
+        + (dxfKrm.profileError ? '\n' + T('Profil „' + dxfKrm.profileError.name + '“ passt nicht - ohne Profil dargestellt', 'Profile "' + dxfKrm.profileError.name + '" does not fit - shown without profile') : ''), false);
+    } else if (!el('dxfKrmStatus').classList.contains('dxf-krm-error')) {
+      setKrmStatus(T('Noch kein Krümmling geladen.', 'No wreath loaded yet.'), false);
+    }
+  }
+  // Release 280: mit gewähltem Bauteilprofil wird das Profil über den Krümmling gezogen; passt es nicht zum Handlauf
+  // (Sebastian: "Wenn es nicht passt, wird eine Meldung ausgegeben und der dargestellte Handlauf bleibt ohne Profil!"),
+  // bleibt der Rechteckquerschnitt (Meldung nur bei showMsg - beim Import und beim Wechsel des Profils).
+  function rebuildKruemmling(showMsg) {
+    const r = dxfGeometry ? CNCParser.buildKruemmlingFromGeometry(dxfGeometry, dxfKrmFlip) : null;
+    const prof = r && r.ok && dxfKrmProfileId ? getPartProfileById(dxfKrmProfileId) : null;
+    if (prof) {
+      const sw = CNCParser.applyKruemmlingProfile(r, prof);
+      if (sw.ok) { r.mesh = sw.mesh; r.profile = Object.assign({ id: prof.id, name: prof.name }, sw.info); }
+      else {
+        r.profileError = { id: prof.id, name: prof.name, error: sw.error, errorEn: sw.errorEn };
+        if (showMsg) window.alert(T('Bauteilprofil „' + prof.name + '“: ' + sw.error, 'Part profile "' + prof.name + '": ' + sw.errorEn));
+      }
+    }
+    dxfKrm = r && r.ok ? r : null;
+  }
+  function loadKruemmlingText(text, filename) {
+    let g = null;
+    try { g = CNCParser.parseDXF(text); } catch (e) { g = null; }
+    const test = CNCParser.buildKruemmlingFromGeometry(g, false);
+    if (!test.ok) { setKrmStatus(T(test.error, test.errorEn), true); return false; }
+    dxfKrmLoading = true;
+    try { loadDxfText(text, filename); } finally { dxfKrmLoading = false; }
+    dxfKrmFlip = false;
+    // Release 278: Farbe wie beim Handlauf; seit Release 279 aus der eigenen Bauteildefinition "Krümmling, stehend"
+    const pd = dxfPartDefaults.parts.krmStanding || dxfPartDefaults.parts.handrail;
+    dxfKrmProfileId = pd.profileId && getPartProfileById(pd.profileId) ? pd.profileId : null;   // Release 280
+    rebuildKruemmling(true);
+    dxfPartType = 'undefined';
+    dxfThicknessColor = pd.fillColor; dxfOutlineColor = pd.outlineColor; dxfThicknessTransparency = pd.transparency;
+    dxfFillMode = pd.fillMode === 'texture' ? 'texture' : 'color'; dxfTextureId = pd.textureId || null;
+    dxfThicknessEverConfirmed = true;   // Release 279: "DXF-Bauteil definieren" zeigt die angewendete Füllung
+    setKrmStatus('', false);
+    updateDxfUI();
+    updateKrmPanel();
+    requestRender();
+    return true;
+  }
+  el('btnDxfKrmIcon').addEventListener('click', () => { updateKrmPanel(); dxfKrmPanel.classList.add('open'); });
+  el('btnDxfKrmClose').addEventListener('click', () => dxfKrmPanel.classList.remove('open'));
+  el('btnDxfKrmLoad').addEventListener('click', () => el('dxfKrmFileInput').click());
+  el('dxfKrmFileInput').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    readFileAsText(f, (text) => loadKruemmlingText(text, f.name), () => setKrmStatus(T('Datei konnte nicht gelesen werden: ', 'File could not be read: ') + f.name, true));
+  });
+  el('dxfKrmFlip').addEventListener('change', () => {
+    if (!dxfKrm) return;
+    dxfKrmFlip = el('dxfKrmFlip').checked;
+    rebuildKruemmling(false);
+    updateKrmPanel();
+    requestRender();
+  });
   el('dxfFileInput').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
@@ -28744,8 +29667,30 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // Release 253 (Sebastian, Punkt 8): Sichtbarkeit je Bauteilart - "- undefiniert -": nur Stärke (+ Füll-Transparenz
   // und darunter); Stufe: Schmiege, vertikal (Taschen + Kreise), horizontal; Setzstufe: Schmiege, vertikal (Kreise, seit Release 258), horizontal;
   // Wange/Handlauf: vertikal (Einstemmung + Kreise), horizontal. Vor jedem Abschnitt ein Trennstrich.
+  // Release 279: im Krümmling-Modus gibt es im Dropdown nur "Krümmling, stehend" (Option wird nur dann eingehängt)
+  const krmPartOption = document.createElement('option');
+  krmPartOption.value = 'krmStanding';
+  function syncKrmPartOption() {
+    const on = !!dxfKrm;
+    Array.from(dxfPartTypeSelect.options).forEach(o => { if (o !== krmPartOption) { o.hidden = on; o.disabled = on; } });
+    if (on) {
+      krmPartOption.textContent = T('Krümmling, stehend', 'Wreath, standing');
+      if (krmPartOption.parentNode !== dxfPartTypeSelect) dxfPartTypeSelect.appendChild(krmPartOption);
+      dxfPartTypeSelect.value = 'krmStanding';
+    } else if (krmPartOption.parentNode) {
+      krmPartOption.remove();
+    }
+  }
   function updateDxfPartTypeUI() {
     const t = dxfPartTypeSelect.value;
+    const krm = t === 'krmStanding';   // Release 279: nur Füllung - keine Stärke, keine Bearbeitungen, keine Vorschau
+    el('dxfThicknessRow').hidden = krm;
+    el('dxfSepProfile').hidden = !krm; el('dxfProfileRow').hidden = !krm;   // Release 280
+    el('dxfDefPreviewToggle').closest('label').hidden = krm;
+    if (krm) {
+      ['dxfMortiseRow', 'dxfPocketRow', 'dxfVPocketRow', 'dxfSchmiegeRow', 'dxfSepSchmiege', 'dxfVerticalGroup', 'dxfSepVertical', 'dxfHBoreRow', 'dxfSepHorizontal'].forEach(id => { el(id).hidden = true; });
+      return;
+    }
     const mortise = isMortisePart(t), step = isStepPart(t);
     const vertical = mortise || t === 'tread' || t === 'riser', horizontal = t !== 'undefined';   // Setzstufe vertikal seit Release 258
     dxfMortiseRow.hidden = !mortise;
@@ -28781,6 +29726,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!dxfGeometry) return;
     refreshDxfSchmiegeUI(); // Release 243
     dxfPartTypeSelect.value = dxfPartType; // Release 249
+    syncKrmPartOption();   // Release 279
+    if (dxfKrm) fillPartProfileSelect(el('dxfProfileSelect'), dxfKrmProfileId);   // Release 280
     refreshDxfMortiseUI();
     refreshDxfPocketUI(); // Release 250
     refreshDxfHBoreUI(); // Release 251
@@ -28826,6 +29773,25 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function confirmDxfThickness(keepOpen) {
     keepOpen = keepOpen === true;
     if (!dxfGeometry) { dxfThicknessPanel.classList.remove('open'); return; }
+    if (dxfKrm) {   // Release 279: "Krümmling, stehend" - nur die Füllung übernehmen
+      const tv = Number(dxfThicknessTransparencySlider.value);
+      if (tv < 100) {
+        const norm = normalizeHex(dxfThicknessColorHex.value), outlineNorm = normalizeHex(dxfOutlineColorHex.value);
+        if (!norm) { dxfThicknessColorHexWarning.hidden = false; return; }
+        if (!outlineNorm) { dxfOutlineColorHexWarning.hidden = false; return; }
+        dxfThicknessColor = norm; dxfOutlineColor = outlineNorm;
+      }
+      dxfFillMode = el('dxfFillModeSelect').value === 'texture' ? 'texture' : 'color';
+      if (dxfFillMode === 'texture') dxfTextureId = el('dxfTextureSelect').value || null;
+      dxfThicknessTransparency = tv;
+      dxfThicknessEverConfirmed = true;
+      const pid = el('dxfProfileSelect').value || null;   // Release 280: Bauteilprofil
+      if (pid !== dxfKrmProfileId) { dxfKrmProfileId = pid; rebuildKruemmling(true); updateKrmPanel(); }
+      updateDxfUI();
+      requestRender();
+      if (!keepOpen) dxfThicknessPanel.classList.remove('open');
+      return;
+    }
     const val = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
     dxfThickness = val;
     // Release 249: Bauteilart + Einstemmungs-Einstellungen übernehmen (Berechnung am Ende).
@@ -29008,7 +29974,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   function drawDxfDefPreview() {
     dxfDefPreviewRaf = 0;
     const pane = el('dxfDefPreviewPane');
-    const show = dxfThicknessPanel.classList.contains('open') && dxfDefPreviewEnabled() && dxfDefPreviewHasLayers();
+    const show = dxfThicknessPanel.classList.contains('open') && dxfDefPreviewEnabled() && dxfDefPreviewHasLayers() && !dxfKrm;   // Release 279: keine Vorschau beim Krümmling
     pane.hidden = !show;
     el('dxfDefPreviewToggle').checked = dxfDefPreviewEnabled();
     if (window.__dxfThicknessPanelReclamp) window.__dxfThicknessPanelReclamp();
@@ -29059,13 +30025,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
   const dpdNum = (id, signed) => { const v = dpdVal(id).replace(',', '.'); if (v === '') return null; const n = Number(v); return Number.isFinite(n) ? (signed ? n : Math.abs(n)) : NaN; };
   function dpdLoadPart(t) {
     const pd = dpdWork.parts[t];
-    el('dpdThickness').value = String(pd.thickness);
+    el('dpdThicknessField').hidden = !('thickness' in pd);   // Release 279: Krümmling ohne Stärke
+    el('dpdThickness').value = 'thickness' in pd ? String(pd.thickness) : '';
     el('dpdTransparency').value = String(pd.transparency);
     el('dpdFillColorPicker').value = pd.fillColor; el('dpdFillColorHex').value = pd.fillColor;
     el('dpdOutlineColorPicker').value = pd.outlineColor; el('dpdOutlineColorHex').value = pd.outlineColor;
     el('dpdFillMode').value = pd.fillMode === 'texture' ? 'texture' : 'color';   // Release 260
     fillDxfTextureSelect(el('dpdTextureSelect'), pd.textureId);
     updateDpdFillModeUI();
+    const hasProf = 'profileId' in pd;   // Release 280
+    ['dpdSepProfile', 'dpdProfileRow', 'dpdSepProfile2'].forEach(id => { el(id).hidden = !hasProf; });
+    if (hasProf) fillPartProfileSelect(el('dpdProfileSelect'), pd.profileId);
     el('dpdVertical').hidden = !(pd.mortise || pd.vpocket || 'pocketDepth' in pd);
     el('dpdMortise').hidden = !pd.mortise;
     el('dpdPocket').hidden = !('pocketDepth' in pd);
@@ -29082,7 +30052,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const bad = [];
     const req = (id, signed, label) => { const n = dpdNum(id, signed); if (n === null || Number.isNaN(n)) { bad.push(label); return null; } return n; };
     const opt = (id, label) => { const n = dpdNum(id, false); if (Number.isNaN(n)) { bad.push(label); return null; } return n; };
-    const th = req('dpdThickness', true, T('Stärke', 'thickness')); if (th !== null) pd.thickness = th;
+    if ('thickness' in pd) { const th = req('dpdThickness', true, T('Stärke', 'thickness')); if (th !== null) pd.thickness = th; }
     const tr = req('dpdTransparency', false, T('Füll-Transparenz', 'fill transparency'));
     if (tr !== null) { if (tr > 100) bad.push(T('Füll-Transparenz (0-100)', 'fill transparency (0-100)')); else pd.transparency = Math.round(tr); }
     const fc = normalizeHex(el('dpdFillColorHex').value), oc = normalizeHex(el('dpdOutlineColorHex').value);
@@ -29102,6 +30072,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       if (a !== null) pd.mortise.depth = a; if (b !== null) pd.mortise.depthTread = b; if (c !== null) pd.mortise.depthRiser = c;
     }
     if ('pocketDepth' in pd) { const n = req('dpdPocketDepth', true, T('Tiefe Taschen-Layer', 'pocket layer depth')); if (n !== null) pd.pocketDepth = n; }
+    if ('profileId' in pd) pd.profileId = el('dpdProfileSelect').value || null;   // Release 280
     if (pd.vpocket) { pd.vpocket.on = el('dpdVPocketOn').checked; const n = req('dpdVPocketDepth', true, T('Taschentiefe', 'pocket depth')); if (n !== null) pd.vpocket.depth = n; }
     ['T', 'U'].forEach(k => {
       if (!pd[k]) return;
@@ -29129,7 +30100,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el('dpdByName').checked = dpdWork.byName;
     el('dpdAutoApply').checked = dpdWork.autoApply;
     el('dpdShowPreview').checked = dpdWork.showPreview !== false;   // Release 264
-    dpdCurrent = DXF_PART_TYPES.includes(dxfPartType) && dxfGeometry ? dxfPartType : 'undefined';
+    dpdCurrent = dxfKrm ? 'krmStanding' : (DXF_PART_TYPES.includes(dxfPartType) && dxfGeometry ? dxfPartType : 'undefined');   // Release 279
     dpdPartSelect.value = dpdCurrent;
     dpdLoadPart(dpdCurrent);
     el('dpdWarning').hidden = true;
@@ -29160,6 +30131,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el('dpdByName').checked = dpdWork.byName; el('dpdAutoApply').checked = dpdWork.autoApply; el('dpdShowPreview').checked = dpdWork.showPreview !== false;
     dpdLoadPart(dpdCurrent); el('dpdWarning').hidden = true;
   });
+  // Release 280: Bauteilprofile geändert (gespeichert/kopiert/gelöscht/importiert)
+  function onPartProfilesChanged() {
+    if (dxfKrm && dxfKrmProfileId) { rebuildKruemmling(false); updateKrmPanel(); requestRender(); }
+    if (dxfThicknessPanel.classList.contains('open') && dxfKrm) fillPartProfileSelect(el('dxfProfileSelect'), el('dxfProfileSelect').value || null);
+    if (dxfPartDefaultsPanel.classList.contains('open')) fillPartProfileSelect(el('dpdProfileSelect'), el('dpdProfileSelect').value || null);
+  }
   // Farbwähler <-> Hexfeld (Release 257)
   [['dpdFillColorPicker', 'dpdFillColorHex'], ['dpdOutlineColorPicker', 'dpdOutlineColorHex']].forEach(([pk, hx]) => {
     el(pk).addEventListener('input', () => { el(hx).value = el(pk).value; });
@@ -29553,6 +30530,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // scheinbar auf die feste HSK63-Standarddarstellung zurück, siehe 9.7.8). Fix: dieselbe
   // Lade-Zeile wie bei toolDxfProfiles, nur für chuckDxfProfiles.
   chuckDxfProfiles = loadPersistedChuckDxfProfiles();
+  partProfiles = loadPersistedPartProfiles();   // Release 280
   // "Spannfutter einblenden"/"ausblenden" (Release 192): ebenfalls schon vor dem ersten Programm-
   // Laden aus localStorage übernehmen, dieselbe Reihenfolge/Begründung wie bei "Werkzeuge" direkt
   // oberhalb - reine Variablenzuweisung statt setShowToolHolder() (genau wie bei gridVisible weiter
