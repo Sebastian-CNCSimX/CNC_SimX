@@ -11878,8 +11878,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 281;
-  const APP_RELEASE_TIMESTAMP = '23.10.2026, 13:20 Uhr';
+  const APP_RELEASE_NUMBER = 282;
+  const APP_RELEASE_TIMESTAMP = '23.10.2026, 15:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -14987,6 +14987,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const dxfScaleCurrentHint = el('dxfScaleCurrentHint');
   const btnDxfScaleReset = el('btnDxfScaleReset');
   const canvas = el('canvas3d');
+  // Release 282 (Sebastian: "Wenn ich ein Werkzeug anzeige, ist das immer sichtbar und ist nicht vom Bauteil verdeckt in der
+  // Simulation, wenn das Bauteil 0% Transparenz hat und das Werkzeug eigentlich hinter dem Bauteil verschwunden ist"):
+  // Tiefenpuffer des zuletzt gebackenen Körpers (drawMortiseBody) und die beim Zeichnen des Werkzeugs gesammelten
+  // Rotationskörper (Werkzeug, Spannfutter: Ursprung, Achse, Profil r/dist).
+  let bodyOccluder = null;
+  let toolOccParts = null;
+  let toolLayerCanvas = null;
   // Performance-Fix (56. Runde, siehe CNC_Simulation.md 9.1b "Bake-Canvas"): ctx ist jetzt statt
   // const neu zuweisbar - render() biegt ihn zeitweise auf eine Offscreen-"Bake"-Canvas um, damit
   // die bereits gefahrene Bahn NICHT mehr bei jedem einzelnen Frame komplett neu gezeichnet werden
@@ -19544,6 +19551,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
     if (needFullBake) {
       ctx = bakeCtx;
+      bodyOccluder = null;   // Release 282: wird von drawMortiseBody() neu gesetzt
       ctx.clearRect(0, 0, w, h);
       // "Hintergrund 3D Simulation" (39. Runde, Benutzer-Farbprofile): das Canvas malt seinen
       // eigenen Hintergrund selbst (deckt die CSS-Hintergrundfarbe von .viewer komplett ab) -
@@ -19599,7 +19607,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Marker/Werkzeug/Messwerkzeug bewegen sich mit scrubIdx/Kamera und werden bewusst NICHT
     // gebacken - jeden Frame frisch direkt auf die sichtbare Canvas gezeichnet (siehe Kommentar
     // oben, "Geisterbilder").
-    if (points.length) { drawMarker(proj); drawTool(proj); }
+    if (points.length) { drawMarker(proj); drawToolOccluded(proj, camPos, basis, w, h); }   // Release 282: Verdeckung durch den Körper
     drawMeasure(proj);
     drawAngleMeasure(proj);
     drawLineSelection(proj);
@@ -21275,6 +21283,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.drawImage(mortiseOffCanvas, X0, Y0, X1 - X0 + 1, Y1 - Y0 + 1, X0 / RS, Y0 / RS, (X1 - X0 + 1) / RS, (Y1 - Y0 + 1) / RS);
     ctx.restore();
     if (RS === 1) mortiseLastFullMs = performance.now() - tStart;
+    // Release 282: Tiefe der vordersten Körperfläche je Pixel (z1, gültig im Rechteck X0..X1/Y0..Y1) für die Verdeckung des
+    // live gezeichneten Werkzeugs (siehe drawToolOccluded())
+    bodyOccluder = { z: z1, W, H, RS, X0, X1, Y0, Y1, alpha };
     return { triDrawn, triCulled, covered, linePixels, W, H, scale: sc, boreCount: bores ? bores.length : 0, boreCarved, boreCyl, boreLinePixels, boreSkipped, boreOverlapPx, renderScale: RS, ms: performance.now() - tStart, texture: TX ? { id: dxfTextureId, pixels: texPixels, mmpx: TX.mmpx } : null };
   }
 
@@ -21565,7 +21576,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           { color: dxfThicknessColor, transparency: dxfThicknessTransparency },
           { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: { x: 0, y: 0, z: 1 } },
           { x: 0, y: 1, z: 0 },
-          { disableSideCull: true, triangulateDegenerate: !!getActiveSchmiegeRings() });   // Release 271: auch benannte Schmiege_vorn/_hinten (Dreiecke aus alignSchmiegePaths()) // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody(); triangulateDegenerate: Release 243
+          { disableSideCull: true, triangulateDegenerate: !!getActiveSchmiegeRings() });
+        // Release 282: Körper ohne Netz (Malprinzip) - Ringe für die Verdeckung des Werkzeugs merken (Tiefe wird bei Bedarf im
+        // Bereich des Werkzeugs gerastert, siehe drawToolOccluded()); Deckel einmal je Backen trianguliert
+        {
+          const capIdx = ring => { try { const f = []; ring.forEach(q => f.push(q.x, q.y)); return earcut(f) || []; } catch (e) { return []; } };
+          bodyOccluder = { kind: 'rings', lower: lowerPts, upper: upperPts, capL: capIdx(lowerPts), capU: capIdx(upperPts), alpha: Math.max(0, Math.min(1, 1 - dxfThicknessTransparency / 100)) };
+        }   // Release 271: auch benannte Schmiege_vorn/_hinten (Dreiecke aus alignSchmiegePaths()) // Bugfix Release 219 - siehe Kommentar in fillRevolutionBody(); triangulateDegenerate: Release 243
         // Release 226 (Sebastian, nach 9.8s: "Was zur Erkennung für den Bediener helfen würde ist
         // eine schwarze 'Outline' der Konturen vom Bauteil oben und unten. Da dann natürlich die
         // Kontur jeweils so wie die Schmiege ist, also das was man sieht. ... Wenn es keine
@@ -22359,8 +22376,176 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // ebenfalls "top", siehe dort), axis/u/v = dieselbe orthonormale Werkzeug-Achsen-Basis wie beim
   // Zylinder (u/v stehen senkrecht auf axis) - alle so gezeichneten Teile sind dadurch immer
   // exakt gleich ausgerichtet.
+  // Release 282: Werkzeug (und Spannfutter) mit Verdeckung durch einen undurchsichtigen bzw. teiltransparenten Körper. Das
+  // Werkzeug wird wie bisher gezeichnet, aber auf eine eigene Ebene; danach wird je Pixel die Tiefe der vordersten
+  // Werkzeugfläche bestimmt (Sehstrahl gegen die gesammelten Rotationskörper - Mantel mit dem Radius an der Stelle, dazu die
+  // beiden Stirnflächen; Projektion ist orthografisch) und mit der Tiefe der vordersten Körperfläche (bodyOccluder)
+  // verglichen. Liegt der Körper davor, bleibt der Hintergrund (= gebackenes Bild mit Körper und Bahnen) stehen; bei
+  // Transparenz scheint das Werkzeug entsprechend durch. Ohne Körper-Netz wird wie bisher direkt gezeichnet.
+  function drawToolOccluded(proj, camPos, basis, w, h) {
+    const occ = bodyOccluder;
+    const tStart = performance.now();
+    window.__lastToolOcclusion = null;
+    if (!occ || occ.alpha <= 0.001 || (!showTool && !showToolHolder)) { drawTool(proj); return; }   // ganz durchsichtig: nichts zu verdecken
+    const cw = canvas.width, ch = canvas.height;
+    if (!toolLayerCanvas) toolLayerCanvas = document.createElement('canvas');
+    if (toolLayerCanvas.width !== cw || toolLayerCanvas.height !== ch) { toolLayerCanvas.width = cw; toolLayerCanvas.height = ch; }
+    const lctx = toolLayerCanvas.getContext('2d', { willReadFrequently: true });   // Pixel werden jedes Bild gelesen
+    const T0 = liveCtx.getTransform();
+    lctx.setTransform(1, 0, 0, 1, 0, 0);
+    lctx.clearRect(0, 0, cw, ch);
+    lctx.setTransform(T0);
+    toolOccParts = [];
+    const saved = ctx;
+    ctx = lctx;
+    try { drawTool(proj); } finally { ctx = saved; }
+    const parts = toolOccParts;
+    toolOccParts = null;
+    if (!parts.length) return;
+    const scl = (h / 2) * (1 / Math.tan((45 * Math.PI / 180) / 2)) / cam.dist;
+    const toCam = p => { const r = toRender(p), rel = sub(r, camPos); return { x: dot(rel, basis.right), y: dot(rel, basis.up), z: dot(rel, basis.fwd) }; };
+    // Teile in Kamerakoordinaten, Radius-Tabelle (1-mm-Raster, größter Radius an der Stelle), Bildschirm-Rechteck
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    const P = parts.map(pt => {
+      const a0 = toCam(pt.origin);
+      const a1 = toCam({ x: pt.origin.x + pt.axis.x, y: pt.origin.y + pt.axis.y, z: pt.origin.z + pt.axis.z });
+      let ax = a1.x - a0.x, ay = a1.y - a0.y, az = a1.z - a0.z;
+      const al = Math.hypot(ax, ay, az) || 1; ax /= al; ay /= al; az /= al;
+      const pr = pt.profile.map(q => ({ r: Math.abs(q.r), d: q.dist }));
+      const dmin = Math.min(...pr.map(q => q.d)), dmax = Math.max(...pr.map(q => q.d));
+      const n = Math.max(2, Math.min(4000, Math.ceil(dmax - dmin) + 1));
+      const tab = new Float32Array(n);
+      for (let k = 0; k < n; k++) {
+        const t = dmin + (dmax - dmin) * k / (n - 1);
+        let r = 0;
+        for (let i = 0; i + 1 < pr.length; i++) {
+          const A = pr[i], B = pr[i + 1], lo = Math.min(A.d, B.d), hi = Math.max(A.d, B.d);
+          if (t < lo - 1e-6 || t > hi + 1e-6) continue;
+          const rr = hi - lo < 1e-9 ? Math.max(A.r, B.r) : A.r + (B.r - A.r) * (t - A.d) / (B.d - A.d);
+          if (rr > r) r = rr;
+        }
+        tab[k] = r;
+      }
+      const rAt = t => (t < dmin || t > dmax) ? -1 : tab[Math.round((t - dmin) / (dmax - dmin || 1) * (n - 1))];
+      pr.forEach(q => {
+        const c = { x: a0.x + ax * q.d, y: a0.y + ay * q.d };
+        const X = w / 2 + c.x * scl, Y = h / 2 - c.y * scl, R = q.r * scl;
+        bx0 = Math.min(bx0, X - R); bx1 = Math.max(bx1, X + R); by0 = Math.min(by0, Y - R); by1 = Math.max(by1, Y + R);
+      });
+      return { a0, ax, ay, az, dmin, dmax, rAt };
+    });
+    const D = (v, a, e) => Math.round(v * a + e);
+    const X0 = Math.max(0, D(bx0, T0.a, T0.e) - 4), X1 = Math.min(cw - 1, D(bx1, T0.a, T0.e) + 4);
+    const Y0 = Math.max(0, D(by0, T0.d, T0.f) - 4), Y1 = Math.min(ch - 1, D(by1, T0.d, T0.f) + 4);
+    if (X0 > X1 || Y0 > Y1) return;
+    const bw = X1 - X0 + 1, bh = Y1 - Y0 + 1;
+    const toolImg = lctx.getImageData(X0, Y0, bw, bh), tool = toolImg.data;
+    const aBody = occ.alpha;
+    // Werkzeugtiefe bei großen Ausschnitten auf einem 2x2-Raster (Zwischenspeicher je Block)
+    const step = bw * bh > 40000 ? 2 : 1, cwB = Math.ceil(bw / step);
+    const dCache = new Float32Array(cwB * Math.ceil(bh / step)).fill(NaN);
+    const toolDepth = (rr, ru) => {
+      let best = Infinity, fb = Infinity;
+      for (const q of P) {
+        const dx = rr - q.a0.x, dy = ru - q.a0.y, s2 = q.ax * q.ax + q.ay * q.ay;
+        if (s2 > 1e-6) {
+          let t = (dx * q.ax + dy * q.ay) / s2;
+          const ex = dx - t * q.ax, ey = dy - t * q.ay, d = Math.hypot(ex, ey), sin = Math.sqrt(s2);
+          const sc0 = q.a0.z + t * q.az;
+          let r = q.rAt(t);
+          if (r > d) {
+            let sh = sc0 - Math.sqrt(r * r - d * d) / sin;
+            const th = t + (sh - sc0) * q.az;
+            const r2 = q.rAt(th);   // Radius an der Stelle des Treffpunkts (außerhalb des Körpers -1: kein Mantel-Treffer)
+            if (r2 > d) sh = sc0 - Math.sqrt(r2 * r2 - d * d) / sin;
+            if (r2 >= 0 && sh < best) best = sh;
+          }
+          const tc = Math.max(q.dmin, Math.min(q.dmax, t));
+          const fz = q.a0.z + tc * q.az;
+          if (fz < fb) fb = fz;
+        }
+        if (Math.abs(q.az) > 1e-4) {
+          for (const tc of [q.dmin, q.dmax]) {
+            const cx = q.a0.x + q.ax * tc, cy = q.a0.y + q.ay * tc, cz = q.a0.z + q.az * tc;
+            const sz = cz - ((rr - cx) * q.ax + (ru - cy) * q.ay) / q.az;
+            const rad = Math.hypot(rr - cx, ru - cy, sz - cz);
+            if (rad <= q.rAt(tc) + 1e-6 && sz < best) best = sz;
+          }
+          if (s2 <= 1e-6) { const fz = q.a0.z + (q.az > 0 ? q.dmin : q.dmax) * q.az; if (fz < fb) fb = fz; }
+        }
+      }
+      return best < Infinity ? best : fb;
+    };
+    let hidden = 0, shown = 0;
+    let RS = occ.RS, OW = occ.W, oz = occ.z;
+    let O = occ;
+    if (occ.kind === 'rings') {
+      // Tiefe des Prismas (untere/obere Kontur, Seitenflächen, Deckel) nur im Rechteck des Werkzeugs rastern
+      const zb = new Float32Array(bw * bh).fill(Infinity);
+      const pj = q => { const r = toRender(q), rel = sub(r, camPos); return { x: (w / 2 + dot(rel, basis.right) * scl) * T0.a + T0.e - X0, y: (h / 2 - dot(rel, basis.up) * scl) * T0.d + T0.f - Y0, d: dot(rel, basis.fwd) }; };
+      const L = occ.lower.map(pj), U = occ.upper.map(pj);
+      const tri = (a, b, c) => {
+        const minX = Math.max(0, Math.ceil(Math.min(a.x, b.x, c.x) - 0.5)), maxX = Math.min(bw - 1, Math.floor(Math.max(a.x, b.x, c.x) - 0.5));
+        const minY = Math.max(0, Math.ceil(Math.min(a.y, b.y, c.y) - 0.5)), maxY = Math.min(bh - 1, Math.floor(Math.max(a.y, b.y, c.y) - 0.5));
+        if (minX > maxX || minY > maxY) return;
+        const ar = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+        if (Math.abs(ar) < 1e-9) return;
+        for (let y = minY; y <= maxY; y++) {
+          const py = y + 0.5;
+          for (let x = minX; x <= maxX; x++) {
+            const px = x + 0.5;
+            const w0 = ((b.x - px) * (c.y - py) - (c.x - px) * (b.y - py)) / ar, w1 = ((c.x - px) * (a.y - py) - (a.x - px) * (c.y - py)) / ar, w2 = 1 - w0 - w1;
+            if (w0 < -1e-6 || w1 < -1e-6 || w2 < -1e-6) continue;
+            const d = w0 * a.d + w1 * b.d + w2 * c.d, k = y * bw + x;
+            if (d < zb[k]) zb[k] = d;
+          }
+        }
+      };
+      const n = Math.min(L.length, U.length);
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; tri(L[i], L[j], U[j]); tri(L[i], U[j], U[i]); }
+      for (let k = 0; k + 2 < occ.capL.length; k += 3) tri(L[occ.capL[k]], L[occ.capL[k + 1]], L[occ.capL[k + 2]]);
+      for (let k = 0; k + 2 < occ.capU.length; k += 3) tri(U[occ.capU[k]], U[occ.capU[k + 1]], U[occ.capU[k + 2]]);
+      // als Puffer im Werkzeug-Rechteck (1:1 Gerätepixel) verwenden
+      O = { X0: X0, X1: X1, Y0: Y0, Y1: Y1 };
+      RS = 1; OW = bw; oz = zb;
+      O.off = true;
+    }
+    for (let y = 0; y < bh; y++) {
+      const py = Y0 + y + 0.5, cssY = (py - T0.f) / T0.d, ru = (h / 2 - cssY) / scl;
+      const oy = Math.floor(py * RS);
+      for (let x = 0; x < bw; x++) {
+        const i = (y * bw + x) * 4, ta = tool[i + 3];
+        if (!ta) continue;
+        const px = X0 + x + 0.5, ox = Math.floor(px * RS);
+        let zf = Infinity;
+        if (O.off) zf = oz[y * bw + x];
+        else if (ox >= O.X0 && ox <= O.X1 && oy >= O.Y0 && oy <= O.Y1) zf = oz[oy * OW + ox];
+        let front = true;
+        if (zf < Infinity) {
+          const ci = ((y / step) | 0) * cwB + ((x / step) | 0);
+          let td = dCache[ci];
+          if (td !== td) {   // NaN: Blockmitte noch nicht berechnet
+            const qx = X0 + (x - x % step) + step / 2, qy = Y0 + (y - y % step) + step / 2;
+            const rr = ((qx - T0.e) / T0.a - w / 2) / scl, rq = (h / 2 - (qy - T0.f) / T0.d) / scl;
+            td = dCache[ci] = toolDepth(rr, rq);
+          }
+          front = td <= zf + 0.3;
+        }
+        if (front) shown++;
+        else { hidden++; tool[i + 3] = Math.round(ta * (1 - aBody)); }   // hinter dem Körper: unsichtbar bzw. durchscheinend
+      }
+    }
+    lctx.save(); lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.putImageData(toolImg, X0, Y0); lctx.restore();
+    liveCtx.save();
+    liveCtx.setTransform(1, 0, 0, 1, 0, 0);
+    liveCtx.globalAlpha = 1;
+    liveCtx.drawImage(toolLayerCanvas, X0, Y0, bw, bh, X0, Y0, bw, bh);
+    liveCtx.restore();
+    window.__lastToolOcclusion = { parts: P.length, hidden, shown, bbox: [X0, Y0, X1, Y1], bodyAlpha: aBody, kind: occ.kind || 'mesh', ms: performance.now() - tStart };
+  }
   function drawToolHolder(origin, axis, u, v, proj, profile, appearance) {
     profile = profile || TOOL_HOLDER_HSK63_PROFILE;
+    if (toolOccParts) toolOccParts.push({ origin, axis, profile });   // Release 282
     const N = 16;
     // Für jeden Profilpunkt ein voller Ring aus N+1 3D-Weltpunkten - Weltkoordinaten UND
     // Bildschirmprojektion bleiben beide erhalten (Release 158: fillRevolutionBody() oben
@@ -22726,6 +22911,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // (siehe Aufrufstelle "if (points.length) { drawMarker(proj); drawTool(proj); }" weiter
         // oben, außerhalb jeder Schleife über Programmpunkte) - mehr Segmente bedeuten hier nur
         // ein paar Dutzend zusätzliche Vierecke pro Frame, nicht pro Programmpunkt.
+        if (toolOccParts) toolOccParts.push({ origin: tip, axis, profile: [{ r: p.toolRadius, dist: 0 }, { r: p.toolRadius, dist: p.toolLength }] });   // Release 282
         const N = p.toolIsBlade ? 64 : 32;
         const bottomPts = [], topPts = [];
         for (let i = 0; i <= N; i++) {
