@@ -1976,6 +1976,8 @@
   /* Release 287: Abtragsimulation (Checkbox rechts von Codesprung, ausgegraut ohne Rohteil) */
   .abtrag-toggle { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
   .abtrag-toggle.is-disabled { opacity: 0.5; cursor: default; }
+  .abtrag-path-btn { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; }
+  .abtrag-path-btn:disabled { opacity: 0.45; cursor: default; }
   .speed-group, .jump-group {
     display: flex;
     align-items: center;
@@ -3547,6 +3549,8 @@
         <label class="layer-toggle abtrag-toggle is-disabled" id="abtragToggle" title="Abtragsimulation: trägt bis zur aktuellen Wiedergabeposition Material vom Rohteil ab (Rohteil über „Bauteil erstellen“ anlegen). Einschalten springt zum Programmanfang." data-i18n-en-title="Material removal simulation: removes material from the stock up to the current playback position (create the stock via &quot;Create part&quot;). Switching on jumps to the start of the program.">
           <input type="checkbox" id="chkAbtrag" disabled> <span data-i18n-en="Material removal simulation">Abtragsimulation</span>
         </label>
+        <!-- Release 288: "CNC-Bahn verstecken" (nur bei aktiver Abtragsimulation), siehe toggleAbtragHidePath() in app.js -->
+        <button class="toolbar-btn abtrag-path-btn" id="btnAbtragHidePath" type="button" disabled aria-pressed="false" title="CNC-Bahn verstecken: nur Rohteil und Fräser zeigen (nur bei aktiver Abtragsimulation, auch während des Fräsens umschaltbar)" data-i18n-en-title="Hide CNC path: show only the stock and the cutter (only with material removal simulation active, can also be switched while milling)"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><polyline points="1,11 5,4 9,10 13,3 19,8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><line x1="3" y1="1" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       </div>
     </div>
   </div>
@@ -12373,9 +12377,9 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   const depthsB = Array.from(new Set(defsB.map(x => Math.round(x.depth * 1e6) / 1e6))).filter(d => d > 1e-9).sort((a, b) => a - b);
   const CB = depthsB.map(d => {
     const rs = defsB.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => { try { return PC.intersection(bottomMP, x.un); } catch (e) { return x.region; } });
-    return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1));
+    return rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));   // Release 289: auch hier robust
   });
-  const RB = CB.length ? PC.difference(bottomMP, CB[0]) : bottomMP;
+  const RB = CB.length ? pcRobust('difference', bottomMP, CB[0]) : bottomMP;
   // Bei schrägen Seiten (Schmiege) reicht der Boden einer Tasche bis zur Kontur AUF Bodenhöhe (zwischen unterer und
   // oberer Kontur interpoliert), nicht bis zur oberen Kontur - sonst bliebe am offenen Rand ein Streifen ohne Boden.
   const Cf = C.map((cj, j) => {
@@ -12384,7 +12388,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
     const ring = contour.map((b, i) => [b.x + (topPts[i].x - b.x) * fr, b.y + (topPts[i].y - b.y) * fr]); ring.push([ring[0][0], ring[0][1]]);
     const pz = [[ring]];
     const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= depths[j]).map(x => { try { return PC.intersection(pz, x.un); } catch (e) { return x.region; } });
-    try { return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1)); } catch (e) { return cj; }
+    try { return rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1)); } catch (e) { return cj; }
   });
   const area = mp => { let s = 0; mp.forEach(poly => poly.forEach((ring, ri) => { let a = 0; for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; s += (ri === 0 ? 1 : -1) * Math.abs(a) / 2; })); return s; };
   const mesh = { topZ, botZ, levels: [], levelsBelow: [], tris: [], walls: [], rings: [], clamped, info: {} };
@@ -12520,7 +12524,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
     const ceilZ = botZ + d;
     const lowerZ = j === 0 ? botZ : botZ + depthsB[j - 1];
     mesh.levelsBelow.push({ depth: d, ceilZ });
-    const ceilMP = j + 1 < depthsB.length ? PC.difference(CB[j], CB[j + 1]) : CB[j];
+    const ceilMP = j + 1 < depthsB.length ? pcRobust('difference', CB[j], CB[j + 1]) : CB[j];
     if (ceilMP && ceilMP.length) triangulate(ceilMP, ceilZ, -1, 'floor');
     addPocketWalls(CB[j], lowerZ, ceilZ);
     CB[j].forEach(poly => poly.forEach(ring => pushRing(ring, ceilZ, 'floor', false)));
@@ -12531,7 +12535,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
     const floorZ = topZ - d;
     const upperZ = j === 0 ? topZ : topZ - depths[j - 1];
     mesh.levels.push({ depth: d, floorZ });
-    const floorMP = j + 1 < depths.length ? PC.difference(Cf[j], Cf[j + 1]) : Cf[j];
+    const floorMP = j + 1 < depths.length ? pcRobust('difference', Cf[j], Cf[j + 1]) : Cf[j];
     if (floorMP && floorMP.length) triangulate(floorMP, floorZ, 1, 'floor');
     addPocketWalls(C[j], floorZ, upperZ);
     Cf[j].forEach(poly => poly.forEach(ring => pushRing(ring, floorZ, 'floor', false)));
@@ -12595,8 +12599,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 287;
-  const APP_RELEASE_TIMESTAMP = '28.10.2026, 09:20 Uhr';
+  const APP_RELEASE_NUMBER = 289;
+  const APP_RELEASE_TIMESTAMP = '28.10.2026, 11:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -20297,6 +20301,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfMortiseMesh, dxfPartType, // Release 249
       dxfKrm,   // Release 278
       abtragMeshRef: abtragOn ? ensureAbtragMesh() : null,   // Release 287: neues Abtrag-Netz -> neu backen
+      abtragPathHidden: abtragPathHidden(),   // Release 288
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
       // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
@@ -20325,6 +20330,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.showRapid === b.showRapid && a.hasStarted === b.hasStarted &&
       a.hiddenOpsVersion === b.hiddenOpsVersion &&
       a.abtragMeshRef === b.abtragMeshRef &&   // Release 287
+      a.abtragPathHidden === b.abtragPathHidden &&   // Release 288
       a.bg === b.bg &&
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
@@ -20409,7 +20415,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Zeichnen einfach übersprungen - Wiedergabe/Scrubber (points/scrubIdx) sind davon unberührt.
       segments.forEach(seg => {
         if (seg.opIndex != null && hiddenOpIndexes.has(seg.opIndex)) return;
-        drawPolyline(seg, proj, 0);
+        if (!abtragPathHidden()) drawPolyline(seg, proj, 0);   // Release 288: CNC-Bahn versteckt
         seg._baked = segRevealCount(seg);
       });
       ctx = liveCtx;
@@ -20424,7 +20430,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const revealCount = segRevealCount(seg);
         const already = seg._baked || 0;
         if (revealCount > already) {
-          drawPolyline(seg, proj, already);
+          if (!abtragPathHidden()) drawPolyline(seg, proj, already);   // Release 288
           seg._baked = revealCount;
         }
       });
@@ -20592,6 +20598,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // markiert" und braucht keine eigene Geometrie. Wie das Messwerkzeug-Overlay JEDEN Frame frisch
   // gezeichnet (nicht gebacken, siehe render()), damit die Markierung der Kamera folgt.
   function drawLineSelection(proj) {
+    if (abtragPathHidden()) return;   // Release 288
     if (!selectedLineHighlight) return;
     const color = cssVar('--accent');
     ctx.save();
@@ -20882,7 +20889,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const d = Math.hypot(s.x - mx, s.y - my);
       if (d < bestDist) { bestDist = d; bestPt = p; bestKind = kind; }
     }
-    const cncGeo = cncSnapGeometry();
+    const cncGeo = abtragPathHidden() ? { ends: [], mids: [] } : cncSnapGeometry();   // Release 288: versteckte Bahn nicht fangbar
     const dxfGeo = dxfSnapGeometry();
     function tryDxf(p, kind) {
       const tp = dxfTransformPoint(p);
@@ -20919,7 +20926,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const { dist } = pointToSegmentDist(mx, my, a.x, a.y, b.x, b.y);
       if (dist <= MEASURE_PICK_PX) nearLines.push({ a, b, p0, p1 });
     }
-    segments.forEach(seg => {
+    (abtragPathHidden() ? [] : segments).forEach(seg => {
       for (let i = 1; i < seg.points.length; i++) collectNearLine(seg.points[i - 1], seg.points[i]);
     });
     if (dxfGeometry && dxfVisible) {
@@ -20953,7 +20960,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (bestPt) return { x: bestPt.x, y: bestPt.y, z: bestPt.z, kind: bestKind };
 
     let bestSeg = null, bestSegDist = MEASURE_PICK_PX, bestT = 0;
-    segments.forEach(seg => {
+    (abtragPathHidden() ? [] : segments).forEach(seg => {
       for (let i = 1; i < seg.points.length; i++) {
         const a = proj(toRender(seg.points[i - 1]));
         const b = proj(toRender(seg.points[i]));
@@ -21019,7 +21026,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const basis = buildBasis(camPos);
     const proj = p => project(p, camPos, basis, w, h);
     let best = null, bestDist = MEASURE_PICK_PX;
-    segments.forEach(seg => {
+    (abtragPathHidden() ? [] : segments).forEach(seg => {   // Release 288: versteckte Bahn nicht anklickbar
       for (let i = 1; i < seg.points.length; i++) {
         const p0 = seg.points[i - 1], p1 = seg.points[i];
         const a = proj(toRender(p0));
@@ -21681,6 +21688,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var abtragLastBuild = 0;
   var abtragPendingTimer = 0;
   var ABTRAG_CHECKPOINT_EVERY = 120;   // Zwischenstand alle n Kapseln
+  // Release 288 (Sebastian: "Wenn man das Programm simuliert, müsste auch die Fräsbahn ausgeblendet werden können, so dass man nur
+  // das Rohteil + Fräser sieht. Bitte neben "Abtragssimulation" ein Icon für "CNC-Bahn verstecken" einbauen. Das Icon wird nur aktiv,
+  // wenn "Abtragssimulation" aktiv ist und kann beim Fräsen aktiv/inaktiv gesetzt werden."): versteckt die gezeichneten Bahnen
+  // (Vorschub und Eilgang), den Bahnpunkt-Marker und die Linienmarkierung; das Werkzeug bleibt. Ausgeblendete Bahnen sind auch
+  // nicht fang-/anklickbar (Messen, Codesprung).
+  var abtragHidePath = false;
+  function abtragPathHidden() { return abtragOn && abtragHidePath; }
   function abtragAvailable() { return !!(dxfCreatedPart && dxfGeometry && dxfKonturLoop && dxfKonturLoop.length >= 3 && dxfThickness && !dxfKrm); }
   // robuste Boolesche Operationen (Rundung auf 1e-3 / 1e-2 / 1e-1 mm bei Abbruch von polygon-clipping)
   const abtragSnap = (a, g) => (typeof a[0] === 'number' ? [Math.round(a[0] * g) / g, Math.round(a[1] * g) / g] : a.map(q => abtragSnap(q, g)));
@@ -21728,7 +21742,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const ang = Math.atan2(dy, dx);
       return arcPts(b, r, ang - Math.PI / 2, ang + Math.PI / 2).concat(arcPts(a, r, ang + Math.PI / 2, ang + 3 * Math.PI / 2));
     };
-    const caps = [], hgroups = [];
+    const caps = [], hgroups = [], hgrooves = [];
     let tilted = 0;
     const pushCap = (idx, ringW, depth) => {
       if (!(depth > 0.001)) return;
@@ -21767,12 +21781,38 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
       if (kind === 'h') {
         // waagerechtes Werkzeug: Gruppen je Bohrloch (gleiche Achse, Querlage innerhalb 40 mm)
-        run.forEach(idx => {
-          const q = list[idx], ax = toolAxisDirection(q);
-          let d = [-ax.x, -ax.y]; const L = Math.hypot(d[0], d[1]) || 1; d = [d[0] / L, d[1] / L];
+        // Release 289 (Sebastian: "Bei der Abtragssimulation ist die Glasnut noch nicht korrekt. Die Bahn wird dargestellt, aber
+        // der Fräser nimmt nur beim Eintauchen ein "Löchlein" weg und hinterlässt bei der Fräsbewegung keine Nut."): fährt das
+        // waagerechte Werkzeug QUER zu seiner Achse (seitliche Nut, z. B. Glasnut mit dem Schlosskastenfräser), entsteht je
+        // Strecke ein Nutstück: senkrechtes Prisma über dem Viereck Spitzenlinie -> Schaftseite, Höhe = Werkzeugdurchmesser.
+        // Die runden Enden liefern die Bohrlochgruppen an Anfang und Ende (sie reichen dazu bis zur Schaftseite der Nut zurück).
+        const dirOf = q => { const ax = toolAxisDirection(q); const d = [-ax.x, -ax.y], L = Math.hypot(d[0], d[1]) || 1; return [d[0] / L, d[1] / L]; };
+        const sMinOf = d => { let m = Infinity; run.forEach(j => { const v = list[j].x * d[0] + list[j].y * d[1]; if (v < m) m = v; }); return m; };
+        run.forEach((idx, k) => {
+          const q = list[idx], d = dirOf(q);
           const s = q.x * d[0] + q.y * d[1], h = -q.x * d[1] + q.y * d[0];
+          let sBack = null;
+          if (k > 0) {
+            const p0 = list[run[k - 1]], R = q.toolRadius;
+            const dh = -(q.x - p0.x) * d[1] + (q.y - p0.y) * d[0], dz = q.z - p0.z;
+            if (R > 0 && Math.abs(dh) > Math.max(2 * R, 10)) {
+              sBack = sMinOf(d) - 5;
+              // schräg (gleichzeitig in z): in kurze Stücke mit jeweils mittlerer Höhe zerlegen
+              const n = Math.abs(dz) > 0.01 ? Math.max(1, Math.ceil(Math.hypot(dh, dz) / Math.max(0.5, R / 2))) : 1;
+              for (let m = 0; m < n; m++) {
+                const f0 = m / n, f1 = (m + 1) / n;
+                hgrooves.push({ idx, d, r: R, sBack, a: [p0.x + (q.x - p0.x) * f0, p0.y + (q.y - p0.y) * f0], b: [p0.x + (q.x - p0.x) * f1, p0.y + (q.y - p0.y) * f1], z: p0.z + dz * (f0 + f1) / 2 });
+              }
+            }
+          }
           let g = hgroups[hgroups.length - 1];
-          if (!g || g.closed || Math.abs(g.d[0] - d[0]) + Math.abs(g.d[1] - d[1]) > 1e-3 || Math.hypot(h - g.h0, q.z - g.z0) > 40) { if (g) g.closed = true; g = { d, h0: h, z0: q.z, r: q.toolRadius, pts: [] }; hgroups.push(g); }
+          if (sBack != null || !g || g.closed || Math.abs(g.d[0] - d[0]) + Math.abs(g.d[1] - d[1]) > 1e-3 || Math.hypot(h - g.h0, q.z - g.z0) > 40) {
+            if (g) g.closed = true;
+            g = { d, h0: h, z0: q.z, r: q.toolRadius, pts: [], sBack };
+            hgroups.push(g);
+            // die Gruppe am Anfang des Nutstücks reicht ebenfalls bis zur Schaftseite zurück (rundes Nutende)
+            if (sBack != null && hgroups.length > 1) { const pg = hgroups[hgroups.length - 2]; pg.sBack = Math.min(pg.sBack == null ? Infinity : pg.sBack, sBack); }
+          }
           g.pts.push({ idx, s, h, z: q.z });
         });
         if (hgroups.length) hgroups[hgroups.length - 1].closed = true;
@@ -21810,7 +21850,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
     caps.sort((p, q) => p.idx - q.idx);
-    return { key: abtragKey(), list, offset, caps, hgroups, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
+    return { key: abtragKey(), list, offset, caps, hgroups, hgrooves, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
   }
   // vereinigte Flächen bis einschließlich Bahnpunkt target
   function abtragAdvance(st, target) {
@@ -21876,19 +21916,42 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const bores = [];
     st.hgroups.forEach((g, gi) => {
       const pts = g.pts.filter(q => q.idx <= target);
-      if (pts.length < 2 || !(g.r > 0)) return;
+      // Release 289: Nutende (sBack gesetzt) auch mit nur einem Punkt
+      if (!pts.length || (pts.length < 2 && g.sBack == null) || !(g.r > 0)) return;
       const hs = pts.map(q => q.h), zs = pts.map(q => q.z);
       const hc = (Math.min(...hs) + Math.max(...hs)) / 2, zc = (Math.min(...zs) + Math.max(...zs)) / 2;
-      const rad = Math.max(...pts.map(q => Math.hypot(q.h - hc, q.z - zc))) + g.r;
-      const s0 = Math.min(...pts.map(q => q.s)) - 5, s1 = Math.max(...pts.map(q => q.s));
+      const s0 = Math.min(Math.min(...pts.map(q => q.s)) - 5, g.sBack == null ? Infinity : g.sBack), s1 = Math.max(...pts.map(q => q.s));
       const P = (s, h) => [s * g.d[0] - h * g.d[1], s * g.d[1] + h * g.d[0]];
       const e = P(s0, hc), f = P(s1, hc), er = st.toRaw(e[0], e[1]), fr = st.toRaw(f[0], f[1]);
       const dr = Math.hypot(fr[0] - er[0], fr[1] - er[1]);
       if (!(dr > 1e-6)) return;
-      bores.push({ id: 'A' + gi, kind: 'A', shape: 'round', entry: er, end: fr, tail: er, dia: 2 * rad * st.rScale, rw: 2 * rad * st.rScale, rh: 2 * rad, depth: dr, ext: 'none', zc: zc - st.zBase });
+      // Release 289: berührt das Werkzeug das Bauteil höchstens (z. B. Profilfräser-Mitte über/unter dem Bauteil), nichts anzeigen
+      const zT = st.zTop, zB = st.zTop - st.T;
+      const round = (z, rad, id) => { if (z - rad < zT - 0.01 && z + rad > zB + 0.01) bores.push({ id, kind: 'A', shape: 'round', entry: er, end: fr, tail: er, dia: 2 * rad * st.rScale, rw: 2 * rad * st.rScale, rh: 2 * rad, depth: dr, ext: 'none', zc: z - st.zBase }); };
+      const zr = Math.max(...zs) - Math.min(...zs);
+      if (Math.max(...hs) - Math.min(...hs) < 0.01 && zr > 0.01) {
+        // Release 289: nur senkrecht verfahren (z. B. zweite Nutbahn darüber) - Langloch statt umschriebenem Kreis
+        round(Math.min(...zs), g.r, 'A' + gi + 'u'); round(Math.max(...zs), g.r, 'A' + gi + 'o');
+        bores.push({ id: 'A' + gi + 'm', kind: 'A', shape: 'rect', entry: er, end: fr, tail: er, dia: 2 * g.r * st.rScale, rw: 2 * g.r * st.rScale, rh: zr, depth: dr, ext: 'none', zc: zc - st.zBase });
+        return;
+      }
+      round(zc, Math.max(...pts.map(q => Math.hypot(q.h - hc, q.z - zc))) + g.r, 'A' + gi);
+    });
+    // Release 289: seitliche Nutstücke des waagerechten Werkzeugs (senkrechte Prismen: Spitzenlinie -> Schaftseite, Höhe 2r)
+    (st.hgrooves || []).forEach((n, ni) => {
+      if (n.idx > target) return;
+      if (!(n.z - n.r < st.zTop - 0.01 && n.z + n.r > st.zTop - st.T + 0.01)) return;
+      const sA = n.a[0] * n.d[0] + n.a[1] * n.d[1], sB = n.b[0] * n.d[0] + n.b[1] * n.d[1];
+      if (!(sA - n.sBack > 0.01 && sB - n.sBack > 0.01)) return;
+      const back = (p, sp) => [p[0] - n.d[0] * (sp - n.sBack), p[1] - n.d[1] * (sp - n.sBack)];
+      const poly = [n.a, n.b, back(n.b, sB), back(n.a, sA)].map(p => st.toRaw(p[0], p[1]));
+      // Spitzenlinie = flaches Werkzeugende (Art 2 wie das flache Ende der runden Nutenden - sonst wechselt die Flächenart
+      // dort, wo beide genau gleich tief liegen, von Pixel zu Pixel und die Umrisslinien füllen die Fläche schwarz)
+      bores.push({ id: 'G' + ni, kind: 'G', shape: 'prism', poly, ek: [2, 0, 0, 0], zc: n.z - st.zBase, rh: 2 * n.r });
     });
     if (mesh && bores.length) mesh.bores = bores;
-    info.bores = bores.length;
+    info.bores = bores.filter(b => b.kind === 'A').length;
+    info.grooves = bores.filter(b => b.kind === 'G').length;
     info.ms = Math.round(performance.now() - t0);
     window.__lastAbtragInfo = info;
     return mesh;
@@ -21921,6 +21984,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!avail && abtragOn) { abtragOn = false; abtragState = null; abtragMesh = null; }
     chk.checked = abtragOn;
     el('abtragToggle').classList.toggle('is-disabled', !avail);
+    // Release 288: "CNC-Bahn verstecken" nur bei aktiver Abtragsimulation; aus -> Bahn wieder sichtbar
+    if (!abtragOn) abtragHidePath = false;
+    const hb = el('btnAbtragHidePath');
+    hb.disabled = !abtragOn;
+    hb.classList.toggle('active', abtragPathHidden());
+    hb.setAttribute('aria-pressed', abtragPathHidden() ? 'true' : 'false');
+  }
+  function toggleAbtragHidePath() {
+    if (!abtragOn) return;
+    abtragHidePath = !abtragHidePath;
+    selectedLineHighlight = null;
+    updateAbtragUI();
+    bakeParams = null;
+    requestRender();
   }
   function setAbtragOn(on) {
     abtragOn = !!on && abtragAvailable();
@@ -22224,7 +22301,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const colOf = (kind, nx, ny, nz, px, py, pz, entry) => {
             const fcv = (nx * rx + ny * ry + nz * rz) / rl;
             const f = entry ? Math.min(-Math.abs(fcv), -0.05) : Math.min(fcv, -0.05);
-            const k = kind === 5 ? 0.55 : 0.62;
+            const k = kind === 5 ? 0.55 : (kind === 2 ? 0.5 : 0.62);   // Release 289: 2 = flaches Ende (wie bei den Bohrungen)
             if (TX && !entry) {
               const lt = (0.62 + 0.45 * Math.max(0, -f)) * k * 0.9;
               return nz !== 0 ? dxfTexSample(TX, te.x + px + 500, te.y + py + 200, 0, lt) : dxfTexSample(TX, -ny * (te.x + px) + nx * (te.y + py) + 500, pz + 200, 0, lt);
@@ -22266,10 +22343,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
               let exitK, exitCol, entryK = 0, entryCol = 0;
               const px = qx + hi * rx, py = qy + hi * ry, pz = qz + hi * rz;
               if (exZ) { exitK = exZ; exitCol = colOf(4, 0, 0, exZ === 6 ? -1 : 1, px, py, pz, false); }
-              else { const e = EG[exE]; exitK = e.k === 5 ? 5 : 4; exitCol = colOf(e.k, -e.nx, -e.ny, 0, px, py, pz, false); }
+              else { const e = EG[exE]; exitK = e.k === 5 || e.k === 2 ? e.k : 4; exitCol = colOf(e.k, -e.nx, -e.ny, 0, px, py, pz, false); }
               if (seeThroughB) {
                 if (enZ) { entryK = enZ; entryCol = colOf(4, 0, 0, enZ === 6 ? 1 : -1, 0, 0, 0, true); }
-                else if (enE >= 0) { const e = EG[enE]; entryK = e.k === 5 ? 5 : 4; entryCol = colOf(e.k, e.nx, e.ny, 0, 0, 0, 0, true); }
+                else if (enE >= 0) { const e = EG[enE]; entryK = e.k === 5 || e.k === 2 ? e.k : 4; entryCol = colOf(e.k, e.nx, e.ny, 0, 0, 0, 0, true); }
               }
               pushIv(i, lo, hi, exitK, true, exitCol, entryK, entryCol);
             }
@@ -23020,6 +23097,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function drawMarker(proj) {
+    if (abtragPathHidden()) return;   // Release 288
     const p = points[scrubIdx];
     if (!p) return;
     const s = proj(toRender(p));
@@ -29890,6 +29968,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   btnStop.addEventListener('click', stopPlayback);
   el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 287
+  el('btnAbtragHidePath').addEventListener('click', toggleAbtragHidePath);   // Release 288
 
   // Release 184: siehe gotoAdjacentOp()/updateOpNavButtons() weiter oben für die vollständige
   // Herleitung. Ein deaktivierter Button (siehe `disabled`-Attribut, von updateOpNavButtons()
