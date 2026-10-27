@@ -685,7 +685,7 @@
   /* Release 278: "DXF CS Krümmling" - kleiner gelber Viertelkreis als Icon, Status im Dialog */
   .krm-icon { width: 12px; height: 12px; vertical-align: -1px; }
   #dxfKrmStatus { white-space: pre-line; }
-  #dxfKrmStatus.dxf-krm-error { color: var(--warn); font-weight: 600; }
+  #dxfKrmStatus.dxf-krm-error, #dxfKrmSideStatus.dxf-krm-error, #dxfTopViewHint.dxf-krm-error, #partCreateTopHint.dxf-krm-error, #partCreateError { color: var(--warn); font-weight: 600; }
   /* Release 274: Hinweis nach "Abbrechen" in der Maschinentyp-Abfrage beim Laden eines CNC-Programms */
   .mt-pending-hint { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; padding: 6px 10px; border-radius: 7px;
     border: 1px solid var(--warn); background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 600;
@@ -1810,7 +1810,7 @@
      lang, um sie ohne unnötiges Aufblähen der kurzen CNC-/DXF-Icons in dieselbe Breite zu
      zwingen; Sebastian hat für diese Anfrage ausdrücklich nur "CNC und DXF" genannt. */
   #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
-  #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
+  #btnPartCreateIcon, #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
@@ -2210,6 +2210,10 @@
      eigenem Label darüber - wiederverwendet .filename-input für einheitliche Optik. */
   .tool-data-row { display: flex; gap: 10px; }
   .tool-data-field { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-muted); }
+  /* Release 284 (Sebastian: "Bitte die Button bei "Draufsicht einfügen" / "Entfernen" bei der Setzstufe kleiner machen.
+     maximale Höhe so wie das Dropdownmenü für "Frontansicht" daneben."): Buttons nicht auf Label+Dropdown strecken */
+  .tool-data-row.top-view-row { align-items: flex-end; }
+  .tool-data-row.top-view-row > .btn { height: 34px; max-height: 34px; box-sizing: border-box; padding-top: 0; padding-bottom: 0; flex: 0 0 auto; }
   /* Release 263: in der Bauteildefinition so breit wie "Füll-Transparenz" (ein Drittel einer Dreier-Zeile) */
   .tool-data-field.dpd-narrow { flex: 0 0 calc((100% - 20px) / 3); min-width: 0; }
 
@@ -3252,6 +3256,7 @@
     <input type="file" id="fileInputList" hidden multiple>
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
     <input type="file" id="dxfKrmFileInput" hidden accept=".dxf">
+    <input type="file" id="dxfKrmSideFileInput" hidden accept=".dxf">
     <input type="file" id="settingsFileInput" hidden accept="application/json,.json">
     <div class="topbar-spacer"></div>
     <!-- "CNC SimX rXXX" oben rechts klickbar machen (170. Runde, Sebastian: "Darunter soll bei
@@ -3377,6 +3382,11 @@
          Verschieben/Spiegeln-X/Spiegeln-Y/Drehen/Bauteilstärke/Löschen), unverändert in ihrer
          bisherigen internen Reihenfolge aus der 67./68. Runde. -->
     <div class="toolbar-row" id="toolbarRow2">
+      <!-- Release 283 (Sebastian: "Eingabe von rechteckigem Bauteil ermöglichen. Dieses Bauteil wird wie ein importiertes DXF
+           behandelt. Erstellen-Icon für Bauteil links von "DXF öffnen" einfügen. Rechts vom Icon ein Trennstrich." / "Eingaben für
+           X, Y und Z ermöglichen. Z wie gehabt auch negativ unter Umständen.") -->
+      <button class="toolbar-btn" id="btnPartCreateIcon" type="button" title="Bauteil erstellen: rechteckiges Bauteil mit X, Y und Z anlegen - wird wie eine importierte DXF behandelt" data-i18n-en-title="Create part: create a rectangular part with X, Y and Z - treated like an imported DXF" data-i18n-en="▭ Part">▭ Bauteil</button>
+      <span class="toolbar-sep" id="partCreateSep"></span>
       <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
       <!-- Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling", das Icon
            dafür ist ein kleiner gelber Viertelkreis, als Text steht da "DXF CS" neben. Das öffnet dann den Modus, bei dem man
@@ -4138,6 +4148,31 @@
         </select>
       </label>
     </div>
+    <!-- Release 285 (Sebastian: "Die Transparenz und Farbe des aktuellen Werkzeugs soll bitte auch bei "+ Werkzeuge (T)"
+         einstellbar sein. Wenn dort der Werkzeugtyp "Fräser" ausgewählt ist z.B. und die Farbe/Transparenz geändert wird, fließt
+         das zurück in die Einstellungen -> Werkzeuge -> Werkzeugdarstellung -> Fräser. Bei "Säge" auch."): dieselben Werte wie
+         #toolAppearanceCutterPanel bzw. #toolAppearanceSawPanel (cutterAppearance/sawAppearance), übernommen mit Ok. -->
+    <div class="scale-group" id="toolDataAppearanceGroup">
+      <div class="scale-group-title" id="toolDataAppearanceTitle">Darstellung Fräser</div>
+      <label class="scale-option"><input type="checkbox" id="toolDataAppearanceFilled"> <span data-i18n-en="Filled">Gefüllt</span></label>
+      <div class="color-field-row" id="toolDataAppearanceColorRow" hidden>
+        <span data-i18n-en="Color">Farbe</span>
+        <span class="color-field-inputs">
+          <input type="color" id="toolDataAppearanceColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+          <input type="text" id="toolDataAppearanceColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#c9cacf">
+        </span>
+      </div>
+      <p class="panel-hint" id="toolDataAppearanceHexWarning" data-i18n-en="Please enter a valid hex code (e.g. #ff00ff or #f0f)." hidden>Bitte einen gültigen Hexcode eingeben (z.&nbsp;B. #ff00ff oder #f0f).</p>
+      <div id="toolDataAppearanceTransparencyRow" hidden>
+        <div class="scale-group-title"><span data-i18n-en="Transparency">Transparenz</span>: <span id="toolDataAppearanceTransparencyValue">0%</span></div>
+        <div class="slider-row">
+          <span class="slider-pct-label">0%</span>
+          <input type="range" id="toolDataAppearanceTransparencySlider" min="0" max="100" step="1" value="0">
+          <span class="slider-pct-label">100%</span>
+        </div>
+      </div>
+      <p class="panel-hint" data-i18n-en="Same setting as Settings → Tools → Tool appearance (cutter or saw, depending on the tool type).">Dieselbe Einstellung wie unter Einstellungen → Werkzeuge → Werkzeugdarstellung (Fräser bzw. Säge, je nach Werkzeugtyp).</p>
+    </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnToolDataCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnToolDataConfirm" type="button">Ok</button>
@@ -4150,12 +4185,46 @@
      Dialogtechnik wie #toolDataPanel oben, nur mit drei statt zwei Feldern (X/Y/Z statt
      Radius/Länge) - siehe dxfOffset/confirmDxfMove() in app.js. -->
 <!-- Release 278: "DXF CS Krümmling" - Import eines Krümmling-DXF (Rechteck mit Handlauf), 3D-Rekonstruktion -->
+<!-- Release 283: "Bauteil erstellen" (rechteckiges Bauteil, optional mit Draufsicht) -->
+<div class="paste-panel" id="partCreatePanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Create part">Bauteil erstellen</h3>
+    <p class="panel-hint" data-i18n-en="Creates a rectangular part (X = length, Y = width, Z = thickness - negative values go into negative Z, as with &quot;DXF drawing settings&quot;). It is treated like an imported DXF. Optionally a top view can be inserted: its width must match X (to the first decimal place), the thickness is then taken from the height of the top view.">Legt ein rechteckiges Bauteil an (X = Länge, Y = Breite, Z = Stärke - negativ geht ins negative Z, wie bei „DXF-Bauteil definieren“). Es wird wie eine importierte DXF behandelt. Optional kann eine Draufsicht eingefügt werden: ihre Breite muss zu X passen (bis auf die erste Nachkommastelle), die Stärke kommt dann aus der Höhe der Draufsicht.</p>
+    <div class="tool-data-row">
+      <label class="tool-data-field">X (mm)<input type="text" id="partCreateX" class="filename-input" inputmode="decimal" spellcheck="false" value="1000"></label>
+      <label class="tool-data-field">Y (mm)<input type="text" id="partCreateY" class="filename-input" inputmode="decimal" spellcheck="false" value="200"></label>
+      <label class="tool-data-field">Z (mm)<input type="text" id="partCreateZ" class="filename-input" inputmode="decimal" spellcheck="false" value="40"></label>
+    </div>
+    <div class="tool-data-row top-view-row">
+      <button class="btn ghost" id="btnPartCreateTopLoad" type="button" data-i18n-en="Insert top view…">Draufsicht einfügen…</button>
+      <button class="btn ghost small" id="btnPartCreateTopRemove" type="button" hidden data-i18n-en="Remove">Entfernen</button>
+      <label class="tool-data-field" id="partCreateFrontField" hidden><span data-i18n-en="Front view">Frontansicht</span>
+        <select id="partCreateFrontSelect" class="filename-input"><option value="up" data-i18n-en="top">oben</option><option value="down" data-i18n-en="bottom">unten</option></select>
+      </label>
+      <input type="file" id="partCreateTopFileInput" hidden accept=".dxf">
+    </div>
+    <p class="panel-hint" id="partCreateTopHint"></p>
+    <p class="panel-hint" id="partCreateError" hidden></p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnPartCreateCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnPartCreateOk" type="button" data-i18n-en="Create">Erstellen</button>
+    </div>
+  </div>
+</div>
+
 <div class="paste-panel" id="dxfKrmPanel">
   <div class="paste-card">
     <h3 data-i18n-en="DXF CS wreath">DXF CS Krümmling</h3>
     <p class="panel-hint" data-i18n-en="Imports a wreath DXF - a rectangle with the handrail inside (two end faces and four edge chains) - and shows the wreath as a 3D body. Fill colour, outline colour, transparency and texture come from the part definition 'Wreath, standing' and can be changed under 'DXF drawing settings'.">Importiert ein Krümmling-DXF - ein Rechteck mit dem Handlauf darin (zwei Stirnseiten und vier Kantenzüge) - und stellt den Krümmling als 3D-Körper dar. Füllfarbe, Outline-Farbe, Transparenz und Textur kommen aus der Bauteildefinition „Krümmling, stehend“ und lassen sich unter „DXF-Bauteil definieren“ ändern.</p>
     <div class="tool-data-row"><button class="btn ghost" id="btnDxfKrmLoad" type="button" data-i18n-en="Load wreath DXF…">Krümmling-DXF laden…</button></div>
     <p class="panel-hint" id="dxfKrmStatus"></p>
+    <!-- Release 283 (Sebastian: "... und der Seitenansicht (bisher nicht berücksichtigt, aber zur Kontrolle - oder du brauchst immer
+         beide?!)"): die Seitenansicht liefert die exakte Höhe jeder Kante, ohne sie wird die Höhe geschätzt -->
+    <div class="tool-data-row">
+      <button class="btn ghost" id="btnDxfKrmSideLoad" type="button" disabled data-i18n-en="Load side view DXF…">Seitenansicht-DXF laden…</button>
+      <button class="btn ghost small" id="btnDxfKrmSideRemove" type="button" hidden data-i18n-en="Remove side view">Seitenansicht entfernen</button>
+    </div>
+    <p class="panel-hint" id="dxfKrmSideStatus"></p>
     <label class="scale-option"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
     <div class="paste-actions">
       <button class="btn primary" id="btnDxfKrmClose" type="button" data-i18n-en="Close">Schließen</button>
@@ -4240,6 +4309,19 @@
           <option value="handrail" data-i18n-en="Handrail">Handlauf</option>
         </select>
       </label>
+    </div>
+    <!-- Release 283 (Sebastian: "Unter "DXF-Bauteil definieren" gibt es die Option über dem Punkt "Stärke" um "Draufsicht
+         einfügen" zu können"): bei der Setzstufe und bei selbst erstellten Bauteilen -->
+    <div class="scale-group" id="dxfTopViewRow" hidden>
+      <div class="tool-data-row top-view-row">
+        <button class="btn ghost" id="btnDxfTopViewLoad" type="button" data-i18n-en="Insert top view…">Draufsicht einfügen…</button>
+        <button class="btn ghost small" id="btnDxfTopViewRemove" type="button" hidden data-i18n-en="Remove">Entfernen</button>
+        <label class="tool-data-field" id="dxfTopViewFrontField" hidden><span data-i18n-en="Front view">Frontansicht</span>
+          <select id="dxfTopViewFrontSelect" class="filename-input"><option value="up" data-i18n-en="top">oben</option><option value="down" data-i18n-en="bottom">unten</option></select>
+        </label>
+      </div>
+      <p class="panel-hint" id="dxfTopViewHint"></p>
+      <input type="file" id="dxfTopViewFileInput" hidden accept=".dxf">
     </div>
     <div class="tool-data-row" id="dxfThicknessRow">
       <label class="tool-data-field"><span data-i18n-en="Thickness (mm)">Stärke (mm)</span>
@@ -4350,6 +4432,28 @@
       </div>
       <p class="panel-hint" id="dxfUBoreHint"></p>
       <p class="panel-hint dxf-dia-warn" id="dxfUBoreDiaWarn" hidden></p>
+      <!-- Release 285 (Sebastian: "Bei den "Horizontalen Bearbeitungen" in den Bauteilen "Wangen" und "Handläufen" sollte es noch
+           eine Checkbox für eine "Nutbearbeitung" geben ... Die Nut ist im Standard meist mittig, kann aber auch außermittig sein.
+           Dazu sollte die dargestellte Stärke der Nut einstellbar sein."): Glasnut aus der gestrichelten Linie an der Kontur -->
+      <div id="dxfGrooveRow" hidden>
+        <label class="scale-option"><input type="checkbox" id="dxfGrooveCheckbox"> <span data-i18n-en="Groove machining (glass groove)">Nutbearbeitung (Glasnut)</span></label>
+        <div id="dxfGrooveBody" hidden>
+          <div class="tool-data-row">
+            <label class="tool-data-field"><span data-i18n-en="Groove layer">Nut-Layer</span>
+              <select id="dxfGrooveLayerSelect" class="filename-input"></select>
+            </label>
+          </div>
+          <div class="tool-data-row">
+            <label class="tool-data-field"><span data-i18n-en="Groove width (mm)">Nutbreite (mm)</span>
+              <input type="text" id="dxfGrooveWidthInput" class="filename-input" inputmode="decimal" spellcheck="false">
+            </label>
+            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
+              <input type="text" id="dxfGrooveHeightInput" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
+            </label>
+          </div>
+        </div>
+        <p class="panel-hint" id="dxfGrooveHint"></p>
+      </div>
     </div>
     <hr class="dxf-part-sep" id="dxfSepFill">
     <!-- Release 260 (Sebastian: "In der Definition der DXF-Bauteilstärke kann die Textur ggf. auch noch geändert werden. Da
@@ -4593,6 +4697,21 @@
             </label>
             <label class="tool-data-field"><span data-i18n-en="Height if rectangular (mm)">Höhe bei eckig (mm)</span>
               <input type="text" id="dpdURectHeight" class="filename-input" inputmode="decimal" spellcheck="false">
+            </label>
+          </div>
+        </div>
+        <!-- Release 285: Glasnut (nur Wange/Handlauf) -->
+        <div id="dpdGroove">
+          <label class="scale-option"><input type="checkbox" id="dpdGrooveOn"> <span data-i18n-en="Groove machining (glass groove) preselected">Nutbearbeitung (Glasnut) vorausgewählt</span></label>
+          <div class="tool-data-row">
+            <label class="tool-data-field"><span data-i18n-en="Groove layer">Nut-Layer</span>
+              <input type="text" id="dpdGrooveLayer" class="filename-input" spellcheck="false">
+            </label>
+            <label class="tool-data-field"><span data-i18n-en="Groove width (mm)">Nutbreite (mm)</span>
+              <input type="text" id="dpdGrooveWidth" class="filename-input" inputmode="decimal" spellcheck="false">
+            </label>
+            <label class="tool-data-field"><span data-i18n-en="Position in Z (mm)">Position in Z (mm)</span>
+              <input type="text" id="dpdGrooveHeight" class="filename-input" inputmode="decimal" spellcheck="false" placeholder="mittig" data-i18n-en-placeholder="centred">
             </label>
           </div>
         </div>
@@ -7374,6 +7493,19 @@
   // 47. Runde (DXF-Unterlage, siehe parseDXF() weiter unten) auch für CIRCLE/ARC/LWPOLYLINE-
   // Bulge-Segmente aus importierten DXF-Dateien wiederverwendet, statt eine zweite, abweichende
   // Konstante einzuführen - dieselbe Detailtreue/Performance-Abwägung gilt dort genauso.
+  // Release 284 (Sebastian: "Wenn ich ein Fräser mit Profil erstelle, ist der im DXF sehr detailliert/schön. Im 3D wird der
+  // dann sehr eckig ... Es sollen bitte alle Bögen 1:1 im Werkzeugprofil rauskommen wenn vorhanden."): Werkzeug- und
+  // Spannfutterprofile lesen die DXF mit parseDXF(text, { fineArcs: true }) - Bögen (ARC/CIRCLE/Bulge) werden dann so fein
+  // zerlegt, dass die Sehne höchstens 0,005 mm vom Bogen abweicht (mindestens alle 3°). Die DXF-Unterlage selbst bleibt
+  // grob (ca. 10 mm je Segment, Leistung).
+  let dxfFineArcs = false;
+  function dxfArcSegCount(r, sweepRad) {
+    const sw = Math.abs(sweepRad);
+    if (!dxfFineArcs) return computeSegmentCount(Math.abs(r) * sw);
+    const tol = 0.005, rr = Math.abs(r) || 1;
+    const step = Math.min(3 * Math.PI / 180, rr > tol ? 2 * Math.acos(1 - tol / rr) : Math.PI / 2);
+    return Math.max(4, Math.min(1440, Math.ceil(sw / step)));
+  }
   function computeSegmentCount(arcLength) {
     const MIN_SEGMENTS = 4, MAX_SEGMENTS = 180, MM_PER_SEGMENT = 10;
     let segments = Math.ceil(arcLength / MM_PER_SEGMENT);
@@ -7813,7 +7945,7 @@
     const a0 = Math.atan2(a.y - cy, a.x - cx);
     const sweep = Math.abs(theta);
     const dirSign = theta >= 0 ? -1 : 1;
-    const segCount = computeSegmentCount(r * sweep);
+    const segCount = dxfArcSegCount(r, sweep);   // Release 284
     const pts = [];
     for (let s = 1; s <= segCount; s++) {
       if (s === segCount) { pts.push({ x: b.x, y: b.y, z: bz }); break; }
@@ -7858,8 +7990,7 @@
   function tessellateCircularArcDeg(cx, cy, cz, r, startDeg, sweepDeg) {
     const startRad = startDeg * Math.PI / 180;
     const sweepRad = sweepDeg * Math.PI / 180;
-    const arcLength = Math.abs(r * sweepRad);
-    const segCount = computeSegmentCount(arcLength);
+    const segCount = dxfArcSegCount(r, sweepRad);   // Release 284
     const pts = [];
     for (let s = 0; s <= segCount; s++) {
       const angle = startRad + sweepRad * (s / segCount);
@@ -7969,7 +8100,13 @@
   // nötig) - bei einer nicht-standardkonformen Datei mit vertauschter Reihenfolge würden Entitäten
   // vor der zugehörigen Layer-Farbdefinition einfach ohne Farbüberschreibung gezeichnet
   // (Fallback auf --dxf-color, siehe drawDxf() in app.js), kein Absturz.
-  function parseDXF(text) {
+  // Release 284: opts.fineArcs - Bögen fein zerlegen (Werkzeug-/Spannfutterprofile, siehe dxfArcSegCount())
+  function parseDXF(text, opts) {
+    const prevFine = dxfFineArcs;
+    dxfFineArcs = !!(opts && opts.fineArcs);
+    try { return parseDXFCore(text); } finally { dxfFineArcs = prevFine; }
+  }
+  function parseDXFCore(text) {
     const raw = String(text || '').replace(/\r\n?/g, '\n');
     const lines = raw.split('\n').map(l => l.trim());
     const n = lines.length;
@@ -9586,6 +9723,314 @@
     return out;
   }
 
+  // Release 285 (Sebastian: "Glasnuten in Handläufen und Wangen erkennen: In diesen DXF ... gibt es einen Layer3 (der kann
+  // auch mal woanders liegen bzw. andere Dingen können auch darauf liegen) mit einer gestrichelten Linien an der Kontur vom
+  // Bauteil. Das ist eine Glasnut ... Wenn die gestrichelte Linie aus der Kontur rausläuft, heißt, dass die Glasnut aus dem
+  // Bauteil rausläuft, also "durchgefräst" wird ... Wenn die winkelig zur Kontur läuft, ist das der Endpunkt der Glasnut").
+  // Nutlinie = Striche des Layers, die parallel zu einer Konturkante im gleichen Abstand d (= Nuttiefe) im Bauteil liegen
+  // (gestrichelt, über Ecken der Kontur hinweg). Ende = "Schenkel": Linienzug von der Kontur bis auf die Nutlinie (auch
+  // geknickt). Läuft die Nutlinie aus der Kontur heraus, ist die Nut an diesem Ende durchgefräst. Alles andere auf dem Layer
+  // wird ignoriert. Liefert { grooves: [{ id, layer, depth, length, start, end ('leg'|'through'|'open'), region: [[x,y]],
+  // tris: [{ p: [[x,y]x3], ek: [Flächenart je Kante] }], strokes }], strokes: Set aller verwendeten Striche, ignored }.
+  // Flächenart: 4 = Nutgrund, 5 = Nutende/Schenkel, 0 = innen/außen (nie sichtbar).
+  function detectGlassGrooves(geo, layerName, konturLoop, opts) {
+    const out = { grooves: [], strokes: new Set(), ignored: 0, open: 0 };
+    if (!geo || !geo.strokes || !layerName || !konturLoop || konturLoop.length < 3) return out;
+    const o = opts || {};
+    const MAXD = o.maxDepth || 80, M = 1;   // Nuttiefe höchstens 80 mm   // M: Überstand nach außen (sauberer Schnitt durch die Außenfläche)
+    const C = konturLoop.map(p => ({ x: p.x, y: p.y }));
+    if (Math.hypot(C[0].x - C[C.length - 1].x, C[0].y - C[C.length - 1].y) < 1e-9) C.pop();
+    const n = C.length;
+    if (n < 3) return out;
+    let ar = 0;
+    for (let i = 0; i < n; i++) { const a = C[i], b = C[(i + 1) % n]; ar += a.x * b.y - b.x * a.y; }
+    const sg = ar > 0 ? 1 : -1;
+    const E = [];
+    let per = 0;
+    for (let i = 0; i < n; i++) {
+      const a = C[i], b = C[(i + 1) % n], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+      if (len < 1e-9) continue;
+      const ux = dx / len, uy = dy / len;
+      E.push({ a, b, ux, uy, len, nx: -uy * sg, ny: ux * sg, s0: per });   // n = Innennormale
+      per += len;
+    }
+    const ne = E.length;
+    if (ne < 3) return out;
+    const inPoly = p => {
+      let c = false;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const A = C[i], B = C[j];
+        if ((A.y > p.y) !== (B.y > p.y) && p.x < (B.x - A.x) * (p.y - A.y) / (B.y - A.y) + A.x) c = !c;
+      }
+      return c;
+    };
+    // nächste Konturkante: { d (Abstand), k, t (Parameter auf der Kante), s (Lauflänge) }
+    const near = p => {
+      let best = null;
+      for (let k = 0; k < ne; k++) {
+        const e = E[k], t = Math.max(0, Math.min(e.len, (p.x - e.a.x) * e.ux + (p.y - e.a.y) * e.uy));
+        const d = Math.hypot(p.x - (e.a.x + e.ux * t), p.y - (e.a.y + e.uy * t));
+        if (!best || d < best.d) best = { d, k, t, s: e.s0 + t };
+      }
+      return best;
+    };
+    // Striche des Layers in Einzelstrecken
+    const segs = [];
+    geo.strokes.forEach(st => {
+      if (!st || st.layer !== layerName || !st.points || st.points.length < 2) return;
+      const pts = st.points.slice();
+      if (st.closed && pts.length > 2) pts.push(pts[0]);
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i], l = Math.hypot(b.x - a.x, b.y - a.y);
+        if (l > 1e-6) segs.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, len: l, st, closed: !!st.closed });
+      }
+    });
+    if (!segs.length) return out;
+    // geschlossene Linienzüge (Rechtecke, Kreise, Einstemmungen auf demselben Layer) sind nie Teil einer Nut
+    {
+      const key = p => Math.round(p.x * 100) + ',' + Math.round(p.y * 100);
+      const deg = new Map(), par = new Map();
+      const find = k => { while (par.get(k) !== k) { par.set(k, par.get(par.get(k))); k = par.get(k); } return k; };
+      segs.forEach(s => { [key(s.a), key(s.b)].forEach(k => { deg.set(k, (deg.get(k) || 0) + 1); if (!par.has(k)) par.set(k, k); }); });
+      segs.forEach(s => { const ra = find(key(s.a)), rb = find(key(s.b)); if (ra !== rb) par.set(ra, rb); });
+      const comp = new Map();
+      segs.forEach(s => { const r0 = find(key(s.a)); let c = comp.get(r0); if (!c) { c = { segs: [], ok: true }; comp.set(r0, c); } c.segs.push(s); [key(s.a), key(s.b)].forEach(k => { if (deg.get(k) !== 2) c.ok = false; }); });
+      comp.forEach(c => { if (c.ok && c.segs.length >= 3) c.segs.forEach(s => { s.closed = true; }); });
+      const n0 = segs.length;
+      for (let i = segs.length - 1; i >= 0; i--) if (segs[i].closed) segs.splice(i, 1);
+      out.ignored += n0 - segs.length;
+      if (!segs.length) return out;
+    }
+    // 1) Nutlinien-Striche: parallel zu einer Konturkante (< 2°), beide Enden im selben Abstand d nach innen, Projektion
+    //    überlappt die Kante; bei mehreren parallelen Kanten zählt die nächste (kleinstes d).
+    const SIN2 = Math.sin(2 * Math.PI / 180);
+    const G = [], rest = [];
+    segs.forEach(sgm => {
+      // Striche auf der Kontur selbst (z. B. Kontur auf demselben Layer) gehören weder zur Nutlinie noch zu einem Schenkel
+      if (near(sgm.a).d <= 0.05 && near(sgm.b).d <= 0.05 && near({ x: (sgm.a.x + sgm.b.x) / 2, y: (sgm.a.y + sgm.b.y) / 2 }).d <= 0.05) { sgm.onContour = true; return; }
+      const vx = (sgm.b.x - sgm.a.x) / sgm.len, vy = (sgm.b.y - sgm.a.y) / sgm.len;
+      let best = null;
+      for (let k = 0; k < ne; k++) {
+        const e = E[k];
+        if (Math.abs(vx * e.uy - vy * e.ux) > SIN2) continue;
+        const da = (sgm.a.x - e.a.x) * e.nx + (sgm.a.y - e.a.y) * e.ny, db = (sgm.b.x - e.a.x) * e.nx + (sgm.b.y - e.a.y) * e.ny;
+        if (da < 0.5 || db < 0.5 || Math.abs(da - db) > 0.05 + 0.001 * sgm.len) continue;
+        const d = (da + db) / 2;
+        if (d > MAXD) continue;
+        const ta = (sgm.a.x - e.a.x) * e.ux + (sgm.a.y - e.a.y) * e.uy, tb = (sgm.b.x - e.a.x) * e.ux + (sgm.b.y - e.a.y) * e.uy;
+        if (Math.max(ta, tb) < -d - 1 || Math.min(ta, tb) > e.len + d + 1) continue;
+        if (!best || d < best.d) best = { k, d, ta, tb };
+      }
+      if (!best) { rest.push(sgm); return; }
+      const e = E[best.k];
+      const fwd = best.tb >= best.ta;
+      const p0 = fwd ? sgm.a : sgm.b, p1 = fwd ? sgm.b : sgm.a;
+      const t0 = Math.min(best.ta, best.tb), t1 = Math.max(best.ta, best.tb), cl = t => Math.max(0, Math.min(e.len, t));
+      // s0/s1 auf der Kante begrenzt (Überstand über die Kante hinaus zählt erst nach Wahl des Ursprungs, siehe uAt())
+      G.push({ sgm, k: best.k, d: best.d, t0, t1, s0: e.s0 + cl(t0), s1: e.s0 + cl(t1), p0, p1, out0: !inPoly(p0), out1: !inPoly(p1) });
+    });
+    // Ein einzelner Strich auf einer Nutlinie, der an einem Ende auf der Kontur sitzt, ist ein Schenkel (z. B. Schenkel an einer
+    // Stirnkante, die rechtwinklig zu einer anderen Kante steht - er ist dann zufällig parallel zu dieser im Abstand d).
+    for (let q = G.length - 1; q >= 0; q--) {
+      const g = G[q];
+      if (G.some(h2 => h2 !== g && h2.k === g.k && Math.abs(h2.d - g.d) <= 0.3)) continue;
+      const on0 = near(g.p0).d <= 0.3, on1 = near(g.p1).d <= 0.3;
+      if ((on0 && !on1 && !g.out1) || (on1 && !on0 && !g.out0)) { rest.push(g.sgm); G.splice(q, 1); }
+    }
+    if (!G.length) { out.ignored = segs.length; return out; }
+    // 2) Schenkel: Linienzug (höchstens 4 Strecken) aus übrigen Strichen von der Kontur (≤ 0,3 mm) bis auf die Nutlinie
+    //    (Abstand d zur Geraden einer Konturkante, im Bereich der Kante - nahe Ecken ist eine andere Kante evtl. näher)
+    const onOffset = (p, dd) => {
+      let best = null;
+      for (let k = 0; k < ne; k++) {
+        const e = E[k], w = (p.x - e.a.x) * e.nx + (p.y - e.a.y) * e.ny, t = (p.x - e.a.x) * e.ux + (p.y - e.a.y) * e.uy;
+        if (Math.abs(w - dd) <= 0.3 && t >= -1 - dd && t <= e.len + 1 + dd && (!best || Math.abs(w - dd) < best.err)) best = { k, t: Math.max(0, Math.min(e.len, t)), s: e.s0 + Math.max(0, Math.min(e.len, t)), err: Math.abs(w - dd) };
+      }
+      return best;
+    };
+    const TOLN = 0.05;
+    const same = (p, q) => Math.abs(p.x - q.x) <= TOLN && Math.abs(p.y - q.y) <= TOLN;
+    const depths = [];
+    G.slice().sort((x, y) => x.d - y.d).forEach(g => { const c = depths[depths.length - 1]; if (c && g.d - c.max <= 0.3) { c.max = g.d; c.list.push(g); } else depths.push({ max: g.d, list: [g] }); });
+    const legs = [];
+    const usedLeg = new Set();
+    rest.forEach(s0 => {
+      if (usedLeg.has(s0)) return;
+      for (const startAtA of [true, false]) {
+        const c = startAtA ? s0.a : s0.b;
+        const nc = near(c);
+        if (nc.d > 0.3) continue;
+        const path = [c], chain = [s0];
+        let cur = startAtA ? s0.b : s0.a, ok = null;
+        for (let step = 0; step < 4; step++) {
+          path.push(cur);
+          if (!inPoly(cur)) break;
+          let nd = null;
+          const grp = depths.find(q => (nd = onOffset(cur, (q.list[0].d + q.max) / 2)));
+          if (grp && path.length > 1) { ok = { grp, nd }; break; }
+          const nx = rest.find(q => !chain.includes(q) && (same(q.a, cur) || same(q.b, cur)));
+          if (!nx) break;
+          chain.push(nx);
+          cur = same(nx.a, cur) ? nx.b : nx.a;
+        }
+        if (!ok) continue;
+        chain.forEach(q => usedLeg.add(q));
+        legs.push({ grp: ok.grp, c, i: cur, pts: path, sc: nc.s, kc: nc.k, si: ok.nd.s, ki: ok.nd.k, chain });
+        break;
+      }
+    });
+    // Lauflänge u relativ zu einem Ursprung in der größten Lücke (Kontur ist geschlossen)
+    const md = (v) => ((v % per) + per) % per;
+    let gid = 0;
+    depths.forEach(grp => {
+      const gl = grp.list, d = gl.reduce((a, g) => a + g.d, 0) / gl.length;
+      const sorted = gl.slice().sort((x, y) => md(x.s0) - md(y.s0));
+      let origin = 0, bestGap = -1;
+      for (let i = 0; i < sorted.length; i++) {
+        const a = sorted[i], b = sorted[(i + 1) % sorted.length];
+        const gap = md(b.s0 - a.s1) || (sorted.length === 1 ? per - (a.s1 - a.s0) : 0);
+        if (gap > bestGap) { bestGap = gap; origin = a.s1 + gap / 2; }
+      }
+      const U = s => md(s - origin);
+      gl.forEach(g => { const L0 = E[g.k].len; g.u0 = U(g.s0) + (g.t0 - Math.max(0, Math.min(L0, g.t0))); g.u1 = U(g.s0) + (g.s1 - g.s0) + (g.t1 - Math.max(0, Math.min(L0, g.t1))); });
+      gl.sort((x, y) => x.u0 - y.u0);
+      const myLegs = legs.filter(l => l.grp === grp).map(l => Object.assign(l, { uc: U(l.sc), ui: U(l.si) }));
+      const segLens = gl.map(g => g.s1 - g.s0).sort((x, y) => x - y);
+      const gapMax = Math.max(60, 3 * segLens[Math.floor(segLens.length / 2)]);
+      // Läufe: aufeinanderfolgende Striche, getrennt durch Schenkel oder zu große Lücken
+      const runs = [];
+      gl.forEach(g => {
+        const r = runs[runs.length - 1];
+        if (r && g.u0 - r.u1 <= gapMax && !myLegs.some(l => l.ui > r.u1 - 1 && l.ui < g.u0 + 1)) { r.list.push(g); r.u1 = Math.max(r.u1, g.u1); }
+        else runs.push({ list: [g], u0: g.u0, u1: g.u1 });
+      });
+      const legTaken = new Set();
+      runs.forEach(r => {
+        const pick = (u, side) => {
+          let best = null;
+          myLegs.forEach(l => { if (legTaken.has(l)) return; const dd = side < 0 ? r.u0 - l.ui : l.ui - r.u1; if (dd >= -1 && dd <= gapMax && (!best || Math.abs(dd) < best.dd)) best = { l, dd: Math.abs(dd) }; });
+          return best ? best.l : null;
+        };
+        const first = r.list[0], last = r.list.reduce((a, g) => (g.u1 > a.u1 ? g : a), r.list[0]);
+        const ls = first.out0 ? null : pick(r.u0, -1), le = last.out1 ? null : pick(r.u1, 1);
+        if (ls) legTaken.add(ls); if (le) legTaken.add(le);
+        const startKind = first.out0 ? 'through' : (ls ? 'leg' : 'open'), endKind = last.out1 ? 'through' : (le ? 'leg' : 'open');
+        // ohne jeden Abschluss (kein Schenkel, läuft nirgends heraus) ist es keine Nut, sondern z. B. die Seite einer anderen Kontur
+        // jedes Ende braucht einen Abschluss (Schenkel oder Auslauf aus der Kontur) - eine Linie mit offenem Ende ist z. B. eine
+        // gestrichelte Schmiegelinie oder die Seite einer Einstemmung, die aus dem Bauteil herausläuft
+        const dashed = r.list.length >= 3;
+        if (startKind === 'open' || endKind === 'open') { if (ls) legTaken.delete(ls); if (le) legTaken.delete(le); out.ignored += r.list.length; return; }
+        const res = buildGrooveStrip({ d, r, first, last, ls, le, startKind, endKind, origin });
+        if (!res) { out.ignored += r.list.length; return; }
+        const strokes = new Set();
+        r.list.forEach(g => strokes.add(g.sgm.st));
+        [ls, le].forEach(l => { if (l) l.chain.forEach(q => strokes.add(q.st)); });
+        strokes.forEach(st => out.strokes.add(st));
+        if (startKind === 'open' || endKind === 'open') out.open++;
+        out.grooves.push(Object.assign({ id: ++gid, layer: layerName, depth: d, start: startKind, end: endKind, dashed, strokes: Array.from(strokes) }, res));
+      });
+    });
+    out.ignored += rest.filter(s => !usedLeg.has(s)).length;
+    return out;
+
+    // --- Geometrie einer Nut: Außenkette (Kontur, um M nach außen) und Innenkette (Schenkel, Nutlinie im Abstand d) ---
+    function buildGrooveStrip(q) {
+      const { d, first, last, ls, le, startKind, endKind, origin } = q;
+      const U = s => md(s - origin);
+      const edgeAtU = u => { for (let k = 0; k < ne; k++) { const t = md(u + origin - E[k].s0); if (t <= E[k].len + 1e-9) return { k, t }; } return { k: 0, t: 0 }; };
+      const uAt = (k, t) => { const tc = Math.max(0, Math.min(E[k].len, t)); return U(E[k].s0 + tc) + (t - tc); };
+      // Linienzug im Abstand dist (innen positiv) von Position s bis f (je { k, t }), Gehrung an den Ecken; ext0/ext1:
+      // gerader Überstand vor s bzw. hinter f (durchgefräst). Liefert { pts, us }.
+      const offsetPath = (s, f, dist, ext0, ext1) => {
+        const pts = [], us = [];
+        const at = (k, t) => { const e = E[k]; pts.push([e.a.x + e.ux * t + e.nx * dist, e.a.y + e.uy * t + e.ny * dist]); us.push(uAt(k, t)); };
+        if (ext0 != null) at(s.k, s.t - ext0);
+        at(s.k, s.t);
+        let k = s.k, guard = 0;
+        while (k !== f.k && guard++ < ne) {
+          const kn = (k + 1) % ne, e1 = E[k], e2 = E[kn], B = e2.a;
+          const cr = e1.ux * e2.uy - e1.uy * e2.ux;
+          const p1 = [B.x + e1.nx * dist, B.y + e1.ny * dist];
+          if (Math.abs(cr) < 1e-6) pts.push(p1);
+          else {
+            const p2 = [B.x + e2.nx * dist, B.y + e2.ny * dist];
+            const t = ((p2[0] - p1[0]) * e2.uy - (p2[1] - p1[1]) * e2.ux) / cr;
+            pts.push([p1[0] + e1.ux * t, p1[1] + e1.uy * t]);
+          }
+          us.push(U(e2.s0));
+          k = kn;
+        }
+        at(f.k, f.t);
+        if (ext1 != null) at(f.k, f.t + ext1);
+        for (let j = 1; j < us.length; j++) { while (us[j] < us[j - 1] - per / 2) us[j] += per; while (us[j] > us[j - 1] + per / 2) us[j] -= per; }
+        return { pts, us };
+      };
+      // Überstand bei durchgefrästen Enden: bis die Bahn (Abstand -M..d) ganz aus der Kontur heraus ist (Parameter auf Kante k)
+      const throughT = (k, forward, tDash) => {
+        const e = E[k];
+        let best = tDash;
+        const consider = t => { if (forward ? t > best : t < best) best = t; };
+        for (let i = 0; i < n; i++) {
+          const A = C[i], B = C[(i + 1) % n];
+          const wa = (A.x - e.a.x) * e.nx + (A.y - e.a.y) * e.ny, wb = (B.x - e.a.x) * e.nx + (B.y - e.a.y) * e.ny;
+          const ta = (A.x - e.a.x) * e.ux + (A.y - e.a.y) * e.uy, tb = (B.x - e.a.x) * e.ux + (B.y - e.a.y) * e.uy;
+          if (wa >= -M && wa <= d) consider(ta);
+          [-M, d].forEach(w => { if ((wa - w) * (wb - w) < 0) consider(ta + (tb - ta) * (w - wa) / (wb - wa)); });
+        }
+        return forward ? best + M + 2 : best - M - 2;
+      };
+      let sI, fI, sO, fO, extS = null, extE = null, legS = [], legE = [], uLegS = null, uLegE = null;
+      if (startKind === 'through') {
+        sI = sO = { k: first.k, t: 0 };
+        extS = -throughT(first.k, false, first.t0);
+        if (extS < 0) { sI = sO = { k: first.k, t: -extS }; extS = 0; }
+      } else if (startKind === 'leg') { sI = { k: ls.ki, t: md(ls.si - E[ls.ki].s0) }; sO = { k: ls.kc, t: md(ls.sc - E[ls.kc].s0) }; legS = ls.pts.slice(1, -1).map(p => [p.x, p.y]); uLegS = [ls.uc, ls.ui]; }
+      else { sI = sO = edgeAtU(first.u0); }
+      if (endKind === 'through') {
+        const e = E[last.k];
+        fI = fO = { k: last.k, t: e.len };
+        extE = throughT(last.k, true, last.t1) - e.len;
+        if (extE < 0) { fI = fO = { k: last.k, t: e.len + extE }; extE = 0; }
+      } else if (endKind === 'leg') { fI = { k: le.ki, t: md(le.si - E[le.ki].s0) }; fO = { k: le.kc, t: md(le.sc - E[le.kc].s0) }; legE = le.pts.slice(1, -1).reverse().map(p => [p.x, p.y]); uLegE = [le.ui, le.uc]; }
+      else { fI = fO = edgeAtU(last.u1); }
+      // Kantenparameter auf die Kantenlänge begrenzen (md() kann bei t = Kantenlänge auf ~0 springen)
+      [sI, fI, sO, fO].forEach(p => { if (p.t > E[p.k].len + 1e-6 && p.t > per / 2) p.t -= per; });
+      const inner = offsetPath(sI, fI, d, extS, extE);
+      const outer = offsetPath(sO, fO, -M, extS, extE);
+      // Lage zueinander (u) angleichen
+      const shift = (arr, ref) => { const dlt = Math.round((ref - arr[0]) / per) * per; for (let j = 0; j < arr.length; j++) arr[j] += dlt; };
+      shift(inner.us, outer.us[0]);
+      if (!(inner.us[inner.us.length - 1] > inner.us[0] + 0.5)) return null;
+      // Innenkette: Außenpunkt Anfang, Schenkel, Nutlinie, Schenkel, Außenpunkt Ende (Schenkel-u linear zwischen Kontur und Nutlinie)
+      const I = [], uI = [], IK = [];   // IK[j]: Art der Kante I[j] -> I[j+1]
+      const lerpU = (a, b, j, m) => a + (b - a) * (j + 1) / (m + 1);
+      I.push(outer.pts[0]); uI.push(outer.us[0]); IK.push(startKind === 'through' ? 0 : 5);
+      legS.forEach((p, j) => { I.push(p); uI.push(lerpU(outer.us[0], inner.us[0], j, legS.length)); IK.push(5); });
+      inner.pts.forEach((p, j) => { I.push(p); uI.push(inner.us[j]); IK.push(j === inner.pts.length - 1 ? (endKind === 'through' ? 0 : 5) : 4); });
+      const uOe = outer.us[outer.us.length - 1], uIe = inner.us[inner.us.length - 1];
+      legE.forEach((p, j) => { I.push(p); uI.push(lerpU(uIe, uOe, j, legE.length)); IK.push(5); });
+      I.push(outer.pts[outer.pts.length - 1]); uI.push(uOe); IK.push(0);
+      // gemeinsamer Anfangs-/Endpunkt: Innenkette beginnt/endet am Außenpunkt; bei Schenkel u monoton machen
+      for (let j = 1; j < uI.length; j++) if (uI[j] < uI[j - 1]) uI[j] = uI[j - 1];
+      const O = outer.pts, uO = outer.us.slice();
+      for (let j = 1; j < uO.length; j++) if (uO[j] < uO[j - 1]) uO[j] = uO[j - 1];
+      // Reißverschluss: monotone Folge in u
+      const tris = [];
+      const area2 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+      const addTri = (a, b, c, ek) => { if (Math.abs(area2(a, b, c)) > 1e-6) tris.push({ p: [a, b, c], ek }); };
+      let i = 0, j = 0;
+      while (i < O.length - 1 || j < I.length - 1) {
+        const advO = j >= I.length - 1 || (i < O.length - 1 && uO[i + 1] <= uI[j + 1]);
+        if (advO) { addTri(O[i], O[i + 1], I[j], [0, 0, 0]); i++; }
+        else { addTri(O[i], I[j + 1], I[j], [0, IK[j], 0]); j++; }
+      }
+      const region = O.concat(I.slice(1, -1).reverse());
+      let length = 0;
+      for (let k = 1; k < inner.pts.length; k++) length += Math.hypot(inner.pts[k][0] - inner.pts[k - 1][0], inner.pts[k][1] - inner.pts[k - 1][1]);
+      return { tris, region, inner: inner.pts, outer: O, length };
+    }
+  }
+
   // Release 253 (Sebastian: "Die vertikale Tasche soll auch eingegeben werden können. Durchmesser der Tasche = max.
   // Ausdehnung in der DXF ... Kreise werden automatisch erkannt."): alle Kreise in allen Layern außer COMPASS/Kontur/
   // Schmiege_vorn/hinten - als CIRCLE (geschlossener Strich) oder aus Bögen (ARC, z. B. 2 Halb- oder 4 Viertelkreise)
@@ -9871,7 +10316,7 @@
   function buildToolProfileFromDxfText(text, opts) {
     opts = opts || {};
     const scale = (typeof opts.scale === 'number' && isFinite(opts.scale) && opts.scale > 0) ? opts.scale : 1;
-    const geo = parseDXF(text);
+    const geo = parseDXF(text, { fineArcs: true });   // Release 284: Bögen 1:1
     const onCompass = geo.strokes.filter(s => s.layer === 'COMPASS');
     const strokesToUse = onCompass.length ? onCompass : geo.strokes;
     const result = buildProfileChainFromStrokes(strokesToUse);
@@ -10613,6 +11058,237 @@
     return { ok: true, faces3, rings, info: { width: w, height: h, railHeight: Wb, rotated, roundAtTop: dl(pTop) > dl(pBot), stations: N, points: M, creases, faces: faces3.length, corners: q.map(i => R[i].slice()) } };
   }
 
+  // Release 283: einfacher Kanten-Graph einer Krümmling-Ansicht (Draufsicht oder Seitenansicht): Rahmen-Rechteck, Körper
+  // mit 8 Ecken (Grad 3) und 12 Wegen zwischen den Ecken. Liefert { ok, frame, corners: [{x,y}], paths: [[{x,y}]] }.
+  function krmViewGraph(geometry) {
+    const key = p => Math.round(p.x * 1000) + ',' + Math.round(p.y * 1000);
+    const nodes = new Map(), seen = new Set();
+    const addSeg = (a, b) => {
+      const ka = key(a), kb = key(b);
+      if (ka === kb) return;
+      const sk = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+      if (seen.has(sk)) return;
+      seen.add(sk);
+      [[ka, a, kb], [kb, b, ka]].forEach(([k, p, o]) => { let n = nodes.get(k); if (!n) { n = { k, p: { x: p.x, y: p.y }, nb: [] }; nodes.set(k, n); } n.nb.push(o); });
+    };
+    ((geometry && geometry.strokes) || []).forEach(st => { const pts = st.points || []; for (let i = 0; i + 1 < pts.length; i++) addSeg(pts[i], pts[i + 1]); });
+    const comp = new Map(), comps = [];
+    nodes.forEach(n => {
+      if (comp.has(n.k)) return;
+      const c = [], st = [n.k];
+      comp.set(n.k, c);
+      while (st.length) { const k = st.pop(); c.push(nodes.get(k)); nodes.get(k).nb.forEach(o => { if (!comp.has(o)) { comp.set(o, c); st.push(o); } }); }
+      comps.push(c);
+    });
+    const isFrame = c => c.length === 4 && c.every(n => n.nb.length === 2) && c.every(n => n.nb.every(o => { const q = nodes.get(o).p; return Math.abs(q.x - n.p.x) < 1e-6 || Math.abs(q.y - n.p.y) < 1e-6; }));
+    const frames = comps.filter(isFrame), others = comps.filter(c => !isFrame(c));
+    if (frames.length !== 1 || others.length !== 1) return { ok: false };
+    const fx = frames[0].map(n => n.p.x), fy = frames[0].map(n => n.p.y);
+    const frame = { x0: Math.min(...fx), y0: Math.min(...fy), x1: Math.max(...fx), y1: Math.max(...fy) };
+    const body = others[0];
+    const corners = body.filter(n => n.nb.length === 3);
+    if (corners.length !== 8 || body.some(n => n.nb.length !== 2 && n.nb.length !== 3)) return { ok: false };
+    const paths = [], used = new Set();
+    const ek = (a, b) => (a < b ? a + '|' + b : b + '|' + a);
+    corners.forEach(c => c.nb.forEach(o0 => {
+      if (used.has(ek(c.k, o0))) return;
+      const pts = [c.p];
+      let prev = c.k, cur = o0;
+      used.add(ek(prev, cur));
+      while (nodes.get(cur).nb.length === 2) {
+        pts.push(nodes.get(cur).p);
+        const nx = nodes.get(cur).nb.find(o => o !== prev);
+        used.add(ek(cur, nx)); prev = cur; cur = nx;
+      }
+      pts.push(nodes.get(cur).p);
+      paths.push(pts);
+    }));
+    if (paths.length !== 12) return { ok: false };
+    return { ok: true, frame, corners: corners.map(n => n.p), paths };
+  }
+
+  // Release 283 (Sebastian: "CS Krümmling überprüfen. Die gefräste Bahn unterscheidet sich vom erzeugten Bauteil ... im Anhang
+  // ... die DXF der Draufsicht ... und der Seitenansicht (bisher nicht berücksichtigt, aber zur Kontrolle - oder du brauchst
+  // immer beide?!)"): Die Draufsicht legt nur den Querschnitt (80 x 45, Neigung) fest, nicht den Höhenverlauf - der wurde bisher
+  // über "Querschnitt senkrecht zur Mittellinie" geschätzt (Abweichung beim Beispiel bis 20 mm, die gefräste Bahn lag
+  // daneben). Mit der Seitenansicht ist jede Kante exakt: zu jedem Kantenpunkt der Draufsicht (x, y) liefert die zugehörige
+  // Kante der Seitenansicht (x, z). Die Ecken werden über x zugeordnet (beide Ansichten haben dieselben x), die Kanten
+  // über ihre beiden Ecken; z über x entlang der Seitenkante (bei gleicher Punktzahl Punkt für Punkt).
+  // Liefert { ok, z: [je Kante z je Punkt], frameH } oder { ok: false, error, errorEn }.
+  function krmSideHeights(side, topFrame, C4) {
+    const fail = (de, en) => ({ ok: false, error: 'Seitenansicht: ' + de, errorEn: 'Side view: ' + en });
+    const g = krmViewGraph(side);
+    if (!g.ok) return fail('erwartet wird wie bei der Draufsicht ein Rechteck mit dem Krümmling darin (zwei Stirnseiten, vier Kantenzüge).', 'like the top view, a rectangle with the wreath inside is expected (two end faces, four edge chains).');
+    const TOL = 0.05;
+    const wTop = topFrame.x1 - topFrame.x0, wSide = g.frame.x1 - g.frame.x0;
+    if (Math.abs(wTop - wSide) > TOL) return fail('die Breite (' + wSide.toFixed(1) + ' mm) passt nicht zur Draufsicht (' + wTop.toFixed(1) + ' mm).', 'the width (' + wSide.toFixed(1) + ' mm) does not match the top view (' + wTop.toFixed(1) + ' mm).');
+    const dx = g.frame.x0 - topFrame.x0;
+    const findCorner = x => { let best = null, bd = Infinity; g.corners.forEach(c => { const d = Math.abs(c.x - dx - x); if (d < bd) { bd = d; best = c; } }); return bd <= TOL ? best : null; };
+    const same = (a, b) => Math.abs(a.x - b.x) < 1e-9 && Math.abs(a.y - b.y) < 1e-9;
+    const z = [];
+    for (let j = 0; j < 4; j++) {
+      const ch = C4[j];
+      const s0 = findCorner(ch[0].x), s1 = findCorner(ch[ch.length - 1].x);
+      if (!s0 || !s1 || s0 === s1) return fail('die Ecken passen nicht zur Draufsicht (x-Werte der Stirnseiten).', 'the corners do not match the top view (x values of the end faces).');
+      let p = g.paths.find(q => same(q[0], s0) && same(q[q.length - 1], s1));
+      if (!p) { p = g.paths.find(q => same(q[0], s1) && same(q[q.length - 1], s0)); if (p) p = p.slice().reverse(); }
+      if (!p) return fail('zu einer Kante der Draufsicht gibt es keine passende Kante.', 'there is no matching edge for an edge of the top view.');
+      const zz = [];
+      if (p.length === ch.length && p.every((q, i) => Math.abs(q.x - dx - ch[i].x) <= TOL)) p.forEach(q => zz.push(q.y - g.frame.y0));
+      else {
+        // z über x entlang der Seitenkante (Suche läuft monoton weiter)
+        let k = 0;
+        for (const pt of ch) {
+          const x = pt.x + dx;
+          let found = false;
+          for (let s = k; s + 1 < p.length; s++) {
+            const a = p[s], b = p[s + 1], lo = Math.min(a.x, b.x) - 1e-6, hi = Math.max(a.x, b.x) + 1e-6;
+            if (x >= lo && x <= hi) { const t = Math.abs(b.x - a.x) > 1e-9 ? (x - a.x) / (b.x - a.x) : 0; zz.push(a.y + (b.y - a.y) * t - g.frame.y0); k = s; found = true; break; }
+          }
+          if (!found) return fail('eine Kante lässt sich nicht über x zuordnen.', 'an edge cannot be matched via x.');
+        }
+      }
+      z.push(zz);
+    }
+    return { ok: true, z, frameH: g.frame.y1 - g.frame.y0 };
+  }
+
+  // Release 283: geschlossene Kontur einer Draufsicht (Setzstufe/Bauteil). Kontur-Layer bevorzugt, sonst alle Linien; ein
+  // umgebendes, achsparalleles Rahmen-Rechteck (wie bei den Krümmling-Exporten) wird übergangen.
+  function buildTopViewLoopFromDxfText(text) {
+    const err = (de, en) => Object.assign(new Error(de), { messageEn: en });
+    let g;
+    try { g = parseDXF(text); } catch (e) { g = null; }
+    if (!g || !g.strokes || !g.strokes.length) throw err('Die Draufsicht enthält keine Linien.', 'The top view contains no lines.');
+    const kl = detectKonturLayerName(g);
+    let strokes = kl ? g.strokes.filter(s => s.layer === kl) : [];
+    let loops = strokes.length ? buildClosedLoopFromLayerStrokes(strokes) : [];
+    if (!loops.length) loops = buildClosedLoopFromLayerStrokes(g.strokes);
+    if (!loops.length) throw err('Die Draufsicht hat keine geschlossene Kontur.', 'The top view has no closed contour.');
+    const area = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p.x * q.y - q.x * p.y; } return Math.abs(a) / 2; };
+    loops.sort((a, b) => area(b) - area(a));
+    const isRect = l => l.length === 4 && l.every((p, i) => { const q = l[(i + 1) % 4]; return Math.abs(p.x - q.x) < 1e-6 || Math.abs(p.y - q.y) < 1e-6; });
+    let loop = loops[0];
+    if (loops.length > 1 && isRect(loops[0])) loop = loops[1];
+    const xs = loop.map(p => p.x), ys = loop.map(p => p.y);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    return { loop: loop.map(p => [p.x, p.y]), xmin, xmax, ymin, ymax, w: xmax - xmin, h: ymax - ymin };
+  }
+
+  // Release 283 (Sebastian: "Setzstufen: Draufsicht und Seitenansicht zusammenfügen, damit ein 3D Objekt der Setzstufen mit
+  // Schmiege entsteht"): Körper = Schnitt zweier senkrecht zueinander stehender Prismen - Frontansicht F (x, y) in z
+  // extrudiert und Draufsicht T (x, z) in y extrudiert: { (x, y, z) : (x, y) in F und (x, z) in T }. In x wird in Scheiben
+  // zwischen allen Eckpunkt-x beider Konturen zerlegt; in jeder Scheibe sind die Intervalle von F (in y) und T (in z)
+  // linear begrenzt (gerade-ungerade-Regel), daraus entstehen je Intervall-Paar vier ebene Flächen. An den Scheibengrenzen
+  // ergibt der Unterschied der Querschnitte links/rechts die senkrechten Flächen (Rasterzellen). Kanten: Flächenränder mit
+  // Knick (> 20°) oder ohne Nachbarfläche. Liefert { faces3, rings, info }.
+  function buildOrthoPrismFaces(F, T) {
+    const EPS = 1e-7;
+    const xsSet = new Set();
+    F.forEach(p => xsSet.add(Math.round(p[0] * 1e6) / 1e6));
+    T.forEach(p => xsSet.add(Math.round(p[0] * 1e6) / 1e6));
+    const xs = Array.from(xsSet).sort((a, b) => a - b);
+    const edgesOf = P => P.map((p, i) => [p, P[(i + 1) % P.length]]).filter(([a, b]) => Math.abs(a[0] - b[0]) > EPS);
+    const EF = edgesOf(F), ET = edgesOf(T);
+    const at = (e, x) => e[0][1] + (e[1][1] - e[0][1]) * (x - e[0][0]) / (e[1][0] - e[0][0]);
+    // Intervalle einer Scheibe: Paare (untere, obere Kante), sortiert nach dem Wert in der Scheibenmitte
+    const intervals = (E, xa, xb) => {
+      const xm = (xa + xb) / 2;
+      const es = E.filter(e => Math.min(e[0][0], e[1][0]) <= xa + 1e-6 && Math.max(e[0][0], e[1][0]) >= xb - 1e-6).map(e => ({ e, v: at(e, xm) })).sort((a, b) => a.v - b.v);
+      const out = [];
+      for (let i = 0; i + 1 < es.length; i += 2) out.push([es[i].e, es[i + 1].e]);
+      return out;
+    };
+    const faces3 = [], quads = [];
+    const quad = (p0, p1, p2, p3, r, uv, kind) => {
+      faces3.push({ v: [p0, p1, p2], r, uv: [uv[0], uv[1], uv[2]], kind });
+      faces3.push({ v: [p0, p2, p3], r, uv: [uv[0], uv[2], uv[3]], kind });
+      quads.push({ p: [p0, p1, p2, p3], r });
+    };
+    const slabs = [];
+    for (let k = 0; k + 1 < xs.length; k++) {
+      const xa = xs[k], xb = xs[k + 1];
+      if (xb - xa < 1e-6) continue;
+      slabs.push({ xa, xb, IF: intervals(EF, xa, xb), IT: intervals(ET, xa, xb) });
+    }
+    const mid = ps => [0, 1, 2].map(i => ps.reduce((s, p) => s + p[i], 0) / ps.length);
+    slabs.forEach(({ xa, xb, IF, IT }) => {
+      IF.forEach(([fl, fh]) => IT.forEach(([tl, th]) => {
+        const P = (x, y, z) => [x, y, z];
+        const yl = x => at(fl, x), yh = x => at(fh, x), zl = x => at(tl, x), zh = x => at(th, x);
+        // y = untere F-Kante (Material bei größerem y)
+        let ps = [P(xa, yl(xa), zl(xa)), P(xb, yl(xb), zl(xb)), P(xb, yl(xb), zh(xb)), P(xa, yl(xa), zh(xa))];
+        let c = mid(ps); quad(...ps, [c[0], c[1] + 0.5, c[2]], ps.map(p => [p[0], p[2]]), 'side');
+        ps = [P(xa, yh(xa), zl(xa)), P(xb, yh(xb), zl(xb)), P(xb, yh(xb), zh(xb)), P(xa, yh(xa), zh(xa))];
+        c = mid(ps); quad(...ps, [c[0], c[1] - 0.5, c[2]], ps.map(p => [p[0], p[2]]), 'side');
+        // z = untere/obere T-Kante
+        ps = [P(xa, yl(xa), zl(xa)), P(xb, yl(xb), zl(xb)), P(xb, yh(xb), zl(xb)), P(xa, yh(xa), zl(xa))];
+        c = mid(ps); quad(...ps, [c[0], c[1], c[2] + 0.5], ps.map(p => [p[0], p[1]]), 'bottom');
+        ps = [P(xa, yl(xa), zh(xa)), P(xb, yl(xb), zh(xb)), P(xb, yh(xb), zh(xb)), P(xa, yh(xa), zh(xa))];
+        c = mid(ps); quad(...ps, [c[0], c[1], c[2] - 0.5], ps.map(p => [p[0], p[1]]), 'top');
+      }));
+    });
+    // senkrechte Flächen an den Scheibengrenzen (Unterschied der Querschnitte)
+    const evalI = (I, x) => I.map(([lo, hi]) => [at(lo, x), at(hi, x)]);
+    const inI = (I, v) => I.some(([a, b]) => v > a && v < b);
+    for (let k = 0; k <= slabs.length; k++) {
+      const L = k > 0 ? slabs[k - 1] : null, R = k < slabs.length ? slabs[k] : null;
+      if (L && R && Math.abs(L.xb - R.xa) > 1e-6) {   // Lücke zwischen Scheiben (sollte nicht vorkommen) - beide Seiten getrennt schließen
+        [[L, null, L.xb], [null, R, R.xa]].forEach(([l, r, x0]) => capAt(l, r, x0));
+        continue;
+      }
+      const x0 = L ? L.xb : R.xa;
+      capAt(L, R, x0);
+    }
+    function capAt(L, R, x0) {
+      const fl = L ? evalI(L.IF, x0) : [], tl = L ? evalI(L.IT, x0) : [], fr = R ? evalI(R.IF, x0) : [], tr = R ? evalI(R.IT, x0) : [];
+      const ys = Array.from(new Set([].concat(...fl, ...fr))).sort((a, b) => a - b);
+      const zs = Array.from(new Set([].concat(...tl, ...tr))).sort((a, b) => a - b);
+      for (let i = 0; i + 1 < ys.length; i++) for (let j = 0; j + 1 < zs.length; j++) {
+        const y0 = ys[i], y1 = ys[i + 1], z0 = zs[j], z1 = zs[j + 1];
+        if (y1 - y0 < 1e-7 || z1 - z0 < 1e-7) continue;
+        const ym = (y0 + y1) / 2, zm = (z0 + z1) / 2;
+        const inL = inI(fl, ym) && inI(tl, zm), inR = inI(fr, ym) && inI(tr, zm);
+        if (inL === inR) continue;
+        const ps = [[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]];
+        quad(...ps, [x0 + (inL ? -0.5 : 0.5), ym, zm], ps.map(p => [p[1], p[2]]), 'end');
+      }
+    }
+    // Kanten: Knick > 20° oder Rand
+    const nrm = q => {
+      const [a, b, c] = q.p;
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+      let l = Math.hypot(...n);
+      if (l < 1e-12) { const d = q.p[3]; const w = [d[0] - a[0], d[1] - a[1], d[2] - a[2]]; n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; l = Math.hypot(...n); }
+      if (l < 1e-12) return null;
+      n = n.map(x => x / l);
+      const m = mid(q.p), s = (m[0] - q.r[0]) * n[0] + (m[1] - q.r[1]) * n[1] + (m[2] - q.r[2]) * n[2];
+      return s < 0 ? n.map(x => -x) : n;
+    };
+    const kp = p => p.map(v => Math.round(v * 1000)).join(',');
+    const em = new Map();
+    quads.forEach(q => {
+      const n = nrm(q);
+      if (!n) return;
+      for (let i = 0; i < 4; i++) {
+        const a = q.p[i], b = q.p[(i + 1) % 4];
+        if (Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1e-6) continue;
+        const ka = kp(a), kb = kp(b), k = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+        let e = em.get(k);
+        if (!e) { e = { a, b, n: [] }; em.set(k, e); }
+        e.n.push(n);
+      }
+    });
+    const rings = [];
+    em.forEach(e => {
+      let line = e.n.length !== 2;
+      if (!line) { const d = e.n[0][0] * e.n[1][0] + e.n[0][1] * e.n[1][1] + e.n[0][2] * e.n[1][2]; line = d < Math.cos(20 * Math.PI / 180); }
+      if (line) rings.push({ pts: [e.a.slice(), e.b.slice()], open: true, z: 0 });
+    });
+    return { faces3, rings, info: { slabs: slabs.length, faces: faces3.length, lines: rings.length } };
+  }
+
   // Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling" ... Das öffnet
   // dann den Modus, bei dem man Krümmlings-DXF importieren kann. Es gehen dann nur DXF zu importieren, die so aufgebaut sind:
   // Rechteck mit Handlauf drin."): Rekonstruktion des 3D-Körpers aus der Draufsicht (siehe Konzept_Kruemmling_3D_aus_DXF.md).
@@ -10621,7 +11297,7 @@
   // Draufsicht desselben starren Rechteckquerschnitts; dessen Maße folgen aus den beiden Stirnseiten. Die Höhe der Ecken im
   // Querschnitt folgt aus den Maßen, die Höhe des Querschnitts aus "Querschnitt senkrecht zur Mittellinie".
   // Liefert { ok: true, mesh, info, frame, layer } oder { ok: false, error, errorEn }.
-  function buildKruemmlingFromGeometry(geometry, flip) {
+  function buildKruemmlingFromGeometry(geometry, flip, opts) {   // opts.side: Seitenansicht (Release 283)
     const fail = (de, en) => ({ ok: false, error: de, errorEn: en });
     const STRUCT_DE = 'Kein Krümmling erkannt - erwartet wird ein Rechteck mit Handlauf darin (zwei Stirnseiten-Vierecke und vier Kantenzüge). ';
     const STRUCT_EN = 'No wreath recognised - expected is a rectangle with a handrail inside (two end-face quadrilaterals and four edge chains). ';
@@ -10712,11 +11388,19 @@
     if (new Set(ends).size !== 4 || ends.some(e => q1.includes(e))) return fail(STRUCT_DE + 'Die Kantenzüge verbinden nicht die beiden Stirnseiten.', STRUCT_EN + 'The edge chains do not connect the two end faces.');
     for (let i = 0; i < 4; i++) { if (!qAdj.get(ends[i]).includes(ends[(i + 1) % 4])) return fail(STRUCT_DE + 'Die Ecken der Stirnseiten passen nicht zueinander.', STRUCT_EN + 'The corners of the end faces do not match.'); }
     let C4 = q1.map(chainPts);   // 4 Kanten, je Punktliste von Stirnseite 1 nach Stirnseite 2
+    // Release 283: mit Seitenansicht exakte Höhe je Kantenpunkt (siehe krmSideHeights())
+    let sideH = null;
+    if (opts && opts.side) {
+      const sr = krmSideHeights(opts.side, frame, C4);
+      if (!sr.ok) return sr;
+      C4 = C4.map((c, j) => c.map((p, i) => ({ x: p.x, y: p.y, z: sr.z[j][i] })));
+      sideH = sr.frameH;
+    }
     // Stationen: gleiche Punktzahl -> direkt; sonst nach Bogenlänge neu abtasten
     const resample = (pts, n) => {
       const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
       const L = cum[cum.length - 1], out = []; let j = 0;
-      for (let i = 0; i < n; i++) { const t = L * i / (n - 1); while (j < pts.length - 2 && cum[j + 1] < t) j++; const u = cum[j + 1] > cum[j] ? (t - cum[j]) / (cum[j + 1] - cum[j]) : 0; out.push({ x: pts[j].x + (pts[j + 1].x - pts[j].x) * u, y: pts[j].y + (pts[j + 1].y - pts[j].y) * u }); }
+      for (let i = 0; i < n; i++) { const t = L * i / (n - 1); while (j < pts.length - 2 && cum[j + 1] < t) j++; const u = cum[j + 1] > cum[j] ? (t - cum[j]) / (cum[j + 1] - cum[j]) : 0; out.push({ x: pts[j].x + (pts[j + 1].x - pts[j].x) * u, y: pts[j].y + (pts[j + 1].y - pts[j].y) * u, z: pts[j].z === undefined ? undefined : pts[j].z + (pts[j + 1].z - pts[j].z) * u }); }
       return out;
     };
     const parErr = arr => { let m = 0; for (let i = 0; i < arr[0].length; i++) m = Math.max(m, Math.hypot(arr[0][i].x + arr[2][i].x - arr[1][i].x - arr[3][i].x, arr[0][i].y + arr[2][i].y - arr[1][i].y - arr[3][i].y)); return m; };
@@ -10778,9 +11462,20 @@
     const P = (i, a, b) => [cen[i][0] + a * U[i][0] + b * V[i][0], cen[i][1] + a * U[i][1] + b * V[i][1], cen[i][2] + a * U[i][2] + b * V[i][2]];
     const A3 = [], B3 = [], C3 = [], D3 = [];
     for (let i = 0; i < N; i++) { A3.push(P(i, -0.5, -0.5)); B3.push(P(i, 0.5, -0.5)); C3.push(P(i, 0.5, 0.5)); D3.push(P(i, -0.5, 0.5)); }
+    // Release 283: mit Seitenansicht die Kantenpunkte selbst (x, y aus der Draufsicht, z aus der Seitenansicht)
+    let sideDev = 0;
+    if (sideH !== null) {
+      for (let i = 0; i < N; i++) {
+        A3[i] = [EA[i].x, EA[i].y, EA[i].z]; B3[i] = [EB[i].x, EB[i].y, EB[i].z]; C3[i] = [EC[i].x, EC[i].y, EC[i].z]; D3[i] = [ED[i].x, ED[i].y, ED[i].z];
+        cen[i][2] = (A3[i][2] + C3[i][2]) / 2;
+        const d3 = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+        sideDev = Math.max(sideDev, Math.abs(d3(A3[i], B3[i]) - wS), Math.abs(d3(A3[i], D3[i]) - hS));
+      }
+      if (sideDev > 1) return fail('Seitenansicht: die Höhen passen nicht zur Draufsicht - der Querschnitt wäre nicht ' + wS.toFixed(1) + ' x ' + hS.toFixed(1) + ' mm (Abweichung ' + sideDev.toFixed(1) + ' mm).', 'Side view: the heights do not match the top view - the cross-section would not be ' + wS.toFixed(1) + ' x ' + hS.toFixed(1) + ' mm (deviation ' + sideDev.toFixed(1) + ' mm).');
+    }
     let zMin = Infinity, zMax = -Infinity;
     [A3, B3, C3, D3].forEach(E => E.forEach(p => { zMin = Math.min(zMin, p[2]); zMax = Math.max(zMax, p[2]); }));
-    const fz = z => (flip ? zMax - z : z - zMin);
+    const fz = z => (sideH !== null ? (flip ? sideH - z : z) : (flip ? zMax - z : z - zMin));
     [A3, B3, C3, D3].forEach(E => E.forEach(p => { p[2] = fz(p[2]); }));
     cen.forEach(c => { c[2] = fz(c[2]); });
     // Neigung Querschnitt / Mittellinie (Kontrolle)
@@ -10812,12 +11507,13 @@
     rings.push({ pts: [A3[0], B3[0], C3[0], D3[0]].map(p => p.slice()), open: false, z: 0 });
     rings.push({ pts: [A3[N - 1], B3[N - 1], C3[N - 1], D3[N - 1]].map(p => p.slice()), open: false, z: 0 });
     const mesh = { tris: [], walls: [], faces3, rings, ringLayer: layer, levels: [], bores: null, kruemmling: true };
-    const info = { width: wS, height: hS, stations: N, resampled, length: len3, thickness: zMax - zMin, maxTiltDeg: maxTilt, flip: !!flip,
+    const info = { width: wS, height: hS, stations: N, resampled, length: len3, thickness: sideH !== null ? sideH : zMax - zMin, maxTiltDeg: maxTilt, flip: !!flip,
+      exactHeight: sideH !== null, sideMaxDev: sideH !== null ? sideDev : null,
       frame: { w: frame.x1 - frame.x0, h: frame.y1 - frame.y0 } };
     return { ok: true, mesh, info, frame, layer, corners: { A: A3, B: B3, C: C3, D: D3 } };
   }
 
-  return { buildKruemmlingFromGeometry, buildPartProfileFromDxfText, applyKruemmlingProfile, applyHandrailProfile, detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
+  return { buildKruemmlingFromGeometry, krmViewGraph, krmSideHeights, buildTopViewLoopFromDxfText, buildOrthoPrismFaces, buildPartProfileFromDxfText, applyKruemmlingProfile, applyHandrailProfile, detectMortiseLayerNames, listMortiseCandidates, buildMortiseLoopsFromLayerStrokes, detectHorizontalTs, detectGlassGrooves, detectVerticalCircles, listLayerSchmiegeCandidates, detectLayerSchmiegeChords, detectLayerSchmiegeLs, buildLayerSchmiegeRings, parse, findFirstOpStartIdx, detectMachine, MACHINES, PATTERNS, stripN, splitAtOriginResets, ORIGIN_RESET_RE, extractToolData, parseArcParams, interpolateArc, parseDXF, parseCornerRadius, parseG302CornerRadius, parseGFILCornerRadius, parseBRCornerRadius, parseFormat4CornerRadius, buildCornerRadiusMarkerRegex, parseConfiguredCornerRadius, computeFillet, tessellateFillet, applyCornerFillets, markArcInner, buildProfileChainFromStrokes, buildToolProfileFromDxfText, guessToolProfileTipDist, detectRotationAxisX, parseDxfEntitiesRaw, explodeDxfEntities, buildDxfText, normDxfAngleDeg, detectKonturLayerName, buildClosedLoopFromLayerStrokes, pickLargestLoop, buildOpenChainsFromLayerStrokes, detectSchmiegeLayerNames, buildSchmiegeKonturRings, computeDxfAnchorShift, findDxfAnchorLayer };
 });
 </script>
 <script>
@@ -11623,6 +12319,16 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   const closeRing = pts => { const r = pts.map(p => [p.x, p.y]); const f = r[0], l = r[r.length - 1]; if (f[0] !== l[0] || f[1] !== l[1]) r.push([f[0], f[1]]); return r; };
   const bottomMP = [[closeRing(contour)]];
   const topMP = sloped ? [[closeRing(topPts)]] : bottomMP;
+  // Release 285: polygon-clipping bricht bei aneinanderstoßenden Taschen mit fast deckungsgleichen Kanten gelegentlich ab
+  // ("Unable to complete output ring", z. B. Stufen- und Setzstufeneinstemmung mit gemeinsamer Ecke in
+  // "Wange gestemmt 45mm, mit Glasnuten") - dann wird mit auf 1e-6 bzw. 1e-3 mm gerundeten Koordinaten erneut gerechnet.
+  const snapG = (a, g) => (typeof a[0] === 'number' ? [Math.round(a[0] * g) / g, Math.round(a[1] * g) / g] : a.map(q => snapG(q, g)));
+  const pcRobust = (op, ...gs) => {
+    try { return PC[op](...gs); } catch (e) {
+      for (const g of [1e6, 1e3]) { try { return PC[op](...gs.map(m => snapG(m, g))); } catch (e2) { /* nächste Rundung */ } }
+      throw e;
+    }
+  };
   let clamped = false;
   const defs = [], defsB = [];
   // Release 255 (Sebastian: "Positive Taschentiefe = Tasche von oben berechnet, Negative Taschentiefe = Tasche von unten
@@ -11637,8 +12343,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
     if (!polys.length) return;
     let region, un = null;
     try {
-      un = PC.union(polys[0], ...polys.slice(1));
-      region = PC.intersection(topMP, un);   // was über die Bauteilkontur hinausgeht, wird abgeschnitten
+      un = pcRobust('union', polys[0], ...polys.slice(1));
+      region = pcRobust('intersection', topMP, un);   // was über die Bauteilkontur hinausgeht, wird abgeschnitten
     } catch (e) { region = null; }
     if (region && region.length) (fromBelow ? defsB : defs).push({ depth: d, region, un, layer: pk.layer });
     else buildMortiseMesh.lastEmpty.push(pk.layer || '?');
@@ -11649,9 +12355,9 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   const depths = Array.from(new Set(posDefs.map(x => Math.round(x.depth * 1e6) / 1e6))).sort((a, b) => a - b);
   const C = depths.map(d => {
     const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => x.region);
-    return rs.length === 1 ? rs[0] : PC.union(rs[0], ...rs.slice(1));
+    return rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));
   });
-  const R = C.length ? PC.difference(topMP, C[0]) : topMP;
+  const R = C.length ? pcRobust('difference', topMP, C[0]) : topMP;
   // Taschen von unten (Release 255): Regionen gegen die untere Kontur, CB[j] = alles mit Tiefe >= depthsB[j]
   const depthsB = Array.from(new Set(defsB.map(x => Math.round(x.depth * 1e6) / 1e6))).filter(d => d > 1e-9).sort((a, b) => a - b);
   const CB = depthsB.map(d => {
@@ -11878,8 +12584,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 282;
-  const APP_RELEASE_TIMESTAMP = '23.10.2026, 15:40 Uhr';
+  const APP_RELEASE_NUMBER = 286;
+  const APP_RELEASE_TIMESTAMP = '27.10.2026, 17:45 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13302,7 +14008,9 @@ CORNERRADIUS=GFIL r=
       const r = Number(p && p.r);
       const dist = Number(p && p.dist);
       if (!Number.isFinite(r) || !Number.isFinite(dist)) return null;
-      out.push({ r, dist });
+      const q = { r, dist };
+      if (p.__arcInner) markArcInner(q);   // Release 284: Bogen-Zwischenpunkte bleiben markiert
+      out.push(q);
     }
     return out.length >= 2 ? out : null;
   }
@@ -13356,13 +14064,26 @@ CORNERRADIUS=GFIL r=
       updatedAt: Number.isFinite(updatedAt) ? updatedAt : now
     };
   }
+  // Release 284: gespeicherte Werkzeug-/Spannfutterprofile beim Laden aus ihrer DXF neu (mit 1:1-Bögen) aufbauen - nur wenn
+  // die neue Kontur dieselbe Ausdehnung hat (gleiche Seite, Referenzpunkte bleiben gültig), sonst bleibt die alte.
+  function refineDxfRDistProfile(p) {
+    if (!p || !p.dxfText) return p;
+    try {
+      const r = CNCParser.buildToolProfileFromDxfText(p.dxfText, { scale: p.scale });
+      const ext = a => (a && a.length >= 2) ? [Math.min(...a.map(q => q.dist)), Math.max(...a.map(q => q.dist)), Math.max(...a.map(q => Math.abs(q.r))), a[0].dist, a[0].r, a[a.length - 1].dist, a[a.length - 1].r] : null;
+      const same = (a, b) => { const x = ext(a), y = ext(b); return !!(x && y && x.every((v, i) => Math.abs(v - y[i]) < 1e-6)); };
+      if (r.profile && same(r.profile, p.mainProfile)) p.mainProfile = r.profile;
+      if (r.alternateProfile && p.alternateProfile && same(r.alternateProfile, p.alternateProfile)) p.alternateProfile = r.alternateProfile;
+    } catch (e) { /* alte Kontur behalten */ }
+    return p;
+  }
   function loadPersistedToolDxfProfiles() {
     try {
       const raw = window.localStorage.getItem(LS_KEY_TOOL_DXF_PROFILES);
       if (!raw) return [];
       const data = JSON.parse(raw);
       if (!Array.isArray(data)) return [];
-      return data.map(normalizeToolDxfProfile).filter(Boolean);
+      return data.map(normalizeToolDxfProfile).filter(Boolean).map(refineDxfRDistProfile);   // Release 284
     } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
     return [];
   }
@@ -13558,7 +14279,7 @@ CORNERRADIUS=GFIL r=
       if (!raw) return [];
       const data = JSON.parse(raw);
       if (!Array.isArray(data)) return [];
-      return data.map(normalizeChuckDxfProfile).filter(Boolean);
+      return data.map(normalizeChuckDxfProfile).filter(Boolean).map(refineDxfRDistProfile);   // Release 284
     } catch (e) { /* siehe Kommentar bei den Maschinentyp-Persistenzfunktionen oben */ }
     return [];
   }
@@ -15550,6 +16271,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   const dxfTexLevel = (TX, texelsPerPx) => (texelsPerPx > 1 ? Math.min(TX.levels.length - 1, Math.floor(Math.log2(texelsPerPx))) : 0);
   const defaultBoreDefaults = () => ({ on: false, shape: 'round', height: null, rectHeight: null });
+  // Release 285: Glasnut (Wange/Handlauf) - vorausgewählt, Layer-Name (Groß-/Kleinschreibung egal), Nutbreite, Position in Z
+  const GROOVE_DEFAULT_LAYER = 'Layer3', GROOVE_DEFAULT_WIDTH = 20;
+  const defaultGrooveDefaults = () => ({ on: true, layer: GROOVE_DEFAULT_LAYER, width: GROOVE_DEFAULT_WIDTH, height: null });
   function builtinDxfPartDefaults() {
     const mortise = () => ({ on: true, depth: 15, depthTread: 15, depthRiser: 15 });
     const vpocket = () => ({ on: false, depth: 10 });
@@ -15559,8 +16283,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         undefined: { thickness: DXF_THICKNESS_PREFILL },
         tread: { thickness: DXF_THICKNESS_PREFILL, pocketDepth: 10, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
         riser: { thickness: DXF_THICKNESS_PREFILL, vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },   // vpocket seit Release 258
-        stringer: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults() },
-        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults(), profileId: null },   // profileId seit Release 281
+        stringer: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults(), groove: defaultGrooveDefaults() },
+        handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults(), groove: defaultGrooveDefaults(), profileId: null },   // profileId seit Release 281
         // Release 279 (Sebastian: "Bei der DXF-Bauteildefinition ein neues Bauteil "Krümmling, stehend" ... Stärke -> nicht
         // gebraucht ... Füllung -> wie gehabt ... Bearbeitungen ... nicht gebraucht"): nur Füllung/Farben/Transparenz/Textur
         krmStanding: { profileId: null }   // Release 280: Bauteilprofil (id) oder null
@@ -15604,6 +16328,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (b.mortise) { const m = s.mortise || {}; b.mortise = { on: bool(m.on, b.mortise.on), depth: num(m.depth, b.mortise.depth), depthTread: num(m.depthTread, b.mortise.depthTread), depthRiser: num(m.depthRiser, b.mortise.depthRiser) }; }
       if (b.vpocket) { const v = s.vpocket || {}; b.vpocket = { on: bool(v.on, b.vpocket.on), depth: num(v.depth, b.vpocket.depth, true) }; }
       ['T', 'U'].forEach(k => { if (!b[k]) return; const q = s[k] || {}; b[k] = { on: bool(q.on, b[k].on), shape: q.shape === 'rect' ? 'rect' : 'round', height: optNum(q.height), rectHeight: optNum(q.rectHeight) }; });
+      if (b.groove) {   // Release 285
+        const g = s.groove || {}, w = Math.abs(Number(g.width));
+        b.groove = { on: bool(g.on, b.groove.on), layer: typeof g.layer === 'string' && g.layer.trim() ? g.layer.trim().slice(0, 60) : b.groove.layer, width: Number.isFinite(w) && w > 0 ? w : b.groove.width, height: optNum(g.height) };
+      }
     });
     return base;
   }
@@ -15640,6 +16368,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const cfg = newHBoreCfg();
     ['T', 'U'].forEach(k => { if (pd[k]) cfg[k] = { enabled: pd[k].on, shape: pd[k].shape, height: pd[k].height, rectHeight: pd[k].rectHeight }; });
     dxfHBoreCfg = cfg;
+    // Release 285: Glasnut - Layer aus der Bauteildefinition, sonst der erste Layer mit erkannten Nuten
+    dxfGrooveCfg = pd.groove ? { enabled: pd.groove.on, layer: defaultGrooveLayer(pd.groove.layer), width: pd.groove.width, height: pd.groove.height } : newGrooveCfg();
   }
   const pocketDepthPrefill = () => (dxfPartDefaults.parts.tread.pocketDepth);
   let dxfMortiseInfo = null;
@@ -15648,6 +16378,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfKrmFlip = false;
   let dxfKrmLoading = false;
   let dxfKrmProfileId = null;   // Release 280: gewähltes Bauteilprofil (partProfiles) oder null
+  let dxfKrmSide = null;   // Release 283: Seitenansicht { geo, name } oder null
+  // Release 283: Draufsicht (Setzstufe bzw. selbst erstelltes Bauteil) - { name, loop: [[x, y]], xmin, xmax, ymin, ymax, w, h }
+  let dxfTopView = null;
+  let dxfTopFrontDown = false;   // Frontansicht unten (Standard: oben)
+  let dxfCreatedPart = null;     // { x, y, z } bei "Bauteil erstellen"
+  let dxfTopPending = null, dxfTopPendingFlip = false;   // Dialog "DXF-Bauteil definieren" (erst mit Ok übernommen)
+  let dxfKrmSideError = null;
   // Release 281: Bauteilprofil beim Handlauf (id oder null) und das Ergebnis der letzten Berechnung
   let dxfRailProfileId = null;
   let dxfRailProfileError = null;   // { name, error, errorEn } wenn das Profil nicht passt
@@ -15675,6 +16412,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Unterseite, null = mittig), rectHeight (nur eckig, null = Länge; die Länge ist seit R253 immer die Ausdehnung aus der Zeichnung).
   const newHBoreCfg = () => ({ T: { enabled: false, shape: 'round', height: null, rectHeight: null }, U: { enabled: false, shape: 'round', height: null, rectHeight: null } });
   let dxfHBoreCfg = newHBoreCfg();
+  // Release 285 (Glasnut, Wange/Handlauf): enabled, layer (Layername der DXF), width (Nutbreite mm, dargestellte Stärke der Nut),
+  // height (Mitte der Nut über der Unterseite, null = mittig). Tiefe, Verlauf und Enden kommen aus der Zeichnung
+  // (CNCParser.detectGlassGrooves), je Layer einmal pro Import ermittelt (dxfGrooveCache).
+  const newGrooveCfg = () => ({ enabled: false, layer: null, width: GROOVE_DEFAULT_WIDTH, height: null });
+  let dxfGrooveCfg = newGrooveCfg();
+  let dxfGrooveCache = new Map();
+  const EMPTY_GROOVES = () => ({ grooves: [], strokes: new Set(), ignored: 0, open: 0 });
+  function getGrooveDetection(layer) {
+    if (!layer || !dxfGeometry || !dxfKonturLoop) return EMPTY_GROOVES();
+    let r = dxfGrooveCache.get(layer);
+    if (!r) {
+      try { r = CNCParser.detectGlassGrooves(dxfGeometry, layer, dxfKonturLoop); } catch (e) { r = EMPTY_GROOVES(); }
+      dxfGrooveCache.set(layer, r);
+    }
+    return r;
+  }
+  function listGrooveLayers() { return dxfGeometry ? (dxfGeometry.layerOrder || []).filter(n => n !== 'COMPASS' && n !== dxfKonturLayerName && !/^schmiege_(vorn|hinten)$/i.test(n)) : []; }
+  // Vorgabe-Layer: der Name aus der Bauteildefinition (Groß-/Kleinschreibung egal), wenn dort Nuten erkannt werden, sonst der
+  // erste Layer mit erkannten Nuten, sonst der Name selbst (falls vorhanden)
+  function defaultGrooveLayer(pref) {
+    const names = listGrooveLayers();
+    const m = pref ? names.find(n => n.toLowerCase() === String(pref).toLowerCase()) : null;
+    if (m && getGrooveDetection(m).grooves.length) return m;
+    // anderer Layer nur mit gestrichelter Nutlinie (sicheres Zeichen einer Glasnut)
+    return names.find(n => getGrooveDetection(n).grooves.some(g => g.dashed)) || m || null;
+  }
+  // gewählter Layer (exakt, sonst Groß-/Kleinschreibung egal), sonst Vorgabe
+  function resolveGrooveLayer(name) {
+    const names = listGrooveLayers();
+    return names.find(n => n === name) || (name ? names.find(n => n.toLowerCase() === String(name).toLowerCase()) : null) || defaultGrooveLayer(name);
+  }
   let dxfHBoreCache = null;
   let dxfHBoreHidden = null;
   let dxfHBoreStrokeSet = null;
@@ -17346,21 +18114,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Netz erzeugen, auch ohne Bearbeitungen (glatter Körper).
     // Release 281: Bauteilprofil beim Handlauf - braucht ebenfalls immer das Netz
     const railProf = dxfPartType === 'handrail' && dxfRailProfileId && dxfThickness ? getPartProfileById(dxfRailProfileId) : null;
-    const wantTex = (isDxfTextureActive() && !!dxfThickness) || !!railProf;
+    // Release 283: Draufsicht (Setzstufe / erstelltes Bauteil) - Körper = Schnitt von Front- und Draufsicht, braucht das Netz
+    const topV = dxfTopView && dxfThickness && dxfKonturLoop ? dxfTopView : null;
+    const wantTex = (isDxfTextureActive() && !!dxfThickness) || !!railProf || !!topV;
     if (dxfPartType === 'undefined') {             // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
-      if (wantTex) { try { dxfMortiseMesh = buildMortiseMesh(dxfKonturLoop, [], dxfThickness, null, { allowPlain: true }); } catch (e) { dxfMortiseMesh = null; } if (dxfMortiseMesh) { dxfMortiseMesh.info.boreCount = 0; window.__lastMortiseInfo = dxfMortiseMesh.info; } }
+      if (wantTex) { try { dxfMortiseMesh = buildMortiseMesh(dxfKonturLoop, [], dxfThickness, null, { allowPlain: true }); } catch (e) { dxfMortiseMesh = null; } if (dxfMortiseMesh) { if (topV) applyTopViewToMesh(dxfMortiseMesh, topV, false); dxfMortiseMesh.info.boreCount = 0; window.__lastMortiseInfo = dxfMortiseMesh.info; } }
       return;
     }
     // Release 251: horizontale Bohrungen (T) - brauchen immer das Netz (auch ohne Einstemmungen/Taschen)
     const hbDet = ((dxfHBoreCfg.T.enabled || dxfHBoreCfg.U.enabled) && dxfThickness) ? getHBoreDetection() : null;
     const hbKinds = hbDet ? [['T', hbDet.ts], ['U', hbDet.us]].filter(([k, list]) => dxfHBoreCfg[k].enabled && list.length) : [];
     const wantBores = hbKinds.length > 0;
+    // Release 285: Glasnut (Wange/Handlauf) - braucht wie die Bohrungen immer das Netz
+    const gLayer = stringer && dxfGrooveCfg.enabled && dxfThickness ? resolveGrooveLayer(dxfGrooveCfg.layer) : null;
+    const gDet = gLayer ? getGrooveDetection(gLayer) : null;
+    const wantGrooves = !!(gDet && gDet.grooves.length);
     // Release 253: vertikale Taschen (Kreise) bei Stufe, Wange und Handlauf; Release 258 (Sebastian: "Bei Setzstufen bitte
     // auch 'Vertikale Bohrungen' ermöglichen"): auch bei der Setzstufe
     const vCircles = dxfVPocketEnabled ? getVerticalCircles() : [];
     const wantV = vCircles.length > 0;
     const pocketsOn = dxfPartType === 'tread' && dxfPocketEnabled && dxfPockets.size;   // Taschen nur bei der Stufe (Release 253)
-    if (stringer && !dxfMortiseInfo && !wantBores && !wantV && !wantTex) return;
+    if (stringer && !dxfMortiseInfo && !wantBores && !wantV && !wantTex && !wantGrooves) return;
     if (!stringer && !pocketsOn && !wantBores && !wantV && !wantTex) return;
     const problems = dxfMortiseProblems;
     const what = stringer ? T('Einstemmung', 'mortise') : T('Tasche', 'pocket');
@@ -17397,13 +18171,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         vCircles.forEach(c => c.strokes.forEach(st => dxfVPocketHidden.add(st)));
       }
     }
-    if (!pockets.length && !wantBores && !wantTex) return;
+    if (!pockets.length && !wantBores && !wantTex && !wantGrooves) return;
     // Stufe/Setzstufe mit Schmiege: untere/obere Kontur der Schmiege, sonst eine Kontur
     const rings = getActiveSchmiegeRings();   // Release 270: auch Wange/Handlauf
     const botLoop = rings && rings.untenLoop && rings.obenLoop && rings.untenLoop.length === rings.obenLoop.length ? rings.untenLoop : dxfKonturLoop;
     const topLoop = botLoop !== dxfKonturLoop ? rings.obenLoop : null;
     let mesh = null;
-    try { mesh = buildMortiseMesh(botLoop, pockets, dxfThickness, topLoop, { allowPlain: wantBores || wantV || wantTex }); } catch (e) { mesh = null; }
+    try { mesh = buildMortiseMesh(botLoop, pockets, dxfThickness, topLoop, { allowPlain: wantBores || wantV || wantTex || wantGrooves }); } catch (e) { mesh = null; }
     const empty = (buildMortiseMesh.lastEmpty || []).slice();
     empty.forEach(n => problems.push(n + ': ' + T('liegt außerhalb der Bauteilkontur', 'lies outside the part contour')));
     if (!mesh) { if (!empty.length) problems.push(T('Keine ' + what + ' liegt innerhalb der Bauteilkontur.', 'No ' + what + ' lies inside the part contour.')); problems.push(T('Das Bauteil wird ohne ' + what + ' dargestellt.', 'The part is shown without a ' + what + '.')); return; }
@@ -17438,6 +18212,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (hbDet.skippedInside) problems.push(T('Bohrungen: ' + hbDet.skippedInside + ' Symbol(e) beginnen nicht an der Bauteilkante und werden ignoriert.', 'Drillings: ' + hbDet.skippedInside + ' symbol(s) do not start at the edge of the part and are ignored.'));
       if (bores.length) mesh.bores = bores; else dxfHBoreHidden = null;
     }
+    // Release 285: Glasnut - jedes Dreieck der Nutfläche als senkrechtes Prisma (Nutbreite in z um die Position in Z), pro Pixel
+    // ausgeschnitten wie die Bohrungen (überlappende/aneinanderliegende Teile bilden einen Hohlraum)
+    if (wantGrooves) {
+      const Hh = Math.abs(dxfThickness), w = dxfGrooveCfg.width;
+      const hRel = dxfGrooveCfg.height == null ? Hh / 2 : dxfGrooveCfg.height;
+      const pre = T('Glasnut: ', 'Glass groove: ');
+      if (!(w > 0)) problems.push(pre + T('ungültige Nutbreite - die Nut wird nicht dargestellt.', 'invalid groove width - the groove is not shown.'));
+      else if (!(hRel >= 0 && hRel <= Hh)) problems.push(pre + T('Die Position in Z (' + hRel + ' mm) liegt außerhalb der Bauteilstärke (0 bis ' + Hh + ' mm) - die Nut wird nicht dargestellt.', 'the position in Z (' + hRel + ' mm) is outside the part thickness (0 to ' + Hh + ' mm) - the groove is not shown.'));
+      else {
+        if (hRel - w / 2 < -1e-6 || hRel + w / 2 > Hh + 1e-6) problems.push(pre + T('Mit dieser Position ragt die Nut (Breite ' + w + ' mm) über die Bauteilstärke (' + Hh + ' mm) hinaus - sie bricht oben bzw. unten durch.', 'at this position the groove (width ' + w + ' mm) exceeds the part thickness (' + Hh + ' mm) - it breaks through the top or bottom.'));
+        const list = mesh.bores || [];
+        gDet.grooves.forEach(g => g.tris.forEach(t => list.push({ id: 'N' + g.id, kind: 'N', shape: 'prism', poly: t.p, ek: t.ek, zc: mesh.botZ + hRel, rh: w, layer: g.layer })));
+        mesh.bores = list;
+        if (!dxfHBoreHidden) dxfHBoreHidden = new Set();
+        gDet.strokes.forEach(st => dxfHBoreHidden.add(st));
+        mesh.info.grooveCount = gDet.grooves.length;
+        mesh.info.grooves = gDet.grooves.map(g => ({ depth: g.depth, length: g.length, start: g.start, end: g.end, tris: g.tris.length }));
+      }
+    }
     // Release 281: Profil über den Handlauf legen - der Kastenquerschnitt (Ober-/Unterseite, Außenwände) wird durch das
     // Profil ersetzt; Bohrungen (T/U) werden weiter pro Pixel ausgeschnitten. Einstemmungen und vertikale Taschen werden mit
     // Profil nicht dargestellt (Hinweis in der Meldung).
@@ -17451,10 +18244,36 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (hadPockets) { used.length = 0; dxfVPocketHidden = null; }
       } else dxfRailProfileError = { id: railProf.id, name: railProf.name, error: sw.error, errorEn: sw.errorEn };
     }
+    if (topV && !mesh.railProfile) {   // Release 283
+      applyTopViewToMesh(mesh, topV, pockets.length > 0);
+      if (pockets.length) { used.length = 0; dxfVPocketHidden = null; }
+    }
     dxfMortiseMesh = mesh;
     dxfMortiseUsedLayers = used;
-    mesh.info.boreCount = mesh.bores ? mesh.bores.length : 0;
+    mesh.info.boreCount = mesh.bores ? mesh.bores.filter(b => b.kind !== 'N').length : 0;   // Release 285: ohne Glasnut-Teile
     window.__lastMortiseInfo = mesh.info;
+  }
+  // Release 283: Front- und Draufsicht zu einem Körper (CNCParser.buildOrthoPrismFaces). Die Draufsicht wird in x auf die
+  // Frontansicht gelegt (linke Kante bündig, Breiten gleich bis auf die erste Nachkommastelle), ihre Höhe ist die Stärke.
+  // Frontansicht oben (Standard): die untere Kante der Draufsicht (Vorderseite) liegt an der Oberseite des Bauteils.
+  function applyTopViewToMesh(mesh, tv, hadPockets) {
+    const F = dxfKonturLoop.map(p => [p.x, p.y]);
+    const fxmin = Math.min(...F.map(p => p[0]));
+    const H = Math.abs(dxfThickness), zUp = Math.max(0, dxfThickness), zDn = Math.min(0, dxfThickness);
+    const T = tv.loop.map(([x, y]) => { const f = (y - tv.ymin) / (tv.h || 1); return [x - tv.xmin + fxmin, dxfTopFrontDown ? zDn + f * H : zUp - f * H]; });
+    const r = CNCParser.buildOrthoPrismFaces(F, T);
+    mesh.tris = []; mesh.walls = []; mesh.levels = []; mesh.levelsBelow = [];
+    mesh.faces3 = r.faces3; mesh.rings = r.rings; mesh.ringLayer = dxfKonturLayerName;
+    mesh.topView = Object.assign({ name: tv.name, frontDown: dxfTopFrontDown, pocketsHidden: !!hadPockets }, r.info);
+  }
+  // Draufsicht-DXF einlesen und gegen die Breite der Frontansicht prüfen; liefert { tv } oder { error, errorEn }
+  function readTopView(text, name, frontWidth) {
+    let tv;
+    try { tv = CNCParser.buildTopViewLoopFromDxfText(text); } catch (e) { return { error: e.message, errorEn: e.messageEn || e.message }; }
+    const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+    if (!(Math.abs(tv.w - frontWidth) <= 0.05)) return { error: 'Die Dimensionen passen nicht: die Draufsicht ist ' + f1(tv.w).replace('.', ',') + ' mm breit, die Frontansicht ' + f1(frontWidth).replace('.', ',') + ' mm.', errorEn: 'The dimensions do not match: the top view is ' + f1(tv.w) + ' mm wide, the front view ' + f1(frontWidth) + ' mm.' };
+    tv.name = name;
+    return { tv };
   }
   function loadDxfText(text, filename) {
     if (!dxfKrmLoading) dxfKrm = null;   // Release 278: normaler DXF-Import beendet den Krümmling-Modus
@@ -17493,6 +18312,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfOutlineColor = '#000000'; // Release 227, siehe Deklaration oben - dieselbe Nicht-Persistenz/Rücksetzung pro Import wie dxfThicknessColor direkt oberhalb
     dxfFillMode = 'color'; dxfTextureId = null; // Release 260 (danach Bauteildefinition, siehe applyPartDefaultsToState())
     dxfThicknessEverConfirmed = false; // Release 222, siehe Deklaration oben
+    dxfTopView = null; dxfTopFrontDown = false; dxfCreatedPart = null;   // Release 283
     dxfScale = 1;
     // "DXF-Bauteilstärke 'ausfüllen'" (Release 216): Kontur-Layer EINMALIG pro Import ermitteln
     // (siehe Deklaration von dxfKonturLayerName/dxfKonturLoop oben) statt bei jedem render() neu -
@@ -17536,6 +18356,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = [];
     dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
     dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
+    dxfGrooveCfg = newGrooveCfg(); dxfGrooveCache = new Map();   // Release 285
     dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
     // Release 256: Bauteil aus dem Dateinamen vorwählen und dessen Standardwerte (Einstellungen -> DXF -> Bauteildefinition)
     dxfPartType = (dxfPartDefaults.byName && detectPartTypeFromName(filename)) || 'undefined';
@@ -17594,8 +18415,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfNamedSchmiegeEnabled = true;   // Release 270
     dxfPartType = 'undefined'; dxfMortiseInfo = null; dxfMortiseLayers = new Map(); dxfMortiseMesh = null; dxfMortiseUsedLayers = []; dxfMortiseProblems = []; // Release 249
     dxfRailProfileId = null; dxfRailProfileError = null; dxfRailProfileAlertKey = null;   // Release 281
+    dxfTopView = null; dxfTopFrontDown = false; dxfCreatedPart = null;   // Release 283
     dxfPocketEnabled = false; dxfPockets = new Map(); dxfPocketCache = new Map(); // Release 250
     dxfHBoreCfg = newHBoreCfg(); dxfHBoreCache = null; dxfHBoreHidden = null; dxfHBoreStrokeSet = null; // Release 251/252
+    dxfGrooveCfg = newGrooveCfg(); dxfGrooveCache = new Map();   // Release 285
     dxfVPocketEnabled = false; dxfVPocketDepth = 10; dxfVCircleCache = null; dxfVPocketHidden = null; // Release 253
     dxfScale = 1;
     btnToggleDxf.classList.remove('is-hidden');
@@ -19666,6 +20489,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         { from: stepX, to: stepY, color: cssVar('--axis-y') },
         { from: stepY, to: measureEnd, color: cssVar('--axis-z') }
       ];
+      // Release 286: paralleler Abstand - Lot vom zweiten Punkt auf die erste Linie (durchgezogen, Akzentfarbe), dazu die
+      // Gerade der ersten Linie bis zum Fußpunkt verlängert (gepunktet), falls der Fußpunkt außerhalb der Strecke liegt
+      const par = parallelLineInfo(measureStart, measureEnd);
+      if (par && par.parallel && par.dist > 1e-6) {
+        const sf = proj(toRender(par.foot)), se = proj(toRender(measureEnd)), s0 = proj(toRender(measureStart));
+        if (sf && se) {
+          ctx.save();
+          ctx.strokeStyle = cssVar('--accent'); ctx.lineWidth = 2.2; ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(se.x, se.y); ctx.lineTo(sf.x, sf.y); ctx.stroke();
+          if (s0) { ctx.lineWidth = 1; ctx.setLineDash([1, 3]); ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(sf.x, sf.y); ctx.stroke(); }
+          ctx.setLineDash([]); ctx.fillStyle = cssVar('--accent');
+          ctx.beginPath(); ctx.arc(sf.x, sf.y, 3, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+      }
       ctx.save();
       ctx.lineWidth = 1.3;
       ctx.setLineDash([2, 3]);
@@ -20144,7 +20982,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         x: p0.x + (p1.x - p0.x) * bestT,
         y: p0.y + (p1.y - p0.y) * bestT,
         z: p0.z + (p1.z - p0.z) * bestT,
-        kind: 'line'
+        kind: 'line',
+        seg: [{ x: p0.x, y: p0.y, z: p0.z }, { x: p1.x, y: p1.y, z: p1.z }]   // Release 286: für den parallelen Abstand
       };
     }
     return null;
@@ -20338,6 +21177,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     updateMeasureOutputInner();
     refreshMeasureLive();
   }
+  // Release 286 (Sebastian: "Messfunktion: Wenn man zwei parallele Linien anklickt, soll der "Parallele Abstand" angezeigt
+  // werden."): beide Messpunkte auf einer Linie (Fang-Art "auf Linie") -> Winkel zwischen den Linien; bis 0,5° gelten sie als
+  // parallel, der Abstand ist dann der senkrechte Abstand des zweiten Punkts zur Geraden der ersten Linie (Fußpunkt foot).
+  // Liefert null (keine zwei Linien), { parallel: false, angle } oder { parallel: true, angle, dist, foot }.
+  const PARALLEL_MAX_DEG = 0.5;
+  function parallelLineInfo(a, b) {
+    if (!a || !b || !a.seg || !b.seg) return null;
+    const d1 = { x: a.seg[1].x - a.seg[0].x, y: a.seg[1].y - a.seg[0].y, z: a.seg[1].z - a.seg[0].z };
+    const d2 = { x: b.seg[1].x - b.seg[0].x, y: b.seg[1].y - b.seg[0].y, z: b.seg[1].z - b.seg[0].z };
+    const l1 = Math.hypot(d1.x, d1.y, d1.z), l2 = Math.hypot(d2.x, d2.y, d2.z);
+    if (l1 < 1e-9 || l2 < 1e-9) return null;
+    const u = { x: d1.x / l1, y: d1.y / l1, z: d1.z / l1 };
+    const c = Math.abs((u.x * d2.x + u.y * d2.y + u.z * d2.z) / l2);
+    const angle = Math.acos(Math.min(1, c)) * 180 / Math.PI;
+    if (angle > PARALLEL_MAX_DEG) return { parallel: false, angle };
+    const w = { x: b.x - a.seg[0].x, y: b.y - a.seg[0].y, z: b.z - a.seg[0].z };
+    const t = w.x * u.x + w.y * u.y + w.z * u.z;
+    const foot = { x: a.seg[0].x + u.x * t, y: a.seg[0].y + u.y * t, z: a.seg[0].z + u.z * t };
+    return { parallel: true, angle, dist: Math.hypot(b.x - foot.x, b.y - foot.y, b.z - foot.z), foot };
+  }
+  function parallelRowsHtml(info) {
+    if (!info) return '';
+    if (!info.parallel) return `<div class="measure-hint measure-parallel-hint">${T('Linien nicht parallel (Winkel ' + fmt(info.angle) + '°) – kein paralleler Abstand.', 'Lines not parallel (angle ' + fmt(info.angle) + '°) – no parallel distance.')}</div>`;
+    return `<div class="readout-row measure-parallel"><span class="k">${T('Paralleler Abstand', 'Parallel distance')}</span><span class="v">${fmt(info.dist)} mm</span></div>`;
+  }
   function updateMeasureOutputInner() {
     if (!measureActive && !angleMeasureActive) { measurePanel.hidden = true; return; }
     measurePanel.hidden = false;
@@ -20391,6 +21255,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     } else {
       measurePanel.innerHTML =
         measureLegRows(measureStart, measureEnd, '') +
+        parallelRowsHtml(parallelLineInfo(measureStart, measureEnd)) +   // Release 286
         `<div class="measure-hint">${T('Erneut klicken für eine neue Messung.', 'Click again for a new measurement.')}</div>`;
     }
   }
@@ -21015,7 +21880,114 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const seeThroughB = alpha < 0.999;
     if (bores) {
       const S = (x, y, z) => { const pp = projU(toRender({ x, y, z })); return [(m.a * pp.x + m.e) * RS, (m.d * pp.y + m.f) * RS, pp.depth]; };
+      const pushIv = (i, t0, t1, exitK, capEnd, exitCol, entryK, entryCol) => {
+        const MB = mortiseBuf;
+        if (MB.bCnt[i] === 0) {
+          MB.bCnt[i] = 1; MB.bT0[i] = t0; MB.bT1[i] = t1; MB.bK[i] = exitK | (entryK << 3) | (capEnd ? 64 : 0); MB.bExit[i] = exitCol; MB.bEntry[i] = entryCol;
+          boreTouched.push(i);
+        } else {
+          if (MB.bCnt[i] < 255) MB.bCnt[i]++;
+          let lst = boreOv.get(i);
+          if (!lst) { lst = []; boreOv.set(i, lst); }
+          lst.push({ t0, t1, exitK, capEnd, exitCol, entryK, entryCol });
+        }
+      };
       for (const b of bores) {
+        // Release 285 (Glasnut): senkrechtes Prisma über einem konvexen Vieleck (Dreieck der Nutfläche), Höhe rh um zc.
+        // Pro Pixel wie die eckige Bohrung: Strahl gegen die Halbebenen der Kanten und die z-Schicht schneiden. Flächenart je
+        // Kante (b.ek): 4 = Nutgrund, 5 = Nutende, 0 = innen/außen (wird durch die Vereinigung benachbarter Dreiecke nie sichtbar).
+        if (b.shape === 'prism') {
+          const P = b.poly.map(q => dxfTransformPoint({ x: q[0], y: q[1], z: baseZ }));
+          const te = P[0], zA = te.z + b.zc, hb = b.rh / 2;
+          let ar2 = 0;
+          for (let k = 0; k < P.length; k++) { const p1 = P[k], p2 = P[(k + 1) % P.length]; ar2 += p1.x * p2.y - p2.x * p1.y; }
+          if (Math.abs(ar2) < 1e-9 || !(hb > 0)) { boreSkipped++; continue; }
+          const sgp = ar2 > 0 ? 1 : -1;
+          const EG = [];
+          for (let k = 0; k < P.length; k++) {
+            const p1 = P[k], p2 = P[(k + 1) % P.length], dx = p2.x - p1.x, dy = p2.y - p1.y, l = Math.hypot(dx, dy) || 1;
+            const nx = sgp * dy / l, ny = -sgp * dx / l;   // Außennormale
+            EG.push({ nx, ny, c: nx * (p1.x - te.x) + ny * (p1.y - te.y), k: (b.ek && b.ek[k]) || 4 });
+          }
+          const o = S(te.x, te.y, zA), ex = S(te.x + 100, te.y, zA), ey = S(te.x, te.y + 100, zA), ez = S(te.x, te.y, zA + 100);
+          const A = [[(ex[0] - o[0]) / 100, (ey[0] - o[0]) / 100, (ez[0] - o[0]) / 100], [(ex[1] - o[1]) / 100, (ey[1] - o[1]) / 100, (ez[1] - o[1]) / 100], [(ex[2] - o[2]) / 100, (ey[2] - o[2]) / 100, (ez[2] - o[2]) / 100]];
+          const det = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+          if (!(Math.abs(det) > 1e-12)) { boreSkipped++; continue; }
+          const Ai = [
+            [(A[1][1] * A[2][2] - A[1][2] * A[2][1]) / det, (A[0][2] * A[2][1] - A[0][1] * A[2][2]) / det, (A[0][1] * A[1][2] - A[0][2] * A[1][1]) / det],
+            [(A[1][2] * A[2][0] - A[1][0] * A[2][2]) / det, (A[0][0] * A[2][2] - A[0][2] * A[2][0]) / det, (A[0][2] * A[1][0] - A[0][0] * A[1][2]) / det],
+            [(A[1][0] * A[2][1] - A[1][1] * A[2][0]) / det, (A[0][1] * A[2][0] - A[0][0] * A[2][1]) / det, (A[0][0] * A[1][1] - A[0][1] * A[1][0]) / det]
+          ];
+          const rx = Ai[0][2], ry = Ai[1][2], rz = Ai[2][2], rl = Math.hypot(rx, ry, rz) || 1;
+          let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+          const SP = [];
+          for (const q of P) for (const kz of [-1, 1]) { const s = S(q.x, q.y, zA + hb * kz); SP.push(s); if (s[0] < mnx) mnx = s[0]; if (s[0] > mxx) mxx = s[0]; if (s[1] < mny) mny = s[1]; if (s[1] > mxy) mxy = s[1]; }
+          const x0 = Math.max(X0, Math.floor(mnx) - 2), x1 = Math.min(X1, Math.ceil(mxx) + 2), y0 = Math.max(Y0, Math.floor(mny) - 2), y1 = Math.min(Y1, Math.ceil(mxy) + 2);
+          if (x0 > x1 || y0 > y1) continue;
+          // Bildschirm-Umriss des Prismas (konvexe Hülle der 6 Ecken) - je Zeile nur dessen Spanne prüfen (lange, schräge
+          // Nutstücke hätten sonst fast den ganzen Bildschirm als Rechteck)
+          SP.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+          const cr = (o2, a2, b2) => (a2[0] - o2[0]) * (b2[1] - o2[1]) - (a2[1] - o2[1]) * (b2[0] - o2[0]);
+          const lower = [], upper = [];
+          for (const p of SP) { while (lower.length >= 2 && cr(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+          for (let k = SP.length - 1; k >= 0; k--) { const p = SP[k]; while (upper.length >= 2 && cr(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+          const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+          const gs = EG.map(e => e.nx * rx + e.ny * ry);
+          const colOf = (kind, nx, ny, nz, px, py, pz, entry) => {
+            const fcv = (nx * rx + ny * ry + nz * rz) / rl;
+            const f = entry ? Math.min(-Math.abs(fcv), -0.05) : Math.min(fcv, -0.05);
+            const k = kind === 5 ? 0.55 : 0.62;
+            if (TX && !entry) {
+              const lt = (0.62 + 0.45 * Math.max(0, -f)) * k * 0.9;
+              return nz !== 0 ? dxfTexSample(TX, te.x + px + 500, te.y + py + 200, 0, lt) : dxfTexSample(TX, -ny * (te.x + px) + nx * (te.y + py) + 500, pz + 200, 0, lt);
+            }
+            return shade(f, k);
+          };
+          for (let y = y0; y <= y1; y++) {
+            const sy = y + 0.5;
+            let hl = Infinity, hr = -Infinity;
+            for (let k = 0; k < hull.length; k++) {
+              const p = hull[k], q = hull[(k + 1) % hull.length];
+              if ((p[1] <= sy && q[1] >= sy) || (q[1] <= sy && p[1] >= sy)) {
+                const xx = Math.abs(q[1] - p[1]) < 1e-9 ? Math.min(p[0], q[0]) : p[0] + (sy - p[1]) * (q[0] - p[0]) / (q[1] - p[1]);
+                const xx2 = Math.abs(q[1] - p[1]) < 1e-9 ? Math.max(p[0], q[0]) : xx;
+                if (xx < hl) hl = xx; if (xx2 > hr) hr = xx2;
+              }
+            }
+            if (hl === Infinity) continue;
+            const xa = Math.max(x0, Math.floor(hl) - 1), xb = Math.min(x1, Math.ceil(hr) + 1);
+            for (let x = xa; x <= xb; x++) {
+              const i = y * W + x;
+              if (z1[i] === Infinity || zb[i] === -Infinity) continue;
+              const dxp = x + 0.5 - o[0], dyp = sy - o[1], dzp = -o[2];
+              const qx = Ai[0][0] * dxp + Ai[0][1] * dyp + Ai[0][2] * dzp;
+              const qy = Ai[1][0] * dxp + Ai[1][1] * dyp + Ai[1][2] * dzp;
+              const qz = Ai[2][0] * dxp + Ai[2][1] * dyp + Ai[2][2] * dzp;
+              let lo = -Infinity, hi = Infinity, exE = -1, enE = -1, rej = false;
+              for (let k = 0; k < EG.length; k++) {
+                const e = EG[k], fq = e.nx * qx + e.ny * qy, g = gs[k];
+                if (Math.abs(g) < 1e-12) { if (fq > e.c) { rej = true; break; } continue; }
+                const tt = (e.c - fq) / g;
+                if (g > 0) { if (tt < hi) { hi = tt; exE = k; } } else if (tt > lo) { lo = tt; enE = k; }
+              }
+              if (rej) continue;
+              let exZ = 0, enZ = 0;
+              if (Math.abs(rz) > 1e-12) { let p0 = (-hb - qz) / rz, p1 = (hb - qz) / rz; if (p0 > p1) { const t = p0; p0 = p1; p1 = t; } if (p0 > lo) { lo = p0; enZ = rz > 0 ? 7 : 6; } if (p1 < hi) { hi = p1; exZ = rz > 0 ? 6 : 7; } }
+              else if (qz < -hb || qz > hb) continue;
+              if (!(hi > lo) || hi <= NEAR) continue;
+              let exitK, exitCol, entryK = 0, entryCol = 0;
+              const px = qx + hi * rx, py = qy + hi * ry, pz = qz + hi * rz;
+              if (exZ) { exitK = exZ; exitCol = colOf(4, 0, 0, exZ === 6 ? -1 : 1, px, py, pz, false); }
+              else { const e = EG[exE]; exitK = e.k === 5 ? 5 : 4; exitCol = colOf(e.k, -e.nx, -e.ny, 0, px, py, pz, false); }
+              if (seeThroughB) {
+                if (enZ) { entryK = enZ; entryCol = colOf(4, 0, 0, enZ === 6 ? 1 : -1, 0, 0, 0, true); }
+                else if (enE >= 0) { const e = EG[enE]; entryK = e.k === 5 ? 5 : 4; entryCol = colOf(e.k, e.nx, e.ny, 0, 0, 0, 0, true); }
+              }
+              pushIv(i, lo, hi, exitK, true, exitCol, entryK, entryCol);
+            }
+          }
+          continue;
+        }
         const te = dxfTransformPoint({ x: b.entry[0], y: b.entry[1], z: baseZ });
         const tn = dxfTransformPoint({ x: b.end[0], y: b.end[1], z: baseZ });
         const tt = dxfTransformPoint({ x: b.tail[0], y: b.tail[1], z: baseZ });
@@ -22356,7 +23328,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.beginPath();
       f.pts.forEach((pt, idx) => { if (idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
       ctx.closePath();
-      ctx.strokeStyle = `rgba(${Math.round(rgb.r * 0.5)},${Math.round(rgb.g * 0.5)},${Math.round(rgb.b * 0.5)},${Math.min(1, alpha + 0.2)})`;
+      // Release 284: fein zerlegte Profile (Fräser mit DXF-Profil) ohne dunkle Facettenkanten - der Strich in der Flächenfarbe
+      // schließt nur die Nahtstellen, die Form zeigt die Schattierung
+      ctx.strokeStyle = (opts && opts.smoothEdges) ? ctx.fillStyle : `rgba(${Math.round(rgb.r * 0.5)},${Math.round(rgb.g * 0.5)},${Math.round(rgb.b * 0.5)},${Math.min(1, alpha + 0.2)})`;
       ctx.lineWidth = 0.8;
       ctx.stroke();
     });
@@ -22543,10 +23517,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     liveCtx.restore();
     window.__lastToolOcclusion = { parts: P.length, hidden, shown, bbox: [X0, Y0, X1, Y1], bodyAlpha: aBody, kind: occ.kind || 'mesh', ms: performance.now() - tStart };
   }
-  function drawToolHolder(origin, axis, u, v, proj, profile, appearance) {
+  function drawToolHolder(origin, axis, u, v, proj, profile, appearance, segs) {
     profile = profile || TOOL_HOLDER_HSK63_PROFILE;
     if (toolOccParts) toolOccParts.push({ origin, axis, profile });   // Release 282
-    const N = 16;
+    const N = segs || 16;   // Release 284: Fräser mit DXF-Profil feiner im Umfang (36)
     // Für jeden Profilpunkt ein voller Ring aus N+1 3D-Weltpunkten - Weltkoordinaten UND
     // Bildschirmprojektion bleiben beide erhalten (Release 158: fillRevolutionBody() oben
     // braucht die Weltpunkte für die Flächennormalen, das bisherige Drahtgitter weiterhin nur die
@@ -22581,8 +23555,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Ringe an jedem Profilpunkt mit Radius > 0 (ein Ring mit Radius 0 wäre nur ein einzelner
     // Punkt und wird übersprungen - er taucht über die Mantellinien unten trotzdem als
     // Spitze/Mittelpunkt einer eventuellen Stirnfläche auf).
+    // Release 284: Ringe im Drahtgitter nur an echten Ecken/Linienenden, nicht an jedem Bogen-Zwischenpunkt (die Bögen sind
+    // jetzt fein zerlegt - jeder Zwischenring würde das Gitter zuschmieren)
     profile.forEach((pt, i) => {
-      if (pt.r > 1e-6) strokePolyline(rings[i]);
+      if (pt.r > 1e-6 && !pt.__arcInner) strokePolyline(rings[i]);
     });
 
     // Mantellinien: das komplette Profil (alle Punkte der Reihe nach) bei einer Auswahl von
@@ -22604,7 +23580,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // "axis" fürs Culling in Render-Koordinaten übergeben (y/z vertauscht, siehe toRender()/
       // Kommentar bei fillRevolutionBody()) - "axis" selbst bleibt in Welt-/CNC-Koordinaten (wird
       // weiter unten/oben auch für die reine Geometrie-Berechnung in CNC-Koordinaten gebraucht).
-      fillRevolutionBody(worldRings, rings, appearance, { startCapNormal, endCapNormal }, { x: axis.x, y: axis.z, z: axis.y });
+      fillRevolutionBody(worldRings, rings, appearance, { startCapNormal, endCapNormal }, { x: axis.x, y: axis.z, z: axis.y }, segs ? { smoothEdges: true } : undefined);
     }
   }
 
@@ -22689,10 +23665,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function buildToolProfileForRender(entry) {
     const raw = getActiveToolDxfRDistProfile(entry);
     if (!raw || raw.length < 2) return null;
-    return raw.map(p => ({
-      r: p.r,
-      dist: p.dist - entry.lengthRef
-    }));
+    return raw.map(p => {
+      const q = { r: p.r, dist: p.dist - entry.lengthRef };
+      if (p.__arcInner) markArcInner(q);   // Release 284: Bogen-Zwischenpunkte bleiben markiert (Drahtgitter)
+      return q;
+    });
   }
 
   // "Spannfutter bearbeiten" (NEU, Release 214) - 1:1 dasselbe Prinzip wie
@@ -22735,10 +23712,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function buildChuckProfileForRender(entry) {
     const raw = getActiveChuckDxfRDistProfile(entry);
     if (!raw || raw.length < 2) return null;
-    return raw.map(p => ({
-      r: p.r,
-      dist: p.dist - entry.lengthRef
-    }));
+    return raw.map(p => {
+      const q = { r: p.r, dist: p.dist - entry.lengthRef };
+      if (p.__arcInner) markArcInner(q);   // Release 284: Bogen-Zwischenpunkte bleiben markiert (Drahtgitter)
+      return q;
+    });
   }
 
   function drawTool(proj) {
@@ -22900,7 +23878,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // statt "holderOrigin" als Ursprung (dieselbe Bedeutung: der Punkt, an dem "dist=0" des
         // übergebenen Profils ansetzt) und derselben, bereits für den Zylinder-Zweig berechneten
         // activeToolAppearance anstelle von colletAppearance.
-        drawToolHolder(tip, axis, u, v, proj, renderProfile, activeToolAppearance);
+        drawToolHolder(tip, axis, u, v, proj, renderProfile, activeToolAppearance, 36);
       } else {
         // Release 160 (Sebastian: "Kann die Säge theoretisch etwas runder dargestellt werden
         // oder geht das zu sehr auf die Performance?" - Tippfehler "runter"->"runder" per
@@ -25939,7 +26917,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
         const hit = pointToSegmentDist(canvasX, canvasY, sa.x, sa.y, sb.x, sb.y);
         if (hit.dist < bestLineDist) {
           bestLineDist = hit.dist;
-          best = { r: a.r + (b.r - a.r) * hit.t, dist: a.dist + (b.dist - a.dist) * hit.t, kind: 'line' };
+          best = { r: a.r + (b.r - a.r) * hit.t, dist: a.dist + (b.dist - a.dist) * hit.t, kind: 'line', seg: [{ r: a.r, dist: a.dist }, { r: b.r, dist: b.dist }] };   // seg: Release 286
         }
       }
       return best;
@@ -25963,7 +26941,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
         } else if (lengthPts.length === 1) {
           panelEl.innerHTML = '<div class="measure-hint">' + T('Startpunkt gesetzt – zweiten Fangpunkt anklicken.', 'Start point set – click the second snap point.') + '</div>';
         } else {
+          // Release 286: paralleler Abstand auch hier (beide Punkte auf einer Linie)
+          const toP = q => q && q.seg ? { x: q.r, y: q.dist, z: 0, seg: q.seg.map(s => ({ x: s.r, y: s.dist, z: 0 })) } : null;
           panelEl.innerHTML = legRows(lengthPts[0], lengthPts[1], '') +
+            parallelRowsHtml(parallelLineInfo(toP(lengthPts[0]), toP(lengthPts[1]))) +
             '<div class="measure-hint">' + T('Erneut klicken für eine neue Messung.', 'Click again for a new measurement.') + '</div>';
         }
         return;
@@ -28294,6 +29275,47 @@ Sebastian Bäcker (Anschrift wie oben)`,
     toolLengthInput.value = hasRealDataForSelectedType ? String(sec.toolLength) : defaults.length;
   }
   toolTypeSelect.addEventListener('change', applyToolTypeUI);
+  // Release 285: Farbe/Transparenz (und gefüllt) des Werkzeugs im Dialog "+Werkzeuge (T)" - je Werkzeugtyp eine Arbeitskopie
+  // von cutterAppearance/sawAppearance; mit Ok über applyToolAppearance() übernommen (= Einstellungen -> Werkzeuge ->
+  // Werkzeugdarstellung -> Fräser/Säge), mit Abbrechen verworfen.
+  let toolDataAppWork = null, toolDataAppShown = 'cutter';
+  const tdaKind = () => (toolTypeSelect.value === 'saege' ? 'saw' : 'cutter');
+  function updateToolDataAppearanceRows() {
+    const filled = el('toolDataAppearanceFilled').checked;
+    el('toolDataAppearanceColorRow').hidden = !filled;
+    el('toolDataAppearanceTransparencyRow').hidden = !filled;
+    el('toolDataAppearanceTransparencyValue').textContent = el('toolDataAppearanceTransparencySlider').value + '%';
+  }
+  function loadToolDataAppearanceUI() {
+    toolDataAppShown = tdaKind();
+    const a = toolDataAppWork[toolDataAppShown];
+    el('toolDataAppearanceTitle').textContent = toolDataAppShown === 'saw' ? T('Darstellung Säge', 'Saw appearance') : T('Darstellung Fräser', 'Cutter appearance');
+    el('toolDataAppearanceFilled').checked = a.filled;
+    el('toolDataAppearanceColorPicker').value = a.color; el('toolDataAppearanceColorHex').value = a.color;
+    el('toolDataAppearanceTransparencySlider').value = String(a.transparency);
+    el('toolDataAppearanceHexWarning').hidden = true;
+    updateToolDataAppearanceRows();
+  }
+  // Felder -> Arbeitskopie des angezeigten Typs; false bei ungültigem Hexcode (Farbe bleibt dann unverändert)
+  function storeToolDataAppearanceUI() {
+    if (!toolDataAppWork) return true;
+    const a = toolDataAppWork[toolDataAppShown];
+    a.filled = el('toolDataAppearanceFilled').checked;
+    a.transparency = Math.max(0, Math.min(100, Math.round(Number(el('toolDataAppearanceTransparencySlider').value) || 0)));
+    const c = normalizeHex(el('toolDataAppearanceColorHex').value);
+    if (c) a.color = c;
+    el('toolDataAppearanceHexWarning').hidden = !!c;
+    return !!c;
+  }
+  function openToolDataAppearanceUI() {
+    toolDataAppWork = { cutter: Object.assign({}, cutterAppearance), saw: Object.assign({}, sawAppearance) };
+    loadToolDataAppearanceUI();
+  }
+  toolTypeSelect.addEventListener('change', () => { if (!toolDataAppWork) return; storeToolDataAppearanceUI(); loadToolDataAppearanceUI(); });
+  el('toolDataAppearanceFilled').addEventListener('change', updateToolDataAppearanceRows);
+  el('toolDataAppearanceTransparencySlider').addEventListener('input', updateToolDataAppearanceRows);
+  el('toolDataAppearanceColorPicker').addEventListener('input', () => { el('toolDataAppearanceColorHex').value = el('toolDataAppearanceColorPicker').value; el('toolDataAppearanceHexWarning').hidden = true; });
+  el('toolDataAppearanceColorHex').addEventListener('input', () => { const c = normalizeHex(el('toolDataAppearanceColorHex').value); if (c) { el('toolDataAppearanceColorPicker').value = c; el('toolDataAppearanceHexWarning').hidden = true; } });
 
   // "Werkzeugprofil" (NEU, Release 200, #toolProfileSelect) - baut die Optionsliste des
   // Dropdowns komplett neu aus dem aktuellen toolDxfProfiles-Array auf (alphabetisch sortiert,
@@ -28393,11 +29415,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // toolRadiusInput.value=.../toolLengthInput.value=..., läuft seit Release 112 mit über
     // applyToolTypeUI(), siehe dortiger Kommentar).
     applyToolTypeUI();
+    openToolDataAppearanceUI();   // Release 285
     toolDataPanel.classList.add('open');
     toolRadiusInput.focus();
     toolRadiusInput.select();
   });
-  el('btnToolDataCancel').addEventListener('click', () => { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; });
+  el('btnToolDataCancel').addEventListener('click', () => { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; toolDataAppWork = null; });
   function confirmInsertToolData() {
     if (scopeMode.type !== 'op' || !current) { toolDataPanel.classList.remove('open'); toolDataActiveSec = null; return; }
     const sec = current.sections.find(s => s.type === 'arbeitsgang' && s.index === scopeMode.index);
@@ -28418,6 +29441,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
       return;
     }
     toolDataNegativeWarning.hidden = true;
+    // Release 285: Darstellung (Farbe/Transparenz) - ungültiger Hexcode -> Hinweis, Dialog bleibt offen
+    if (!storeToolDataAppearanceUI()) return;
+    if (toolDataAppWork) {
+      const same = (p, q) => p.filled === q.filled && p.color === q.color && p.transparency === q.transparency;
+      if (!same(toolDataAppWork.cutter, cutterAppearance)) applyToolAppearance('cutter', toolDataAppWork.cutter);
+      if (!same(toolDataAppWork.saw, sawAppearance)) applyToolAppearance('saw', toolDataAppWork.saw);
+      toolDataAppWork = null;
+    }
     const toolMode = toolModeSelect.value === 'ohnehsk63' ? 'ohnehsk63' : 'eingespannt';
     const toolType = toolTypeSelect.value === 'saege' ? 'saege' : 'fraeser';
     // "Werkzeugprofil" (NEU, Release 200): leerer Wert ("Kein Profil (Zylinder)") wird als
@@ -29381,7 +30412,19 @@ Sebastian Bäcker (Anschrift wie oben)`,
     st.classList.toggle('dxf-krm-error', !!isError);
   }
   function fmtMm(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', currentLang === 'en' ? '.' : ','); }
+  function updateKrmSideStatus() {
+    const st = el('dxfKrmSideStatus');
+    el('btnDxfKrmSideLoad').disabled = !dxfKrm;
+    el('btnDxfKrmSideRemove').hidden = !dxfKrmSide;
+    let txt = '', err = false;
+    if (dxfKrmSideError) { txt = T(dxfKrmSideError.error, dxfKrmSideError.errorEn) + T(' Der Krümmling wird mit geschätzter Höhe dargestellt.', ' The wreath is shown with an estimated height.'); err = true; }
+    else if (dxfKrm && dxfKrm.info.exactHeight) txt = T('Seitenansicht: ', 'Side view: ') + (dxfKrmSide ? dxfKrmSide.name : '') + T(' - Höhe exakt (Rohling ', ' - exact height (blank ') + fmtMm(dxfKrm.info.thickness) + ' mm)';
+    else if (dxfKrm) txt = T('Höhe geschätzt (nur Draufsicht). Für die exakte Höhe die Seitenansicht laden.', 'Height estimated (top view only). Load the side view for the exact height.');
+    st.textContent = txt;
+    st.classList.toggle('dxf-krm-error', err);
+  }
   function updateKrmPanel() {
+    updateKrmSideStatus();   // Release 283
     const cb = el('dxfKrmFlip');
     cb.disabled = !dxfKrm;
     cb.checked = !!(dxfKrm && dxfKrmFlip);
@@ -29401,7 +30444,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // (Sebastian: "Wenn es nicht passt, wird eine Meldung ausgegeben und der dargestellte Handlauf bleibt ohne Profil!"),
   // bleibt der Rechteckquerschnitt (Meldung nur bei showMsg - beim Import und beim Wechsel des Profils).
   function rebuildKruemmling(showMsg) {
-    const r = dxfGeometry ? CNCParser.buildKruemmlingFromGeometry(dxfGeometry, dxfKrmFlip) : null;
+    // Release 283: mit Seitenansicht exakte Höhe; passt sie nicht, ohne Seitenansicht (Meldung im Dialog)
+    let r = dxfGeometry ? CNCParser.buildKruemmlingFromGeometry(dxfGeometry, dxfKrmFlip, dxfKrmSide ? { side: dxfKrmSide.geo } : null) : null;
+    dxfKrmSideError = null;
+    if (r && !r.ok && dxfKrmSide) { dxfKrmSideError = r; r = CNCParser.buildKruemmlingFromGeometry(dxfGeometry, dxfKrmFlip); }
     const prof = r && r.ok && dxfKrmProfileId ? getPartProfileById(dxfKrmProfileId) : null;
     if (prof) {
       const sw = CNCParser.applyKruemmlingProfile(r, prof);
@@ -29421,6 +30467,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfKrmLoading = true;
     try { loadDxfText(text, filename); } finally { dxfKrmLoading = false; }
     dxfKrmFlip = false;
+    dxfKrmSide = null;   // Release 283: neue Draufsicht - Seitenansicht neu laden
     // Release 278: Farbe wie beim Handlauf; seit Release 279 aus der eigenen Bauteildefinition "Krümmling, stehend"
     const pd = dxfPartDefaults.parts.krmStanding || dxfPartDefaults.parts.handrail;
     dxfKrmProfileId = pd.profileId && getPartProfileById(pd.profileId) ? pd.profileId : null;   // Release 280
@@ -29444,6 +30491,88 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!f) return;
     readFileAsText(f, (text) => loadKruemmlingText(text, f.name), () => setKrmStatus(T('Datei konnte nicht gelesen werden: ', 'File could not be read: ') + f.name, true));
   });
+  // Release 283: "Bauteil erstellen" - Rechteck X x Y auf dem Layer "Kontur" als DXF erzeugen und wie eine importierte DXF laden,
+  // Stärke Z (auch negativ); optional mit Draufsicht (Breite muss zu X passen, Stärke aus ihrer Höhe)
+  const partCreatePanel = el('partCreatePanel');
+  let partCreateTop = null;
+  function partCreateNum(id) { const v = evalCalcExpression(el(id).value); return v === null || !isFinite(v) ? null : v; }
+  function refreshPartCreateTopUI(errText) {
+    const h = el('partCreateTopHint');
+    el('btnPartCreateTopRemove').hidden = !partCreateTop;
+    el('partCreateFrontField').hidden = !partCreateTop;
+    el('partCreateZ').disabled = !!partCreateTop;
+    h.classList.toggle('dxf-krm-error', !!errText);
+    if (errText) h.textContent = errText;
+    else if (partCreateTop) h.textContent = T('Draufsicht: ' + partCreateTop.name + ' - Breite ' + fmtDim(partCreateTop.w) + ' mm, Stärke ' + fmtDim(partCreateTop.h) + ' mm aus der Draufsicht.', 'Top view: ' + partCreateTop.name + ' - width ' + fmtDim(partCreateTop.w) + ' mm, thickness ' + fmtDim(partCreateTop.h) + ' mm from the top view.');
+    else h.textContent = T('Ohne Draufsicht: rechteckiger Körper mit der Stärke Z.', 'Without a top view: rectangular body with thickness Z.');
+  }
+  function showPartCreateError(msg) { const e = el('partCreateError'); e.textContent = msg || ''; e.hidden = !msg; }
+  el('btnPartCreateIcon').addEventListener('click', () => {
+    partCreateTop = null; el('partCreateFrontSelect').value = 'up';
+    showPartCreateError(''); refreshPartCreateTopUI();
+    partCreatePanel.classList.add('open');
+    el('partCreateX').focus(); el('partCreateX').select();
+  });
+  el('btnPartCreateCancel').addEventListener('click', () => partCreatePanel.classList.remove('open'));
+  el('btnPartCreateTopLoad').addEventListener('click', () => el('partCreateTopFileInput').click());
+  el('partCreateTopFileInput').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    const X = partCreateNum('partCreateX');
+    if (!(X > 0)) { refreshPartCreateTopUI(T('Bitte zuerst X (Länge) eingeben.', 'Please enter X (length) first.')); return; }
+    readFileAsText(f, (text) => {
+      const r = readTopView(text, f.name, X);
+      if (r.error) { partCreateTop = null; refreshPartCreateTopUI(T(r.error, r.errorEn)); return; }
+      partCreateTop = r.tv;
+      const z = partCreateNum('partCreateZ') || 0;
+      el('partCreateZ').value = String(Math.round((z < 0 ? -r.tv.h : r.tv.h) * 1000) / 1000);
+      refreshPartCreateTopUI();
+    });
+  });
+  el('btnPartCreateTopRemove').addEventListener('click', () => { partCreateTop = null; refreshPartCreateTopUI(); });
+  function createRectPart() {
+    const X = partCreateNum('partCreateX'), Y = partCreateNum('partCreateY'), Z = partCreateNum('partCreateZ');
+    if (!(X > 0) || !(Y > 0)) { showPartCreateError(T('X und Y müssen größer 0 sein.', 'X and Y must be greater than 0.')); return; }
+    if (Z === null) { showPartCreateError(T('Bitte für Z eine Zahl eingeben (auch negativ möglich).', 'Please enter a number for Z (negative is possible).')); return; }
+    if (partCreateTop && !(Math.abs(partCreateTop.w - X) <= 0.05)) { showPartCreateError(T('Die Dimensionen passen nicht: die Draufsicht ist ' + fmtDim(partCreateTop.w) + ' mm breit, X ist ' + fmtDim(X) + ' mm.', 'The dimensions do not match: the top view is ' + fmtDim(partCreateTop.w) + ' mm wide, X is ' + fmtDim(X) + ' mm.')); return; }
+    const zz = partCreateTop ? (Z < 0 ? -partCreateTop.h : partCreateTop.h) : Z;
+    const n = v => String(Math.round(v * 1e6) / 1e6);
+    const L = ['0', 'SECTION', '2', 'ENTITIES'];
+    [[0, 0, X, 0], [X, 0, X, Y], [X, Y, 0, Y], [0, Y, 0, 0]].forEach(q => L.push('0', 'LINE', '8', 'Kontur', '10', n(q[0]), '20', n(q[1]), '30', '0', '11', n(q[2]), '21', n(q[3]), '31', '0'));
+    L.push('0', 'ENDSEC', '0', 'EOF');
+    const top = partCreateTop, frontDown = el('partCreateFrontSelect').value === 'down';
+    loadDxfText(L.join('\r\n') + '\r\n', T('Bauteil_', 'Part_') + n(X) + 'x' + n(Y) + '.DXF');
+    dxfCreatedPart = { x: X, y: Y, z: zz };
+    dxfTopView = top; dxfTopFrontDown = frontDown;
+    dxfThickness = zz;
+    const pd = dxfPartDefaults.parts[dxfPartType] || dxfPartDefaults.parts.undefined;
+    dxfThicknessTransparency = pd.transparency;
+    dxfThicknessEverConfirmed = true;
+    recomputeMortise();
+    bakeParams = null;
+    updateDxfUI();
+    requestRender();
+    partCreatePanel.classList.remove('open');
+  }
+  el('btnPartCreateOk').addEventListener('click', createRectPart);
+  // Release 283: Seitenansicht laden/entfernen
+  el('btnDxfKrmSideLoad').addEventListener('click', () => el('dxfKrmSideFileInput').click());
+  el('dxfKrmSideFileInput').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f || !dxfKrm) return;
+    readFileAsText(f, (text) => {
+      let g = null;
+      try { g = CNCParser.parseDXF(text); } catch (err) { g = null; }
+      dxfKrmSide = g ? { geo: g, name: f.name } : null;
+      rebuildKruemmling(false);
+      if (dxfKrmSideError) dxfKrmSide = null;   // passt nicht: nicht behalten (Meldung bleibt stehen)
+      updateKrmPanel();
+      requestRender();
+    });
+  });
+  el('btnDxfKrmSideRemove').addEventListener('click', () => { dxfKrmSide = null; rebuildKruemmling(false); updateKrmPanel(); requestRender(); });
   el('dxfKrmFlip').addEventListener('change', () => {
     if (!dxfKrm) return;
     dxfKrmFlip = el('dxfKrmFlip').checked;
@@ -29925,6 +31054,39 @@ Sebastian Bäcker (Anschrift wie oben)`,
     });
   }
   ['T', 'U'].forEach(k => { HB_UI[k].cb.addEventListener('change', updateDxfHBoreHint); HB_UI[k].shape.addEventListener('change', updateDxfHBoreHint); });
+  // Release 285: Glasnut im Dialog (nur Wange/Handlauf) - Layer-Auswahl, Nutbreite, Position in Z (leer = mittig)
+  const dxfGrooveCheckbox = el('dxfGrooveCheckbox'), dxfGrooveLayerSelect = el('dxfGrooveLayerSelect');
+  function refreshDxfGrooveUI() {
+    const names = listGrooveLayers();
+    dxfGrooveLayerSelect.innerHTML = '';
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; dxfGrooveLayerSelect.appendChild(o); });
+    const lay = resolveGrooveLayer(dxfGrooveCfg.layer);
+    if (lay) dxfGrooveLayerSelect.value = lay;
+    dxfGrooveCheckbox.disabled = !names.length;
+    dxfGrooveCheckbox.checked = !!(names.length && dxfGrooveCfg.enabled);
+    el('dxfGrooveWidthInput').value = String(dxfGrooveCfg.width);
+    el('dxfGrooveHeightInput').value = fmtOpt(dxfGrooveCfg.height);
+    updateDxfGrooveHint();
+  }
+  function describeGrooves(det, layer) {
+    const gs = det.grooves;
+    if (!gs.length) return T('Keine Glasnut auf ' + layer + ' gefunden (gestrichelte Linie im gleichen Abstand zur Kontur).', 'No glass groove found on ' + layer + ' (dashed line at a constant distance from the contour).');
+    const deps = Array.from(new Set(gs.map(g => fmtDim(g.depth))));
+    const thr = gs.filter(g => g.start === 'through' || g.end === 'through').length;
+    return T(gs.length + (gs.length > 1 ? ' Glasnuten' : ' Glasnut') + ' erkannt (' + layer + '): Tiefe ' + deps.join(' / ') + ' mm, Länge ' + gs.map(g => Math.round(g.length)).join(' / ') + ' mm' + (thr ? ', ' + thr + '× durchgefräst' : '') + '.',
+      gs.length + (gs.length > 1 ? ' glass grooves' : ' glass groove') + ' found (' + layer + '): depth ' + deps.join(' / ') + ' mm, length ' + gs.map(g => Math.round(g.length)).join(' / ') + ' mm' + (thr ? ', ' + thr + '× running out' : '') + '.');
+  }
+  function updateDxfGrooveHint() {
+    const names = listGrooveLayers(), on = !!(dxfGrooveCheckbox.checked && names.length);
+    el('dxfGrooveBody').hidden = !on;
+    const hint = el('dxfGrooveHint');
+    if (!names.length) { hint.textContent = T('Nur mit weiteren Layern möglich.', 'Only possible with further layers.'); return; }
+    const lay = dxfGrooveLayerSelect.value, det = getGrooveDetection(lay);
+    if (!on) { hint.textContent = det.grooves.length ? describeGrooves(det, lay) : ''; return; }
+    hint.textContent = describeGrooves(det, lay) + (det.grooves.length ? ' ' + T('Position in Z -> leer = mittig, sonst Mitte der Nut von Bauteilunterkante gemessen.', 'Position in Z -> empty = in the centre, otherwise the centre of the groove measured from the bottom of the part.') : '');
+  }
+  dxfGrooveCheckbox.addEventListener('change', updateDxfGrooveHint);
+  dxfGrooveLayerSelect.addEventListener('change', updateDxfGrooveHint);
   function describeMortiseCandidate(c) {
     if (!c.strokeCount) return T('keine Linien', 'no lines');
     const parts = [];
@@ -30051,6 +31213,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const t = dxfPartTypeSelect.value;
     const krm = t === 'krmStanding';   // Release 279: nur Füllung - keine Stärke, keine Bearbeitungen, keine Vorschau
     el('dxfThicknessRow').hidden = krm;
+    el('dxfTopViewRow').hidden = krm || !(t === 'riser' || dxfCreatedPart || dxfTopPending);   // Release 283
     el('dxfSepProfile').hidden = !(krm || t === 'handrail'); el('dxfProfileRow').hidden = !(krm || t === 'handrail');   // Release 280/281
     el('dxfDefPreviewToggle').closest('label').hidden = krm;
     if (krm) {
@@ -30069,7 +31232,41 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el('dxfSepVertical').hidden = !vertical;
     el('dxfHBoreRow').hidden = !horizontal;
     el('dxfSepHorizontal').hidden = !horizontal;
+    el('dxfGrooveRow').hidden = !mortise;   // Release 285: Glasnut nur bei Wange/Handlauf
   }
+  // Release 283: Draufsicht im Dialog (vorläufig bis Ok)
+  function dxfFrontWidth() { if (!dxfKonturLoop || !dxfKonturLoop.length) return null; const xs = dxfKonturLoop.map(p => p.x); return Math.max(...xs) - Math.min(...xs); }
+  function fmtDim(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', currentLang === 'en' ? '.' : ','); }
+  function refreshTopViewUI(errText) {
+    const tv = dxfTopPending, hint = el('dxfTopViewHint');
+    el('btnDxfTopViewRemove').hidden = !tv;
+    el('dxfTopViewFrontField').hidden = !tv;
+    el('dxfTopViewFrontSelect').value = dxfTopPendingFlip ? 'down' : 'up';
+    dxfThicknessInput.disabled = !!tv && !el('dxfTopViewRow').hidden;
+    hint.classList.toggle('dxf-krm-error', !!errText);
+    if (errText) hint.textContent = errText;
+    else if (tv) hint.textContent = T('Draufsicht: ' + tv.name + ' - Breite ' + fmtDim(tv.w) + ' mm passt, Stärke ' + fmtDim(tv.h) + ' mm aus der Draufsicht.', 'Top view: ' + tv.name + ' - width ' + fmtDim(tv.w) + ' mm matches, thickness ' + fmtDim(tv.h) + ' mm from the top view.');
+    else hint.textContent = T('Optional: Draufsicht (DXF), Breite wie die Frontansicht (erste Nachkommastelle). Die Stärke kommt dann aus ihrer Höhe, sonst gilt die eingestellte Stärke.', 'Optional: top view (DXF), same width as the front view (first decimal). The thickness then comes from its height, otherwise the set thickness applies.');
+  }
+  el('btnDxfTopViewLoad').addEventListener('click', () => el('dxfTopViewFileInput').click());
+  el('dxfTopViewFileInput').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    readFileAsText(f, (text) => {
+      const fw = dxfFrontWidth();
+      if (fw == null) { refreshTopViewUI(T('Die Frontansicht hat keine geschlossene Kontur.', 'The front view has no closed contour.')); return; }
+      const r = readTopView(text, f.name, fw);
+      if (r.error) { refreshTopViewUI(T(r.error, r.errorEn)); return; }
+      dxfTopPending = r.tv;
+      const cur = parseFloat(normalizeToolValue(dxfThicknessInput.value, 0)) || 0;
+      dxfThicknessInput.value = String(Math.round((cur < 0 ? -r.tv.h : r.tv.h) * 1000) / 1000);
+      updateDxfPartTypeUI();
+      refreshTopViewUI();
+    });
+  });
+  el('btnDxfTopViewRemove').addEventListener('click', () => { dxfTopPending = null; updateDxfPartTypeUI(); refreshTopViewUI(); });
+  el('dxfTopViewFrontSelect').addEventListener('change', () => { dxfTopPendingFlip = el('dxfTopViewFrontSelect').value === 'down'; });
   dxfPartTypeSelect.addEventListener('change', () => {
     // Release 256: solange der Dialog für diesen Import noch nicht bestätigt wurde, bringt ein anderes Bauteil seine
     // Standardwerte mit (Stärke, Einstemmung, vertikale Taschen, Bohrungen)
@@ -30083,8 +31280,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfOutlineColorPicker.value = pdt.outlineColor; dxfOutlineColorHex.value = pdt.outlineColor;
       el('dxfFillModeSelect').value = pdt.fillMode === 'texture' ? 'texture' : 'color'; fillDxfTextureSelect(el('dxfTextureSelect'), pdt.textureId);   // Release 260
       updateDxfThicknessColorRowVisibility();
-      refreshDxfMortiseUI(); refreshDxfVPocketUI(); refreshDxfHBoreUI();
+      refreshDxfMortiseUI(); refreshDxfVPocketUI(); refreshDxfHBoreUI(); refreshDxfGrooveUI();
     }
+    refreshTopViewUI();   // Release 283
     if (dxfPartTypeSelect.value === 'handrail') fillPartProfileSelect(el('dxfProfileSelect'), dxfThicknessEverConfirmed ? (el('dxfProfileSelect').value || dxfRailProfileId) : dxfRailProfileId);   // Release 281
     updateDxfPartTypeUI();
   });
@@ -30095,11 +31293,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
     dxfPartTypeSelect.value = dxfPartType; // Release 249
     syncKrmPartOption();   // Release 279
     fillPartProfileSelect(el('dxfProfileSelect'), dxfKrm ? dxfKrmProfileId : dxfRailProfileId);   // Release 280/281
+    dxfTopPending = dxfTopView; dxfTopPendingFlip = dxfTopFrontDown;   // Release 283
     refreshDxfMortiseUI();
     refreshDxfPocketUI(); // Release 250
     refreshDxfHBoreUI(); // Release 251
+    refreshDxfGrooveUI(); // Release 285
     refreshDxfVPocketUI(); // Release 253
     updateDxfPartTypeUI();
+    refreshTopViewUI();   // Release 283
     // Release 222 (Sebastian: "Am Anfang flach, keine Bauteilstärke, das Menü hat aber schon Werte
     // drin."): solange der Dialog für diesen Import noch nie bestätigt wurde, werden die Felder mit
     // DXF_THICKNESS_PREFILL/DXF_THICKNESS_TRANSPARENCY_PREFILL vorbefüllt statt mit dem tatsächlich
@@ -30238,8 +31439,12 @@ Sebastian Bäcker (Anschrift wie oben)`,
         dxfHBoreCfg[k] = { enabled: !ui.cb.disabled && ui.cb.checked, shape: ui.shape.value === 'rect' ? 'rect' : 'round', height: optNum(ui.height), rectHeight: optNum(ui.rectHeight) };
         if (dxfHBoreCfg[k].rectHeight === 0) dxfHBoreCfg[k].rectHeight = null;
       });
+      // Release 285: Glasnut (ungültige Nutbreite -> bisheriger Wert, leere Position = mittig)
+      const w = parseFloat(normalizeToolValue(el('dxfGrooveWidthInput').value.trim(), 0));
+      dxfGrooveCfg = { enabled: !dxfGrooveCheckbox.disabled && dxfGrooveCheckbox.checked, layer: dxfGrooveLayerSelect.value || dxfGrooveCfg.layer, width: isFinite(w) && Math.abs(w) > 0 ? Math.abs(w) : dxfGrooveCfg.width, height: optNum(el('dxfGrooveHeightInput')) };
     }
     dxfRailProfileId = dxfPartType === 'handrail' ? (el('dxfProfileSelect').value || null) : null;   // Release 281
+    dxfTopView = el('dxfTopViewRow').hidden ? null : dxfTopPending; dxfTopFrontDown = dxfTopPendingFlip;   // Release 283
     recomputeLayerSchmiegeRings();
     recomputeMortise(); // Release 249
     updateDxfUI();
@@ -30252,11 +31457,15 @@ Sebastian Bäcker (Anschrift wie oben)`,
       dxfRailProfileAlertKey = railKey;
     } else {
       dxfRailProfileAlertKey = null;
+      if (dxfMortiseMesh && dxfMortiseMesh.topView && dxfMortiseMesh.topView.pocketsHidden) setTimeout(() => alert(T('Draufsicht „' + dxfMortiseMesh.topView.name + '“: Taschen und Einstemmungen werden mit Draufsicht nicht dargestellt (horizontale Bohrungen schon).', 'Top view "' + dxfMortiseMesh.topView.name + '": pockets and mortises are not shown with a top view (horizontal drillings are).')), 0);
       if (dxfMortiseMesh && dxfMortiseMesh.railProfile && dxfMortiseMesh.railProfile.pocketsHidden) setTimeout(() => alert(T('Bauteilprofil „' + dxfMortiseMesh.railProfile.name + '“: Einstemmungen und vertikale Taschen werden mit Profil nicht dargestellt (horizontale Bohrungen schon).', 'Part profile "' + dxfMortiseMesh.railProfile.name + '": mortises and vertical pockets are not shown with a profile (horizontal drillings are).')), 0);
     }
     // Release 249: dasselbe für die Einstemmungen der gestemmten Wange.
-    if (dxfMortiseProblems.length) {
-      const msg = (isMortisePart(dxfPartType) ? T('Einstemmung:\n', 'Mortise:\n') : (dxfPartType === 'tread' ? T('Taschen:\n', 'Pockets:\n') : T('Bearbeitungen:\n', 'Machining:\n'))) + dxfMortiseProblems.join('\n');
+    // Release 285: Meldungen zur Glasnut (eigene Vorsilbe "Glasnut: ") ohne die Überschrift "Einstemmung:"
+    const isGrooveMsg = m => /^(Glasnut|Glass groove): /.test(m);
+    const otherProblems = dxfMortiseProblems.filter(m => !isGrooveMsg(m)), grooveProblems = dxfMortiseProblems.filter(isGrooveMsg);
+    if (otherProblems.length || grooveProblems.length) {
+      const msg = (otherProblems.length ? (isMortisePart(dxfPartType) ? T('Einstemmung:\n', 'Mortise:\n') : (dxfPartType === 'tread' ? T('Taschen:\n', 'Pockets:\n') : T('Bearbeitungen:\n', 'Machining:\n'))) + otherProblems.join('\n') : '') + (otherProblems.length && grooveProblems.length ? '\n\n' : '') + grooveProblems.join('\n');
       setTimeout(() => alert(msg), 0);
     }
     // Release 247: Meldung beim Verlassen des Dialogs, wenn eine gewählte Schmiege nicht berechenbar war.
@@ -30345,6 +31554,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
         }
       });
     }
+    if (vis('dxfGrooveRow') && dxfGrooveCheckbox.checked && !dxfGrooveCheckbox.disabled) {   // Release 285
+      const det = getGrooveDetection(dxfGrooveLayerSelect.value);
+      if (det.grooves.length) out.push({ label: T('Glasnut', 'Glass groove') + ' (' + dxfGrooveLayerSelect.value + ')', strokes: Array.from(det.strokes) });
+    }
     out.forEach((h, i) => { h.color = DXF_DEF_PREVIEW_COLORS[i % DXF_DEF_PREVIEW_COLORS.length]; });
     return out;
   }
@@ -30418,6 +31631,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
     el('dpdPocket').hidden = !('pocketDepth' in pd);
     el('dpdVPocket').hidden = !pd.vpocket;
     el('dpdHorizontal').hidden = !pd.T;
+    el('dpdGroove').hidden = !pd.groove;   // Release 285
+    if (pd.groove) { el('dpdGrooveOn').checked = pd.groove.on; el('dpdGrooveLayer').value = pd.groove.layer; el('dpdGrooveWidth').value = String(pd.groove.width); el('dpdGrooveHeight').value = pd.groove.height == null ? '' : String(pd.groove.height); }
     if (pd.mortise) { el('dpdMortiseOn').checked = pd.mortise.on; el('dpdMortiseDepth').value = String(pd.mortise.depth); el('dpdMortiseDepthTread').value = String(pd.mortise.depthTread); el('dpdMortiseDepthRiser').value = String(pd.mortise.depthRiser); }
     if ('pocketDepth' in pd) el('dpdPocketDepth').value = String(pd.pocketDepth);
     if (pd.vpocket) { el('dpdVPocketOn').checked = pd.vpocket.on; el('dpdVPocketDepth').value = String(pd.vpocket.depth); }
@@ -30457,6 +31672,13 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const h = opt('dpd' + k + 'Height', T('Position in Z', 'position in Z') + ' (' + k + ')'), rh = opt('dpd' + k + 'RectHeight', T('Höhe', 'height') + ' (' + k + ')');
       pd[k].height = h; pd[k].rectHeight = rh === 0 ? null : rh;
     });
+    if (pd.groove) {   // Release 285
+      pd.groove.on = el('dpdGrooveOn').checked;
+      pd.groove.layer = dpdVal('dpdGrooveLayer').slice(0, 60) || GROOVE_DEFAULT_LAYER;
+      const w = dpdNum('dpdGrooveWidth', false);
+      if (w === null || Number.isNaN(w) || !(w > 0)) bad.push(T('Nutbreite', 'groove width')); else pd.groove.width = w;
+      pd.groove.height = opt('dpdGrooveHeight', T('Position in Z', 'position in Z') + ' (' + T('Nut', 'groove') + ')');
+    }
     const numErr = bad.length ? T('Bitte gültige Zahlen eingeben: ', 'Please enter valid numbers: ') + bad.join(', ') : '';
     return [texErr, numErr].filter(Boolean).join(' ');
   }
