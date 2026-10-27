@@ -1973,6 +1973,9 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Release 287: Abtragsimulation (Checkbox rechts von Codesprung, ausgegraut ohne Rohteil) */
+  .abtrag-toggle { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+  .abtrag-toggle.is-disabled { opacity: 0.5; cursor: default; }
   .speed-group, .jump-group {
     display: flex;
     align-items: center;
@@ -3537,6 +3540,13 @@
              Hervorhebung) statt ".transport-btn.small" wie der direkt benachbarte Pfeil-Knopf, da
              "Codesprung" ein eigenes, längeres Textlabel trägt statt eines einzelnen Glyphen. -->
         <button class="toolbar-btn" id="btnCodeJump" type="button" title="Codesprung: Ein-/ausschalten. Bei aktivem Codesprung springt ein Klick auf eine Linie im 3D-Bereich zur zugehörigen Programmzeile und markiert Start-/Endpunkt mit &quot;[]&quot; - ausgeschaltet verhält sich ein Klick/Ziehen im 3D-Bereich wie gewohnt (Kamera drehen/verschieben, Messwerkzeuge)." data-i18n-en-title="Jump in code: toggle on/off. When active, clicking a line in the 3D area jumps to the corresponding program line and marks the start/end point with &quot;[]&quot; - when off, clicking/dragging in the 3D area behaves as usual (rotate/pan camera, measurement tools)." data-i18n-en="Jump in code">Codesprung</button>
+        <!-- Release 287 (Sebastian: "Checkbox "Abtragsimulation" einbauen neben "Codesprung" davor, also rechts von Codesprung ein
+             Trennstrich. Dieser Haken kann gesetzt werden, sobald ein Rohteil erstellt worden ist (über Bauteil erstellen-Button)."),
+             siehe ensureAbtragMesh()/setAbtragOn() in app.js -->
+        <span class="toolbar-sep" id="abtragSep"></span>
+        <label class="layer-toggle abtrag-toggle is-disabled" id="abtragToggle" title="Abtragsimulation: trägt bis zur aktuellen Wiedergabeposition Material vom Rohteil ab (Rohteil über „Bauteil erstellen“ anlegen). Einschalten springt zum Programmanfang." data-i18n-en-title="Material removal simulation: removes material from the stock up to the current playback position (create the stock via &quot;Create part&quot;). Switching on jumps to the start of the program.">
+          <input type="checkbox" id="chkAbtrag" disabled> <span data-i18n-en="Material removal simulation">Abtragsimulation</span>
+        </label>
       </div>
     </div>
   </div>
@@ -12340,10 +12350,11 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
     if (fromBelow) d = -d;
     if (d > H) { d = H; clamped = true; }
     const polys = (pk.loops || []).filter(l => l && l.length >= 3).map(l => [closeRing(l)]);
-    if (!polys.length) return;
+    const hasMp = !!(pk.mp && pk.mp.length);   // Release 287: fertig vereinigte Fläche (Abtragssimulation)
+    if (!polys.length && !hasMp) return;
     let region, un = null;
     try {
-      un = pcRobust('union', polys[0], ...polys.slice(1));
+      un = hasMp ? pk.mp : pcRobust('union', polys[0], ...polys.slice(1));
       region = pcRobust('intersection', topMP, un);   // was über die Bauteilkontur hinausgeht, wird abgeschnitten
     } catch (e) { region = null; }
     if (region && region.length) (fromBelow ? defsB : defs).push({ depth: d, region, un, layer: pk.layer });
@@ -12584,8 +12595,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 286;
-  const APP_RELEASE_TIMESTAMP = '27.10.2026, 17:45 Uhr';
+  const APP_RELEASE_NUMBER = 287;
+  const APP_RELEASE_TIMESTAMP = '28.10.2026, 09:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -17712,6 +17723,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // (Menüpunkt + Toolbar-Icon) und "DXF löschen" (Menüpunkt) - alle zusammen erst aktiv, sobald
   // ein DXF geladen ist. Wird nach jedem Laden/Löschen aufgerufen.
   function updateDxfUI() {
+    updateAbtragUI();   // Release 287
     // 70. Runde, Punkt 22: an dieser Stelle laufen ausnahmslos ALLE Änderungen zusammen, die die
     // Spiegel-/Dreh-Anker-Korrektur betreffen können (Laden/Löschen, beide Spiegeln-Umschalter,
     // "DXF drehen" bestätigen) - siehe recomputeDxfAnchorCorrection()/dxfAnchorCorrection oben.
@@ -20284,6 +20296,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfNamedSchmiegeEnabled,   // Release 270: Checkbox "Schmiege aus Layer Schmiege_vorn/_hinten"
       dxfMortiseMesh, dxfPartType, // Release 249
       dxfKrm,   // Release 278
+      abtragMeshRef: abtragOn ? ensureAbtragMesh() : null,   // Release 287: neues Abtrag-Netz -> neu backen
       // Release 227 (siehe Deklaration von dxfOutlineColor weiter oben): muss hier genauso wie
       // dxfThicknessColor mitgeführt werden - sonst exakt derselbe Bake-Cache-Bug wie in Release 218
       // (siehe dortiger Kommentar): eine reine Änderung der Outline-Farbe (ohne Änderung von
@@ -20311,6 +20324,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.tx === b.tx && a.ty === b.ty && a.tz === b.tz &&
       a.showRapid === b.showRapid && a.hasStarted === b.hasStarted &&
       a.hiddenOpsVersion === b.hiddenOpsVersion &&
+      a.abtragMeshRef === b.abtragMeshRef &&   // Release 287
       a.bg === b.bg &&
       a.dxfGeometry === b.dxfGeometry && a.dxfOffX === b.dxfOffX && a.dxfOffY === b.dxfOffY && a.dxfOffZ === b.dxfOffZ && a.dxfVisible === b.dxfVisible &&
       a.dxfMirrorX === b.dxfMirrorX && a.dxfMirrorY === b.dxfMirrorY && a.dxfRotateDeg === b.dxfRotateDeg && a.dxfThickness === b.dxfThickness && a.dxfScale === b.dxfScale &&
@@ -21644,6 +21658,280 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     viewInteractionTimer = setTimeout(() => { viewInteractionTimer = null; requestRender(); }, 180);
   }
   const mortiseRenderScale = () => (performance.now() < viewInteractionUntil && mortiseLastFullMs > 20 ? 0.5 : 1);
+  // ============================================================
+  // Release 287: Abtragssimulation (Sebastian: "Abtragssimulation einbauen, wie bereits in der Vorschau ... Checkbox
+  // "Abtragsimulation" ... Dieser Haken kann gesetzt werden, sobald ein Rohteil erstellt worden ist (über Bauteil erstellen-
+  // Button). Wenn aktiv, wird die Abtragsimulation Material abtragen, immer nach dem Schritt bzw. Satz CNC-Code der aktuell
+  // simuliert worden ist ... Wenn Arbeitsgänge ausgeblendet werden, werden diese auch nicht bei der Abtragsimulation
+  // berücksichtigt. Aktiviert man die Abtragsimulation nachträglich, geht das Programm auch zum Programmanfang.").
+  // Verfahren (siehe Konzept_Abtragssimulation.md, Stufe 1 + waagerechte Bohrungen):
+  //  - Quelle: alle Bahnpunkte in Programmreihenfolge (beim einzelnen Arbeitsgang die vorherigen als fertig), bis zur
+  //    aktuellen Wiedergabeposition; Punkte ausgeblendeter Arbeitsgänge tragen nichts ab.
+  //  - senkrechter Fräser: Werkzeugmittelpunktbahn (Radiuskorrektur wie drawTool), je Bahnstück eine "Kapsel" (Rechteck +
+  //    Halbkreise, Werkzeugradius) mit Tiefe = Oberseite - Werkzeugspitze; Säge: Fuge in Blattstärke; waagerechtes Werkzeug:
+  //    Bohrloch (Zylinder um die Achse, wie die horizontalen Bohrungen); schräge Werkzeuge werden (noch) übersprungen.
+  //  - je Tiefe eine schrittweise vereinigte Fläche (polygon-clipping) mit Zwischenständen fürs Zurückspulen.
+  //  - Abfall: die durchgefrästen Flächen teilen das Rohteil in Stücke; Stücke am Rand des Rohteils werden entfernt, wenn
+  //    noch ein Stück ohne Randkontakt bleibt. Hängt alles zusammen (Steg unten/seitlich), bleibt alles stehen.
+  //  - Darstellung: Netz aus buildMortiseMesh() (Taschen mit fertiger Fläche "mp"), gezeichnet mit drawMortiseBody().
+  var abtragOn = false;
+  var abtragState = null;      // Vorberechnung + vereinigte Flächen (siehe abtragPrepare)
+  var abtragMesh = null;       // zuletzt gebautes Netz
+  var abtragMeshTarget = -1;   // Position, für die abtragMesh gilt
+  var abtragLastBuild = 0;
+  var abtragPendingTimer = 0;
+  var ABTRAG_CHECKPOINT_EVERY = 120;   // Zwischenstand alle n Kapseln
+  function abtragAvailable() { return !!(dxfCreatedPart && dxfGeometry && dxfKonturLoop && dxfKonturLoop.length >= 3 && dxfThickness && !dxfKrm); }
+  // robuste Boolesche Operationen (Rundung auf 1e-3 / 1e-2 / 1e-1 mm bei Abbruch von polygon-clipping)
+  const abtragSnap = (a, g) => (typeof a[0] === 'number' ? [Math.round(a[0] * g) / g, Math.round(a[1] * g) / g] : a.map(q => abtragSnap(q, g)));
+  function abtragOp(name, ...gs) {
+    const PC = polygonClipping;
+    try { return PC[name](...gs); } catch (e) { /* gerundet erneut */ }
+    for (const g of [1e3, 1e2, 1e1]) { try { return PC[name](...gs.map(m => abtragSnap(m, g))); } catch (e) { /* gröber */ } }
+    throw new Error('polygon-clipping ' + name);
+  }
+  function abtragUnion(acc, polys) {
+    const list = (acc && acc.length ? [acc] : []).concat(polys);
+    if (!list.length) return [];
+    if (list.length === 1) return typeof list[0][0][0][0] === 'number' ? list[0] : [list[0]];   // Mehrfach- oder Einzelpolygon
+    try { return abtragOp('union', ...list); } catch (e) {
+      let out = acc && acc.length ? acc : [];
+      polys.forEach(p => { try { out = out.length ? abtragOp('union', out, p) : [p]; } catch (e2) { /* Stück auslassen */ } });
+      return out;
+    }
+  }
+  // Bahnpunkte in Programmreihenfolge (Arbeitsgang-Ansicht: vorherige Arbeitsgänge vollständig davor)
+  function abtragSource() {
+    const ctx = [];
+    segments.filter(s => s.context).forEach(seg => seg.points.forEach(p => ctx.push(Object.assign({ opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade }, p))));
+    return { list: ctx.length ? ctx.concat(points) : points, offset: ctx.length };
+  }
+  function abtragKey() {
+    return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive()].join('|');
+  }
+  // Vorberechnung: Kapseln (mit Index des Bahnpunkts, an dem sie entstehen), Bohrlochgruppen, Abbildung Welt -> DXF-Roh
+  function abtragPrepare() {
+    const { list, offset } = abtragSource();
+    const o = dxfTransformPoint({ x: 0, y: 0, z: 0 }), ex = dxfTransformPoint({ x: 1, y: 0, z: 0 }), ey = dxfTransformPoint({ x: 0, y: 1, z: 0 });
+    const A = ex.x - o.x, B = ey.x - o.x, C = ex.y - o.y, D = ey.y - o.y, det = A * D - B * C;
+    if (!(Math.abs(det) > 1e-12)) return null;
+    const toRaw = (x, y) => [(D * (x - o.x) - B * (y - o.y)) / det, (-C * (x - o.x) + A * (y - o.y)) / det];
+    const rScale = 1 / Math.sqrt(Math.abs(det));
+    const baseZ = dxfKonturLoop[0].z || 0;
+    const zBase = dxfTransformPoint({ x: 0, y: 0, z: baseZ }).z;
+    const zTop = zBase + Math.max(0, dxfThickness), T = Math.abs(dxfThickness);
+    const N = 32, RC = 1 / Math.cos(Math.PI / N);   // Kreise umschrieben (kein Restgrat an Ecken)
+    const arcPts = (c, r, a0, a1) => { const out = [], n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / (2 * Math.PI / N))); for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n, rr = (i === 0 || i === n) ? r : r * RC; out.push([c[0] + rr * Math.cos(a), c[1] + rr * Math.sin(a)]); } return out; };
+    const capsule = (a, b, r) => {
+      const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+      if (L < 1e-9) return arcPts(a, r, 0, 2 * Math.PI).slice(0, -1);
+      const ang = Math.atan2(dy, dx);
+      return arcPts(b, r, ang - Math.PI / 2, ang + Math.PI / 2).concat(arcPts(a, r, ang + Math.PI / 2, ang + 3 * Math.PI / 2));
+    };
+    const caps = [], hgroups = [];
+    let tilted = 0;
+    const pushCap = (idx, ringW, depth) => {
+      if (!(depth > 0.001)) return;
+      const ring = ringW.map(([x, y]) => toRaw(x, y));
+      ring.push(ring[0].slice());
+      caps.push({ idx, ring: [ring], depth: Math.min(T, Math.round(depth * 100) / 100) });
+    };
+    const hidden = p => p.opIndex != null && hiddenOpIndexes.has(p.opIndex);
+    const kindOf = p => {
+      if (p.toolIsBlade) return 'saw';
+      const ax = toolAxisDirection(p);
+      if (!ax || Math.abs(ax.z) > 0.99) return 'v';
+      return Math.abs(ax.z) < 0.1 ? 'h' : 'tilt';
+    };
+    const kinds = list.map(kindOf);
+    let i = 1;
+    while (i < list.length) {
+      if (list[i].rapid || hidden(list[i]) || !(list[i].toolRadius > 0)) { i++; continue; }
+      const kind = kinds[i];
+      const run = [i - 1];
+      while (i < list.length && !list[i].rapid && !hidden(list[i]) && list[i].toolRadius > 0 && kinds[i] === kind) { run.push(i); i++; }
+      if (kind === 'tilt') { tilted += run.length - 1; continue; }
+      if (kind === 'saw') {
+        for (let k = 0; k + 1 < run.length; k++) {
+          const p0 = list[run[k]], q = list[run[k + 1]];
+          const a = [p0.x, p0.y], b = [q.x, q.y], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+          const depth = zTop - Math.min(p0.z, q.z);
+          if (L < 1e-9 || !(depth > 0)) continue;
+          const ux = dx / L, uy = dy / L, w = (q.toolLength > 0 ? q.toolLength : 4) / 2, Rb = q.toolRadius || 0;
+          const below = Math.max(0, depth - T);   // Blatt unter der Unterseite: halbe Sehne dort als Überstand
+          const ext = Rb > below ? Math.sqrt(Rb * Rb - (Rb - below) * (Rb - below)) : 0;
+          const nx = -uy * w, ny = ux * w, P = [a[0] - ux * ext, a[1] - uy * ext], Q = [b[0] + ux * ext, b[1] + uy * ext];
+          pushCap(run[k + 1], [[P[0] + nx, P[1] + ny], [Q[0] + nx, Q[1] + ny], [Q[0] - nx, Q[1] - ny], [P[0] - nx, P[1] - ny]], depth);
+        }
+        continue;
+      }
+      if (kind === 'h') {
+        // waagerechtes Werkzeug: Gruppen je Bohrloch (gleiche Achse, Querlage innerhalb 40 mm)
+        run.forEach(idx => {
+          const q = list[idx], ax = toolAxisDirection(q);
+          let d = [-ax.x, -ax.y]; const L = Math.hypot(d[0], d[1]) || 1; d = [d[0] / L, d[1] / L];
+          const s = q.x * d[0] + q.y * d[1], h = -q.x * d[1] + q.y * d[0];
+          let g = hgroups[hgroups.length - 1];
+          if (!g || g.closed || Math.abs(g.d[0] - d[0]) + Math.abs(g.d[1] - d[1]) > 1e-3 || Math.hypot(h - g.h0, q.z - g.z0) > 40) { if (g) g.closed = true; g = { d, h0: h, z0: q.z, r: q.toolRadius, pts: [] }; hgroups.push(g); }
+          g.pts.push({ idx, s, h, z: q.z });
+        });
+        if (hgroups.length) hgroups[hgroups.length - 1].closed = true;
+        continue;
+      }
+      // senkrechter Fräser: Werkzeugmittelpunktbahn mit Radiuskorrektur
+      const segs = [];
+      for (let k = 0; k + 1 < run.length; k++) {
+        const p0 = list[run[k]], q = list[run[k + 1]];
+        const a = [p0.x, p0.y], b = [q.x, q.y], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), r = q.toolRadius;
+        const depth = zTop - Math.min(p0.z, q.z);
+        if (L < 1e-9) { segs.push({ a, b, r, depth, idx: run[k + 1] }); continue; }
+        const ux = dx / L, uy = dy / L, s = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0);
+        const nx = -uy * s * r, ny = ux * s * r;
+        segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: run[k + 1] });
+      }
+      for (let k = 0; k < segs.length; k++) {
+        const g = segs[k], h = segs[k + 1];
+        if (h && g.u && h.u && g.s && g.s === h.s) {
+          const cr = g.u[0] * h.u[1] - g.u[1] * h.u[0];
+          if (cr * g.s < -1e-9) {   // Außenecke: Bogen um den Eckpunkt
+            const a0 = Math.atan2(g.b[1] - g.v[1], g.b[0] - g.v[0]); let a1 = Math.atan2(h.a[1] - g.v[1], h.a[0] - g.v[0]);
+            while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI; while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+            const arc = arcPts(g.v, g.r, a0, a1);
+            for (let m = 0; m + 1 < arc.length; m++) pushCap(h.idx, capsule(arc[m], arc[m + 1], g.r), Math.max(g.depth, h.depth));
+          } else if (cr * g.s > 1e-9) {   // Innenecke: versetzte Strecken am Schnittpunkt kürzen
+            const den = (g.b[0] - g.a[0]) * (h.b[1] - h.a[1]) - (g.b[1] - g.a[1]) * (h.b[0] - h.a[0]);
+            if (Math.abs(den) > 1e-12) {
+              const t = ((h.a[0] - g.a[0]) * (h.b[1] - h.a[1]) - (h.a[1] - g.a[1]) * (h.b[0] - h.a[0])) / den;
+              if (t > 0 && t < 1) { const X = [g.a[0] + (g.b[0] - g.a[0]) * t, g.a[1] + (g.b[1] - g.a[1]) * t]; g.b = X; h.a = X; }
+            }
+          }
+        }
+        pushCap(g.idx, capsule(g.a, g.b, g.r), g.depth);
+      }
+    }
+    caps.sort((p, q) => p.idx - q.idx);
+    return { key: abtragKey(), list, offset, caps, hgroups, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
+  }
+  // vereinigte Flächen bis einschließlich Bahnpunkt target
+  function abtragAdvance(st, target) {
+    let n = 0;
+    while (n < st.caps.length && st.caps[n].idx <= target) n++;
+    if (n < st.done) {
+      let cp = st.checkpoints[0];
+      st.checkpoints.forEach(c => { if (c.done <= n && c.done >= cp.done) cp = c; });
+      st.levels = new Map(cp.levels); st.done = cp.done;
+    }
+    while (st.done < n) {
+      const stop = Math.min(n, (Math.floor(st.done / ABTRAG_CHECKPOINT_EVERY) + 1) * ABTRAG_CHECKPOINT_EVERY);
+      const byDepth = new Map();
+      for (let k = st.done; k < stop; k++) { const c = st.caps[k]; let l = byDepth.get(c.depth); if (!l) { l = []; byDepth.set(c.depth, l); } l.push(c.ring); }
+      byDepth.forEach((polys, d) => { st.levels.set(d, abtragUnion(st.levels.get(d), polys)); });
+      st.done = stop;
+      if (stop % ABTRAG_CHECKPOINT_EVERY === 0 && !st.checkpoints.some(c => c.done === stop)) st.checkpoints.push({ done: stop, levels: new Map(st.levels) });
+    }
+  }
+  function abtragBuildMesh(st, target) {
+    const t0 = performance.now();
+    abtragAdvance(st, target);
+    const T = st.T;
+    const stockRing = dxfKonturLoop.map(p => [p.x, p.y]); stockRing.push(stockRing[0].slice());
+    let pockets = Array.from(st.levels.entries()).filter(([, mp]) => mp && mp.length).map(([depth, mp]) => ({ depth, mp, loops: [], layer: 'Abtrag' }));
+    let contour = dxfKonturLoop.map(p => ({ x: p.x, y: p.y }));
+    const info = { target, caps: st.done, levels: pockets.length, pieces: 1, waste: 0, kept: 1, removed: false, tilted: st.tilted };
+    const through = pockets.filter(p => p.depth >= T - 1e-6);
+    if (through.length) {
+      try {
+        const T1 = through.length === 1 ? through[0].mp : abtragOp('union', ...through.map(p => p.mp));
+        const pieces = abtragOp('difference', [[stockRing]], T1);
+        const area = ring => { let a = 0; for (let k = 0; k + 1 < ring.length; k++) a += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1]; return Math.abs(a / 2); };
+        const big = pieces.filter(pc => area(pc[0]) > 1);
+        // Randkontakt: Eckpunkt auf dem Umriss des Rohteils
+        const onStock = ([x, y]) => {
+          for (let k = 0; k + 1 < stockRing.length; k++) {
+            const a = stockRing[k], b = stockRing[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy || 1;
+            const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / l2));
+            if (Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t) < 1e-2) return true;
+          }
+          return false;
+        };
+        const atBorder = pc => pc[0].some(onStock);
+        const waste = big.filter(atBorder), kept = big.filter(pc => !atBorder(pc));
+        Object.assign(info, { pieces: big.length, waste: waste.length, kept: kept.length });
+        if (waste.length && kept.length) {
+          kept.sort((p, q) => area(q[0]) - area(p[0]));
+          contour = kept[0][0].slice(0, -1).map(([x, y]) => ({ x, y }));
+          const holes = kept[0].slice(1);
+          pockets = pockets.filter(p => p.depth < T - 1e-6);
+          if (holes.length) pockets.push({ depth: T, mp: holes.map(r => [r]), loops: [], layer: 'Abtrag' });
+          info.removed = true;
+          info.keptArea = Math.round(area(kept[0][0]));
+          info.extraKept = kept.length - 1;
+        }
+      } catch (e) { info.error = String(e); }
+    }
+    const z0 = dxfKonturLoop[0].z || 0;
+    let mesh = null;
+    try { mesh = buildMortiseMesh(contour.map(p => ({ x: p.x, y: p.y, z: z0 })), pockets, dxfThickness, null, { allowPlain: true }); } catch (e) { info.error = String(e); mesh = null; }
+    // waagerechte Bohrungen (bis zur aktuellen Position)
+    const bores = [];
+    st.hgroups.forEach((g, gi) => {
+      const pts = g.pts.filter(q => q.idx <= target);
+      if (pts.length < 2 || !(g.r > 0)) return;
+      const hs = pts.map(q => q.h), zs = pts.map(q => q.z);
+      const hc = (Math.min(...hs) + Math.max(...hs)) / 2, zc = (Math.min(...zs) + Math.max(...zs)) / 2;
+      const rad = Math.max(...pts.map(q => Math.hypot(q.h - hc, q.z - zc))) + g.r;
+      const s0 = Math.min(...pts.map(q => q.s)) - 5, s1 = Math.max(...pts.map(q => q.s));
+      const P = (s, h) => [s * g.d[0] - h * g.d[1], s * g.d[1] + h * g.d[0]];
+      const e = P(s0, hc), f = P(s1, hc), er = st.toRaw(e[0], e[1]), fr = st.toRaw(f[0], f[1]);
+      const dr = Math.hypot(fr[0] - er[0], fr[1] - er[1]);
+      if (!(dr > 1e-6)) return;
+      bores.push({ id: 'A' + gi, kind: 'A', shape: 'round', entry: er, end: fr, tail: er, dia: 2 * rad * st.rScale, rw: 2 * rad * st.rScale, rh: 2 * rad, depth: dr, ext: 'none', zc: zc - st.zBase });
+    });
+    if (mesh && bores.length) mesh.bores = bores;
+    info.bores = bores.length;
+    info.ms = Math.round(performance.now() - t0);
+    window.__lastAbtragInfo = info;
+    return mesh;
+  }
+  // liefert das Netz für die aktuelle Wiedergabeposition (oder null); beim Abspielen höchstens alle 200 ms neu
+  function ensureAbtragMesh() {
+    if (!abtragOn || !abtragAvailable()) return null;
+    if (!abtragState || abtragState.key !== abtragKey()) {
+      try { abtragState = abtragPrepare(); } catch (e) { abtragState = null; window.__lastAbtragInfo = { error: String(e) }; }
+      abtragMesh = null; abtragMeshTarget = -1;
+      if (!abtragState) return null;
+    }
+    const target = points.length ? abtragState.offset + scrubIdx : -1;
+    if (abtragMesh && target === abtragMeshTarget) return abtragMesh;
+    const now = performance.now();
+    if (abtragMesh && playing && now - abtragLastBuild < 200) {
+      if (!abtragPendingTimer) abtragPendingTimer = setTimeout(() => { abtragPendingTimer = 0; requestRender(); }, 210 - (now - abtragLastBuild));
+      return abtragMesh;
+    }
+    const m = abtragBuildMesh(abtragState, target);
+    abtragLastBuild = performance.now();
+    if (m) { abtragMesh = m; abtragMeshTarget = target; }
+    return abtragMesh;
+  }
+  function updateAbtragUI() {
+    const chk = el('chkAbtrag');
+    if (!chk) return;
+    const avail = abtragAvailable();
+    chk.disabled = !avail;
+    if (!avail && abtragOn) { abtragOn = false; abtragState = null; abtragMesh = null; }
+    chk.checked = abtragOn;
+    el('abtragToggle').classList.toggle('is-disabled', !avail);
+  }
+  function setAbtragOn(on) {
+    abtragOn = !!on && abtragAvailable();
+    abtragState = null; abtragMesh = null; abtragMeshTarget = -1;
+    // Einschalten -> zum Programmanfang (Wiedergabe gestoppt, Position 0)
+    if (abtragOn && points.length) stopPlayback();
+    updateAbtragUI();
+    bakeParams = null;
+    requestRender();
+  }
+
   function drawMortiseBody(proj, mesh, baseZ) {
     const m = ctx.getTransform();
     const sc = m.a || 1;
@@ -22383,10 +22671,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Release 249: bei aktivem Einstemmungs-Netz ("Wange, gestemmt") übernimmt das Netz samt seinen
     // tiefengeprüften Umrisslinien die Darstellung der Kontur UND der Einstemmungs-Layer - beide
     // verschwinden deshalb aus den (nicht tiefengeprüften) Drahtgitter-Kopien.
-    const meshActive = fillActive && !!dxfMortiseMesh; // Release 250: auch Stufe/Setzstufe mit Taschen
+    // Release 287: Abtragssimulation - eigenes Netz statt des normalen Bauteil-Netzes
+    const abMesh = fillActive ? ensureAbtragMesh() : null;
+    const bodyMesh = abMesh || dxfMortiseMesh;
+    window.__lastAbtragDraw = !!abMesh;
+    const meshActive = fillActive && !!bodyMesh; // Release 250: auch Stufe/Setzstufe mit Taschen
     const mortiseLayerSet = meshActive ? new Set(dxfMortiseUsedLayers) : null;
     // Release 251: die T-Linien, aus denen horizontale Bohrungen entstanden sind, werden durch die Bohrungen ersetzt
-    const boreHide = (meshActive && dxfMortiseMesh.bores && dxfHBoreHidden) ? dxfHBoreHidden : null;
+    const boreHide = (meshActive && !abMesh && dxfMortiseMesh.bores && dxfHBoreHidden) ? dxfHBoreHidden : null;
     const circHide = (meshActive && dxfVPocketHidden) ? dxfVPocketHidden : null;   // Release 253: Kreise -> vertikale Taschen
     const keepStroke = s => !(boreHide && boreHide.has(s.src)) && !(circHide && circHide.has(s.src));
     const bottomWireframeStrokes = (schmiegeActive || meshActive) ? transformedStrokes.filter(s => s.layer !== dxfKonturLayerName && !(mortiseLayerSet && mortiseLayerSet.has(s.layer)) && keepStroke(s)) : transformedStrokes;
@@ -22466,8 +22758,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (meshActive) {
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
-        const rinfo = drawMortiseBody(proj, dxfMortiseMesh, dxfKonturLoop[0].z || 0);
-        window.__lastMortiseRenderInfo = Object.assign({ thickness: dxfThickness, levels: dxfMortiseMesh.levels.length, tris: dxfMortiseMesh.tris.length, walls: dxfMortiseMesh.walls.length }, rinfo || {});
+        const rinfo = drawMortiseBody(proj, bodyMesh, dxfKonturLoop[0].z || 0);
+        window.__lastMortiseRenderInfo = Object.assign({ thickness: dxfThickness, levels: bodyMesh.levels.length, tris: bodyMesh.tris.length, walls: bodyMesh.walls.length, abtrag: !!abMesh }, rinfo || {});
       } else if (fillActive) {
         // Release 221 ("Schmiege_vorn"/"Schmiege_hinten", siehe Deklaration von dxfSchmiegeRings
         // oben sowie buildSchmiegeKonturRings() in parser.js): liegen einer oder beide der
@@ -29597,6 +29889,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
 
   btnStop.addEventListener('click', stopPlayback);
+  el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 287
 
   // Release 184: siehe gotoAdjacentOp()/updateOpNavButtons() weiter oben für die vollständige
   // Herleitung. Ein deaktivierter Button (siehe `disabled`-Attribut, von updateOpNavButtons()
