@@ -12599,8 +12599,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 289;
-  const APP_RELEASE_TIMESTAMP = '28.10.2026, 11:40 Uhr';
+  const APP_RELEASE_NUMBER = 290;
+  const APP_RELEASE_TIMESTAMP = '28.10.2026, 16:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -21717,11 +21717,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Bahnpunkte in Programmreihenfolge (Arbeitsgang-Ansicht: vorherige Arbeitsgänge vollständig davor)
   function abtragSource() {
     const ctx = [];
-    segments.filter(s => s.context).forEach(seg => seg.points.forEach(p => ctx.push(Object.assign({ opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade }, p))));
+    segments.filter(s => s.context).forEach(seg => seg.points.forEach(p => ctx.push(Object.assign({ opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolProfileId: seg.toolProfileId }, p))));
     return { list: ctx.length ? ctx.concat(points) : points, offset: ctx.length };
   }
   function abtragKey() {
-    return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive()].join('|');
+    return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
+      // Release 290: Profilwerkzeuge (Werkzeug-DXF) gehen in den Abtrag ein
+      useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(',')].join('|');
   }
   // Vorberechnung: Kapseln (mit Index des Bahnpunkts, an dem sie entstehen), Bohrlochgruppen, Abbildung Welt -> DXF-Roh
   function abtragPrepare() {
@@ -21744,27 +21746,78 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     };
     const caps = [], hgroups = [], hgrooves = [];
     let tilted = 0;
-    const pushCap = (idx, ringW, depth) => {
+    // Release 290: Profilschichten (soft) bekommen keine Umrisslinie je Stufe (sonst wirkt die Rundung wie ein schwarzes Band)
+    const softDepths = new Set();
+    const pushCap = (idx, ringW, depth, soft) => {
       if (!(depth > 0.001)) return;
+      if (soft) softDepths.add(Math.min(T, Math.round(depth * 100) / 100));
       const ring = ringW.map(([x, y]) => toRaw(x, y));
       ring.push(ring[0].slice());
       caps.push({ idx, ring: [ring], depth: Math.min(T, Math.round(depth * 100) / 100) });
     };
     const hidden = p => p.opIndex != null && hiddenOpIndexes.has(p.opIndex);
     const kindOf = p => {
-      if (p.toolIsBlade) return 'saw';
       const ax = toolAxisDirection(p);
+      // Release 290: Säge mit Dreh-/Kippwinkel (5-Achs, z. B. Schmiege) - Scheibe senkrecht zur Achse wie in der 3D-Darstellung
+      if (p.toolIsBlade) return ((p.a || 0) !== 0 || (p.b || 0) !== 0 || (p.c || 0) !== 0) && ax && Math.abs(ax.z) <= 0.99 ? 'tiltsaw' : 'saw';
       if (!ax || Math.abs(ax.z) > 0.99) return 'v';
       return Math.abs(ax.z) < 0.1 ? 'h' : 'tilt';
     };
     const kinds = list.map(kindOf);
+    // Release 290 (Sebastian: "Bitte bau das Omegaprofil und das mit dem Stufenprofil so ein."): Profilwerkzeug (Werkzeug-DXF,
+    // ";TPro <Name>") - Rotationsprofil r(dist), dist = Abstand vom programmierten Punkt Richtung Spindel
+    const profCache = new Map();
+    const profileOf = q => {
+      if (!q.toolProfileId || !useToolProfileShapes) return null;
+      if (profCache.has(q.toolProfileId)) return profCache.get(q.toolProfileId);
+      const e = getToolDxfProfileById(q.toolProfileId), rp = e ? buildToolProfileForRender(e) : null;
+      profCache.set(q.toolProfileId, rp && rp.length >= 2 ? rp : null);
+      return profCache.get(q.toolProfileId);
+    };
+    const PROF_STEP = 0.25;
+    // senkrechtes Profilwerkzeug: Schichten von 0,25 mm; je Höhe der kleinste Radius von dort bis zur Oberseite (Taschen
+    // von oben können keine Hinterschneidung darstellen)
+    const profileSlices = (rp, zTip) => {
+      const dMin = Math.min(...rp.map(q => q.dist)), dMax = Math.max(...rp.map(q => q.dist)), dTop = zTop - zTip;
+      const hs = []; for (let d = dMin; d < dTop - 1e-9; d += PROF_STEP) hs.push(d);
+      if (!hs.length) return [];
+      const out = [];
+      let rMin = abtragProfileR(rp, Math.min(dTop, dMax));
+      if (!(rMin >= 0)) rMin = Infinity;
+      for (let k = hs.length - 1; k >= 0; k--) { const r = abtragProfileR(rp, hs[k]); if (r < 0) rMin = -1; else rMin = Math.min(rMin, r); if (rMin > 0) out.push({ r: rMin, depth: zTop - (zTip + hs[k]) }); }
+      return out;
+    };
+    // Werkzeug quer zu seiner Achse verfahren (waagerechtes Profilwerkzeug, geneigter Fräser, geneigte Säge): Durchgänge
+    // gleicher Höhe merken, die Flächen entstehen in abtragSweeps()
+    const sweeps = [];
+    const dirOfP = q => { const ax = toolAxisDirection(q); const L = Math.hypot(ax.x, ax.y) || 1; return [-ax.x / L, -ax.y / L]; };
+    const sweepRun = (run, specOf) => {
+      let k = 0;
+      while (k + 1 < run.length) {
+        let m = k; while (m + 1 < run.length && Math.abs(list[run[m + 1]].z - list[run[k]].z) < 0.01) m++;
+        if (m > k) {
+          const P = [];
+          run.slice(k, m + 1).forEach(j => { const q = list[j]; if (P.length && Math.hypot(q.x - P[P.length - 1].x, q.y - P[P.length - 1].y) < 1e-6) { P[P.length - 1].d = dirOfP(q); P[P.length - 1].idx = j; return; } P.push({ x: q.x, y: q.y, d: dirOfP(q), idx: j }); });
+          if (P.length >= 2) {
+            const q = list[run[m]], ax = toolAxisDirection(q);
+            let ok = true;
+            // quer zur Achse: waagerechter Anteil der Achse (an jedem Streckenende) senkrecht zur Strecke
+            for (let i = 0; i + 1 < P.length; i++) { const dx = P[i + 1].x - P[i].x, dy = P[i + 1].y - P[i].y, l = Math.hypot(dx, dy) || 1, d = P[i + 1].d; if (Math.abs((d[0] * dx + d[1] * dy) / l) > 0.1) ok = false; }
+            if (ok) sweeps.push({ id: sweeps.length, P, zc: q.z, a: { x: ax.x, y: ax.y, z: ax.z }, spec: specOf(q) });
+            else tilted += P.length - 1;
+          }
+        }
+        k = Math.max(m, k + 1);
+      }
+    };
+    // Release 290: Bahnen ganz durch das Bauteil (für die Erkennung des Fertigteils, wenn es am Rohteilrand anliegt)
+    const loops = [];
     let i = 1;
     while (i < list.length) {
       if (list[i].rapid || hidden(list[i]) || !(list[i].toolRadius > 0)) { i++; continue; }
       const kind = kinds[i];
       const run = [i - 1];
       while (i < list.length && !list[i].rapid && !hidden(list[i]) && list[i].toolRadius > 0 && kinds[i] === kind) { run.push(i); i++; }
-      if (kind === 'tilt') { tilted += run.length - 1; continue; }
       if (kind === 'saw') {
         for (let k = 0; k + 1 < run.length; k++) {
           const p0 = list[run[k]], q = list[run[k + 1]];
@@ -21779,6 +21832,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         continue;
       }
+      if (kind === 'h' && profileOf(list[run[run.length - 1]])) { sweepRun(run, q => ({ type: 'profile', rp: profileOf(q) })); continue; }
+      if (kind === 'tilt') { sweepRun(run, q => profileOf(q) ? { type: 'profile', rp: profileOf(q) } : { type: 'cyl', R: q.toolRadius, L: q.toolLength > 0 ? q.toolLength : 100 }); continue; }
+      if (kind === 'tiltsaw') { sweepRun(run, q => ({ type: 'saw', R: q.toolRadius, t: q.toolLength > 0 ? q.toolLength : 4 })); continue; }
       if (kind === 'h') {
         // waagerechtes Werkzeug: Gruppen je Bohrloch (gleiche Achse, Querlage innerhalb 40 mm)
         // Release 289 (Sebastian: "Bei der Abtragssimulation ist die Glasnut noch nicht korrekt. Die Bahn wird dargestellt, aber
@@ -21824,10 +21880,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const p0 = list[run[k]], q = list[run[k + 1]];
         const a = [p0.x, p0.y], b = [q.x, q.y], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), r = q.toolRadius;
         const depth = zTop - Math.min(p0.z, q.z);
-        if (L < 1e-9) { segs.push({ a, b, r, depth, idx: run[k + 1] }); continue; }
+        if (L < 1e-9) { segs.push({ a, b, r, depth, idx: run[k + 1], prof: profileOf(q), zTip: Math.min(p0.z, q.z) }); continue; }
         const ux = dx / L, uy = dy / L, s = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0);
         const nx = -uy * s * r, ny = ux * s * r;
-        segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: run[k + 1] });
+        segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: run[k + 1], prof: profileOf(q), zTip: Math.min(p0.z, q.z) });
       }
       for (let k = 0; k < segs.length; k++) {
         const g = segs[k], h = segs[k + 1];
@@ -21837,7 +21893,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             const a0 = Math.atan2(g.b[1] - g.v[1], g.b[0] - g.v[0]); let a1 = Math.atan2(h.a[1] - g.v[1], h.a[0] - g.v[0]);
             while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI; while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
             const arc = arcPts(g.v, g.r, a0, a1);
-            for (let m = 0; m + 1 < arc.length; m++) pushCap(h.idx, capsule(arc[m], arc[m + 1], g.r), Math.max(g.depth, h.depth));
+            for (let m = 0; m + 1 < arc.length; m++) {
+              if (g.prof) profileSlices(g.prof, Math.min(g.zTip, h.zTip)).forEach(sl => pushCap(h.idx, capsule(arc[m], arc[m + 1], sl.r), sl.depth, true));
+              else pushCap(h.idx, capsule(arc[m], arc[m + 1], g.r), Math.max(g.depth, h.depth));
+            }
           } else if (cr * g.s > 1e-9) {   // Innenecke: versetzte Strecken am Schnittpunkt kürzen
             const den = (g.b[0] - g.a[0]) * (h.b[1] - h.a[1]) - (g.b[1] - g.a[1]) * (h.b[0] - h.a[0]);
             if (Math.abs(den) > 1e-12) {
@@ -21846,11 +21905,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             }
           }
         }
-        pushCap(g.idx, capsule(g.a, g.b, g.r), g.depth);
+        if (g.prof) profileSlices(g.prof, g.zTip).forEach(sl => pushCap(g.idx, capsule(g.a, g.b, sl.r), sl.depth, true));
+        else pushCap(g.idx, capsule(g.a, g.b, g.r), g.depth);
       }
+      // Bahnpunkte, an denen ganz durchgefräst wird (Werkzeugspitze unter der Unterseite)
+      let lp = null;
+      run.forEach(j => { const q = list[j]; if (zTop - q.z >= T - 1e-6) { if (!lp) { lp = []; loops.push(lp); } lp.push({ x: q.x, y: q.y, idx: j }); } else lp = null; });
     }
     caps.sort((p, q) => p.idx - q.idx);
-    return { key: abtragKey(), list, offset, caps, hgroups, hgrooves, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
+    softDepths.delete(T);
+    return { key: abtragKey(), softDepths, sweeps, loops, list, offset, caps, hgroups, hgrooves, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
   }
   // vereinigte Flächen bis einschließlich Bahnpunkt target
   function abtragAdvance(st, target) {
@@ -21869,6 +21933,404 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       st.done = stop;
       if (stop % ABTRAG_CHECKPOINT_EVERY === 0 && !st.checkpoints.some(c => c.done === stop)) st.checkpoints.push({ done: stop, levels: new Map(st.levels) });
     }
+  }
+  // Release 290: Radius eines Werkzeugprofils (r/dist-Punkte) an der Stelle d - an senkrechten Profilstufen der größte; -1 außerhalb
+  function abtragProfileR(rp, d) {
+    let best = -1;
+    for (let k = 0; k + 1 < rp.length; k++) {
+      const a = rp[k], b = rp[k + 1], lo = Math.min(a.dist, b.dist), hi = Math.max(a.dist, b.dist);
+      if (d < lo - 1e-9 || d > hi + 1e-9) continue;
+      const r = Math.abs(hi - lo) < 1e-9 ? Math.max(Math.abs(a.r), Math.abs(b.r)) : Math.abs(a.r + (b.r - a.r) * (d - a.dist) / (b.dist - a.dist));
+      if (r > best) best = r;
+    }
+    return best;
+  }
+  // Release 290 (Sebastian: "Bitte bau das Omegaprofil und das mit dem Stufenprofil so ein."): waagerechtes Profilwerkzeug
+  // (Werkzeug-DXF, z. B. Omega-Fräser D_80x45_Omega), quer zu seiner Achse verfahren. Ein Rotationskörper trägt dabei im
+  // Querschnitt genau |z - zc| <= r(w) ab (w = Abstand vom programmierten Punkt Richtung Spindel). Alle Durchgänge auf
+  // derselben Bahn (auch in Gegenrichtung) werden zu EINEM Querschnitt zusammengefasst: Oberseite zt(w) = min(oben, zc - r(w))
+  // der Durchgänge über dem Bauteil, Unterseite zb(w) = max(unten, zc + r(w)) der Durchgänge darunter. Das Band
+  // [wLo, wEnd] wird aus der 2,5D-Kontur ausgeschnitten und als gekrümmte Flächen (faces3) ergänzt - an der Kontur
+  // beschnitten, mit Stirnflächen an Konturkanten und an Stellen, wo sich der Querschnitt ändert (Durchgang erst bis
+  // zur aktuellen Position gefahren). Liefert { faces3, rings, contour, info } oder null.
+  // Erweitert (Sebastian: "Beim "Schmiegen fuer Z-Setzstufen" (mit der Säge) und "Schmiegen schlichten" (mit Fräser) wird
+  // kein Material abgetragen. Das sind zwei 5-Achs Bearbeitungen"): jedes Werkzeug, das quer zu seiner Achse fährt (Profil,
+  // geneigter Fräser, geneigte Säge), schneidet im Querschnitt seine Silhouette K aus (Profil um die Achse; Fräser =
+  // Rechteck Spitze..Länge x Durchmesser; Säge = Scheibe von der Spitze aus in Achsrichtung Blattstärke dick, Radius quer).
+  // Querschnitt = Band - Vereinigung aller K; abgetrennte Teile (ohne Verbindung zum übrigen Bauteil) fallen weg. Gerade,
+  // parallele Bahnen (z. B. Säge- und Fräserbahn derselben Schmiege) teilen sich EINEN Querschnitt.
+  function abtragSweeps(st, target, contour) {
+    const act = (st.sweeps || []).map(sw => ({ sw, done: sw.P.filter(p => p.idx <= target).length })).filter(a => a.done >= 2);
+    if (!act.length || !contour || contour.length < 3) return null;
+    const area2 = ring => { let a = 0; for (let k = 0; k < ring.length; k++) { const p = ring[k], q = ring[(k + 1) % ring.length]; a += p.x * q.y - q.x * p.y; } return a; };
+    const ckey = contour.length + '|' + contour[0].x.toFixed(3) + '|' + contour[0].y.toFixed(3) + '|' + area2(contour).toFixed(1);
+    const key = ckey + '#' + act.map(a => a.sw.id + ':' + a.done).join(',');
+    if (!st.sweepCache) st.sweepCache = new Map();
+    if (st.sweepCache.has(key)) return st.sweepCache.get(key);
+    const t0 = performance.now();
+    const PC = polygonClipping, EC = earcut;
+    const zT = st.zTop, zB = st.zTop - st.T, zBase = st.zBase;
+    const rAt = abtragProfileR;
+    // Gruppen: gleiche Bahn (auch in Gegenrichtung) oder gerade, parallele Bahnen; Abdeckung je Durchgang als Indexbereich
+    const groups = [];
+    const straightDir = P => {
+      const a = P[0], b = P[P.length - 1], L = Math.hypot(b.x - a.x, b.y - a.y);
+      if (L < 1e-6) return null;
+      const t = [(b.x - a.x) / L, (b.y - a.y) / L];
+      return P.every(p => Math.abs(-(p.x - a.x) * t[1] + (p.y - a.y) * t[0]) < 0.05) ? t : null;
+    };
+    act.forEach(({ sw, done }) => {
+      const P = sw.P, n = P.length;
+      const ps = { zc: sw.zc, spec: sw.spec, a: sw.a };
+      const same = (g, rev) => g.P && g.P.length === n && g.P.every((p, i) => { const q = P[rev ? n - 1 - i : i]; return Math.hypot(p.x - q.x, p.y - q.y) < 0.05; });
+      let g = null, rev = false;
+      for (const q of groups) { if (same(q, false)) { g = q; break; } if (same(q, true)) { g = q; rev = true; break; } }
+      if (g) { ps.wOff = 0; ps.from = rev ? n - done : 0; ps.to = rev ? n - 1 : done - 1; g.passes.push(ps); return; }
+      const t = straightDir(P);
+      if (t) {
+        g = groups.find(q => q.line && Math.abs(q.t[0] * t[1] - q.t[1] * t[0]) < 1e-3);
+        if (!g) { g = { line: true, t, O: { x: P[0].x, y: P[0].y }, d: P[0].d, passes: [] }; groups.push(g); }
+        const sOf = p => (p.x - g.O.x) * g.t[0] + (p.y - g.O.y) * g.t[1];
+        ps.s0 = sOf(P[0]); ps.s1 = sOf(P[done - 1]);
+        ps.wOff = -((P[0].x - g.O.x) * g.d[0] + (P[0].y - g.O.y) * g.d[1]);
+        g.passes.push(ps);
+        return;
+      }
+      g = { P, passes: [] }; groups.push(g);
+      ps.wOff = 0; ps.from = 0; ps.to = done - 1; g.passes.push(ps);
+    });
+    // gerade Gruppen: Bezugsbahn aus allen Anfangs-/End-/Fortschrittspunkten
+    groups.forEach(g => {
+      if (!g.line) return;
+      const ss = Array.from(new Set(g.passes.flatMap(ps => [ps.s0, ps.s1].map(v => Math.round(v * 1e4) / 1e4)))).sort((a, b) => a - b);
+      g.P = ss.map(sv => ({ x: g.O.x + g.t[0] * sv, y: g.O.y + g.t[1] * sv, d: g.d }));
+      const ix = v => { const r = Math.round(v * 1e4) / 1e4; return ss.indexOf(r); };
+      g.passes.forEach(ps => { const a = ix(ps.s0), b = ix(ps.s1); ps.from = Math.min(a, b); ps.to = Math.max(a, b); });
+    });
+    const Cw = contour.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
+    const inside = (x, y) => { let c = false; for (let i = 0, j = Cw.length - 1; i < Cw.length; j = i++) { const a = Cw[i], b = Cw[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+    let ar = 0; for (let i = 0; i < Cw.length; i++) { const a = Cw[i], b = Cw[(i + 1) % Cw.length]; ar += a[0] * b[1] - b[0] * a[1]; }
+    const ccw = ar > 0, CwRing = Cw.concat([Cw[0]]);
+    const raw = (x, y, z) => { const r = st.toRaw(x, y); return [r[0], r[1], z - zBase]; };
+    const faces3 = [], rings = [], bands = [];
+    const push = (v, r, kind) => faces3.push({ v, r, kind });
+    let cutMP = [[CwRing.map(p => st.toRaw(p[0], p[1]))]];
+    const info = { groups: groups.length, skipped: 0, sections: 0, faces: 0, ms: 0 };
+    // Silhouette K eines Durchgangs im Querschnitt (w = Richtung -d der Bezugsbahn, z); Achse durch den programmierten Punkt
+    const kPoly = (ps, ew) => {
+      let aw = ps.a.x * ew[0] + ps.a.y * ew[1], az = ps.a.z;
+      const al = Math.hypot(aw, az); if (al < 1e-9) return null; aw /= al; az /= al;
+      const pw = -az, pz = aw, c0 = [ps.wOff, ps.zc];
+      const at = (sv, r) => [c0[0] + sv * aw + r * pw, c0[1] + sv * az + r * pz];
+      let prof;
+      if (ps.spec.type === 'profile') prof = ps.spec.rp.map(q => [q.dist, Math.abs(q.r)]);
+      else if (ps.spec.type === 'saw') prof = [[0, ps.spec.R], [ps.spec.t, ps.spec.R]];
+      else prof = [[0, ps.spec.R], [ps.spec.L, ps.spec.R]];
+      const left = prof.map(([sv, r]) => at(sv, r)), right = prof.map(([sv, r]) => at(sv, -r)).reverse();
+      const ring = left.concat(right); ring.push(ring[0].slice());
+      return [[ring]];
+    };
+    // Querschnitt aus einer Menge von Durchgängen: Stützstellen W, Oberseite ZT, Unterseite ZB (je w ein Materialintervall)
+    const section = (passes, ew, isMatW) => {
+      const Ks = passes.map(ps => kPoly(ps, ew)).filter(Boolean);
+      if (!Ks.length) return null;
+      let KU;
+      try { KU = Ks.length === 1 ? Ks[0] : abtragOp('union', ...Ks); } catch (e) { return null; }
+      const big = 1e5, strip = [[[[-big, zB], [big, zB], [big, zT], [-big, zT], [-big, zB]]]];
+      let Kc; try { Kc = abtragOp('intersection', KU, strip); } catch (e) { return null; }
+      let dMin = Infinity, dMax = -Infinity;
+      Kc.forEach(poly => poly.forEach(ring => ring.forEach(([w]) => { dMin = Math.min(dMin, w); dMax = Math.max(dMax, w); })));
+      if (!(dMax - dMin > 1e-6)) return null;
+      const lo = dMin - 0.5, hi = dMax + 0.5, ifLo = isMatW(lo - 0.5), ifHi = isMatW(hi + 0.5);
+      let S; try { S = abtragOp('difference', [[[[lo, zB], [hi, zB], [hi, zT], [lo, zT], [lo, zB]]]], KU); } catch (e) { return null; }
+      const bb = poly => { let a = Infinity, b = -Infinity; poly[0].forEach(([w]) => { a = Math.min(a, w); b = Math.max(b, w); }); return [a, b]; };
+      const areaP = poly => { let A = 0; poly.forEach((ring, ri) => { let x = 0; for (let k = 0; k + 1 < ring.length; k++) x += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1]; A += (ri ? -1 : 1) * Math.abs(x / 2); }); return A; };
+      let kept = S.filter(poly => { const [a, b] = bb(poly); return (ifLo && a <= lo + 1e-6) || (ifHi && b >= hi - 1e-6); });
+      if (!ifLo && !ifHi) kept = S.length ? [S.slice().sort((p, q) => areaP(q) - areaP(p))[0]] : [];
+      // Stützstellen: knapp neben jedem Eckpunkt (senkrechte Kanten beidseitig) und an den Bandgrenzen
+      const ws = new Set([lo, hi]);
+      kept.forEach(poly => poly.forEach(ring => ring.forEach(([w], k) => {
+        if (!(w > lo + 3e-4 && w < hi - 3e-4)) return;
+        const nb = ring[k + 1] || ring[1];
+        if (nb && Math.abs(nb[0] - w) < 1e-6) { ws.add(Math.round((w - 2e-4) * 1e6) / 1e6); ws.add(Math.round((w + 2e-4) * 1e6) / 1e6); }   // senkrechte Kante
+        else ws.add(Math.round(w * 1e6) / 1e6);
+      })));
+      const W = Array.from(ws).sort((a, b) => a - b);
+      const mid = (zT + zB) / 2;
+      let approx = 0;
+      const ZT = [], ZB = [];
+      W.forEach(w0 => {
+        const w = Math.min(hi - 1e-4, Math.max(lo + 1e-4, w0));   // an den Bandgrenzen knapp innen auswerten
+        const ivs = [];
+        kept.forEach(poly => {
+          const zs = [];
+          poly.forEach(ring => { for (let k = 0; k + 1 < ring.length; k++) { const [w1, z1] = ring[k], [w2, z2] = ring[k + 1]; if ((w1 <= w) !== (w2 <= w)) zs.push(z1 + (z2 - z1) * (w - w1) / (w2 - w1)); } });
+          zs.sort((a, b) => a - b);
+          for (let k = 0; k + 1 < zs.length; k += 2) if (zs[k + 1] - zs[k] > 1e-9) ivs.push([zs[k], zs[k + 1]]);
+        });
+        if (!ivs.length) {
+          // kein Material: Höhe des nächstgelegenen Eckpunkts (spitz auslaufende Kante bleibt spitz, keine schräge Fläche)
+          let best = null, bd = Infinity;
+          kept.forEach(poly => poly.forEach(ring => ring.forEach(([pw, pz]) => { const dd = Math.abs(pw - w); if (dd < bd) { bd = dd; best = pz; } })));
+          const zz = best == null ? mid : best;
+          ZT.push(zz); ZB.push(zz); return;
+        }
+        if (ivs.length > 1) approx++;
+        ZB.push(Math.min(...ivs.map(v => v[0]))); ZT.push(Math.max(...ivs.map(v => v[1])));
+      });
+      if (approx) info.approx = (info.approx || 0) + approx;
+      const interp = (Z, w) => { if (w <= W[0]) return Z[0]; if (w >= W[W.length - 1]) return Z[W.length - 1]; let k = 0; while (k + 2 < W.length && W[k + 1] < w) k++; const f = (w - W[k]) / ((W[k + 1] - W[k]) || 1); return Z[k] + (Z[k + 1] - Z[k]) * Math.max(0, Math.min(1, f)); };
+      let rMax = 0; Ks.forEach(k => k[0][0].forEach(([w, z]) => { rMax = Math.max(rMax, Math.hypot(w, z - (zT + zB) / 2)); }));
+      return { W, ZT, ZB, zt: w => interp(ZT, w), zb: w => interp(ZB, w), rMax: Math.min(rMax, 400) };
+    };
+    // Bahn (Punkte mit Achsrichtung d) für einen Querschnitt als Flächen ausgeben
+    const emit = (Praw, sec, extS, extE) => {
+      const { W, ZT, ZB } = sec;
+      const tang = (a, b) => { const x = b.x - a.x, y = b.y - a.y, l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+      let P = Praw.slice();
+      const E = sec.rMax + 2;
+      if (extS) { const t = tang(P[0], P[1]); P.unshift({ x: P[0].x - t[0] * E, y: P[0].y - t[1] * E, d: P[0].d }); }
+      if (extE) { const t = tang(P[P.length - 2], P[P.length - 1]); P.push({ x: P[P.length - 1].x + t[0] * E, y: P[P.length - 1].y + t[1] * E, d: P[P.length - 1].d }); }
+      // Strecken in Stücke <= 20 mm teilen (lange, schmale Dreiecke vermeiden)
+      const Pe = [P[0]];
+      for (let i = 0; i + 1 < P.length; i++) {
+        const a = P[i], b = P[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 20));
+        for (let k = 1; k < n; k++) { const f = k / n, dx = a.d[0] + (b.d[0] - a.d[0]) * f, dy = a.d[1] + (b.d[1] - a.d[1]) * f, dl = Math.hypot(dx, dy) || 1; Pe.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, d: [dx / dl, dy / dl] }); }
+        Pe.push(b);
+      }
+      const Q = (i, w) => [Pe[i].x - Pe[i].d[0] * w, Pe[i].y - Pe[i].d[1] * w];
+      const band = []; for (let i = 0; i < Pe.length; i++) band.push(Q(i, W[0])); for (let i = Pe.length - 1; i >= 0; i--) band.push(Q(i, W[W.length - 1]));
+      const bandRaw = band.map(p => st.toRaw(p[0], p[1])); bandRaw.push(bandRaw[0].slice());
+      bands.push(bandRaw);
+      try { cutMP = abtragOp('difference', cutMP, [[bandRaw]]); } catch (e) { info.cutError = String(e); }
+      const ins = Pe.map((p, i) => W.map(w => { const q = Q(i, w); return inside(q[0], q[1]); }));
+      const strip = (i, j, top) => {
+        const zs = top ? ZT : ZB;
+        if (ZT[j] - ZB[j] < 1e-6 && ZT[j + 1] - ZB[j + 1] < 1e-6) return;
+        const A = Q(i, W[j]), B = Q(i + 1, W[j]), C = Q(i + 1, W[j + 1]), D = Q(i, W[j + 1]);
+        const nIn = ins[i][j] + ins[i + 1][j] + ins[i + 1][j + 1] + ins[i][j + 1];
+        const dz = top ? -0.5 : 0.5;
+        const tri = (a, b, c) => { const pa = raw(a[0], a[1], a[2]), pb = raw(b[0], b[1], b[2]), pc = raw(c[0], c[1], c[2]); push([pa, pb, pc], [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3 + dz], top ? 'sweepTop' : 'sweepBot'); };
+        if (nIn === 4) { tri([A[0], A[1], zs[j]], [B[0], B[1], zs[j]], [C[0], C[1], zs[j + 1]]); tri([A[0], A[1], zs[j]], [C[0], C[1], zs[j + 1]], [D[0], D[1], zs[j + 1]]); return; }
+        if (W[j + 1] - W[j] < 1e-3) {
+          // senkrechte Profilstufe (Streifen fast ohne Breite): entlang der Mittellinie eindimensional beschneiden
+          const M0 = [(A[0] + D[0]) / 2, (A[1] + D[1]) / 2], M1 = [(B[0] + C[0]) / 2, (B[1] + C[1]) / 2];
+          const ts = [0, 1], vx = M1[0] - M0[0], vy = M1[1] - M0[1];
+          for (let e = 0; e < Cw.length; e++) {
+            const p = Cw[e], q = Cw[(e + 1) % Cw.length], ex = q[0] - p[0], ey = q[1] - p[1], den = vx * ey - vy * ex;
+            if (Math.abs(den) < 1e-12) continue;
+            const t = ((p[0] - M0[0]) * ey - (p[1] - M0[1]) * ex) / den, u = ((p[0] - M0[0]) * vy - (p[1] - M0[1]) * vx) / den;
+            if (t > 0 && t < 1 && u >= 0 && u <= 1) ts.push(t);
+          }
+          ts.sort((x, y) => x - y);
+          const L = (P0, P1, t) => [P0[0] + (P1[0] - P0[0]) * t, P0[1] + (P1[1] - P0[1]) * t];
+          for (let k = 0; k + 1 < ts.length; k++) {
+            const mm = L(M0, M1, (ts[k] + ts[k + 1]) / 2);
+            if (!inside(mm[0], mm[1]) || ts[k + 1] - ts[k] < 1e-9) continue;
+            const a2 = L(A, B, ts[k]), b2 = L(A, B, ts[k + 1]), c2 = L(D, C, ts[k + 1]), d2 = L(D, C, ts[k]);
+            tri([a2[0], a2[1], zs[j]], [b2[0], b2[1], zs[j]], [c2[0], c2[1], zs[j + 1]]); tri([a2[0], a2[1], zs[j]], [c2[0], c2[1], zs[j + 1]], [d2[0], d2[1], zs[j + 1]]);
+          }
+          return;
+        }
+        if (nIn === 0) {
+          // ganz außen - nur beschneiden, wenn die Kontur in das Viereck hineinragt
+          let any = false; const mnx = Math.min(A[0], B[0], C[0], D[0]), mxx = Math.max(A[0], B[0], C[0], D[0]), mny = Math.min(A[1], B[1], C[1], D[1]), mxy = Math.max(A[1], B[1], C[1], D[1]);
+          for (const p of Cw) if (p[0] >= mnx && p[0] <= mxx && p[1] >= mny && p[1] <= mxy) { any = true; break; }
+          if (!any) return;
+        }
+        let parts;
+        try { parts = PC.intersection([[[A, B, C, D, A]]], [[CwRing]]); } catch (e) { return; }
+        if (!parts || !parts.length) return;
+        const M0 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], M1 = [(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], vx = M1[0] - M0[0], vy = M1[1] - M0[1], l2 = vx * vx + vy * vy || 1;
+        const zOf = X => zs[j] + (zs[j + 1] - zs[j]) * Math.max(0, Math.min(1, ((X[0] - M0[0]) * vx + (X[1] - M0[1]) * vy) / l2));
+        const snap = p => { for (const c of [A, B, C, D]) if (Math.abs(p[0] - c[0]) < 1e-6 && Math.abs(p[1] - c[1]) < 1e-6) return c; return p; };
+        parts.forEach(poly => {
+          const flat = [], holes = [], pts = [];
+          poly.forEach((ring, ri) => { if (ri) holes.push(pts.length); ring.slice(0, -1).forEach(p0 => { const p = snap(p0); pts.push(p); flat.push(p[0], p[1]); }); });
+          const idx = EC(flat, holes.length ? holes : null);
+          for (let k = 0; k + 2 < idx.length; k += 3) { const v = [pts[idx[k]], pts[idx[k + 1]], pts[idx[k + 2]]].map(p => [p[0], p[1], zOf(p)]); tri(v[0], v[1], v[2]); }
+        });
+      };
+      for (let i = 0; i + 1 < Pe.length; i++) for (let j = 0; j + 1 < W.length; j++) { strip(i, j, true); strip(i, j, false); }
+      // Anfangsfläche bei W[0] (Material schon an der Werkzeugspitze, z. B. Rohteilkante genau an der Spitze)
+      if (ZT[0] - ZB[0] > 1e-6) {
+        for (let i = 0; i + 1 < Pe.length; i++) {
+          if (!(ins[i][0] && ins[i + 1][0])) continue;
+          const a = Q(i, W[0]), b = Q(i + 1, W[0]), dm = [(Pe[i].d[0] + Pe[i + 1].d[0]) / 2, (Pe[i].d[1] + Pe[i + 1].d[1]) / 2];
+          const p00 = raw(a[0], a[1], ZB[0]), p10 = raw(b[0], b[1], ZB[0]), p11 = raw(b[0], b[1], ZT[0]), p01 = raw(a[0], a[1], ZT[0]);
+          const ri = raw((a[0] + b[0]) / 2 - dm[0] * 0.5, (a[1] + b[1]) / 2 - dm[1] * 0.5, (ZB[0] + ZT[0]) / 2);
+          push([p00, p10, p11], ri, 'sweepStart'); push([p00, p11, p01], ri, 'sweepStart');
+        }
+      }
+      // Stirnflächen an Konturkanten innerhalb des Bandes (Bauteilenden); w(X) über die nächste Bahnstrecke
+      const wOf = X => {
+        let best = null;
+        for (let i = 0; i + 1 < Pe.length; i++) {
+          const a = Pe[i], b = Pe[i + 1], vx = b.x - a.x, vy = b.y - a.y, d = [(a.d[0] + b.d[0]) / 2, (a.d[1] + b.d[1]) / 2];
+          const det = vx * d[1] - vy * d[0];
+          if (Math.abs(det) < 1e-12) continue;
+          const rx = X[0] - a.x, ry = X[1] - a.y, u = (rx * d[1] - ry * d[0]) / det, w = (vx * ry - vy * rx) / -det;
+          const pen = u < 0 ? -u : (u > 1 ? u - 1 : 0);
+          if (!best || pen < best.pen) best = { pen, w };
+        }
+        return best ? best.w : null;
+      };
+      const bandW = band.concat([band[0]]);
+      const inBand = (x, y) => { let c = false; for (let i = 0, j = bandW.length - 2; i < bandW.length - 1; j = i++) { const a = bandW[i], b = bandW[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+      // Umriss der Stirnflächen: obere und untere Linie laufen über fast gerade Konturknicke hinweg, senkrechte Linien nur an
+      // den Enden bzw. an echten Ecken (> 20°)
+      let topL = [], botL = [], prevDir = null, hardStart = true;
+      const flushRing = hard => {
+        if (topL.length >= 2) {
+          rings.push({ pts: topL, open: true, z: 0 }); rings.push({ pts: botL, open: true, z: 0 });
+          // senkrechte Linie nicht dort, wo die Stirnfläche bündig in die volle Bauteilwand übergeht (Bandgrenze im Bauteil)
+          const full = (bp, tp) => Math.abs(tp[2] - (zT - zBase)) < 1e-3 && Math.abs(bp[2] - (zB - zBase)) < 1e-3;
+          if (hardStart && !full(botL[0], topL[0])) rings.push({ pts: [botL[0], topL[0]], open: true, z: 0 });
+          if (hard !== false && !full(botL[botL.length - 1], topL[topL.length - 1])) rings.push({ pts: [botL[botL.length - 1], topL[topL.length - 1]], open: true, z: 0 });
+        }
+        if (topL.length || hard !== false) hardStart = hard !== false;
+        topL = []; botL = [];
+      };
+      for (let e = 0; e < Cw.length; e++) {
+        const a = Cw[e], b = Cw[(e + 1) % Cw.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (L < 1e-6) continue;
+        const dirE = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+        if (prevDir && dirE[0] * prevDir[0] + dirE[1] * prevDir[1] < Math.cos(20 * Math.PI / 180)) flushRing();
+        prevDir = dirE;
+        const nOut = ccw ? [(b[1] - a[1]) / L, -(b[0] - a[0]) / L] : [-(b[1] - a[1]) / L, (b[0] - a[0]) / L];
+        // schneller Ausschluss: Kante weit weg vom Band
+        if (!inBand(a[0] - nOut[0] * 0.01, a[1] - nOut[1] * 0.01) && !inBand(b[0] - nOut[0] * 0.01, b[1] - nOut[1] * 0.01)) {
+          let hit = false;
+          for (let k = 0; k + 1 < bandW.length && !hit; k++) { const p = bandW[k], q = bandW[k + 1]; const d1 = (q[0] - p[0]) * (a[1] - p[1]) - (q[1] - p[1]) * (a[0] - p[0]), d2 = (q[0] - p[0]) * (b[1] - p[1]) - (q[1] - p[1]) * (b[0] - p[0]), d3 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]), d4 = (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]); if ((d1 > 0) !== (d2 > 0) && (d3 > 0) !== (d4 > 0)) hit = true; }
+          if (!hit) { flushRing(); continue; }
+        }
+        const n = Math.max(1, Math.ceil(L / 0.5));
+        const samp = [];
+        for (let k = 0; k <= n; k++) { const t = k / n, X = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; samp.push({ t, X, w: inBand(X[0] - nOut[0] * 0.01, X[1] - nOut[1] * 0.01) ? wOf(X) : null }); }
+        const all = [];
+        for (let k = 0; k < samp.length; k++) {
+          const s0 = samp[k], s1 = samp[k + 1]; all.push(s0);
+          if (!s1 || s0.w == null || s1.w == null) continue;
+          const lo = Math.min(s0.w, s1.w), hi = Math.max(s0.w, s1.w);
+          W.forEach(wv => { if (wv <= lo || wv >= hi) return; const t = s0.t + (s1.t - s0.t) * (wv - s0.w) / (s1.w - s0.w); all.push({ t, X: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], w: wv }); });
+        }
+        all.sort((p, q) => p.t - q.t);
+        let prev = null;
+        for (const sm of all) {
+          const cur = sm.w != null ? { X: sm.X, zt: sec.zt(sm.w), zb: sec.zb(sm.w) } : null;
+          if (prev && cur && (prev.zt - prev.zb > 1e-6 || cur.zt - cur.zb > 1e-6)) {
+            const p00 = raw(prev.X[0], prev.X[1], prev.zb), p10 = raw(cur.X[0], cur.X[1], cur.zb), p11 = raw(cur.X[0], cur.X[1], cur.zt), p01 = raw(prev.X[0], prev.X[1], prev.zt);
+            const ri = raw((prev.X[0] + cur.X[0]) / 2 - nOut[0] * 0.5, (prev.X[1] + cur.X[1]) / 2 - nOut[1] * 0.5, (prev.zb + prev.zt + cur.zb + cur.zt) / 4);
+            push([p00, p10, p11], ri, 'end1'); push([p00, p11, p01], ri, 'end1');
+            if (!topL.length || Math.hypot(topL[topL.length - 1][0] - p01[0], topL[topL.length - 1][1] - p01[1]) > 1e-6) { flushRing(false); topL.push(p01); botL.push(p00); }
+            topL.push(p11); botL.push(p10);
+          } else if (prev || !cur) flushRing(cur == null || prev == null || (Math.max(prev.zt - prev.zb, cur.zt - cur.zb) > 1e-6));
+          prev = cur;
+        }
+        if (!prev) flushRing();
+      }
+      flushRing();
+      // Kanten auf Ober-/Unterseite, wo der Abtrag nicht tangential beginnt (z. B. Rand einer Hohlkehle)
+      for (let j = 1; j + 1 < W.length; j++) {
+        [[ZT, zT], [ZB, zB]].forEach(([Z, zf]) => {
+          const atF = Math.abs(Z[j] - zf) < 1e-3, nxtCut = Math.abs(Z[j + 1] - zf) >= 1e-3, prvCut = Math.abs(Z[j - 1] - zf) >= 1e-3;
+          if (!atF || nxtCut === prvCut) return;
+          const k2 = nxtCut ? j + 1 : j - 1;
+          if (Math.abs((Z[k2] - Z[j]) / ((W[k2] - W[j]) || 1e-9)) < Math.tan(12 * Math.PI / 180)) return;
+          let pts = [];
+          for (let i = 0; i < Pe.length; i++) { const q = Q(i, W[j]); if (ins[i][j]) pts.push(raw(q[0], q[1], Z[j])); else { if (pts.length >= 2) rings.push({ pts, open: true, z: 0 }); pts = []; } }
+          if (pts.length >= 2) rings.push({ pts, open: true, z: 0 });
+        });
+      }
+    };
+    // Stufe zwischen zwei Querschnitten an Bahnpunkt p (Seite A vor, B nach dem Punkt in Bahnrichtung t)
+    const stepCap = (p, t, secA, secB) => {
+      const Ws = Array.from(new Set((secA ? secA.W : []).concat(secB ? secB.W : []))).sort((a, b) => a - b);
+      const zt = (s, w) => !s || w < s.W[0] - 1e-9 || w > s.W[s.W.length - 1] + 1e-9 ? zT : s.zt(w);
+      const zb = (s, w) => !s || w < s.W[0] - 1e-9 || w > s.W[s.W.length - 1] + 1e-9 ? zB : s.zb(w);
+      const Qp = w => [p.x - p.d[0] * w, p.y - p.d[1] * w];
+      // Teilstücke der Strecke q0-q1, die im Bauteil liegen (Parameter 0..1)
+      const clip1 = (q0, q1) => {
+        const ts = [0, 1], vx = q1[0] - q0[0], vy = q1[1] - q0[1];
+        for (let e = 0; e < Cw.length; e++) {
+          const p = Cw[e], q = Cw[(e + 1) % Cw.length], ex = q[0] - p[0], ey = q[1] - p[1], den = vx * ey - vy * ex;
+          if (Math.abs(den) < 1e-12) continue;
+          const t = ((p[0] - q0[0]) * ey - (p[1] - q0[1]) * ex) / den, u = ((p[0] - q0[0]) * vy - (p[1] - q0[1]) * vx) / den;
+          if (t > 0 && t < 1 && u >= 0 && u <= 1) ts.push(t);
+        }
+        ts.sort((x, y) => x - y);
+        const out = [];
+        for (let k = 0; k + 1 < ts.length; k++) { const tm = (ts[k] + ts[k + 1]) / 2; if (ts[k + 1] - ts[k] > 1e-9 && inside(q0[0] + vx * tm, q0[1] + vy * tm)) out.push([ts[k], ts[k + 1]]); }
+        return out;
+      };
+      for (let j = 0; j + 1 < Ws.length; j++) {
+        const w0f = Ws[j], w1f = Ws[j + 1], qa = Qp(w0f), qb = Qp(w1f);
+        clip1(qa, qb).forEach(([ta, tb]) => {
+        const w0 = w0f + (w1f - w0f) * ta, w1 = w0f + (w1f - w0f) * tb, q0 = Qp(w0), q1 = Qp(w1);
+        [[zt(secA, w0), zt(secB, w0), zt(secA, w1), zt(secB, w1), 1], [zb(secA, w0), zb(secB, w0), zb(secA, w1), zb(secB, w1), -1]].forEach(([a0, b0, a1, b1, sg]) => {
+          if (Math.abs(a0 - b0) < 1e-6 && Math.abs(a1 - b1) < 1e-6) return;
+          // Material auf der Seite mit der höheren Oberseite (bzw. tieferen Unterseite)
+          const sideA = sg > 0 ? (a0 + a1 > b0 + b1) : (a0 + a1 < b0 + b1);
+          const p00 = raw(q0[0], q0[1], Math.min(a0, b0)), p01 = raw(q0[0], q0[1], Math.max(a0, b0)), p10 = raw(q1[0], q1[1], Math.min(a1, b1)), p11 = raw(q1[0], q1[1], Math.max(a1, b1));
+          const m = [(q0[0] + q1[0]) / 2 + t[0] * (sideA ? -0.5 : 0.5), (q0[1] + q1[1]) / 2 + t[1] * (sideA ? -0.5 : 0.5)];
+          const ri = raw(m[0], m[1], (a0 + b0 + a1 + b1) / 4);
+          push([p00, p10, p11], ri, 'end1'); push([p00, p11, p01], ri, 'end1');
+        });
+        });
+      }
+    };
+    groups.forEach(g => {
+      const n = g.P.length;
+      // Abschnitte gleicher Durchgangsmenge
+      const cuts = new Set([0, n - 1]);
+      g.passes.forEach(ps => { cuts.add(ps.from); cuts.add(ps.to); });
+      const cs = Array.from(cuts).sort((a, b) => a - b);
+      const parts = [];
+      for (let k = 0; k + 1 < cs.length; k++) {
+        const a = cs[k], b = cs[k + 1];
+        const passes = g.passes.filter(ps => ps.from <= a && ps.to >= b);
+        if (!passes.length) { parts.push(null); continue; }
+        const sk = passes.map(ps => ps.zc + '/' + ps.wOff + '/' + ps.spec.type).join(',');
+        const mi = Math.round((a + b) / 2), pm = g.P[mi], pn = g.P[Math.min(n - 1, mi + 1)], po = g.P[Math.max(0, mi - 1)];
+        // Mitte des Abschnitts (bei nur zwei Punkten die Streckenmitte) für die Prüfung "Material jenseits der Bandgrenze"
+        const pc = b - a === 1 ? { x: (g.P[a].x + g.P[b].x) / 2, y: (g.P[a].y + g.P[b].y) / 2, d: g.P[a].d } : pm;
+        const ew = [-pc.d[0], -pc.d[1]];
+        const sec = section(passes, ew, w => inside(pc.x + ew[0] * w, pc.y + ew[1] * w));
+        if (!sec) { parts.push(null); continue; }
+        parts.push({ a, b, sec, sk });
+      }
+      // gleiche Nachbarabschnitte zusammenlegen
+      const merged = [];
+      parts.forEach(pt => { const l = merged[merged.length - 1]; if (pt && l && l.sk === pt.sk && l.b === pt.a) l.b = pt.b; else merged.push(pt); });
+      merged.forEach((pt, k) => {
+        if (!pt) return;
+        info.sections++;
+        const P = g.P.slice(pt.a, pt.b + 1);
+        // Bahnende außerhalb des Bauteils: Querschnitt über das Ende hinaus fortsetzen (Werkzeugkörper)
+        const outS = pt.a === 0 && !inside(P[0].x, P[0].y), outE = pt.b === n - 1 && !inside(P[P.length - 1].x, P[P.length - 1].y);
+        emit(P, pt.sec, outS, outE);
+        const nx = merged[k + 1];
+        if (nx && nx.a === pt.b) {
+          const p = g.P[pt.b], q = g.P[Math.min(n - 1, pt.b + 1)], o = g.P[Math.max(0, pt.b - 1)];
+          const tx = q.x - o.x, ty = q.y - o.y, tl = Math.hypot(tx, ty) || 1;
+          stepCap(p, [tx / tl, ty / tl], pt.sec, nx.sec);
+        }
+      });
+    });
+    let outContour = contour;
+    if (cutMP && !cutMP.length) outContour = [];   // das ganze Bauteil liegt im Band
+    else if (cutMP && cutMP.length) {
+      const area = ring => { let a = 0; for (let k = 0; k + 1 < ring.length; k++) a += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1]; return Math.abs(a / 2); };
+      const best = cutMP.slice().sort((p, q) => area(q[0]) - area(p[0]))[0];
+      outContour = best[0].slice(0, -1).map(([x, y]) => ({ x, y }));
+      info.pieces = cutMP.length;
+    }
+    info.faces = faces3.length;
+    info.ms = Math.round(performance.now() - t0);
+    const res = { faces3, rings, bands, contour: outContour, info };
+    if (st.sweepCache.size > 40) st.sweepCache.clear();
+    st.sweepCache.set(key, res);
+    return res;
   }
   function abtragBuildMesh(st, target) {
     const t0 = performance.now();
@@ -21895,7 +22357,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           return false;
         };
         const atBorder = pc => pc[0].some(onStock);
-        const waste = big.filter(atBorder), kept = big.filter(pc => !atBorder(pc));
+        let waste = big.filter(atBorder), kept = big.filter(pc => !atBorder(pc));
+        // Release 290 (Sebastian: "Wenn ein Programm fertig ist, verschwindet nicht immer das Restholz", Stufe 1000 x 300 in
+        // einem Rohteil 1010 x 400 ab 0/0): liegt das Fertigteil selbst am Rohteilrand an, berühren ALLE Stücke den Rand.
+        // Dann gilt als Fertigteil, was innerhalb einer durchgefrästen Bahn liegt (Konturbahn rund um das Teil).
+        if (!kept.length && waste.length > 1) {
+          const polys = (st.loops || []).map(lp => lp.filter(q => q.idx <= target).map(q => st.toRaw(q.x, q.y))).filter(pl => pl.length >= 3);
+          const inPoly = (pl, x, y) => { let c = false; for (let i = 0, j = pl.length - 1; i < pl.length; j = i++) { const a = pl[i], b = pl[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+          const innerPt = pc => {   // Punkt sicher im Stück: Schwerpunkt des größten Dreiecks
+            const flat = [], holes = []; let n = 0;
+            pc.forEach((ring, ri) => { if (ri) holes.push(n); ring.slice(0, -1).forEach(([x, y]) => { flat.push(x, y); n++; }); });
+            const ix = earcut(flat, holes.length ? holes : null); let best = null, ba = -1;
+            for (let k = 0; k + 2 < ix.length; k += 3) { const ax = flat[ix[k] * 2], ay = flat[ix[k] * 2 + 1], bx = flat[ix[k + 1] * 2], by = flat[ix[k + 1] * 2 + 1], cx = flat[ix[k + 2] * 2], cy = flat[ix[k + 2] * 2 + 1]; const a = Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)); if (a > ba) { ba = a; best = [(ax + bx + cx) / 3, (ay + by + cy) / 3]; } }
+            return best;
+          };
+          const enclosed = pc => { const q = innerPt(pc); return !!q && polys.some(pl => inPoly(pl, q[0], q[1])); };
+          const inner = big.filter(enclosed);
+          if (inner.length && inner.length < big.length) { kept = inner; waste = big.filter(pc => !enclosed(pc)); info.keptByLoop = true; }
+        }
         Object.assign(info, { pieces: big.length, waste: waste.length, kept: kept.length });
         if (waste.length && kept.length) {
           kept.sort((p, q) => area(q[0]) - area(p[0]));
@@ -21910,8 +22389,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       } catch (e) { info.error = String(e); }
     }
     const z0 = dxfKonturLoop[0].z || 0;
+    // Release 290: waagerechte Profilwerkzeuge (Omega) - Band aus der Kontur, gekrümmte Flächen dazu
+    let sweepRes = null;
+    try { sweepRes = abtragSweeps(st, target, contour); } catch (e) { info.sweepError = String(e); sweepRes = null; }
+    if (sweepRes) contour = sweepRes.contour;
     let mesh = null;
-    try { mesh = buildMortiseMesh(contour.map(p => ({ x: p.x, y: p.y, z: z0 })), pockets, dxfThickness, null, { allowPlain: true }); } catch (e) { info.error = String(e); mesh = null; }
+    if (contour.length >= 3) { try { mesh = buildMortiseMesh(contour.map(p => ({ x: p.x, y: p.y, z: z0 })), pockets, dxfThickness, null, { allowPlain: true }); } catch (e) { info.error = String(e); mesh = null; } }
+    // Release 290: ganzes Bauteil im Querschnitt-Band (z. B. Schmiegen vorn und hinten) - nur die Querschnittsflächen
+    else if (sweepRes) mesh = { topZ: dxfThickness > 0 ? dxfThickness : 0, botZ: dxfThickness > 0 ? 0 : dxfThickness, levels: [], levelsBelow: [], tris: [], walls: [], rings: [], info: {} };
     // waagerechte Bohrungen (bis zur aktuellen Position)
     const bores = [];
     st.hgroups.forEach((g, gi) => {
@@ -21950,6 +22435,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       bores.push({ id: 'G' + ni, kind: 'G', shape: 'prism', poly, ek: [2, 0, 0, 0], zc: n.z - st.zBase, rh: 2 * n.r });
     });
     if (mesh && bores.length) mesh.bores = bores;
+    if (mesh && sweepRes && sweepRes.faces3.length) {
+      // Umrisslinien der 2,5D-Kontur nicht auf der Bandgrenze (dort geht die Fläche bündig in den Querschnitt über)
+      const onBand = (x, y) => sweepRes.bands.some(bd => { for (let k = 0; k + 1 < bd.length; k++) { const a = bd[k], b = bd[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / l2)); if (Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t) < 0.01) return true; } return false; });
+      const split = [];
+      mesh.rings.forEach(r => {
+        if (!r.pts.length || r.pts[0].length > 2) { split.push(r); return; }
+        const n = r.pts.length, segs = r.open ? n - 1 : n;
+        let run = [], cut = false;
+        for (let k = 0; k < segs; k++) {
+          const a = r.pts[k], b = r.pts[(k + 1) % n];
+          if (onBand((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) { if (run.length >= 2) split.push(Object.assign({}, r, { pts: run, open: true })); run = []; cut = true; continue; }
+          if (!run.length) run.push(a); run.push(b);
+        }
+        if (!cut) split.push(r); else if (run.length >= 2) split.push(Object.assign({}, r, { pts: run, open: true }));
+      });
+      mesh.faces3 = sweepRes.faces3; mesh.rings = split.concat(sweepRes.rings);
+    }
+    info.sweeps = sweepRes ? sweepRes.info.sections : 0;
+    info.sweepFaces = sweepRes ? sweepRes.faces3.length : 0;
+    if (sweepRes && sweepRes.info.skipped) info.sweepSkipped = sweepRes.info.skipped;
+    if (mesh && st.softDepths && st.softDepths.size) mesh.rings = mesh.rings.filter(r => r.pts.length && r.pts[0].length > 2 || !st.softDepths.has(Math.round((mesh.topZ - r.z) * 100) / 100));
     info.bores = bores.filter(b => b.kind === 'A').length;
     info.grooves = bores.filter(b => b.kind === 'G').length;
     info.ms = Math.round(performance.now() - t0);
@@ -22102,24 +22608,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       triDrawn++;
       for (let y = minY; y <= maxY; y++) {
         const py = y + 0.5;
-        let xl = Infinity, xr = -Infinity;
+        // Release 290: jede Kante in fester Punktreihenfolge rechnen (gemeinsame Kanten zweier Dreiecke exakt gleich - keine
+        // Haarrisse) und die Tiefe entlang der Kanten interpolieren (lange, schmale Dreiecke der Profilflächen sonst ungenau)
+        let xl = Infinity, xr = -Infinity, dl = 0, dr = 0;
         for (let e = 0; e < 3; e++) {
-          const p = P[e], q = P[(e + 1) % 3];
-          if ((p.y <= py && q.y > py) || (q.y <= py && p.y > py)) {
-            const x = p.x + (py - p.y) * (q.x - p.x) / (q.y - p.y);
-            if (x < xl) xl = x;
-            if (x > xr) xr = x;
+          const p0 = P[e], q0 = P[(e + 1) % 3];
+          const sw = p0.y > q0.y || (p0.y === q0.y && p0.x > q0.x), p = sw ? q0 : p0, q = sw ? p0 : q0;
+          if (p.y <= py && q.y > py) {
+            const f = (py - p.y) / (q.y - p.y), x = p.x + f * (q.x - p.x), dd = p.d + f * (q.d - p.d);
+            if (x < xl) { xl = x; dl = dd; }
+            if (x > xr) { xr = x; dr = dd; }
           }
         }
         if (xl === Infinity) continue;
         const xs = Math.max(0, Math.ceil(xl - 0.5)), xe = Math.min(W - 1, Math.ceil(xr - 0.5) - 1);
-        let d = a.d + gx * (xs + 0.5 - a.x) + gy * (py - a.y);
+        const gxs = xr - xl > 1e-9 ? (dr - dl) / (xr - xl) : gx;
+        let d = dl + gxs * (xs + 0.5 - xl);
         let i = y * W + xs;
         if (back) {
-          for (let x = xs; x <= xe; x++, i++, d += gx) { if (d > zb[i]) zb[i] = d; }
+          for (let x = xs; x <= xe; x++, i++, d += gxs) { if (d > zb[i]) zb[i] = d; }
           continue;
         }
-        for (let x = xs; x <= xe; x++, i++, d += gx) {
+        for (let x = xs; x <= xe; x++, i++, d += gxs) {
           if (d <= NEAR) continue;
           if (d < z2[i]) {
             let cc = col;
