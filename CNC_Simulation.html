@@ -1976,7 +1976,9 @@
   /* Release 287: Abtragsimulation (Checkbox rechts von Codesprung, ausgegraut ohne Rohteil) */
   .abtrag-toggle { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
   .abtrag-toggle.is-disabled { opacity: 0.5; cursor: default; }
-  .abtrag-path-btn { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; }
+  /* Release 291: so groß wie der Messen-Knopf (#btnMeasureTransport, 36 x 26 px) */
+  .abtrag-path-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 26px; padding: 0; line-height: 1; box-sizing: border-box; }
+  .abtrag-part-toggle { margin-left: 6px; }
   .abtrag-path-btn:disabled { opacity: 0.45; cursor: default; }
   .speed-group, .jump-group {
     display: flex;
@@ -3391,6 +3393,12 @@
            behandelt. Erstellen-Icon für Bauteil links von "DXF öffnen" einfügen. Rechts vom Icon ein Trennstrich." / "Eingaben für
            X, Y und Z ermöglichen. Z wie gehabt auch negativ unter Umständen.") -->
       <button class="toolbar-btn" id="btnPartCreateIcon" type="button" title="Bauteil erstellen: rechteckiges Bauteil mit X, Y und Z anlegen - wird wie eine importierte DXF behandelt" data-i18n-en-title="Create part: create a rectangular part with X, Y and Z - treated like an imported DXF" data-i18n-en="▭ Part">▭ Bauteil</button>
+      <!-- Release 291 (Sebastian: "Es gibt rechts neben "Bauteil" auch eine Checkbox für "Abtrag". Der unten bleibt vorhanden. Wenn ich
+           es neben "Bauteil" abhake, geht der Haken bei "Abtragssimulation" weg und umgekehrt auch. Das ist dieselbe Funktion an zwei
+           Stellen.") -->
+      <label class="layer-toggle abtrag-toggle abtrag-part-toggle is-disabled" id="abtragPartToggle" title="Abtragsimulation ein/aus (dieselbe Funktion wie „Abtragsimulation“ unten)" data-i18n-en-title="Material removal simulation on/off (same function as &quot;Material removal simulation&quot; below)">
+        <input type="checkbox" id="chkAbtragPart" disabled> <span data-i18n-en="Removal">Abtrag</span>
+      </label>
       <span class="toolbar-sep" id="partCreateSep"></span>
       <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
       <!-- Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling", das Icon
@@ -3550,7 +3558,7 @@
           <input type="checkbox" id="chkAbtrag" disabled> <span data-i18n-en="Material removal simulation">Abtragsimulation</span>
         </label>
         <!-- Release 288: "CNC-Bahn verstecken" (nur bei aktiver Abtragsimulation), siehe toggleAbtragHidePath() in app.js -->
-        <button class="toolbar-btn abtrag-path-btn" id="btnAbtragHidePath" type="button" disabled aria-pressed="false" title="CNC-Bahn verstecken: nur Rohteil und Fräser zeigen (nur bei aktiver Abtragsimulation, auch während des Fräsens umschaltbar)" data-i18n-en-title="Hide CNC path: show only the stock and the cutter (only with material removal simulation active, can also be switched while milling)"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><polyline points="1,11 5,4 9,10 13,3 19,8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><line x1="3" y1="1" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <button class="toolbar-btn abtrag-path-btn" id="btnAbtragHidePath" type="button" disabled aria-pressed="false" title="CNC-Fräsbahn anzeigen/verstecken" data-i18n-en-title="Hide/Show CNC path"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><polyline points="1,11 5,4 9,10 13,3 19,8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><line x1="3" y1="1" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       </div>
     </div>
   </div>
@@ -12368,17 +12376,23 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   if (!defs.length && !defsB.length && !(opts && opts.allowPlain)) return null;
   const posDefs = defs.filter(x => x.depth > 1e-9), zeroDefs = defs.filter(x => x.depth <= 1e-9);
   const depths = Array.from(new Set(posDefs.map(x => Math.round(x.depth * 1e6) / 1e6))).sort((a, b) => a - b);
-  const C = depths.map(d => {
-    const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => x.region);
-    return rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));
-  });
+  // Release 292: C[j] = alles mit Tiefe >= depths[j] - schrittweise von der tiefsten Ebene her (C[j] = Ebene j ∪ C[j+1]) statt
+  // für jede Ebene alle tieferen neu zu vereinigen (viele Ebenen, z. B. Rampen, wurden sonst sehr langsam)
+  const C = new Array(depths.length);
+  for (let j = depths.length - 1; j >= 0; j--) {
+    const rs = posDefs.filter(x => Math.round(x.depth * 1e6) / 1e6 === depths[j]).map(x => x.region);
+    if (j + 1 < depths.length) rs.push(C[j + 1]);
+    C[j] = rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));
+  }
   const R = C.length ? pcRobust('difference', topMP, C[0]) : topMP;
   // Taschen von unten (Release 255): Regionen gegen die untere Kontur, CB[j] = alles mit Tiefe >= depthsB[j]
   const depthsB = Array.from(new Set(defsB.map(x => Math.round(x.depth * 1e6) / 1e6))).filter(d => d > 1e-9).sort((a, b) => a - b);
-  const CB = depthsB.map(d => {
-    const rs = defsB.filter(x => Math.round(x.depth * 1e6) / 1e6 >= d).map(x => { try { return PC.intersection(bottomMP, x.un); } catch (e) { return x.region; } });
-    return rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));   // Release 289: auch hier robust
-  });
+  const CB = new Array(depthsB.length);   // Release 292: schrittweise wie C
+  for (let j = depthsB.length - 1; j >= 0; j--) {
+    const rs = defsB.filter(x => Math.round(x.depth * 1e6) / 1e6 === depthsB[j]).map(x => { try { return PC.intersection(bottomMP, x.un); } catch (e) { return x.region; } });
+    if (j + 1 < depthsB.length) rs.push(CB[j + 1]);
+    CB[j] = rs.length === 1 ? rs[0] : pcRobust('union', rs[0], ...rs.slice(1));   // Release 289: auch hier robust
+  }
   const RB = CB.length ? pcRobust('difference', bottomMP, CB[0]) : bottomMP;
   // Bei schrägen Seiten (Schmiege) reicht der Boden einer Tasche bis zur Kontur AUF Bodenhöhe (zwischen unterer und
   // oberer Kontur interpoliert), nicht bis zur oberen Kontur - sonst bliebe am offenen Rand ein Streifen ohne Boden.
@@ -12599,8 +12613,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 290;
-  const APP_RELEASE_TIMESTAMP = '28.10.2026, 16:20 Uhr';
+  const APP_RELEASE_NUMBER = 292;
+  const APP_RELEASE_TIMESTAMP = '29.10.2026, 13:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -18610,6 +18624,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     updateReichenbacherSwitch();
     renderTree();
     setScope({ type: 'all' });
+    updateAbtragUI();   // Release 291: Maße aus dem Programmkopf -> Abtragsimulation ggf. direkt einschaltbar
   }
 
   // Weist jeder Zeile des geladenen Programms (Index = Zeilennummer, 0-basiert) dieselbe Farbe
@@ -21695,6 +21710,83 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // nicht fang-/anklickbar (Messen, Codesprung).
   var abtragHidePath = false;
   function abtragPathHidden() { return abtragOn && abtragHidePath; }
+  // Release 291 (Sebastian: "Die Größe des Bauteils aus dem CNC-Programm so auslesen, dass das Bauteil bei der Aktivierung der
+  // Abtragssimulation direkt angezeigt wird bzw. beim Klick auf "Bauteil" die Parameter schon vorausgefüllt werden" - "Die
+  // Parameter stehen immer im Bereich vom Programmkopf und dem ersten Kommentar"): Kennungen je Maschinentyp, gesucht wird vom
+  // Programmanfang bis zum ersten Verfahrsatz (höchstens 200 Zeilen). Liefert { x, y, z, neg } oder null (neg: SCM/Morbidelli
+  // geben die Stärke im Bauteil-Dialog mit negativem Vorzeichen aus).
+  const PROGRAM_DIM_RULES = {
+    scm: { keys: ['DX', 'DY', 'DZ'], neg: true },              // SCM, Morbidelli: "DX=" "DY=" "DZ="
+    holzher: { keys: ['DX', 'DY', 'DZ'] },                     // "DX :=" "DY :=" "DZ :="
+    homag: { keys: ['_BSX', '_BSY', '_BSZ'] },
+    krc: { keys: ['V.E.PRDLENGTH', 'V.E.PRDWIDTH', 'THICKNESS'] },   // "( THICKNESS=44.000 )"
+    biesse: { keys: ['LX', 'LY', 'PLPZ'] },
+    mkm: { line: /Plattenmasse|\bL\s*=.*\bB\s*=.*\bS\s*=/i, keys: ['L', 'B', 'S'] },   // "( Plattenmasse L=3980.57 B=502.83 S=44.00 )"
+    // Moroff, Baierl: "double material=44.40+2;" - Release 292 (Sebastian: "Bitte die "+2" ignorieren"): nur die erste Zahl
+    moroff: { keys: ['double laenge', 'double breite', 'double material'] },
+    // Release 292 (Sebastian: "Bei Format4 auch einen Bauteilmaßimport einbauen: "l=" für X "h=" für Y "t=" für Z"), klein geschrieben
+    format4: { keys: ['l', 'h', 't'], cs: true },
+    reichenbacher: { dim: true }                                                     // MSG ("DIMENSION L 3980.566 B 502.828 H 44.500")
+  };
+  function programDimFamily(name) {
+    const n = String(name || '').toLowerCase();
+    if (/^(scm|morbidelli)/.test(n)) return 'scm';
+    if (/^holzher/.test(n)) return 'holzher';
+    if (/^homag/.test(n)) return 'homag';
+    if (/^krc/.test(n)) return 'krc';
+    if (/^biesse/.test(n)) return 'biesse';
+    if (/^mkm/.test(n)) return 'mkm';
+    if (/^(moroff|baierl)/.test(n)) return 'moroff';
+    if (/^reichenbacher/.test(n)) return 'reichenbacher';
+    if (/^format\s*4/.test(n)) return 'format4';
+    return null;
+  }
+  function readProgramPartDims(text, mtName) {
+    if (typeof text !== 'string' || !text) return null;
+    const lines = text.split(/\r\n|\r|\n/), head = [];
+    for (let i = 0; i < lines.length && i < 200; i++) {
+      if (i > 0 && /^\s*(N\d+\s*)?G0*[0-3](?![0-9])/i.test(lines[i])) break;   // erster Verfahrsatz
+      head.push(lines[i]);
+    }
+    const num = v => { if (v == null) return null; const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; };
+    const esc = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const keyVal = (src, k, cs) => { const m = src.match(new RegExp('(?:^|[^A-Za-z0-9_.])' + esc(k).replace(/ /g, '\\s+') + '\\s*:?=\\s*([+-]?\\d+(?:[.,]\\d+)?)', cs ? '' : 'i')); return m ? num(m[1]) : null; };
+    const tryFamily = fam => {
+      const r = PROGRAM_DIM_RULES[fam];
+      let x = null, y = null, z = null;
+      if (r.dim) {
+        for (const l of head) { const m = l.match(/DIMENSION\s+L\s*([+-]?\d+(?:[.,]\d+)?)\s+B\s*([+-]?\d+(?:[.,]\d+)?)\s+H\s*([+-]?\d+(?:[.,]\d+)?)/i); if (m) { x = num(m[1]); y = num(m[2]); z = num(m[3]); break; } }
+      } else if (r.expr) {
+        const ev = k => { for (const l of head) { const m = l.match(new RegExp(esc(k) + '\\s*=\\s*([^;]+);', 'i')); if (m) { const v = evalCalcExpression(m[1].replace(',', '.')); if (v !== null && isFinite(v)) return v; } } return null; };
+        [x, y, z] = r.expr.map(ev);
+      } else if (r.line) {
+        for (const l of head) { if (!r.line.test(l)) continue; const v = r.keys.map(k => keyVal(l, k)); if (v[0] !== null && v[1] !== null) { [x, y, z] = v; break; } }
+      } else {
+        const first = k => { for (const l of head) { const v = keyVal(l, k, r.cs); if (v !== null) return v; } return null; };
+        [x, y, z] = r.keys.map(first);
+      }
+      return x > 0 && y > 0 ? { x, y, z: z == null ? 0 : Math.abs(z), neg: !!r.neg, family: fam } : null;
+    };
+    const fam = programDimFamily(mtName);
+    if (fam) return tryFamily(fam);
+    // anderer Maschinentyp (z. B. ISO): alle Kennungen der Reihe nach probieren
+    for (const f of ['scm', 'holzher', 'homag', 'krc', 'mkm', 'moroff', 'reichenbacher', 'biesse']) { const r = tryFamily(f); if (r) return r; }
+    return null;
+  }
+  window.__readProgramPartDims = readProgramPartDims;
+  // Vorgabe für "Bauteil": X + 10, Y + 10, Z (SCM/Morbidelli negativ); ohne Angaben 0 / 0 / 0
+  function programPartPrefill() {
+    if (rawProgramText == null) return null;
+    const d = readProgramPartDims(rawProgramText, activeMachineTypeName);
+    const r3 = v => Math.round(v * 1000) / 1000;
+    return d ? { x: r3(d.x + 10), y: r3(d.y + 10), z: r3(d.neg ? -d.z : d.z), read: true } : { x: 0, y: 0, z: 0, read: false };
+  }
+  // Abtragsimulation ohne Rohteil einschaltbar, wenn die Maße aus dem Programmkopf kommen (das Rohteil entsteht dann sofort)
+  function abtragCanAutoCreate() {
+    if (dxfCreatedPart || dxfGeometry || dxfKrm || !points.length) return false;
+    const pf = programPartPrefill();
+    return !!(pf && pf.read && pf.z !== 0);
+  }
   function abtragAvailable() { return !!(dxfCreatedPart && dxfGeometry && dxfKonturLoop && dxfKonturLoop.length >= 3 && dxfThickness && !dxfKrm); }
   // robuste Boolesche Operationen (Rundung auf 1e-3 / 1e-2 / 1e-1 mm bei Abbruch von polygon-clipping)
   const abtragSnap = (a, g) => (typeof a[0] === 'number' ? [Math.round(a[0] * g) / g, Math.round(a[1] * g) / g] : a.map(q => abtragSnap(q, g)));
@@ -21744,13 +21836,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const ang = Math.atan2(dy, dx);
       return arcPts(b, r, ang - Math.PI / 2, ang + Math.PI / 2).concat(arcPts(a, r, ang + Math.PI / 2, ang + 3 * Math.PI / 2));
     };
-    const caps = [], hgroups = [], hgrooves = [];
+    const caps = [], hgroups = [], hgrooves = [], hlinks = [];
     let tilted = 0;
     // Release 290: Profilschichten (soft) bekommen keine Umrisslinie je Stufe (sonst wirkt die Rundung wie ein schwarzes Band)
     const softDepths = new Set();
-    const pushCap = (idx, ringW, depth, soft) => {
+    const rampDepths = new Set(), hardDepths = new Set();   // Release 292: Rampenstufen ohne Umrisslinie, außer die Tiefe kommt auch sonst vor
+    const pushCap = (idx, ringW, depth, soft, ramp) => {
       if (!(depth > 0.001)) return;
       if (soft) softDepths.add(Math.min(T, Math.round(depth * 100) / 100));
+      else (ramp ? rampDepths : hardDepths).add(Math.min(T, Math.round(depth * 100) / 100));
       const ring = ringW.map(([x, y]) => toRaw(x, y));
       ring.push(ring[0].slice());
       caps.push({ idx, ring: [ring], depth: Math.min(T, Math.round(depth * 100) / 100) });
@@ -21844,6 +21938,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Die runden Enden liefern die Bohrlochgruppen an Anfang und Ende (sie reichen dazu bis zur Schaftseite der Nut zurück).
         const dirOf = q => { const ax = toolAxisDirection(q); const d = [-ax.x, -ax.y], L = Math.hypot(d[0], d[1]) || 1; return [d[0] / L, d[1] / L]; };
         const sMinOf = d => { let m = Infinity; run.forEach(j => { const v = list[j].x * d[0] + list[j].y * d[1]; if (v < m) m = v; }); return m; };
+        // Release 292 (Sebastian: ""Nut fuer Glasfuellung Vorderkante": Die Fräsung ist erst richtig, dann wird da plötzlich ein
+        // riesengroßer Kreis raus, obwohl es nur eine Bewegung nach in X und Y ist"): jede Strecke zwischen zwei Bahnpunkten wird
+        // als eigene Verbindung gemerkt (hlinks) - die Gruppe wird nur noch dann als EIN umschriebener Kreis gezeichnet, wenn ihre
+        // Punkte wirklich auf einem Kreis liegen (Zirkularbohrung).
+        let prevG = -1;
         run.forEach((idx, k) => {
           const q = list[idx], d = dirOf(q);
           const s = q.x * d[0] + q.y * d[1], h = -q.x * d[1] + q.y * d[0];
@@ -21864,26 +21963,47 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           let g = hgroups[hgroups.length - 1];
           if (sBack != null || !g || g.closed || Math.abs(g.d[0] - d[0]) + Math.abs(g.d[1] - d[1]) > 1e-3 || Math.hypot(h - g.h0, q.z - g.z0) > 40) {
             if (g) g.closed = true;
-            g = { d, h0: h, z0: q.z, r: q.toolRadius, pts: [], sBack };
+            g = { d, h0: h, z0: q.z, r: q.toolRadius, pts: [], sBack, back: sMinOf(d) - 5 };
             hgroups.push(g);
             // die Gruppe am Anfang des Nutstücks reicht ebenfalls bis zur Schaftseite zurück (rundes Nutende)
             if (sBack != null && hgroups.length > 1) { const pg = hgroups[hgroups.length - 2]; pg.sBack = Math.min(pg.sBack == null ? Infinity : pg.sBack, sBack); }
           }
           g.pts.push({ idx, s, h, z: q.z });
+          const gi = hgroups.length - 1;
+          if (k > 0 && sBack == null) {
+            const p0 = list[run[k - 1]];
+            hlinks.push({ idx, d, r: q.toolRadius, back: g.back, ga: prevG, gb: gi, a: { s: p0.x * d[0] + p0.y * d[1], h: -p0.x * d[1] + p0.y * d[0], z: p0.z }, b: { s, h, z: q.z } });
+          }
+          prevG = gi;
         });
         if (hgroups.length) hgroups[hgroups.length - 1].closed = true;
         continue;
       }
       // senkrechter Fräser: Werkzeugmittelpunktbahn mit Radiuskorrektur
       const segs = [];
+      // Release 292 (Sebastian: "Die Glasnut ist nicht vollständig ... Da ist der Fräser in der Ecke"): schräges Eintauchen/Ausfahren
+      // (Rampe, z ändert sich entlang der Strecke) - bisher wurde die ganze Strecke in der tiefsten Höhe abgetragen, auch dort, wo
+      // der Fräser noch über dem Bauteil ist. Jetzt in Stücke mit höchstens 2 mm Höhenunterschied, jedes in seiner eigenen Tiefe (auf 2 mm gestuft).
+      const runX = [], RAMP_STEP = 2;   // mm je Stufe
       for (let k = 0; k + 1 < run.length; k++) {
         const p0 = list[run[k]], q = list[run[k + 1]];
+        const dzr = q.z - p0.z, Lxy = Math.hypot(q.x - p0.x, q.y - p0.y);
+        const zLo = Math.max(Math.min(p0.z, q.z), zTop - T - 1), zHi = Math.min(Math.max(p0.z, q.z), zTop);
+        const nR = Math.abs(dzr) > 0.01 && Lxy > 1e-6 && zHi > zLo ? Math.min(200, Math.ceil(Math.abs(dzr) / RAMP_STEP)) : 1;
+        if (nR <= 1) { runX.push([p0, q, run[k + 1], false]); continue; }
+        for (let m = 0; m < nR; m++) {
+          const f0 = m / nR, f1 = (m + 1) / nR, at = f => Object.assign({}, q, { x: p0.x + (q.x - p0.x) * f, y: p0.y + (q.y - p0.y) * f, z: p0.z + dzr * f });
+          runX.push([at(f0), at(f1), run[k + 1], true]);
+        }
+      }
+      for (const [p0, q, qIdx, ramp] of runX) {
         const a = [p0.x, p0.y], b = [q.x, q.y], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), r = q.toolRadius;
-        const depth = zTop - Math.min(p0.z, q.z);
-        if (L < 1e-9) { segs.push({ a, b, r, depth, idx: run[k + 1], prof: profileOf(q), zTip: Math.min(p0.z, q.z) }); continue; }
+        // Release 292: Rampenstücke auf ganze Millimeter (zur flacheren Seite) - wenige gemeinsame Tiefenebenen
+        const depth0 = zTop - Math.min(p0.z, q.z), depth = ramp && Math.abs(depth0 / RAMP_STEP - Math.round(depth0 / RAMP_STEP)) > 1e-6 ? Math.floor(depth0 / RAMP_STEP) * RAMP_STEP : depth0;
+        if (L < 1e-9) { segs.push({ a, b, r, depth, idx: qIdx, prof: profileOf(q), zTip: Math.min(p0.z, q.z), ramp }); continue; }
         const ux = dx / L, uy = dy / L, s = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0);
         const nx = -uy * s * r, ny = ux * s * r;
-        segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: run[k + 1], prof: profileOf(q), zTip: Math.min(p0.z, q.z) });
+        segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: qIdx, prof: profileOf(q), zTip: Math.min(p0.z, q.z), ramp });
       }
       for (let k = 0; k < segs.length; k++) {
         const g = segs[k], h = segs[k + 1];
@@ -21895,7 +22015,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             const arc = arcPts(g.v, g.r, a0, a1);
             for (let m = 0; m + 1 < arc.length; m++) {
               if (g.prof) profileSlices(g.prof, Math.min(g.zTip, h.zTip)).forEach(sl => pushCap(h.idx, capsule(arc[m], arc[m + 1], sl.r), sl.depth, true));
-              else pushCap(h.idx, capsule(arc[m], arc[m + 1], g.r), Math.max(g.depth, h.depth));
+              else pushCap(h.idx, capsule(arc[m], arc[m + 1], g.r), Math.max(g.depth, h.depth), false, g.ramp && h.ramp);
             }
           } else if (cr * g.s > 1e-9) {   // Innenecke: versetzte Strecken am Schnittpunkt kürzen
             const den = (g.b[0] - g.a[0]) * (h.b[1] - h.a[1]) - (g.b[1] - g.a[1]) * (h.b[0] - h.a[0]);
@@ -21906,15 +22026,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           }
         }
         if (g.prof) profileSlices(g.prof, g.zTip).forEach(sl => pushCap(g.idx, capsule(g.a, g.b, sl.r), sl.depth, true));
-        else pushCap(g.idx, capsule(g.a, g.b, g.r), g.depth);
+        else pushCap(g.idx, capsule(g.a, g.b, g.r), g.depth, false, g.ramp);
       }
       // Bahnpunkte, an denen ganz durchgefräst wird (Werkzeugspitze unter der Unterseite)
       let lp = null;
       run.forEach(j => { const q = list[j]; if (zTop - q.z >= T - 1e-6) { if (!lp) { lp = []; loops.push(lp); } lp.push({ x: q.x, y: q.y, idx: j }); } else lp = null; });
     }
     caps.sort((p, q) => p.idx - q.idx);
+    rampDepths.forEach(d => { if (!hardDepths.has(d)) softDepths.add(d); });
     softDepths.delete(T);
-    return { key: abtragKey(), softDepths, sweeps, loops, list, offset, caps, hgroups, hgrooves, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
+    return { key: abtragKey(), softDepths, sweeps, loops, list, offset, caps, hgroups, hgrooves, hlinks, tilted, toRaw, rScale, zBase, zTop, T, levels: new Map(), done: 0, checkpoints: [{ done: 0, levels: new Map() }] };
   }
   // vereinigte Flächen bis einschließlich Bahnpunkt target
   function abtragAdvance(st, target) {
@@ -22361,6 +22482,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Release 290 (Sebastian: "Wenn ein Programm fertig ist, verschwindet nicht immer das Restholz", Stufe 1000 x 300 in
         // einem Rohteil 1010 x 400 ab 0/0): liegt das Fertigteil selbst am Rohteilrand an, berühren ALLE Stücke den Rand.
         // Dann gilt als Fertigteil, was innerhalb einer durchgefrästen Bahn liegt (Konturbahn rund um das Teil).
+        // Release 291: nur noch EIN Stück übrig (der Abfall wurde ganz weggefräst, z. B. Rohteil nur 10 mm größer) - das ist das Fertigteil
+        if (!kept.length && big.length === 1) { kept = big.slice(); waste = []; info.keptSingle = true; }
         if (!kept.length && waste.length > 1) {
           const polys = (st.loops || []).map(lp => lp.filter(q => q.idx <= target).map(q => st.toRaw(q.x, q.y))).filter(pl => pl.length >= 3);
           const inPoly = (pl, x, y) => { let c = false; for (let i = 0, j = pl.length - 1; i < pl.length; j = i++) { const a = pl[i], b = pl[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
@@ -22376,13 +22499,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           if (inner.length && inner.length < big.length) { kept = inner; waste = big.filter(pc => !enclosed(pc)); info.keptByLoop = true; }
         }
         Object.assign(info, { pieces: big.length, waste: waste.length, kept: kept.length });
-        if (waste.length && kept.length) {
+        if (kept.length && (waste.length || info.keptSingle)) {
           kept.sort((p, q) => area(q[0]) - area(p[0]));
           contour = kept[0][0].slice(0, -1).map(([x, y]) => ({ x, y }));
           const holes = kept[0].slice(1);
           pockets = pockets.filter(p => p.depth < T - 1e-6);
           if (holes.length) pockets.push({ depth: T, mp: holes.map(r => [r]), loops: [], layer: 'Abtrag' });
-          info.removed = true;
+          info.removed = !info.keptSingle;   // Release 291: bei nur einem Stück gab es nichts zu entfernen (Kontur wird trotzdem übernommen)
           info.keptArea = Math.round(area(kept[0][0]));
           info.extraKept = kept.length - 1;
         }
@@ -22399,13 +22522,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     else if (sweepRes) mesh = { topZ: dxfThickness > 0 ? dxfThickness : 0, botZ: dxfThickness > 0 ? 0 : dxfThickness, levels: [], levelsBelow: [], tris: [], walls: [], rings: [], info: {} };
     // waagerechte Bohrungen (bis zur aktuellen Position)
     const bores = [];
+    const zTopP = st.zTop, zBotP = st.zTop - st.T;
+    const gType = [];
+    // Werkzeugstellung als runde Bohrung: Zylinder von der Schaftseite (back) bis zur Spitze s, Mitte (h, z)
+    const roundAt = (d, back, s, h, z, rad, id) => {
+      if (!(z - rad < zTopP - 0.01 && z + rad > zBotP + 0.01)) return;   // berührt das Bauteil höchstens
+      const P = (sv, hv) => [sv * d[0] - hv * d[1], sv * d[1] + hv * d[0]];
+      const e = P(Math.min(back, s - 0.01), h), f = P(s, h), er = st.toRaw(e[0], e[1]), fr = st.toRaw(f[0], f[1]);
+      const dr = Math.hypot(fr[0] - er[0], fr[1] - er[1]);
+      if (!(dr > 1e-6)) return;
+      bores.push({ id, kind: 'A', shape: 'round', entry: er, end: fr, tail: er, dia: 2 * rad * st.rScale, rw: 2 * rad * st.rScale, rh: 2 * rad, depth: dr, ext: 'none', zc: z - st.zBase });
+    };
     st.hgroups.forEach((g, gi) => {
       const pts = g.pts.filter(q => q.idx <= target);
       // Release 289: Nutende (sBack gesetzt) auch mit nur einem Punkt
       if (!pts.length || (pts.length < 2 && g.sBack == null) || !(g.r > 0)) return;
       const hs = pts.map(q => q.h), zs = pts.map(q => q.z);
       const hc = (Math.min(...hs) + Math.max(...hs)) / 2, zc = (Math.min(...zs) + Math.max(...zs)) / 2;
-      const s0 = Math.min(Math.min(...pts.map(q => q.s)) - 5, g.sBack == null ? Infinity : g.sBack), s1 = Math.max(...pts.map(q => q.s));
+      // Release 292: Schaftseite einheitlich für den ganzen Lauf (vorher: flachste Spitze der Gruppe - 5 mm)
+      const s0 = Math.min(Math.min(...pts.map(q => q.s)) - 5, g.sBack == null ? Infinity : g.sBack, g.back == null ? Infinity : g.back), s1 = Math.max(...pts.map(q => q.s));
       const P = (s, h) => [s * g.d[0] - h * g.d[1], s * g.d[1] + h * g.d[0]];
       const e = P(s0, hc), f = P(s1, hc), er = st.toRaw(e[0], e[1]), fr = st.toRaw(f[0], f[1]);
       const dr = Math.hypot(fr[0] - er[0], fr[1] - er[1]);
@@ -22416,11 +22551,59 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const zr = Math.max(...zs) - Math.min(...zs);
       if (Math.max(...hs) - Math.min(...hs) < 0.01 && zr > 0.01) {
         // Release 289: nur senkrecht verfahren (z. B. zweite Nutbahn darüber) - Langloch statt umschriebenem Kreis
+        gType[gi] = 'v';
         round(Math.min(...zs), g.r, 'A' + gi + 'u'); round(Math.max(...zs), g.r, 'A' + gi + 'o');
         bores.push({ id: 'A' + gi + 'm', kind: 'A', shape: 'rect', entry: er, end: fr, tail: er, dia: 2 * g.r * st.rScale, rw: 2 * g.r * st.rScale, rh: zr, depth: dr, ext: 'none', zc: zc - st.zBase });
         return;
       }
-      round(zc, Math.max(...pts.map(q => Math.hypot(q.h - hc, q.z - zc))) + g.r, 'A' + gi);
+      // Release 292: umschriebener Kreis nur bei echter Zirkularbohrung - mindestens 3/4 der Punkte auf einem Kreis um die Mitte
+      // des Hüllrechtecks (fast ganz herum), die übrigen (Anfahren, Rückzug zur Mitte) innerhalb dieses Kreises
+      const rho = pts.map(q => Math.hypot(q.h - hc, q.z - zc));
+      const rMax = Math.max(...rho), tol = Math.max(0.5, 0.15 * rMax);
+      const onC = pts.filter((q, k) => rho[k] >= rMax - tol);
+      let circular = pts.length >= 8 && rMax > 0.5 && onC.length >= 0.75 * pts.length;
+      if (circular) {
+        const angs = onC.map(q => Math.atan2(q.z - zc, q.h - hc)).sort((a, b) => a - b);
+        let gap = angs[0] + 2 * Math.PI - angs[angs.length - 1];
+        for (let k = 1; k < angs.length; k++) gap = Math.max(gap, angs[k] - angs[k - 1]);
+        circular = gap < Math.PI / 3;
+      }
+      const mz = zc, rMean = rMax;
+      if (circular) { gType[gi] = 'c'; round(mz, rMean + g.r, 'A' + gi); return; }
+      // sonst: jede Werkzeugstellung einzeln (die Strecken dazwischen liefern die Verbindungen unten)
+      gType[gi] = 'p';
+      pts.forEach((q, k) => roundAt(g.d, s0, q.s, q.h, q.z, g.r, 'A' + gi + 'p' + k));
+    });
+    // Release 292: Verbindungen zwischen den Bahnpunkten des waagerechten Werkzeugs (nicht innerhalb einer Zirkularbohrung bzw. eines
+    // Langlochs): quer waagerecht -> Prisma, senkrecht -> Langloch (eckig), schräg bzw. mit Vorschub in Achsrichtung -> Kette runder Bohrungen
+    (st.hlinks || []).forEach((l, li) => {
+      if (l.idx > target || !(l.r > 0)) return;
+      if (l.ga === l.gb && (gType[l.gb] === 'c' || gType[l.gb] === 'v')) return;
+      const { a, b, d, r } = l, back = l.back;
+      const dS = b.s - a.s, dH = b.h - a.h, dZ = b.z - a.z, Lp = Math.hypot(dH, dZ);
+      if (Lp < 0.01) return;   // nur in Achsrichtung: die Stellungen an beiden Enden decken das ab
+      const P = (sv, hv) => [sv * d[0] - hv * d[1], sv * d[1] + hv * d[0]];
+      if (Math.abs(dS) < 0.01 && Math.abs(dZ) < 0.01) {
+        if (!(a.z - r < zTopP - 0.01 && a.z + r > zBotP + 0.01)) return;
+        if (!(a.s - back > 0.01)) return;
+        const poly = [P(a.s, a.h), P(a.s, b.h), P(back, b.h), P(back, a.h)].map(p => st.toRaw(p[0], p[1]));
+        bores.push({ id: 'L' + li, kind: 'G', shape: 'prism', poly, ek: [2, 0, 0, 0], zc: a.z - st.zBase, rh: 2 * r });
+        if (l.ga !== l.gb || gType[l.gb] !== 'p') { roundAt(d, back, a.s, a.h, a.z, r, 'L' + li + 'a'); roundAt(d, back, b.s, b.h, b.z, r, 'L' + li + 'b'); }
+        return;
+      }
+      if (Math.abs(dS) < 0.01 && Math.abs(dH) < 0.01) {
+        const zm = (a.z + b.z) / 2, hz = Math.abs(dZ) / 2;
+        if (zm - hz - r < zTopP - 0.01 && zm + hz + r > zBotP + 0.01) {
+          const e = P(Math.min(back, a.s - 0.01), a.h), f = P(a.s, a.h), er = st.toRaw(e[0], e[1]), fr = st.toRaw(f[0], f[1]), dr = Math.hypot(fr[0] - er[0], fr[1] - er[1]);
+          if (dr > 1e-6) bores.push({ id: 'L' + li + 'm', kind: 'A', shape: 'rect', entry: er, end: fr, tail: er, dia: 2 * r * st.rScale, rw: 2 * r * st.rScale, rh: Math.abs(dZ), depth: dr, ext: 'none', zc: zm - st.zBase });
+        }
+        if (l.ga !== l.gb || gType[l.gb] !== 'p') { roundAt(d, back, a.s, a.h, a.z, r, 'L' + li + 'a'); roundAt(d, back, b.s, b.h, b.z, r, 'L' + li + 'b'); }
+        return;
+      }
+      // schräg: Zwischenstellungen nur, wo die Endstellungen nicht reichen (Abstand <= 0,6 r: Rest < 5 % von r)
+      const L3 = Math.hypot(dS, dH, dZ), n = L3 <= 0.6 * r ? 1 : Math.min(400, Math.ceil(L3 / Math.max(0.5, r / 3)));
+      const k0 = l.ga !== l.gb || gType[l.gb] !== 'p' ? 0 : 1, k1 = l.ga !== l.gb || gType[l.ga] !== 'p' ? n : n - 1;
+      for (let k = k0; k <= k1; k++) { const f = k / n; roundAt(d, back, a.s + dS * f, a.h + dH * f, a.z + dZ * f, r, 'L' + li + 'c' + k); }
     });
     // Release 289: seitliche Nutstücke des waagerechten Werkzeugs (senkrechte Prismen: Spitzenlinie -> Schaftseite, Höhe 2r)
     (st.hgrooves || []).forEach((n, ni) => {
@@ -22485,11 +22668,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function updateAbtragUI() {
     const chk = el('chkAbtrag');
     if (!chk) return;
-    const avail = abtragAvailable();
-    chk.disabled = !avail;
+    const avail = abtragAvailable(), canOn = avail || abtragCanAutoCreate();
+    chk.disabled = !canOn;
     if (!avail && abtragOn) { abtragOn = false; abtragState = null; abtragMesh = null; }
     chk.checked = abtragOn;
-    el('abtragToggle').classList.toggle('is-disabled', !avail);
+    el('abtragToggle').classList.toggle('is-disabled', !canOn);
+    // Release 291: zweiter Haken "Abtrag" neben "Bauteil" - dieselbe Funktion
+    const chk2 = el('chkAbtragPart');
+    if (chk2) { chk2.disabled = !canOn; chk2.checked = abtragOn; el('abtragPartToggle').classList.toggle('is-disabled', !canOn); }
     // Release 288: "CNC-Bahn verstecken" nur bei aktiver Abtragsimulation; aus -> Bahn wieder sichtbar
     if (!abtragOn) abtragHidePath = false;
     const hb = el('btnAbtragHidePath');
@@ -22506,6 +22692,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     requestRender();
   }
   function setAbtragOn(on) {
+    // Release 291: noch kein Rohteil, aber Maße im Programmkopf -> Rohteil sofort anlegen (wie "Bauteil" mit Ok)
+    if (on && !abtragAvailable() && abtragCanAutoCreate()) { partCreateTop = null; fillPartCreateFromProgram(); createRectPart(); }
     abtragOn = !!on && abtragAvailable();
     abtragState = null; abtragMesh = null; abtragMeshTarget = -1;
     // Einschalten -> zum Programmanfang (Wiedergabe gestoppt, Position 0)
@@ -22998,11 +23186,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           // vorderste Flächen im Ausschnitt entfernen
           let carved = false;
           const f2 = z2[i];
-          if (f1 > t0 && f1 < t1) {
-            if (f2 > t0 && f2 < t1) { z1[i] = Infinity; z2[i] = Infinity; c1[i] = 0; c2[i] = 0; }
+          // Release 292: Flächen, die genau auf dem Rand der Bohrung liegen (z. B. Taschenwand in derselben Ebene wie die
+          // Bohrungsseite), nicht ausschneiden - sonst wechselt das von Pixel zu Pixel und die Umrisslinien füllen die Fläche
+          const eps = 1e-4 * (Math.abs(t0) + Math.abs(t1) + 1);
+          const inIv = f => f > t0 + eps && f < t1 - eps;
+          if (inIv(f1)) {
+            if (inIv(f2)) { z1[i] = Infinity; z2[i] = Infinity; c1[i] = 0; c2[i] = 0; }
             else { z1[i] = f2; c1[i] = c2[i]; z2[i] = Infinity; c2[i] = 0; }
             carved = true;
-          } else if (f2 > t0 && f2 < t1) { z2[i] = Infinity; c2[i] = 0; }
+          } else if (inIv(f2)) { z2[i] = Infinity; c2[i] = 0; }
           // dahinter Material? dann ist die Austrittsfläche sichtbar
           const hasMat = f1 <= t1 + 1e-4 && t1 <= zb[i] + 1e-4 && (exitK !== 2 || capEnd);
           if (hasMat) {
@@ -23035,7 +23227,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         for (const iv of lst) {
           const g = groups[groups.length - 1];
           if (g && iv.t0 <= g.t1 + 1e-4) {
-            if (iv.t1 > g.t1) { g.t1 = iv.t1; g.exitK = iv.exitK; g.capEnd = iv.capEnd; g.exitCol = iv.exitCol; }
+            // Release 292: fast gleich tiefe Austritte (berührende Flächen zweier Bohrungen) behalten die bisherige Flächenart -
+            // sonst wechselt sie von Pixel zu Pixel und die Umrisslinien füllen die Fläche schwarz
+            if (iv.t1 > g.t1 + 1e-4 * (Math.abs(g.t1) + 1)) { g.t1 = iv.t1; g.exitK = iv.exitK; g.capEnd = iv.capEnd; g.exitCol = iv.exitCol; }
+            else if (iv.t1 > g.t1) g.t1 = iv.t1;
             boreOverlapPx++;
           } else groups.push(Object.assign({}, iv));
         }
@@ -30478,6 +30673,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   btnStop.addEventListener('click', stopPlayback);
   el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 287
+  el('chkAbtragPart').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 291
   el('btnAbtragHidePath').addEventListener('click', toggleAbtragHidePath);   // Release 288
 
   // Release 184: siehe gotoAdjacentOp()/updateOpNavButtons() weiter oben für die vollständige
@@ -31389,8 +31585,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     else h.textContent = T('Ohne Draufsicht: rechteckiger Körper mit der Stärke Z.', 'Without a top view: rectangular body with thickness Z.');
   }
   function showPartCreateError(msg) { const e = el('partCreateError'); e.textContent = msg || ''; e.hidden = !msg; }
+  let partCreatePrefill = null;   // Release 291: aus dem Programmkopf vorbelegte Werte (für die Verschiebung um Y -5 mm)
+  function fillPartCreateFromProgram() {
+    const pf = programPartPrefill();
+    partCreatePrefill = null;
+    if (!pf) return;   // kein Programm geladen: bisherige Eingaben bleiben
+    el('partCreateX').value = String(pf.x); el('partCreateY').value = String(pf.y); el('partCreateZ').value = String(pf.z);
+    if (pf.read) partCreatePrefill = pf;
+  }
   el('btnPartCreateIcon').addEventListener('click', () => {
     partCreateTop = null; el('partCreateFrontSelect').value = 'up';
+    fillPartCreateFromProgram();
     showPartCreateError(''); refreshPartCreateTopUI();
     partCreatePanel.classList.add('open');
     el('partCreateX').focus(); el('partCreateX').select();
@@ -31426,6 +31631,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     const top = partCreateTop, frontDown = el('partCreateFrontSelect').value === 'down';
     loadDxfText(L.join('\r\n') + '\r\n', T('Bauteil_', 'Part_') + n(X) + 'x' + n(Y) + '.DXF');
     dxfCreatedPart = { x: X, y: Y, z: zz };
+    // Release 291: Maße aus dem Programmkopf unverändert übernommen -> Rohteil um Y -5 mm verschieben (an der Vorderkante wird
+    // etwas abgetragen)
+    const pf = partCreatePrefill;
+    if (pf && Math.abs(pf.x - X) < 1e-9 && Math.abs(pf.y - Y) < 1e-9) dxfOffset = { x: 0, y: -5, z: 0 };
+    partCreatePrefill = null;
     dxfTopView = top; dxfTopFrontDown = frontDown;
     dxfThickness = zz;
     const pd = dxfPartDefaults.parts[dxfPartType] || dxfPartDefaults.parts.undefined;
