@@ -12613,8 +12613,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 292;
-  const APP_RELEASE_TIMESTAMP = '29.10.2026, 13:30 Uhr';
+  const APP_RELEASE_NUMBER = 293;
+  const APP_RELEASE_TIMESTAMP = '30.10.2026, 08:40 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -22138,7 +22138,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let cutMP = [[CwRing.map(p => st.toRaw(p[0], p[1]))]];
     const info = { groups: groups.length, skipped: 0, sections: 0, faces: 0, ms: 0 };
     // Silhouette K eines Durchgangs im Querschnitt (w = Richtung -d der Bezugsbahn, z); Achse durch den programmierten Punkt
-    const kPoly = (ps, ew) => {
+    // eCut (Release 293): Querschnitt im Abstand e vor bzw. hinter der Werkzeugstellung - jeder Radius schrumpft auf sqrt(r² - e²)
+    // (Rotationskörper bzw. Sägescheibe, Achse quer zur Bahn): so entsteht das runde Bahnende mit dem Fräserradius
+    const kPoly = (ps, ew, eCut) => {
       let aw = ps.a.x * ew[0] + ps.a.y * ew[1], az = ps.a.z;
       const al = Math.hypot(aw, az); if (al < 1e-9) return null; aw /= al; az /= al;
       const pw = -az, pz = aw, c0 = [ps.wOff, ps.zc];
@@ -22147,13 +22149,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (ps.spec.type === 'profile') prof = ps.spec.rp.map(q => [q.dist, Math.abs(q.r)]);
       else if (ps.spec.type === 'saw') prof = [[0, ps.spec.R], [ps.spec.t, ps.spec.R]];
       else prof = [[0, ps.spec.R], [ps.spec.L, ps.spec.R]];
+      if (eCut > 0) { prof = prof.map(([sv, r]) => [sv, Math.sqrt(Math.max(0, r * r - eCut * eCut))]); if (!prof.some(([, r]) => r > 1e-3)) return null; }
       const left = prof.map(([sv, r]) => at(sv, r)), right = prof.map(([sv, r]) => at(sv, -r)).reverse();
       const ring = left.concat(right); ring.push(ring[0].slice());
       return [[ring]];
     };
     // Querschnitt aus einer Menge von Durchgängen: Stützstellen W, Oberseite ZT, Unterseite ZB (je w ein Materialintervall)
-    const section = (passes, ew, isMatW) => {
-      const Ks = passes.map(ps => kPoly(ps, ew)).filter(Boolean);
+    // base (Release 293, nur für Kappen): Querschnitt des Abschnitts - liegen in einer Spalte mehrere Materialstücke übereinander
+    // (verkleinertes Werkzeug reicht nicht mehr ganz durch), gilt das Stück, das sich mit dem Material des Abschnitts deckt
+    const section = (passes, ew, isMatW, eCut, base) => {
+      const Ks = passes.map(ps => kPoly(ps, ew, eCut || 0)).filter(Boolean);
       if (!Ks.length) return null;
       let KU;
       try { KU = Ks.length === 1 ? Ks[0] : abtragOp('union', ...Ks); } catch (e) { return null; }
@@ -22196,6 +22201,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const zz = best == null ? mid : best;
           ZT.push(zz); ZB.push(zz); return;
         }
+        if (ivs.length > 1 && base) {
+          const bzb = base.zb(w), bzt = base.zt(w);
+          let pick;
+          if (bzt - bzb > 1e-6) pick = ivs.slice().sort((p, q) => (Math.min(q[1], bzt) - Math.max(q[0], bzb)) - (Math.min(p[1], bzt) - Math.max(p[0], bzb)))[0];
+          else pick = ivs.find(v => v[0] <= zB + 1e-6) || ivs.find(v => v[1] >= zT - 1e-6);
+          if (pick) { ZB.push(pick[0]); ZT.push(pick[1]); return; }
+        }
         if (ivs.length > 1) approx++;
         ZB.push(Math.min(...ivs.map(v => v[0]))); ZT.push(Math.max(...ivs.map(v => v[1])));
       });
@@ -22204,19 +22216,75 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       let rMax = 0; Ks.forEach(k => k[0][0].forEach(([w, z]) => { rMax = Math.max(rMax, Math.hypot(w, z - (zT + zB) / 2)); }));
       return { W, ZT, ZB, zt: w => interp(ZT, w), zb: w => interp(ZB, w), rMax: Math.min(rMax, 400) };
     };
+    const passRadius = passes => Math.max(0, ...passes.map(ps => ps.spec.type === 'profile' ? Math.max(...ps.spec.rp.map(q => Math.abs(q.r))) : ps.spec.R));
     // Bahn (Punkte mit Achsrichtung d) für einen Querschnitt als Flächen ausgeben
-    const emit = (Praw, sec, extS, extE) => {
-      const { W, ZT, ZB } = sec;
+    // Release 293: jeder Bahnpunkt trägt seine eigene Ober-/Unterseite (zt/zb über W) - im Normalfall die des Abschnitts, an einem
+    // Bahnende im Bauteil (cap) die des Werkzeugs im Abstand e vor dem Ende (Fräserradius bleibt stehen, Sebastian: "Der
+    // Fräserradius wird beim "Sattelschmiegen abräumen" noch nicht in den Ecken stehengelassen und vermutlich noch bei keinem
+    // Arbeitsgang, der 5-Achs erfolgt")
+    const emit = (Praw, sec, extS, extE, cap) => {
+      let { W, ZT, ZB } = sec;
       const tang = (a, b) => { const x = b.x - a.x, y = b.y - a.y, l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
-      let P = Praw.slice();
+      const iw = (Z, w) => { if (w <= W[0]) return Z[0]; if (w >= W[W.length - 1]) return Z[W.length - 1]; let k = 0; while (k + 2 < W.length && W[k + 1] < w) k++; const f = (w - W[k]) / ((W[k + 1] - W[k]) || 1); return Z[k] + (Z[k + 1] - Z[k]) * Math.max(0, Math.min(1, f)); };
+      // Bahnende im Bauteil: Querschnitte des Werkzeugs im Abstand e = R sin(θ) vor dem Ende
+      // Spalten, die am Bahnende im Bauteil liegen: wie im Abschnitt abräumen (gleiche Prüfung "Material jenseits der Bandgrenze");
+      // übrige Spalten (die Kappe reicht über eine Konturecke ins Bauteil): Prüfung an der Stelle des Kappenquerschnitts
+      const mkCap = (end, t) => {
+        const R = passRadius(cap.passes), N = 8, lv = [];
+        if (!(R > 0)) return lv;
+        for (let k = 1; k <= N; k++) {
+          const e = k === N ? R : R * Math.sin(k / N * Math.PI / 2);
+          const cx = end.x + t[0] * e, cy = end.y + t[1] * e;
+          const sA = k === N ? null : section(cap.passes, cap.ew, cap.isMatW, e, sec);
+          const sB = k === N ? null : section(cap.passes, cap.ew, w => inside(cx - end.d[0] * w, cy - end.d[1] * w), e);
+          lv.push({ x: cx, y: cy, end, sA, sB });
+        }
+        return lv;
+      };
+      const capSL = cap && cap.capS && Praw.length >= 2 ? mkCap(Praw[0], tang(Praw[1], Praw[0])) : [];
+      const capEL = cap && cap.capE && Praw.length >= 2 ? mkCap(Praw[Praw.length - 1], tang(Praw[Praw.length - 2], Praw[Praw.length - 1])) : [];
+      if (capSL.length || capEL.length) {
+        // Stützstellen der Kappenquerschnitte und die Übergänge Bauteil/Abfall entlang der Endlinie in W aufnehmen
+        // (Kappenstützstellen nur mit mindestens 0,3 mm Abstand - sonst wird der ganze Abschnitt unnötig fein unterteilt)
+        const ws = new Set(W);
+        const add = w => { if (w > W[0] + 1e-6 && w < W[W.length - 1] - 1e-6) ws.add(Math.round(w * 1e6) / 1e6); };
+        const cand = [];
+        capSL.concat(capEL).forEach(c => [c.sA, c.sB].forEach(s2 => { if (s2) s2.W.forEach(w => cand.push(w)); }));
+        cand.sort((a, b) => a - b);
+        let have = W.slice();
+        cand.forEach(w => {
+          let lo = 0, hi = have.length; while (lo < hi) { const m = (lo + hi) >> 1; if (have[m] < w) lo = m + 1; else hi = m; }
+          const near = Math.min(lo < have.length ? have[lo] - w : Infinity, lo > 0 ? w - have[lo - 1] : Infinity);
+          if (near >= 0.3) { add(w); have.splice(lo, 0, w); }
+        });
+        [capSL[0], capEL[0]].forEach(c => {
+          if (!c) return;
+          const o = c.end, dx = -o.d[0], dy = -o.d[1];
+          for (let i = 0; i < Cw.length; i++) {
+            const p = Cw[i], q = Cw[(i + 1) % Cw.length], ex = q[0] - p[0], ey = q[1] - p[1], det = -dx * ey + ex * dy;
+            if (Math.abs(det) < 1e-12) continue;
+            const rx = p[0] - o.x, ry = p[1] - o.y, w = (-rx * ey + ex * ry) / det, sp = (dx * ry - dy * rx) / det;
+            if (sp >= 0 && sp <= 1) { add(w - 2e-4); add(w + 2e-4); }
+          }
+        });
+        W = Array.from(ws).sort((a, b) => a - b); ZT = W.map(w => sec.zt(w)); ZB = W.map(w => sec.zb(w));
+      }
+      const ev = (s2, w, top) => !s2 || w < s2.W[0] - 1e-9 || w > s2.W[s2.W.length - 1] + 1e-9 ? (top ? zT : zB) : (top ? s2.zt(w) : s2.zb(w));
+      const capPts = lv => lv.map(c => {
+        const sOf = w => inside(c.end.x - c.end.d[0] * w, c.end.y - c.end.d[1] * w) ? c.sA : c.sB;
+        return { x: c.x, y: c.y, d: c.end.d, cap: true, zt: W.map(w => ev(sOf(w), w, true)), zb: W.map(w => ev(sOf(w), w, false)) };
+      });
+      let P = Praw.map(p => Object.assign({}, p, { zt: ZT, zb: ZB }));
       const E = sec.rMax + 2;
-      if (extS) { const t = tang(P[0], P[1]); P.unshift({ x: P[0].x - t[0] * E, y: P[0].y - t[1] * E, d: P[0].d }); }
-      if (extE) { const t = tang(P[P.length - 2], P[P.length - 1]); P.push({ x: P[P.length - 1].x + t[0] * E, y: P[P.length - 1].y + t[1] * E, d: P[P.length - 1].d }); }
-      // Strecken in Stücke <= 20 mm teilen (lange, schmale Dreiecke vermeiden)
+      if (extS) { const t = tang(P[0], P[1]); P.unshift({ x: P[0].x - t[0] * E, y: P[0].y - t[1] * E, d: P[0].d, zt: ZT, zb: ZB }); }
+      if (extE) { const t = tang(P[P.length - 2], P[P.length - 1]); P.push({ x: P[P.length - 1].x + t[0] * E, y: P[P.length - 1].y + t[1] * E, d: P[P.length - 1].d, zt: ZT, zb: ZB }); }
+      if (capSL.length) P = capPts(capSL).reverse().concat(P);
+      if (capEL.length) P = P.concat(capPts(capEL));
+      // Strecken in Stücke <= 20 mm teilen (lange, schmale Dreiecke vermeiden) - nicht in den Kappen
       const Pe = [P[0]];
       for (let i = 0; i + 1 < P.length; i++) {
-        const a = P[i], b = P[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 20));
-        for (let k = 1; k < n; k++) { const f = k / n, dx = a.d[0] + (b.d[0] - a.d[0]) * f, dy = a.d[1] + (b.d[1] - a.d[1]) * f, dl = Math.hypot(dx, dy) || 1; Pe.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, d: [dx / dl, dy / dl] }); }
+        const a = P[i], b = P[i + 1], n = a.cap || b.cap ? 1 : Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 20));
+        for (let k = 1; k < n; k++) { const f = k / n, dx = a.d[0] + (b.d[0] - a.d[0]) * f, dy = a.d[1] + (b.d[1] - a.d[1]) * f, dl = Math.hypot(dx, dy) || 1; Pe.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, d: [dx / dl, dy / dl], zt: ZT, zb: ZB }); }
         Pe.push(b);
       }
       const Q = (i, w) => [Pe[i].x - Pe[i].d[0] * w, Pe[i].y - Pe[i].d[1] * w];
@@ -22226,13 +22294,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       try { cutMP = abtragOp('difference', cutMP, [[bandRaw]]); } catch (e) { info.cutError = String(e); }
       const ins = Pe.map((p, i) => W.map(w => { const q = Q(i, w); return inside(q[0], q[1]); }));
       const strip = (i, j, top) => {
-        const zs = top ? ZT : ZB;
-        if (ZT[j] - ZB[j] < 1e-6 && ZT[j + 1] - ZB[j + 1] < 1e-6) return;
+        const p0 = Pe[i], p1 = Pe[i + 1];
+        if (p0.zt[j] - p0.zb[j] < 1e-6 && p0.zt[j + 1] - p0.zb[j + 1] < 1e-6 && p1.zt[j] - p1.zb[j] < 1e-6 && p1.zt[j + 1] - p1.zb[j + 1] < 1e-6) return;
+        const z0 = top ? p0.zt : p0.zb, z1 = top ? p1.zt : p1.zb;
+        const za = z0[j], zb_ = z1[j], zc = z1[j + 1], zd = z0[j + 1];   // Ecken A (i,j), B (i+1,j), C (i+1,j+1), D (i,j+1)
         const A = Q(i, W[j]), B = Q(i + 1, W[j]), C = Q(i + 1, W[j + 1]), D = Q(i, W[j + 1]);
         const nIn = ins[i][j] + ins[i + 1][j] + ins[i + 1][j + 1] + ins[i][j + 1];
         const dz = top ? -0.5 : 0.5;
         const tri = (a, b, c) => { const pa = raw(a[0], a[1], a[2]), pb = raw(b[0], b[1], b[2]), pc = raw(c[0], c[1], c[2]); push([pa, pb, pc], [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3 + dz], top ? 'sweepTop' : 'sweepBot'); };
-        if (nIn === 4) { tri([A[0], A[1], zs[j]], [B[0], B[1], zs[j]], [C[0], C[1], zs[j + 1]]); tri([A[0], A[1], zs[j]], [C[0], C[1], zs[j + 1]], [D[0], D[1], zs[j + 1]]); return; }
+        if (nIn === 4) { tri([A[0], A[1], za], [B[0], B[1], zb_], [C[0], C[1], zc]); tri([A[0], A[1], za], [C[0], C[1], zc], [D[0], D[1], zd]); return; }
         if (W[j + 1] - W[j] < 1e-3) {
           // senkrechte Profilstufe (Streifen fast ohne Breite): entlang der Mittellinie eindimensional beschneiden
           const M0 = [(A[0] + D[0]) / 2, (A[1] + D[1]) / 2], M1 = [(B[0] + C[0]) / 2, (B[1] + C[1]) / 2];
@@ -22248,8 +22318,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           for (let k = 0; k + 1 < ts.length; k++) {
             const mm = L(M0, M1, (ts[k] + ts[k + 1]) / 2);
             if (!inside(mm[0], mm[1]) || ts[k + 1] - ts[k] < 1e-9) continue;
-            const a2 = L(A, B, ts[k]), b2 = L(A, B, ts[k + 1]), c2 = L(D, C, ts[k + 1]), d2 = L(D, C, ts[k]);
-            tri([a2[0], a2[1], zs[j]], [b2[0], b2[1], zs[j]], [c2[0], c2[1], zs[j + 1]]); tri([a2[0], a2[1], zs[j]], [c2[0], c2[1], zs[j + 1]], [d2[0], d2[1], zs[j + 1]]);
+            const t0 = ts[k], t1 = ts[k + 1];
+            const a2 = L(A, B, t0), b2 = L(A, B, t1), c2 = L(D, C, t1), d2 = L(D, C, t0);
+            const zA2 = za + (zb_ - za) * t0, zB2 = za + (zb_ - za) * t1, zC2 = zd + (zc - zd) * t1, zD2 = zd + (zc - zd) * t0;
+            tri([a2[0], a2[1], zA2], [b2[0], b2[1], zB2], [c2[0], c2[1], zC2]); tri([a2[0], a2[1], zA2], [c2[0], c2[1], zC2], [d2[0], d2[1], zD2]);
           }
           return;
         }
@@ -22262,8 +22334,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         let parts;
         try { parts = PC.intersection([[[A, B, C, D, A]]], [[CwRing]]); } catch (e) { return; }
         if (!parts || !parts.length) return;
-        const M0 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], M1 = [(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], vx = M1[0] - M0[0], vy = M1[1] - M0[1], l2 = vx * vx + vy * vy || 1;
-        const zOf = X => zs[j] + (zs[j + 1] - zs[j]) * Math.max(0, Math.min(1, ((X[0] - M0[0]) * vx + (X[1] - M0[1]) * vy) / l2));
+        // Höhe im Viereck bilinear (u entlang der Bahn, v entlang w)
+        const ux = B[0] - A[0], uy = B[1] - A[1], vx = D[0] - A[0], vy = D[1] - A[1], det = ux * vy - uy * vx;
+        const zOf = X => {
+          const rx = X[0] - A[0], ry = X[1] - A[1];
+          let u = Math.abs(det) > 1e-12 ? (rx * vy - ry * vx) / det : 0, v = Math.abs(det) > 1e-12 ? (ux * ry - uy * rx) / det : 0;
+          u = Math.max(0, Math.min(1, u)); v = Math.max(0, Math.min(1, v));
+          return (1 - u) * (1 - v) * za + u * (1 - v) * zb_ + u * v * zc + (1 - u) * v * zd;
+        };
         const snap = p => { for (const c of [A, B, C, D]) if (Math.abs(p[0] - c[0]) < 1e-6 && Math.abs(p[1] - c[1]) < 1e-6) return c; return p; };
         parts.forEach(poly => {
           const flat = [], holes = [], pts = [];
@@ -22274,17 +22352,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       };
       for (let i = 0; i + 1 < Pe.length; i++) for (let j = 0; j + 1 < W.length; j++) { strip(i, j, true); strip(i, j, false); }
       // Anfangsfläche bei W[0] (Material schon an der Werkzeugspitze, z. B. Rohteilkante genau an der Spitze)
-      if (ZT[0] - ZB[0] > 1e-6) {
-        for (let i = 0; i + 1 < Pe.length; i++) {
-          if (!(ins[i][0] && ins[i + 1][0])) continue;
-          const a = Q(i, W[0]), b = Q(i + 1, W[0]), dm = [(Pe[i].d[0] + Pe[i + 1].d[0]) / 2, (Pe[i].d[1] + Pe[i + 1].d[1]) / 2];
-          const p00 = raw(a[0], a[1], ZB[0]), p10 = raw(b[0], b[1], ZB[0]), p11 = raw(b[0], b[1], ZT[0]), p01 = raw(a[0], a[1], ZT[0]);
-          const ri = raw((a[0] + b[0]) / 2 - dm[0] * 0.5, (a[1] + b[1]) / 2 - dm[1] * 0.5, (ZB[0] + ZT[0]) / 2);
-          push([p00, p10, p11], ri, 'sweepStart'); push([p00, p11, p01], ri, 'sweepStart');
-        }
+      for (let i = 0; i + 1 < Pe.length; i++) {
+        const p0 = Pe[i], p1 = Pe[i + 1];
+        if (!(p0.zt[0] - p0.zb[0] > 1e-6 || p1.zt[0] - p1.zb[0] > 1e-6)) continue;
+        if (!(ins[i][0] && ins[i + 1][0])) continue;
+        const a = Q(i, W[0]), b = Q(i + 1, W[0]), dm = [(p0.d[0] + p1.d[0]) / 2, (p0.d[1] + p1.d[1]) / 2];
+        const p00 = raw(a[0], a[1], p0.zb[0]), p10 = raw(b[0], b[1], p1.zb[0]), p11 = raw(b[0], b[1], p1.zt[0]), p01 = raw(a[0], a[1], p0.zt[0]);
+        const ri = raw((a[0] + b[0]) / 2 - dm[0] * 0.5, (a[1] + b[1]) / 2 - dm[1] * 0.5, (p0.zb[0] + p0.zt[0] + p1.zb[0] + p1.zt[0]) / 4);
+        push([p00, p10, p11], ri, 'sweepStart'); push([p00, p11, p01], ri, 'sweepStart');
       }
-      // Stirnflächen an Konturkanten innerhalb des Bandes (Bauteilenden); w(X) über die nächste Bahnstrecke
-      const wOf = X => {
+      // Stirnflächen an Konturkanten innerhalb des Bandes (Bauteilenden); w(X) und Lage auf der Bahn über die nächste Strecke
+      const posOf = X => {
         let best = null;
         for (let i = 0; i + 1 < Pe.length; i++) {
           const a = Pe[i], b = Pe[i + 1], vx = b.x - a.x, vy = b.y - a.y, d = [(a.d[0] + b.d[0]) / 2, (a.d[1] + b.d[1]) / 2];
@@ -22292,10 +22370,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           if (Math.abs(det) < 1e-12) continue;
           const rx = X[0] - a.x, ry = X[1] - a.y, u = (rx * d[1] - ry * d[0]) / det, w = (vx * ry - vy * rx) / -det;
           const pen = u < 0 ? -u : (u > 1 ? u - 1 : 0);
-          if (!best || pen < best.pen) best = { pen, w };
+          if (!best || pen < best.pen) best = { pen, w, i, u: Math.max(0, Math.min(1, u)) };
         }
-        return best ? best.w : null;
+        return best;
       };
+      const zAt = (pos, top) => { const a = Pe[pos.i], b = Pe[pos.i + 1]; return (1 - pos.u) * iw(top ? a.zt : a.zb, pos.w) + pos.u * iw(top ? b.zt : b.zb, pos.w); };
       const bandW = band.concat([band[0]]);
       const inBand = (x, y) => { let c = false; for (let i = 0, j = bandW.length - 2; i < bandW.length - 1; j = i++) { const a = bandW[i], b = bandW[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
       // Umriss der Stirnflächen: obere und untere Linie laufen über fast gerade Konturknicke hinweg, senkrechte Linien nur an
@@ -22327,18 +22406,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         const n = Math.max(1, Math.ceil(L / 0.5));
         const samp = [];
-        for (let k = 0; k <= n; k++) { const t = k / n, X = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; samp.push({ t, X, w: inBand(X[0] - nOut[0] * 0.01, X[1] - nOut[1] * 0.01) ? wOf(X) : null }); }
+        for (let k = 0; k <= n; k++) { const t = k / n, X = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; samp.push({ t, X, pos: inBand(X[0] - nOut[0] * 0.01, X[1] - nOut[1] * 0.01) ? posOf(X) : null }); }
         const all = [];
         for (let k = 0; k < samp.length; k++) {
           const s0 = samp[k], s1 = samp[k + 1]; all.push(s0);
-          if (!s1 || s0.w == null || s1.w == null) continue;
-          const lo = Math.min(s0.w, s1.w), hi = Math.max(s0.w, s1.w);
-          W.forEach(wv => { if (wv <= lo || wv >= hi) return; const t = s0.t + (s1.t - s0.t) * (wv - s0.w) / (s1.w - s0.w); all.push({ t, X: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], w: wv }); });
+          if (!s1 || !s0.pos || !s1.pos) continue;
+          const lo = Math.min(s0.pos.w, s1.pos.w), hi = Math.max(s0.pos.w, s1.pos.w);
+          W.forEach(wv => { if (wv <= lo || wv >= hi) return; const t = s0.t + (s1.t - s0.t) * (wv - s0.pos.w) / (s1.pos.w - s0.pos.w); const X = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; const ps = posOf(X); if (ps) { ps.w = wv; all.push({ t, X, pos: ps }); } });
         }
         all.sort((p, q) => p.t - q.t);
         let prev = null;
         for (const sm of all) {
-          const cur = sm.w != null ? { X: sm.X, zt: sec.zt(sm.w), zb: sec.zb(sm.w) } : null;
+          const cur = sm.pos ? { X: sm.X, zt: zAt(sm.pos, true), zb: zAt(sm.pos, false) } : null;
           if (prev && cur && (prev.zt - prev.zb > 1e-6 || cur.zt - cur.zb > 1e-6)) {
             const p00 = raw(prev.X[0], prev.X[1], prev.zb), p10 = raw(cur.X[0], cur.X[1], cur.zb), p11 = raw(cur.X[0], cur.X[1], cur.zt), p01 = raw(prev.X[0], prev.X[1], prev.zt);
             const ri = raw((prev.X[0] + cur.X[0]) / 2 - nOut[0] * 0.5, (prev.X[1] + cur.X[1]) / 2 - nOut[1] * 0.5, (prev.zb + prev.zt + cur.zb + cur.zt) / 4);
@@ -22351,15 +22430,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!prev) flushRing();
       }
       flushRing();
-      // Kanten auf Ober-/Unterseite, wo der Abtrag nicht tangential beginnt (z. B. Rand einer Hohlkehle)
+      // Kanten auf Ober-/Unterseite, wo der Abtrag nicht tangential beginnt (z. B. Rand einer Hohlkehle) - nur entlang der Bahn
       for (let j = 1; j + 1 < W.length; j++) {
-        [[ZT, zT], [ZB, zB]].forEach(([Z, zf]) => {
+        [[ZT, zT, 'zt'], [ZB, zB, 'zb']].forEach(([Z, zf, key]) => {
           const atF = Math.abs(Z[j] - zf) < 1e-3, nxtCut = Math.abs(Z[j + 1] - zf) >= 1e-3, prvCut = Math.abs(Z[j - 1] - zf) >= 1e-3;
           if (!atF || nxtCut === prvCut) return;
           const k2 = nxtCut ? j + 1 : j - 1;
           if (Math.abs((Z[k2] - Z[j]) / ((W[k2] - W[j]) || 1e-9)) < Math.tan(12 * Math.PI / 180)) return;
           let pts = [];
-          for (let i = 0; i < Pe.length; i++) { const q = Q(i, W[j]); if (ins[i][j]) pts.push(raw(q[0], q[1], Z[j])); else { if (pts.length >= 2) rings.push({ pts, open: true, z: 0 }); pts = []; } }
+          for (let i = 0; i < Pe.length; i++) { const q = Q(i, W[j]); if (ins[i][j] && !Pe[i].cap) pts.push(raw(q[0], q[1], Pe[i][key][j])); else { if (pts.length >= 2) rings.push({ pts, open: true, z: 0 }); pts = []; } }
           if (pts.length >= 2) rings.push({ pts, open: true, z: 0 });
         });
       }
@@ -22418,7 +22497,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const ew = [-pc.d[0], -pc.d[1]];
         const sec = section(passes, ew, w => inside(pc.x + ew[0] * w, pc.y + ew[1] * w));
         if (!sec) { parts.push(null); continue; }
-        parts.push({ a, b, sec, sk });
+        parts.push({ a, b, sec, sk, passes, ew, isMatW: w => inside(pc.x + ew[0] * w, pc.y + ew[1] * w) });
       }
       // gleiche Nachbarabschnitte zusammenlegen
       const merged = [];
@@ -22429,12 +22508,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const P = g.P.slice(pt.a, pt.b + 1);
         // Bahnende außerhalb des Bauteils: Querschnitt über das Ende hinaus fortsetzen (Werkzeugkörper)
         const outS = pt.a === 0 && !inside(P[0].x, P[0].y), outE = pt.b === n - 1 && !inside(P[P.length - 1].x, P[P.length - 1].y);
-        emit(P, pt.sec, outS, outE);
-        const nx = merged[k + 1];
-        if (nx && nx.a === pt.b) {
+        // Release 293: endet die Bahn im Bauteil (oder der Durchgang ist erst bis hier gefahren), bleibt dort der Fräserradius stehen
+        // (auch zwischen zwei Abschnitten derselben Bahngruppe, wenn sie keinen Durchgang teilen und quer zur Bahn getrennt liegen)
+        const prv = merged[k - 1], nxt = merged[k + 1];
+        const apart = (A, B) => !A.passes.some(ps => B.passes.includes(ps)) && (A.sec.W[A.sec.W.length - 1] < B.sec.W[0] - 1e-6 || B.sec.W[B.sec.W.length - 1] < A.sec.W[0] - 1e-6);
+        const joinS = prv && prv.b === pt.a, joinE = nxt && nxt.a === pt.b;
+        const capS = !outS && (!joinS || apart(prv, pt)), capE = !outE && (!joinE || apart(pt, nxt));
+        emit(P, pt.sec, outS, outE, { capS, capE, passes: pt.passes, ew: pt.ew, isMatW: pt.isMatW });
+        if (joinE && !apart(pt, nxt)) {
           const p = g.P[pt.b], q = g.P[Math.min(n - 1, pt.b + 1)], o = g.P[Math.max(0, pt.b - 1)];
           const tx = q.x - o.x, ty = q.y - o.y, tl = Math.hypot(tx, ty) || 1;
-          stepCap(p, [tx / tl, ty / tl], pt.sec, nx.sec);
+          stepCap(p, [tx / tl, ty / tl], pt.sec, nxt.sec);
         }
       });
     });
