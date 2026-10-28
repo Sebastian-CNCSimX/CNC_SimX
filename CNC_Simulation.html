@@ -12627,8 +12627,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 294;
-  const APP_RELEASE_TIMESTAMP = '30.10.2026, 14:20 Uhr';
+  const APP_RELEASE_NUMBER = 295;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 09:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -23046,7 +23046,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const ccw = ar > 0, CwRing = Cw.concat([Cw[0]]);
     const raw = (x, y, z) => { const r = st.toRaw(x, y); return [r[0], r[1], z - zBase]; };
     const faces3 = [], rings = [], bands = [];
-    const push = (v, r, kind) => faces3.push({ v, r, kind });
+    // Release 295 (Sebastian: "Wenn ich bei dem Programm eine Textur über das Bauteil packe, wird der "bauchige" Teil vom Omega nicht mit
+    // Textur dargestellt"): jede Fläche bekommt Texturkoordinaten (mm) - die Streifen entlang der Bahn (u = Bahnlänge, v = Länge
+    // quer über das Profil), alle übrigen eben wie Ober-/Unterseite (u = X, v = Y) bzw. wie die Wände (u = X oder Y + 337, v = Z + 91)
+    const planarUV = v => {
+      const ux = v[1][0] - v[0][0], uy = v[1][1] - v[0][1], uz = v[1][2] - v[0][2], wx = v[2][0] - v[0][0], wy = v[2][1] - v[0][1], wz = v[2][2] - v[0][2];
+      const nx = Math.abs(uy * wz - uz * wy), ny = Math.abs(uz * wx - ux * wz), nz = Math.abs(ux * wy - uy * wx);
+      if (nz >= Math.max(nx, ny)) return v.map(p => [p[0], p[1]]);
+      return nx >= ny ? v.map(p => [p[1] + 337, p[2] + 91]) : v.map(p => [p[0], p[2] + 91]);
+    };
+    const push = (v, r, kind, uv) => faces3.push({ v, r, kind, uv: uv || planarUV(v) });
     let cutMP = [[CwRing.map(p => st.toRaw(p[0], p[1]))]];
     const info = { groups: groups.length, skipped: 0, sections: 0, faces: 0, ms: 0 };
     // Silhouette K eines Durchgangs im Querschnitt (w = Richtung -d der Bezugsbahn, z); Achse durch den programmierten Punkt
@@ -23205,16 +23214,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       bands.push(bandRaw);
       try { cutMP = abtragOp('difference', cutMP, [[bandRaw]]); } catch (e) { info.cutError = String(e); }
       const ins = Pe.map((p, i) => W.map(w => { const q = Q(i, w); return inside(q[0], q[1]); }));
+      // Texturkoordinaten der Streifen: Bahnlänge je Bahnpunkt, Profillänge je Stützstelle (Ober- bzw. Unterseite des Punkts)
+      const Sarc = [0]; for (let i = 1; i < Pe.length; i++) Sarc.push(Sarc[i - 1] + Math.hypot(Pe[i].x - Pe[i - 1].x, Pe[i].y - Pe[i - 1].y));
+      const vCache = [new Map(), new Map()];
+      const Varc = (i, top) => {
+        const m = vCache[top ? 0 : 1]; let a = m.get(i);
+        if (!a) { const Z = top ? Pe[i].zt : Pe[i].zb; a = [0]; for (let j = 1; j < W.length; j++) a.push(a[j - 1] + Math.hypot(W[j] - W[j - 1], Z[j] - Z[j - 1])); m.set(i, a); }
+        return a;
+      };
       const strip = (i, j, top) => {
         const p0 = Pe[i], p1 = Pe[i + 1];
+        const V0 = Varc(i, top), V1 = Varc(i + 1, top);
+        // (s, t) im Viereck: s entlang der Bahn (A -> B), t entlang w (A -> D)
+        const uvAt = (sP, tP) => [Sarc[i] + (Sarc[i + 1] - Sarc[i]) * sP, (1 - sP) * ((1 - tP) * V0[j] + tP * V0[j + 1]) + sP * ((1 - tP) * V1[j] + tP * V1[j + 1])];
         if (p0.zt[j] - p0.zb[j] < 1e-6 && p0.zt[j + 1] - p0.zb[j + 1] < 1e-6 && p1.zt[j] - p1.zb[j] < 1e-6 && p1.zt[j + 1] - p1.zb[j + 1] < 1e-6) return;
         const z0 = top ? p0.zt : p0.zb, z1 = top ? p1.zt : p1.zb;
         const za = z0[j], zb_ = z1[j], zc = z1[j + 1], zd = z0[j + 1];   // Ecken A (i,j), B (i+1,j), C (i+1,j+1), D (i,j+1)
         const A = Q(i, W[j]), B = Q(i + 1, W[j]), C = Q(i + 1, W[j + 1]), D = Q(i, W[j + 1]);
         const nIn = ins[i][j] + ins[i + 1][j] + ins[i + 1][j + 1] + ins[i][j + 1];
         const dz = top ? -0.5 : 0.5;
-        const tri = (a, b, c) => { const pa = raw(a[0], a[1], a[2]), pb = raw(b[0], b[1], b[2]), pc = raw(c[0], c[1], c[2]); push([pa, pb, pc], [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3 + dz], top ? 'sweepTop' : 'sweepBot'); };
-        if (nIn === 4) { tri([A[0], A[1], za], [B[0], B[1], zb_], [C[0], C[1], zc]); tri([A[0], A[1], za], [C[0], C[1], zc], [D[0], D[1], zd]); return; }
+        const tri = (a, b, c, ua, ub, uc) => { const pa = raw(a[0], a[1], a[2]), pb = raw(b[0], b[1], b[2]), pc = raw(c[0], c[1], c[2]); push([pa, pb, pc], [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3 + dz], top ? 'sweepTop' : 'sweepBot', ua ? [ua, ub, uc] : null); };
+        const uA = uvAt(0, 0), uB = uvAt(1, 0), uC = uvAt(1, 1), uD = uvAt(0, 1);
+        if (nIn === 4) { tri([A[0], A[1], za], [B[0], B[1], zb_], [C[0], C[1], zc], uA, uB, uC); tri([A[0], A[1], za], [C[0], C[1], zc], [D[0], D[1], zd], uA, uC, uD); return; }
         if (W[j + 1] - W[j] < 1e-3) {
           // senkrechte Profilstufe (Streifen fast ohne Breite): entlang der Mittellinie eindimensional beschneiden
           const M0 = [(A[0] + D[0]) / 2, (A[1] + D[1]) / 2], M1 = [(B[0] + C[0]) / 2, (B[1] + C[1]) / 2];
@@ -23233,7 +23254,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             const t0 = ts[k], t1 = ts[k + 1];
             const a2 = L(A, B, t0), b2 = L(A, B, t1), c2 = L(D, C, t1), d2 = L(D, C, t0);
             const zA2 = za + (zb_ - za) * t0, zB2 = za + (zb_ - za) * t1, zC2 = zd + (zc - zd) * t1, zD2 = zd + (zc - zd) * t0;
-            tri([a2[0], a2[1], zA2], [b2[0], b2[1], zB2], [c2[0], c2[1], zC2]); tri([a2[0], a2[1], zA2], [c2[0], c2[1], zC2], [d2[0], d2[1], zD2]);
+            const ua2 = uvAt(t0, 0), ub2 = uvAt(t1, 0), uc2 = uvAt(t1, 1), ud2 = uvAt(t0, 1);
+            tri([a2[0], a2[1], zA2], [b2[0], b2[1], zB2], [c2[0], c2[1], zC2], ua2, ub2, uc2); tri([a2[0], a2[1], zA2], [c2[0], c2[1], zC2], [d2[0], d2[1], zD2], ua2, uc2, ud2);
           }
           return;
         }
@@ -23248,10 +23270,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!parts || !parts.length) return;
         // Höhe im Viereck bilinear (u entlang der Bahn, v entlang w)
         const ux = B[0] - A[0], uy = B[1] - A[1], vx = D[0] - A[0], vy = D[1] - A[1], det = ux * vy - uy * vx;
-        const zOf = X => {
+        const stOf = X => {
           const rx = X[0] - A[0], ry = X[1] - A[1];
           let u = Math.abs(det) > 1e-12 ? (rx * vy - ry * vx) / det : 0, v = Math.abs(det) > 1e-12 ? (ux * ry - uy * rx) / det : 0;
-          u = Math.max(0, Math.min(1, u)); v = Math.max(0, Math.min(1, v));
+          return [Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v))];
+        };
+        const zOf = X => {
+          const [u, v] = stOf(X);
           return (1 - u) * (1 - v) * za + u * (1 - v) * zb_ + u * v * zc + (1 - u) * v * zd;
         };
         const snap = p => { for (const c of [A, B, C, D]) if (Math.abs(p[0] - c[0]) < 1e-6 && Math.abs(p[1] - c[1]) < 1e-6) return c; return p; };
@@ -23259,7 +23284,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const flat = [], holes = [], pts = [];
           poly.forEach((ring, ri) => { if (ri) holes.push(pts.length); ring.slice(0, -1).forEach(p0 => { const p = snap(p0); pts.push(p); flat.push(p[0], p[1]); }); });
           const idx = EC(flat, holes.length ? holes : null);
-          for (let k = 0; k + 2 < idx.length; k += 3) { const v = [pts[idx[k]], pts[idx[k + 1]], pts[idx[k + 2]]].map(p => [p[0], p[1], zOf(p)]); tri(v[0], v[1], v[2]); }
+          for (let k = 0; k + 2 < idx.length; k += 3) {
+            const pp = [pts[idx[k]], pts[idx[k + 1]], pts[idx[k + 2]]], v = pp.map(p => [p[0], p[1], zOf(p)]), uv = pp.map(p => { const st = stOf(p); return uvAt(st[0], st[1]); });
+            tri(v[0], v[1], v[2], uv[0], uv[1], uv[2]);
+          }
         });
       };
       for (let i = 0; i + 1 < Pe.length; i++) for (let j = 0; j + 1 < W.length; j++) { strip(i, j, true); strip(i, j, false); }
@@ -24018,7 +24046,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           if (fc > -EPSF) { triCulled++; continue; }
           const a = I[3 * t], b = I[3 * t + 1], c = I[3 * t + 2];
           VA.x = sx[a]; VA.y = sy[a]; VA.d = sd[a]; VA.l = sl[a]; VB.x = sx[b]; VB.y = sy[b]; VB.d = sd[b]; VB.l = sl[b]; VC.x = sx[c]; VC.y = sy[c]; VC.d = sd[c]; VC.l = sl[c];
-          triG(VA, VB, VC);
+          if (TX) {
+            // Release 295: Textur - eben je Dreieck nach der Hauptrichtung der Normalen (wie Ober-/Unterseite bzw. Wände)
+            const nx = Math.abs(N[3 * t]), ny = Math.abs(N[3 * t + 1]), nz = Math.abs(N[3 * t + 2]), z0b = mesh.dexel.box.z0;
+            const uvOf = v => nz >= Math.max(nx, ny) ? [P[3 * v], P[3 * v + 1]] : (nx >= ny ? [P[3 * v + 1] + 337, P[3 * v + 2] - z0b + 91] : [P[3 * v], P[3 * v + 2] - z0b + 91]);
+            tri(VA, VB, VC, shade(fc, 1), false, [uvOf(a), uvOf(b), uvOf(c), lightOf(fc, 1)]);
+          } else triG(VA, VB, VC);
         }
       }
     }
