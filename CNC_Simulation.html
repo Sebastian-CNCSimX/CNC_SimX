@@ -1980,6 +1980,7 @@
   .abtrag-path-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 26px; padding: 0; line-height: 1; box-sizing: border-box; }
   .abtrag-part-toggle { margin-left: 6px; }
   .abtrag-path-btn:disabled { opacity: 0.45; cursor: default; }
+  .abtrag-progress { margin-left: 6px; font-size: 12px; color: var(--muted, #667); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .speed-group, .jump-group {
     display: flex;
     align-items: center;
@@ -3559,6 +3560,10 @@
         </label>
         <!-- Release 288: "CNC-Bahn verstecken" (nur bei aktiver Abtragsimulation), siehe toggleAbtragHidePath() in app.js -->
         <button class="toolbar-btn abtrag-path-btn" id="btnAbtragHidePath" type="button" disabled aria-pressed="false" title="CNC-Fräsbahn anzeigen/verstecken" data-i18n-en-title="Hide/Show CNC path"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><polyline points="1,11 5,4 9,10 13,3 19,8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><line x1="3" y1="1" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <!-- Release 294 (Sebastian: "8 Es fehlt ein Button um alle Bearbeitungen zurückzusetzen, also um den Rohblock wieder
+             zusammenzubauen"), siehe resetAbtragStock() in app.js; daneben der Rechenstand des 5-Achs-Abtrags -->
+        <button class="toolbar-btn abtrag-path-btn" id="btnAbtragReset" type="button" disabled title="Rohteil wiederherstellen: alle Bearbeitungen zurücksetzen (Sprung zum Programmanfang)" data-i18n-en-title="Restore stock: reset all machining (jump to program start)"><svg width="18" height="16" viewBox="0 0 18 16" aria-hidden="true"><path d="M4.2 4.2 A6 6 0 1 1 3 9.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><polyline points="1.4,1.8 4.4,4.4 7.4,2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><rect x="6.6" y="6.6" width="4.8" height="4.8" fill="currentColor" opacity="0.55"/></svg></button>
+        <span class="abtrag-progress" id="abtragProgress" hidden></span>
       </div>
     </div>
   </div>
@@ -7010,11 +7015,17 @@
     if (t.startsWith('#')) return t.slice(1);
     return null;
   }
+  // Release 294 (Sebastian, Krümmling: "Stirnseiten schruppen 1 1" ... nimmt nichts weg): Umlaute zählen wie ihre
+  // Umschreibung (";Abraeumen" = "Abräumen"), und eine angehängte laufende Nummer (";Stirnseiten schruppen 1 1" zu
+  // "Stirnseiten schruppen 1") gilt, wenn direkt danach ein Werkzeugwechsel beginnt - die Teilgänge ohne
+  // Werkzeugwechsel ("... 1 2") bleiben im selben Arbeitsgang
+  const umlautFold = t => t.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  const toolChangeFollows = (lines, i) => { for (let j = i + 1; j < lines.length && j < i + 4; j++) { const t = lines[j].trim(); if (!t) continue; return /WERKZEUGWECHSEL|^XT\s/i.test(t); } return false; };
   MACHINES.NAMED = {
     label: 'Namensliste',
     findStart(lines, fromIdx, opNames) {
       if (!opNames || !opNames.length) return null;
-      const lower = opNames.map(n => n.toLowerCase());
+      const lower = opNames.map(n => umlautFold(n.toLowerCase().replace(/\s+/g, ' ').trim()));
       const norm = opNames.map(normSpaces);
       const byLen = norm.map((n, k) => k).filter(k => norm[k]).sort((a, b) => norm[b].length - norm[a].length);
       for (let i = fromIdx; i < lines.length; i++) {
@@ -7022,8 +7033,11 @@
         if (!l0) continue;
         const stripped = stripLineCommentMarker(l0);
         if (!stripped) continue;
-        const idx = lower.indexOf(stripped.toLowerCase());
+        const sl = umlautFold(stripped.toLowerCase().replace(/\s+/g, ' '));
+        const idx = lower.indexOf(sl);
         if (idx !== -1) return { startIdx: i, blockEndIdx: i, title: stripped };
+        const mNum = sl.match(/^(.*\S)\s+\d+$/);
+        if (mNum && lower.indexOf(mNum[1]) !== -1 && toolChangeFollows(lines, i)) return { startIdx: i, blockEndIdx: i, title: stripped };
         // Platzhalter-Suche im Kommentarteil
         const cp = commentPartOf(l0);
         if (cp === null) continue;
@@ -12613,8 +12627,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 293;
-  const APP_RELEASE_TIMESTAMP = '30.10.2026, 08:40 Uhr';
+  const APP_RELEASE_NUMBER = 294;
+  const APP_RELEASE_TIMESTAMP = '30.10.2026, 14:20 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -21765,7 +21779,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const first = k => { for (const l of head) { const v = keyVal(l, k, r.cs); if (v !== null) return v; } return null; };
         [x, y, z] = r.keys.map(first);
       }
-      return x > 0 && y > 0 ? { x, y, z: z == null ? 0 : Math.abs(z), neg: !!r.neg, family: fam } : null;
+      if (!(x > 0 && y > 0)) return null;
+      let neg = !!r.neg;
+      // Release 294 (Sebastian: "Rohblockmaße vom Bauteil, trotz SCM: ... Z 112.358 (Z positiv in dem Fall, anderer Postprozessor,
+      // da arbeiten wir in Z positiv)"): SCM-Programme mit Nullpunkt unten - "O ... f=1" (Krümmling-Postprozessor), "O ... Z=-DZ"
+      // oder überwiegend positive Z-Werte in den G0-G3-Sätzen - bekommen die Stärke positiv
+      if (neg && fam === 'scm') {
+        let pos = 0, ng = 0, oPos = false;
+        for (const l of lines) {
+          if (/^\s*O\s/i.test(l)) {
+            if (/\bf\s*=/i.test(l)) oPos = true;
+            const mz = l.match(/\bZ\s*=\s*([+-]?\d+(?:\.\d+)?)/i);
+            if (mz && z > 0 && Math.abs(parseFloat(mz[1]) + Math.abs(z)) < 0.01) oPos = true;
+            continue;
+          }
+          const m = l.match(/^\s*G0*[0-3](?![0-9D]).*?\bZ\s*([+-]?\d+(?:\.\d+)?)/i);
+          if (m) { const v = parseFloat(m[1]); if (v > 1e-6) pos++; else if (v < -1e-6) ng++; }
+        }
+        if (oPos || pos > ng) neg = false;
+      }
+      return { x, y, z: z == null ? 0 : Math.abs(z), neg, family: fam };
     };
     const fam = programDimFamily(mtName);
     if (fam) return tryFamily(fam);
@@ -21816,6 +21849,860 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
       // Release 290: Profilwerkzeuge (Werkzeug-DXF) gehen in den Abtrag ein
       useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(',')].join('|');
+  }
+  // ============================================================================================================
+  // Release 294 (Sebastian, Krümmling: "1 Bei "Seitenbahnen 1 | 1" wird nichts abgetragen bzw. nicht überall korrekt / 2
+  // "Stirnseiten schruppen 1 1" nimmt auch nichts weg / 3 "Rundstab" nimmt nichts weg / 4 "Profil 1" nimmt nichts weg /
+  // 5 "Stirnseiten 1 1" nimmt nichts weg / 6 "Trennschnitt" nimmt nichts weg / 7 Die Performance ist sehr dürftig. Beim Sprung
+  // direkt in den Trennschnitt ruckelt alles."): Programme mit simultanen 5-Achs-Bewegungen (Werkzeugachse ändert sich entlang
+  // der Bahn bzw. geneigtes Werkzeug mit z-Änderung) lassen sich mit den 2,5D-Taschen nicht darstellen. Für sie gibt es ein
+  // Volumenmodell: Tri-Dexel - Strahlen entlang X, Y und Z auf einem Gitter (Abstand h), je Strahl die Materialintervalle.
+  // Das Werkzeug ist ein Stapel von Zylinderscheiben (Achse a, Abstand d0..d1 von der Spitze, Radius r; Profilwerkzeug in
+  // Scheiben, Säge als dünne Scheibe). Je Bahnstück wird das Werkzeug mit fester Lage verschoben (Lageänderung in Schritten
+  // von höchstens 1°): das überstrichene Volumen jeder Scheibe ist konvex, sein Schnitt mit einem Strahl daher genau ein
+  // Intervall, das analytisch berechnet und abgezogen wird. Die Rechnung läuft in Web-Workern (Strahlen auf die Worker
+  // verteilt), mit Zwischenständen für schnelles Springen; ohne Worker zeitgeteilt im Hauptprogramm.
+  // ABDEX_CORE ist eigenständig (kein Zugriff auf andere Teile der Anwendung) - sein Quelltext wird auch als Worker gestartet.
+  function ABDEX_CORE() {
+    function create(box, h) {
+      // Knoten um h/2 versetzt, eine halbe Zelle über den Quader hinaus (die Quaderflächen liegen zwischen den Knoten)
+      const nx = Math.ceil((box.x1 - box.x0) / h - 1e-9) + 1, ny = Math.ceil((box.y1 - box.y0) / h - 1e-9) + 1, nz = Math.ceil((box.z1 - box.z0) / h - 1e-9) + 1;
+      const g = { x0: box.x0 - h / 2, y0: box.y0 - h / 2, z0: box.z0 - h / 2 };
+      // Strahlen: Richtung 0 = X (Index j + k*(ny+1)), 1 = Y (i + k*(nx+1)), 2 = Z (i + j*(nx+1))
+      return { box, nx, ny, nz, h, g, rays: [new Array((ny + 1) * (nz + 1)), new Array((nx + 1) * (nz + 1)), new Array((nx + 1) * (ny + 1))] };
+    }
+    // Zeile eines Strahls (für die Aufteilung auf die Worker): die zweite Ebenenkoordinate
+    function rowOf(D, k, idx) { return k === 2 ? Math.floor(idx / (D.nx + 1)) : Math.floor(idx / (k === 0 ? D.ny + 1 : D.nx + 1)); }
+    // Prisma: Umriss poly (Welt x/y), Höhe z0..z1; nur Zeilen dieses Teils (part von W)
+    function fillPrism(D, poly, z0, z1, part, W) {
+      const { nx, ny, nz, h, g } = D;
+      const xs = i => g.x0 + i * h, ys = j => g.y0 + j * h, zs = k => g.z0 + k * h;
+      const lineIv = (c, horiz) => {
+        const t = [];
+        for (let m = 0, n = poly.length - 1; m < poly.length; n = m++) {
+          const a = poly[m], b = poly[n], pa = horiz ? a[1] : a[0], pb = horiz ? b[1] : b[0];
+          if ((pa > c) !== (pb > c)) { const f = (c - pa) / (pb - pa); t.push(horiz ? a[0] + (b[0] - a[0]) * f : a[1] + (b[1] - a[1]) * f); }
+        }
+        t.sort((p, q) => p - q);
+        return t;
+      };
+      const inside = (x, y) => { let c = false; for (let m = 0, n = poly.length - 1; m < poly.length; n = m++) { const a = poly[m], b = poly[n]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+      const mine = row => W <= 1 || row % W === part;
+      for (let k = 0; k <= nz; k++) for (let j = 0; j <= ny; j++) { const z = zs(k); D.rays[0][j + k * (ny + 1)] = mine(k) && z >= z0 && z <= z1 ? lineIv(ys(j), true) : []; }
+      for (let k = 0; k <= nz; k++) for (let i = 0; i <= nx; i++) { const z = zs(k); D.rays[1][i + k * (nx + 1)] = mine(k) && z >= z0 && z <= z1 ? lineIv(xs(i), false) : []; }
+      for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) D.rays[2][i + j * (nx + 1)] = mine(j) && inside(xs(i), ys(j)) ? [z0, z1] : [];
+    }
+    // [s,e] aus der Intervallliste r entfernen; true bei Änderung
+    function subtract(r, s, e) {
+      const n = r.length;
+      if (!n || e <= r[0] || s >= r[n - 1]) return false;
+      let hit = false;
+      for (let q = 0; q < n; q += 2) if (r[q + 1] > s && r[q] < e) { hit = true; break; }
+      if (!hit) return false;
+      const out = [];
+      for (let q = 0; q < n; q += 2) {
+        const a = r[q], b = r[q + 1];
+        if (b <= s || a >= e) { out.push(a, b); continue; }
+        if (a < s) out.push(a, s);
+        if (b > e) out.push(e, b);
+      }
+      r.length = 0; for (let q = 0; q < out.length; q++) r.push(out[q]);
+      return true;
+    }
+    // Strahl x = o + t e_k gegen das überstrichene Volumen einer Scheibe (Spitze c, Achse a, Verschiebung v, d0..d1, r):
+    // x liegt darin, wenn es u in [0,1] gibt mit s = (x-c-u v)·a in [d0,d1] und |(x-c)⊥ - u v⊥| <= r. Lineare Bedingungen
+    // in (t,u) und eine Ellipse Q(t,u) <= 0 - gesucht ist der (konvexe) t-Bereich: Kandidaten sind die t-Extreme der Ellipse,
+    // ihre Schnitte mit den vier Geraden und die Ecken des linearen Vielecks in der Ellipse.
+    function prep(c, a, v, k) {
+      const al1 = a[k], beta = v[0] * a[0] + v[1] * a[1] + v[2] * a[2];
+      const Ex = (k === 0 ? 1 : 0) - al1 * a[0], Ey = (k === 1 ? 1 : 0) - al1 * a[1], Ez = (k === 2 ? 1 : 0) - al1 * a[2];
+      const Vx = v[0] - beta * a[0], Vy = v[1] - beta * a[1], Vz = v[2] - beta * a[2];
+      return { c, a, k, al1, beta, Ex, Ey, Ez, Vx, Vy, Vz, EE: Ex * Ex + Ey * Ey + Ez * Ez, VV: Vx * Vx + Vy * Vy + Vz * Vz, EV: Ex * Vx + Ey * Vy + Ez * Vz };
+    }
+    const LA = new Float64Array(4), LB = new Float64Array(4), LC = new Float64Array(4);
+    // Scheibe als Kegelstumpf: Radius r0 bei d0 bis r1 bei d1 (Zylinder: r0 = r1). Bedingung |(x-c)⊥ - u v⊥| <= r(s) ist ein
+    // Kegel zweiter Ordnung - quadriert eine Kegelschnitt-Ungleichung G(t,u) <= 0 (konvex innerhalb des Streifens d0 <= s <= d1).
+    function rayIv(S, o, d0, d1, r0, r1, out) {
+      const c = S.c, a = S.a;
+      const wx = o[0] - c[0], wy = o[1] - c[1], wz = o[2] - c[2];
+      const wa = wx * a[0] + wy * a[1] + wz * a[2];
+      const al1 = S.al1, beta = S.beta;
+      const Px = wx - wa * a[0], Py = wy - wa * a[1], Pz = wz - wa * a[2];
+      const PE = Px * S.Ex + Py * S.Ey + Pz * S.Ez, PV = Px * S.Vx + Py * S.Vy + Pz * S.Vz, PP = Px * Px + Py * Py + Pz * Pz;
+      const mm = d1 > d0 ? (r1 - r0) / (d1 - d0) : 0;
+      const c0 = r0 + mm * (wa - d0), c1 = mm * al1, c2 = -mm * beta;
+      const A = S.EE - c1 * c1, B = S.VV - c2 * c2, C = -2 * S.EV - 2 * c1 * c2, Dl = 2 * PE - 2 * c0 * c1, El = -2 * PV - 2 * c0 * c2, F = PP - c0 * c0;
+      const rM = r0 > r1 ? r0 : r1, tolU = 1e-9, tolS = 1e-7, qTol = 1e-6 * (1 + rM * rM);
+      let tmin = Infinity, tmax = -Infinity, nL = 4;
+      LA[0] = 0; LB[0] = 1; LC[0] = 0; LA[1] = 0; LB[1] = 1; LC[1] = 1;
+      LA[2] = al1; LB[2] = -beta; LC[2] = d0 - wa; LA[3] = al1; LB[3] = -beta; LC[3] = d1 - wa;
+      if (Math.abs(al1) < 1e-12 && Math.abs(beta) < 1e-12) { if (wa < d0 - tolS || wa > d1 + tolS) return false; nL = 2; }
+      // (a) senkrechte Tangenten: dG/du = 0 -> u = alpha t + gamma
+      if (Math.abs(B) > 1e-12) {
+        const al = -C / (2 * B), ga = -El / (2 * B);
+        const q2 = A + B * al * al + C * al, q1 = 2 * B * al * ga + C * ga + Dl + El * al, q0 = B * ga * ga + El * ga + F;
+        let x1, x2, ok = true;
+        if (Math.abs(q2) < 1e-14) { if (Math.abs(q1) < 1e-14) ok = false; else x1 = x2 = -q0 / q1; }
+        else { const disc = q1 * q1 - 4 * q2 * q0; if (disc < 0) ok = false; else { const sq = Math.sqrt(disc); x1 = (-q1 - sq) / (2 * q2); x2 = (-q1 + sq) / (2 * q2); } }
+        if (ok) for (let m = 0; m < 2; m++) {
+          const t = m ? x2 : x1, u = al * t + ga;
+          if (u < -tolU || u > 1 + tolU) continue;
+          const s = wa + al1 * t - beta * u; if (s < d0 - tolS || s > d1 + tolS) continue;
+          if (c0 + c1 * t + c2 * u < -1e-9) continue;
+          if (t < tmin) tmin = t; if (t > tmax) tmax = t;
+        }
+      }
+      // (b) Kegelschnitt x Geraden
+      for (let p = 0; p < nL; p++) {
+        const LAp = LA[p], LBp = LB[p], LCp = LC[p], byT = Math.abs(LBp) >= Math.abs(LAp);
+        let q2, q1, q0, m, n;
+        if (byT) {
+          if (Math.abs(LBp) < 1e-14) continue;
+          m = -LAp / LBp; n = LCp / LBp;   // u = m t + n
+          q2 = A + B * m * m + C * m; q1 = 2 * B * m * n + C * n + Dl + El * m; q0 = B * n * n + El * n + F;
+        } else {
+          m = -LBp / LAp; n = LCp / LAp;   // t = m u + n
+          q2 = A * m * m + B + C * m; q1 = 2 * A * m * n + C * n + Dl * m + El; q0 = A * n * n + Dl * n + F;
+        }
+        let x1, x2;
+        if (Math.abs(q2) < 1e-14) { if (Math.abs(q1) < 1e-14) continue; x1 = x2 = -q0 / q1; }
+        else { const disc = q1 * q1 - 4 * q2 * q0; if (disc < 0) continue; const sq = Math.sqrt(disc); x1 = (-q1 - sq) / (2 * q2); x2 = (-q1 + sq) / (2 * q2); }
+        for (let w = 0; w < 2; w++) {
+          const x = w ? x2 : x1, t = byT ? x : m * x + n, u = byT ? m * x + n : x;
+          if (u < -tolU || u > 1 + tolU) continue;
+          const s = wa + al1 * t - beta * u; if (s < d0 - tolS || s > d1 + tolS) continue;
+          if (c0 + c1 * t + c2 * u < -1e-9) continue;
+          if (t < tmin) tmin = t; if (t > tmax) tmax = t;
+        }
+      }
+      // (c) Ecken des linearen Vielecks im Kegel
+      for (let p = 0; p < nL; p++) for (let q = p + 1; q < nL; q++) {
+        const det = LA[p] * LB[q] - LA[q] * LB[p];
+        if (det > -1e-14 && det < 1e-14) continue;
+        const t = (LC[p] * LB[q] - LC[q] * LB[p]) / det, u = (LA[p] * LC[q] - LA[q] * LC[p]) / det;
+        if (u < -tolU || u > 1 + tolU) continue;
+        const s = wa + al1 * t - beta * u; if (s < d0 - tolS || s > d1 + tolS) continue;
+        if (A * t * t + B * u * u + C * t * u + Dl * t + El * u + F > qTol) continue;
+        if (c0 + c1 * t + c2 * u < -1e-9) continue;
+        if (t < tmin) tmin = t; if (t > tmax) tmax = t;
+      }
+      if (!(tmin <= tmax)) return false;
+      out[0] = tmin; out[1] = tmax; return true;
+    }
+    function hull2(pts) {
+      pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+      const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+      const lo = [], up = [];
+      for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+      for (let m = pts.length - 1; m >= 0; m--) { const p = pts[m]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+      up.pop(); lo.pop();
+      return lo.concat(up);
+    }
+    // Baum aus Hüllzylindern über die Kegelstümpfe eines Profilwerkzeugs (je Werkzeug einmal)
+    const treeCache = new WeakMap(), stk = new Int32Array(256);
+    function sliceTree(sl) {
+      let T = treeCache.get(sl);
+      if (T) return T;
+      const n = sl.length / 4, cap = 2 * n;
+      T = { d0: new Float64Array(cap), d1: new Float64Array(cap), r: new Float64Array(cap), lo: new Int32Array(cap), hi: new Int32Array(cap), left: new Int32Array(cap), right: new Int32Array(cap) };
+      let cnt = 0;
+      const build = (lo, hi) => {
+        const id = cnt++;
+        let rr = 0; for (let k = lo; k < hi; k++) rr = Math.max(rr, sl[4 * k + 2], sl[4 * k + 3]);
+        T.d0[id] = sl[4 * lo]; T.d1[id] = sl[4 * (hi - 1) + 1]; T.r[id] = rr; T.lo[id] = lo; T.hi[id] = hi;
+        if (hi - lo > 1) { const mid = (lo + hi) >> 1; T.left[id] = build(lo, mid); T.right[id] = build(mid, hi); }
+        return id;
+      };
+      build(0, n);
+      treeCache.set(sl, T);
+      return T;
+    }
+    // ein Schritt: Werkzeug (slices: Float64Array [d0,d1,r,...]) mit Spitze c, Achse a um v verschoben; onChange(k, idx)
+    const O = [0, 0, 0], IV = [0, 0];
+    function cut(D, c, a, v, slices, part, W, onChange) {
+      const { box, nx, ny, nz, h, g } = D;
+      let rMax = 0, dMin = Infinity, dMax = -Infinity;
+      for (let s = 0; s < slices.length; s += 4) { const rr = Math.max(slices[s + 2], slices[s + 3]); if (rr > rMax) rMax = rr; if (slices[s] < dMin) dMin = slices[s]; if (slices[s + 1] > dMax) dMax = slices[s + 1]; }
+      const multi = slices.length > 4, tree = multi ? sliceTree(slices) : null;
+      if (!(rMax > 0)) return;
+      let ux, uy, uz;
+      if (Math.abs(a[2]) < 0.9) { ux = -a[1]; uy = a[0]; uz = 0; } else { ux = 0; uy = -a[2]; uz = a[1]; }
+      const ul = Math.hypot(ux, uy, uz); ux /= ul; uy /= ul; uz /= ul;
+      const wx = a[1] * uz - a[2] * uy, wy = a[2] * ux - a[0] * uz, wz = a[0] * uy - a[1] * ux;
+      // Hülle: Kreise an den Enden jeder Scheibe (Profilwerkzeug: wirklicher Umriss statt Hüllzylinder), Anfangs- und Endlage
+      const NS = 16, P3 = [];
+      const ring = (d, rr) => { for (let e = 0; e < 2; e++) for (let m = 0; m < NS; m++) {
+        const th = 2 * Math.PI * m / NS, co = Math.cos(th) * rr, si = Math.sin(th) * rr;
+        P3.push([c[0] + e * v[0] + a[0] * d + ux * co + wx * si, c[1] + e * v[1] + a[1] * d + uy * co + wy * si, c[2] + e * v[2] + a[2] * d + uz * co + wz * si]);
+      } };
+      if (multi) { for (let s = 0; s < slices.length; s += 4) { ring(slices[s], slices[s + 2]); ring(slices[s + 1], slices[s + 3]); } }
+      else { ring(dMin, rMax); ring(dMax, rMax); }
+      const infl = rMax * (1 - Math.cos(Math.PI / NS)) + 1e-6;
+      const lo3 = [Infinity, Infinity, Infinity], hi3 = [-Infinity, -Infinity, -Infinity];
+      for (const p of P3) for (let e = 0; e < 3; e++) { if (p[e] < lo3[e]) lo3[e] = p[e]; if (p[e] > hi3[e]) hi3[e] = p[e]; }
+      for (let e = 0; e < 3; e++) { lo3[e] -= infl; hi3[e] += infl; }
+      if (hi3[0] < box.x0 || lo3[0] > box.x1 || hi3[1] < box.y0 || lo3[1] > box.y1 || hi3[2] < box.z0 || lo3[2] > box.z1) return;
+      const org = [g.x0, g.y0, g.z0], nn = [nx, ny, nz];
+      for (let k = 0; k < 3; k++) {
+        const p = k === 0 ? 1 : 0, q = k === 2 ? 1 : 2;
+        const H = hull2(P3.map(pt => [pt[p], pt[q]]));
+        if (H.length < 3) continue;
+        const rays = D.rays[k], np = nn[p], nq = nn[q], stride = np + 1;
+        const S = prep(c, a, v, k);
+        const q0 = Math.max(0, Math.ceil((lo3[q] - org[q]) / h - 1e-9)), q1 = Math.min(nq, Math.floor((hi3[q] - org[q]) / h + 1e-9));
+        const tLo = lo3[k], tHi = hi3[k];
+        for (let jq = q0; jq <= q1; jq++) {
+          if (W > 1 && jq % W !== part) continue;
+          const yq = org[q] + jq * h;
+          let xa = Infinity, xb = -Infinity;
+          for (let m = 0, n = H.length - 1; m < H.length; n = m++) {
+            const A = H[m], B = H[n];
+            if ((A[1] > yq) !== (B[1] > yq)) { const x = A[0] + (B[0] - A[0]) * (yq - A[1]) / (B[1] - A[1]); if (x < xa) xa = x; if (x > xb) xb = x; }
+            else if (A[1] === yq) { if (A[0] < xa) xa = A[0]; if (A[0] > xb) xb = A[0]; }
+          }
+          if (!(xa <= xb)) continue;
+          xa -= infl; xb += infl;
+          const i0 = Math.max(0, Math.ceil((xa - org[p]) / h - 1e-9)), i1 = Math.min(np, Math.floor((xb - org[p]) / h + 1e-9));
+          for (let ip = i0; ip <= i1; ip++) {
+            const idx = ip + jq * stride, r = rays[idx], rn = r.length;
+            if (!rn || r[rn - 1] <= tLo || r[0] >= tHi) continue;
+            let any = false; for (let m = 0; m < rn; m += 2) if (r[m + 1] > tLo && r[m] < tHi) { any = true; break; }
+            if (!any) continue;
+            O[p] = org[p] + ip * h; O[q] = yq; O[k] = 0;
+            let did = false;
+            if (multi) {
+              // Profilwerkzeug: Baum aus Hüllzylindern - nur Äste, deren Hüllzylinder noch Material trifft, werden weiter geprüft
+              const T = tree;
+              let sp = 0; stk[sp++] = 0;
+              while (sp && r.length) {
+                const nd = stk[--sp];
+                const leaf = T.lo[nd] + 1 === T.hi[nd];
+                if (leaf) { const s4 = T.lo[nd] * 4; if (!rayIv(S, O, slices[s4], slices[s4 + 1], slices[s4 + 2], slices[s4 + 3], IV)) continue; }
+                else if (!rayIv(S, O, T.d0[nd], T.d1[nd], T.r[nd], T.r[nd], IV)) continue;
+                if (leaf) { if (subtract(r, IV[0], IV[1])) did = true; continue; }
+                let hit = false; for (let m = 0; m < r.length; m += 2) if (r[m + 1] > IV[0] && r[m] < IV[1]) { hit = true; break; }
+                if (!hit) continue;
+                stk[sp++] = T.left[nd]; stk[sp++] = T.right[nd];
+              }
+            } else if (rayIv(S, O, slices[0], slices[1], slices[2], slices[3], IV)) { if (subtract(r, IV[0], IV[1])) did = true; }
+            if (did) onChange(k, idx);
+          }
+        }
+      }
+    }
+    // Ablauf eines Teils (part von W): Schritte (steps: Float64Array je 9 Werte c, a, v; tool: Werkzeugnummer je Schritt),
+    // Zwischenstände (Änderungen seit dem vorigen Zwischenstand), Lieferung der Änderungen gegenüber dem zuletzt Gelieferten
+    function makeRunner(cfg) {
+      const D = create(cfg.box, cfg.h);
+      fillPrism(D, cfg.poly, cfg.z0, cfg.z1, cfg.part, cfg.W);
+      const KEY = 1 << 24;
+      const initRays = D.rays.map(rs => rs.map(r => r.slice()));   // Ausgangsstand (Rohteil)
+      let cur = 0, base = 0, since = new Set();   // Stand = Zwischenstand base + Änderungen "since"
+      const cps = [{ n: 0, delta: new Map() }];   // delta: Strahl -> Stand beim Zwischenstand (Änderungen seit dem vorigen)
+      let cpTime = 0;
+      const sent = new Map();   // zuletzt gelieferter Stand geänderter Strahlen (fehlend = Ausgangsstand)
+      const unsent = new Set();
+      const onChange = (k, idx) => { const key = k * KEY + idx; since.add(key); unsent.add(key); };
+      const initOf = key => initRays[Math.floor(key / KEY)][key % KEY];
+      const rayOf = key => D.rays[Math.floor(key / KEY)][key % KEY];
+      const setRay = (key, val) => { const r = rayOf(key); r.length = 0; for (let q = 0; q < val.length; q++) r.push(val[q]); };
+      const valAt = (key, ci) => { for (let m = ci; m >= 1; m--) { const d = cps[m].delta.get(key); if (d) return d; } return initOf(key); };
+      function restore(ci) {
+        const keys = new Set(since);
+        for (let m = Math.min(ci, base) + 1; m <= Math.max(ci, base); m++) cps[m].delta.forEach((_, key) => keys.add(key));
+        keys.forEach(key => { setRay(key, valAt(key, ci)); unsent.add(key); });
+        since = new Set(); base = ci; cur = cps[ci].n; cpTime = 0;
+      }
+      const a = [0, 0, 0], c = [0, 0, 0], v = [0, 0, 0];
+      return {
+        D,
+        get cur() { return cur; },
+        nSteps: cfg.tool.length,
+        // bis Schritt n rechnen, höchstens budget ms; true = angekommen
+        run(n, budget) {
+          const t0 = Date.now();
+          // nächstgelegener Zwischenstand <= n, der näher liegt als der aktuelle Stand (oder zurück)
+          let ci = -1;
+          for (let m = 0; m < cps.length; m++) if (cps[m].n <= n) ci = m;
+          if (n < cur || (ci >= 0 && cps[ci].n > cur)) restore(ci);
+          while (cur < n) {
+            const ts = Date.now(), s = cfg.steps, o = cur * 9;
+            c[0] = s[o]; c[1] = s[o + 1]; c[2] = s[o + 2]; a[0] = s[o + 3]; a[1] = s[o + 4]; a[2] = s[o + 5]; v[0] = s[o + 6]; v[1] = s[o + 7]; v[2] = s[o + 8];
+            cut(D, c, a, v, cfg.tools[cfg.tool[cur]], cfg.part, cfg.W, onChange);
+            cur++;
+            cpTime += Date.now() - ts;
+            // neuer Zwischenstand nach etwa 300 ms Rechenzeit, nur jenseits des letzten
+            if (cpTime >= 300 && cur > cps[cps.length - 1].n) {
+              const delta = new Map();
+              since.forEach(key => delta.set(key, rayOf(key).slice()));
+              cps.push({ n: cur, delta }); base = cps.length - 1; since = new Set(); cpTime = 0;
+            }
+            if (Date.now() - t0 >= budget) return false;
+          }
+          return true;
+        },
+        // Änderungen gegenüber dem zuletzt Gelieferten
+        takeDelta() {
+          const keys = [], lens = [], data = [];
+          unsent.forEach(key => {
+            const r = rayOf(key), prev = sent.has(key) ? sent.get(key) : initOf(key);
+            let same = prev.length === r.length; if (same) for (let q = 0; q < r.length; q++) if (prev[q] !== r[q]) { same = false; break; }
+            if (same) return;
+            keys.push(key); lens.push(r.length); for (let q = 0; q < r.length; q++) data.push(r[q]);
+            sent.set(key, r.slice());
+          });
+          unsent.clear();
+          return { keys: Int32Array.from(keys), lens: Int32Array.from(lens), data: Float64Array.from(data) };
+        }
+      };
+    }
+    return { create, fillPrism, subtract, prep, rayIv, hull2, cut, makeRunner, rowOf, KEY: 1 << 24 };
+  }
+  // Vernetzung des Tri-Dexel-Modells (Hauptprogramm): Surface Nets in Blöcken zu 32³ Zellen. Knotenstatus aus den Z-Strahlen,
+  // Kantenschnittpunkte exakt aus den Strahlen der jeweiligen Richtung, je Zelle ein Punkt (Mittel ihrer Kantenschnittpunkte),
+  // je Kante mit Vorzeichenwechsel ein Viereck. Ebene Bereiche (alle vier Zellpunkte in der Ebene) werden je Block zu
+  // Rechtecken zusammengefasst (Fächer über die Randpunkte - keine T-Stöße). Nur geänderte Blöcke werden neu vernetzt.
+  const ABDEX_CS = 32;
+  function abdexMesher(D) {
+    const nx = D.nx, ny = D.ny, nz = D.nz, h = D.h, ih = 1 / D.h, gx0 = D.g.x0, gy0 = D.g.y0, gz0 = D.g.z0;
+    const NX = nx + 1, NY = ny + 1, NZ = nz + 1, SK = NX * NY;
+    const R0 = D.rays[0], R1 = D.rays[1], R2 = D.rays[2];
+    const st = new Uint8Array(NX * NY * NZ);
+    const cbx = Math.ceil(nx / ABDEX_CS), cby = Math.ceil(ny / ABDEX_CS), cbz = Math.ceil(nz / ABDEX_CS);
+    const chunks = new Array(cbx * cby * cbz).fill(null);
+    const dirty = new Uint8Array(cbx * cby * cbz).fill(1);
+    function colStatus(i, j) {
+      const r = R2[i + j * NX], base = i + NX * j;
+      for (let k = 0; k < NZ; k++) st[base + SK * k] = 0;
+      for (let m = 0; m < r.length; m += 2) {
+        const k0 = Math.max(0, Math.ceil((r[m] - gz0) * ih)), k1 = Math.min(nz, Math.floor((r[m + 1] - gz0) * ih));
+        for (let k = k0; k <= k1; k++) st[base + SK * k] = 1;
+      }
+    }
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) colStatus(i, j);
+    function markCells(i0, i1, j0, j1, k0, k1) {
+      const a0 = Math.max(0, Math.floor(i0 / ABDEX_CS)), a1 = Math.min(cbx - 1, Math.floor(i1 / ABDEX_CS));
+      const b0 = Math.max(0, Math.floor(j0 / ABDEX_CS)), b1 = Math.min(cby - 1, Math.floor(j1 / ABDEX_CS));
+      const c0 = Math.max(0, Math.floor(k0 / ABDEX_CS)), c1 = Math.min(cbz - 1, Math.floor(k1 / ABDEX_CS));
+      for (let c = c0; c <= c1; c++) for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) dirty[a + cbx * (b + cby * c)] = 1;
+    }
+    // Strahl (Richtung k, Index idx) bekommt den Stand newR: Blöcke im geänderten Bereich markieren, Strahl ersetzen
+    function setRay(k, idx, newR) {
+      const oldR = D.rays[k][idx];
+      // geänderter Bereich: kleinster/größter Endpunkt, der nur in einem der beiden Stände vorkommt
+      let lo = Infinity, hi = -Infinity;
+      for (let m = 0; m < oldR.length; m++) if (newR.indexOf(oldR[m]) < 0) { if (oldR[m] < lo) lo = oldR[m]; if (oldR[m] > hi) hi = oldR[m]; }
+      for (let m = 0; m < newR.length; m++) if (oldR.indexOf(newR[m]) < 0) { if (newR[m] < lo) lo = newR[m]; if (newR[m] > hi) hi = newR[m]; }
+      D.rays[k][idx] = newR;
+      if (!(lo <= hi)) return;
+      if (k === 2) {
+        const i = idx % NX, j = (idx - i) / NX;
+        colStatus(i, j);
+        markCells(i - 2, i + 1, j - 2, j + 1, Math.floor((lo - gz0) * ih) - 1, Math.ceil((hi - gz0) * ih) + 1);
+      } else if (k === 0) {
+        const j = idx % NY, kk = (idx - j) / NY;
+        markCells(Math.floor((lo - gx0) * ih) - 1, Math.ceil((hi - gx0) * ih) + 1, j - 2, j + 1, kk - 2, kk + 1);
+      } else {
+        const i = idx % NX, kk = (idx - i) / NX;
+        markCells(i - 2, i + 1, Math.floor((lo - gy0) * ih) - 1, Math.ceil((hi - gy0) * ih) + 1, kk - 2, kk + 1);
+      }
+    }
+    function crossOn(r, lo, hi) { for (let m = 0; m < r.length; m++) { const v = r[m]; if (v >= lo && v <= hi) return v; } return (lo + hi) / 2; }
+    // Zellpunkt: Mittel der Kantenschnittpunkte (feste Reihenfolge -> in allen Blöcken bitgleich); Rückgabe "rein": alle
+    // Schnitte in einer Richtung mit gleichem Wert (ebene Fläche) -> Bit der Richtung, sonst 0
+    const CP = new Float64Array(3);
+    function cellPt(i, j, k) {
+      let sx = 0, sy = 0, sz = 0, n = 0, dirMask = 0, val = 0, same = true;
+      const x0 = gx0 + i * h, y0 = gy0 + j * h, z0 = gz0 + k * h, b = i + NX * j + SK * k;
+      for (let dk = 0; dk < 2; dk++) for (let dj = 0; dj < 2; dj++) {
+        const s = b + NX * dj + SK * dk;
+        if (st[s] !== st[s + 1]) { const x = crossOn(R0[(j + dj) + (k + dk) * NY], x0, x0 + h); sx += x; sy += y0 + dj * h; sz += z0 + dk * h; n++; dirMask |= 1; if (n === 1) val = x; else if (x !== val) same = false; }
+      }
+      for (let dk = 0; dk < 2; dk++) for (let di = 0; di < 2; di++) {
+        const s = b + di + SK * dk;
+        if (st[s] !== st[s + NX]) { const y = crossOn(R1[(i + di) + (k + dk) * NX], y0, y0 + h); sx += x0 + di * h; sy += y; sz += z0 + dk * h; n++; dirMask |= 2; if (n === 1) val = y; else if (y !== val) same = false; }
+      }
+      for (let dj = 0; dj < 2; dj++) for (let di = 0; di < 2; di++) {
+        const s = b + di + NX * dj;
+        if (st[s] !== st[s + SK]) { const z = crossOn(R2[(i + di) + (j + dj) * NX], z0, z0 + h); sx += x0 + di * h; sy += y0 + dj * h; sz += z; n++; dirMask |= 4; if (n === 1) val = z; else if (z !== val) same = false; }
+      }
+      if (!n) { CP[0] = x0 + h / 2; CP[1] = y0 + h / 2; CP[2] = z0 + h / 2; return 0; }
+      CP[0] = sx / n; CP[1] = sy / n; CP[2] = sz / n;
+      return (dirMask === 1 || dirMask === 2 || dirMask === 4) && same ? dirMask : 0;
+    }
+    // Block-Arbeitsspeicher
+    const VW = ABDEX_CS + 4, vidBuf = new Int32Array(VW * VW * VW).fill(-1);
+    let vidUsed = new Int32Array(4096), nUsed = 0;
+    let pos = new Float64Array(3 * 4096), pure = new Uint8Array(4096), nV = 0;
+    let qBuf = new Float64Array(11 * 4096), nq = 0, nrmV = new Float64Array(3 * 4096);
+    let eia = 0, eib = 0, eja = 0, ejb = 0, eka = 0, ekb = 0;   // Kernbereich des Blocks (nur dort werden Dreiecke ausgegeben)
+    let idx = new Uint32Array(3 * 8192), nI = 0;
+    let cia = 0, cja = 0, cka = 0;
+    function V(i, j, k) {
+      const key = (i - cia + 2) + VW * ((j - cja + 2) + VW * (k - cka + 2));
+      let id = vidBuf[key];
+      if (id < 0) {
+        id = nV++;
+        if (nV > pure.length) { const p2 = new Float64Array(pos.length * 2); p2.set(pos); pos = p2; const u2 = new Uint8Array(pure.length * 2); u2.set(pure); pure = u2; }
+        vidBuf[key] = id;
+        if (nUsed >= vidUsed.length) { const v2 = new Int32Array(vidUsed.length * 2); v2.set(vidUsed); vidUsed = v2; }
+        vidUsed[nUsed++] = key;
+        pure[id] = cellPt(i, j, k); pos[3 * id] = CP[0]; pos[3 * id + 1] = CP[1]; pos[3 * id + 2] = CP[2];
+      }
+      return id;
+    }
+    function addQ(v0, v1, v2, v3, dir, sg, val, p, q, al, ei, ej, ek) {
+      if (nq + 11 > qBuf.length) { const nb = new Float64Array(qBuf.length * 2); nb.set(qBuf); qBuf = nb; }
+      qBuf[nq] = v0; qBuf[nq + 1] = v1; qBuf[nq + 2] = v2; qBuf[nq + 3] = v3; qBuf[nq + 4] = dir; qBuf[nq + 5] = sg; qBuf[nq + 6] = val; qBuf[nq + 7] = p; qBuf[nq + 8] = q; qBuf[nq + 9] = al;
+      qBuf[nq + 10] = ei >= eia && ei < eib && ej >= eja && ej < ejb && ek >= eka && ek < ekb ? 1 : 0;
+      nq += 11;
+    }
+    // Kanten mit Vorzeichenwechsel aus dem Knotenstatus (nicht aus den Strahlendpunkten - bei streifenden Schnitten können
+    // sich Z- und X/Y-Strahl widersprechen); Schnittpunkt aus dem Strahl der Kantenrichtung, sonst Kantenmitte
+    function edgesAll(ia, ib, ja, jb, ka, kb) {
+      const k0 = Math.max(1, ka), k1 = Math.min(nz, kb), j0 = Math.max(1, ja), j1 = Math.min(ny, jb), i0 = Math.max(1, ia), i1 = Math.min(nx, ib);
+      // X-Kanten (Knoten i,j,k -> i+1): Zellen (i, j-1..j, k-1..k)
+      for (let k = k0; k < k1; k++) for (let j = j0; j < j1; j++) {
+        const rb = NX * j + SK * k;
+        for (let i = ia; i < ib; i++) {
+          const s0 = st[rb + i]; if (s0 === st[rb + i + 1]) continue;
+          addQ(V(i, j - 1, k - 1), V(i, j, k - 1), V(i, j, k), V(i, j - 1, k), 0, s0 ? 1 : -1, crossOn(R0[j + k * NY], gx0 + i * h, gx0 + (i + 1) * h), j, k, i, i, j, k);
+        }
+      }
+      // Y-Kanten (i,j,k -> j+1): Zellen (i-1..i, j, k-1..k)
+      for (let k = k0; k < k1; k++) for (let j = ja; j < jb; j++) {
+        const rb = NX * j + SK * k;
+        for (let i = i0; i < i1; i++) {
+          const s0 = st[rb + i]; if (s0 === st[rb + i + NX]) continue;
+          addQ(V(i - 1, j, k - 1), V(i, j, k - 1), V(i, j, k), V(i - 1, j, k), 1, s0 ? 1 : -1, crossOn(R1[i + k * NX], gy0 + j * h, gy0 + (j + 1) * h), i, k, j, i, j, k);
+        }
+      }
+      // Z-Kanten (i,j,k -> k+1): Zellen (i-1..i, j-1..j, k)
+      for (let k = ka; k < kb; k++) for (let j = j0; j < j1; j++) {
+        const rb = NX * j + SK * k;
+        for (let i = i0; i < i1; i++) {
+          const s0 = st[rb + i]; if (s0 === st[rb + i + SK]) continue;
+          addQ(V(i - 1, j - 1, k), V(i, j - 1, k), V(i, j, k), V(i - 1, j, k), 2, s0 ? 1 : -1, crossOn(R2[i + j * NX], gz0 + k * h, gz0 + (k + 1) * h), i, j, k, i, j, k);
+        }
+      }
+    }
+    // Umlaufsinn rein topologisch: Zellen um eine X-Kante in der Reihenfolge (j-1,k-1),(j,k-1),(j,k),(j-1,k) ergeben die Normale
+    // +X, um eine Y-Kante (i,k) -Y, um eine Z-Kante (i,j) +Z; Material auf der kleineren Seite (sg > 0) -> Normale +Richtung
+    function triOut(p0, p1, p2, dir, sg) {
+      const ax = pos[3 * p1] - pos[3 * p0], ay = pos[3 * p1 + 1] - pos[3 * p0 + 1], az = pos[3 * p1 + 2] - pos[3 * p0 + 2];
+      const bx = pos[3 * p2] - pos[3 * p0], by = pos[3 * p2 + 1] - pos[3 * p0 + 1], bz = pos[3 * p2 + 2] - pos[3 * p0 + 2];
+      const n0 = ay * bz - az * by, n1 = az * bx - ax * bz, n2 = ax * by - ay * bx;
+      if (n0 * n0 + n1 * n1 + n2 * n2 < 1e-24) return;
+      if (nI + 3 > idx.length) { const i2 = new Uint32Array(idx.length * 2); i2.set(idx); idx = i2; }
+      const flip = dir === 1 ? sg > 0 : sg < 0;
+      if (flip) { idx[nI++] = p0; idx[nI++] = p2; idx[nI++] = p1; } else { idx[nI++] = p0; idx[nI++] = p1; idx[nI++] = p2; }
+    }
+    const GW = ABDEX_CS + 2;
+    function buildChunk(a, b, c) {
+      const ia = a * ABDEX_CS, ib = Math.min(nx, ia + ABDEX_CS), ja = b * ABDEX_CS, jb = Math.min(ny, ja + ABDEX_CS), ka = c * ABDEX_CS, kb = Math.min(nz, ka + ABDEX_CS);
+      for (let m = 0; m < nUsed; m++) vidBuf[vidUsed[m]] = -1;
+      nUsed = 0; nV = 0; nq = 0; nI = 0; cia = ia; cja = ja; cka = ka;
+      eia = ia; eib = ib; eja = ja; ejb = jb; eka = ka; ekb = kb;
+      // eine Zelle Rand ringsum: die Punktnormalen am Blockrand sehen so dieselben Nachbarflächen wie im Nachbarblock
+      edgesAll(Math.max(0, ia - 1), Math.min(nx, ib + 1), Math.max(0, ja - 1), Math.min(ny, jb + 1), Math.max(0, ka - 1), Math.min(nz, kb + 1));
+      // Punktnormalen: Summe der Vierecksnormalen (Diagonalen-Kreuzprodukt, Umlaufsinn wie triOut)
+      if (nrmV.length < 3 * pure.length) nrmV = new Float64Array(3 * pure.length);
+      nrmV.fill(0, 0, 3 * nV);
+      for (let o = 0; o < nq; o += 11) {
+        const i0 = qBuf[o], i1 = qBuf[o + 1], i2 = qBuf[o + 2], i3 = qBuf[o + 3], dir = qBuf[o + 4], sg = qBuf[o + 5];
+        const ax = pos[3 * i2] - pos[3 * i0], ay = pos[3 * i2 + 1] - pos[3 * i0 + 1], az = pos[3 * i2 + 2] - pos[3 * i0 + 2];
+        const bx = pos[3 * i3] - pos[3 * i1], by = pos[3 * i3 + 1] - pos[3 * i1 + 1], bz = pos[3 * i3 + 2] - pos[3 * i1 + 2];
+        const f = (dir === 1 ? sg > 0 : sg < 0) ? -1 : 1;
+        const n0 = (ay * bz - az * by) * f, n1 = (az * bx - ax * bz) * f, n2 = (ax * by - ay * bx) * f;
+        for (const vv of [i0, i1, i2, i3]) { nrmV[3 * vv] += n0; nrmV[3 * vv + 1] += n1; nrmV[3 * vv + 2] += n2; }
+      }
+      // ebene Vierecke gruppieren (Wert, Richtung, Seite, Zellindex entlang der Richtung) -> Rechtecke
+      const pBase = [ja, ia, ia], qBase = [ka, ka, ja];
+      let groups = null;
+      for (let o = 0; o < nq; o += 11) {
+        if (!qBuf[o + 10]) continue;   // Rand: nur für die Normalen
+        const i0 = qBuf[o], i1 = qBuf[o + 1], i2 = qBuf[o + 2], i3 = qBuf[o + 3], dir = qBuf[o + 4], sg = qBuf[o + 5], val = qBuf[o + 6];
+        const bit = 1 << dir;
+        if (pure[i0] === bit && pure[i1] === bit && pure[i2] === bit && pure[i3] === bit && pos[3 * i0 + dir] === val && pos[3 * i1 + dir] === val && pos[3 * i2 + dir] === val && pos[3 * i3 + dir] === val) {
+          const along = qBuf[o + 9];
+          if (!groups) groups = new Map();
+          let lst = groups.get(val); if (!lst) { lst = []; groups.set(val, lst); }
+          let gr = null; for (let m = 0; m < lst.length; m++) { const x = lst[m]; if (x.dir === dir && x.sg === sg && x.along === along) { gr = x; break; } }
+          if (!gr) { gr = { dir, sg, along, grid: new Uint8Array(GW * GW), cells: [] }; lst.push(gr); }
+          const cc = (qBuf[o + 7] - pBase[dir]) + GW * (qBuf[o + 8] - qBase[dir]);
+          gr.grid[cc] = 1; gr.cells.push(cc);
+          continue;
+        }
+        triOut(i0, i1, i2, dir, sg); triOut(i0, i2, i3, dir, sg);
+      }
+      if (groups) groups.forEach(lst => lst.forEach(gr => {
+        const dir = gr.dir, sg = gr.sg, along = gr.along, grid = gr.grid, pb = pBase[dir], qb = qBase[dir];
+        gr.cells.sort((u, w) => u - w);
+        const at = (p, q) => dir === 0 ? V(along, p, q) : dir === 1 ? V(p, along, q) : V(p, q, along);
+        for (const c0 of gr.cells) {
+          if (grid[c0] !== 1) continue;
+          const p0 = c0 % GW, q0 = (c0 - p0) / GW;
+          let p1 = p0; while (p1 + 1 < GW && grid[p1 + 1 + GW * q0] === 1) p1++;
+          let q1 = q0;
+          for (;;) { if (q1 + 1 >= GW) break; let ok = true; for (let p = p0; p <= p1; p++) if (grid[p + GW * (q1 + 1)] !== 1) { ok = false; break; } if (!ok) break; q1++; }
+          for (let q = q0; q <= q1; q++) for (let p = p0; p <= p1; p++) grid[p + GW * q] = 2;
+          // Zellen (p0-1..p1, q0-1..q1) in den Ebenenachsen; Rand als Ring, Fächer
+          const ring = [], P0 = p0 + pb, P1 = p1 + pb, Q0 = q0 + qb, Q1 = q1 + qb;
+          for (let p = P0 - 1; p <= P1; p++) ring.push(at(p, Q0 - 1));
+          for (let q = Q0; q <= Q1; q++) ring.push(at(P1, q));
+          for (let p = P1 - 1; p >= P0 - 1; p--) ring.push(at(p, Q1));
+          for (let q = Q1 - 1; q >= Q0; q--) ring.push(at(P0 - 1, q));
+          // Fächer um einen Mittelpunkt (kein Randstück fällt weg -> wasserdicht, keine T-Stöße)
+          let cx = 0, cy = 0, cz = 0;
+          for (let t = 0; t < ring.length; t++) { cx += pos[3 * ring[t]]; cy += pos[3 * ring[t] + 1]; cz += pos[3 * ring[t] + 2]; }
+          const cid = nV++;
+          if (nV > pure.length) { const p2 = new Float64Array(pos.length * 2); p2.set(pos); pos = p2; const u2 = new Uint8Array(pure.length * 2); u2.set(pure); pure = u2; }
+          if (nrmV.length < 3 * nV) { const n2 = new Float64Array(pos.length); n2.set(nrmV); nrmV = n2; }
+          nrmV[3 * cid] = nrmV[3 * cid + 1] = nrmV[3 * cid + 2] = 0; nrmV[3 * cid + dir] = (dir === 1 ? -1 : 1) * ((dir === 1 ? sg > 0 : sg < 0) ? -1 : 1);
+          pos[3 * cid] = cx / ring.length; pos[3 * cid + 1] = cy / ring.length; pos[3 * cid + 2] = cz / ring.length; pos[3 * cid + dir] = pos[3 * ring[0] + dir];
+          for (let t = 0; t < ring.length; t++) triOut(cid, ring[t], ring[(t + 1) % ring.length], dir, sg);
+        }
+      }));
+      if (!nI) return null;
+      const P = new Float32Array(3 * nV); for (let m = 0; m < 3 * nV; m++) P[m] = pos[m];
+      const I = idx.slice(0, nI), nT = nI / 3, N = new Float32Array(nT * 3);
+      for (let t = 0; t < nT; t++) {
+        const p0 = I[3 * t], p1 = I[3 * t + 1], p2 = I[3 * t + 2];
+        const ax = P[3 * p1] - P[3 * p0], ay = P[3 * p1 + 1] - P[3 * p0 + 1], az = P[3 * p1 + 2] - P[3 * p0 + 2];
+        const bx = P[3 * p2] - P[3 * p0], by = P[3 * p2 + 1] - P[3 * p0 + 1], bz = P[3 * p2 + 2] - P[3 * p0 + 2];
+        const x = ay * bz - az * by, y = az * bx - ax * bz, z = ax * by - ay * bx, l = Math.hypot(x, y, z) || 1;
+        N[3 * t] = x / l; N[3 * t + 1] = y / l; N[3 * t + 2] = z / l;
+      }
+      const NV = new Float32Array(3 * nV);
+      for (let v = 0; v < nV; v++) { const x = nrmV[3 * v], y = nrmV[3 * v + 1], z = nrmV[3 * v + 2], l = Math.hypot(x, y, z) || 1; NV[3 * v] = x / l; NV[3 * v + 1] = y / l; NV[3 * v + 2] = z / l; }
+      return { pos: P, idx: I, nrm: N, vn: NV, nT };
+    }
+    // abgetrennte Stücke (Abfall, z. B. nach dem Trennschnitt): Zusammenhangskomponenten der Knoten im Material; behalten wird
+    // das größte Stück und jedes, das mindestens halb so groß ist - die übrigen fallen weg (Knoten als "außen" gesetzt)
+    let dropList = null, vis = null, que = null, lastComps = null;
+    function bfs(s0, mark, collect) {
+      let hd = 0, tl = 0; que[tl++] = s0; vis[s0] = mark;
+      while (hd < tl) {
+        const c = que[hd++];
+        if (collect) collect.push(c);
+        let d = c + 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+        d = c - 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+        d = c + NX; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+        d = c - NX; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+        d = c + SK; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+        d = c - SK; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
+      }
+      return tl;
+    }
+    function clearDrop() {
+      if (!dropList) return;
+      const cols = new Set();
+      for (let m = 0; m < dropList.length; m++) { const c = dropList[m], i = c % NX, j = ((c - i) / NX) % NY; cols.add(i + NX * j); }
+      cols.forEach(col => { const i = col % NX, j = (col - i) / NX; colStatus(i, j); markCells(i - 2, i + 1, j - 2, j + 1, 0, nz); });
+      dropList = null;
+    }
+    function settleDrop() {
+      clearDrop();
+      const N = NX * NY * NZ;
+      if (!vis) { vis = new Uint8Array(N); que = new Int32Array(N); } else vis.fill(0);
+      const comps = [];
+      for (let s0 = 0; s0 < N; s0++) if (st[s0] && !vis[s0]) comps.push([s0, bfs(s0, 1, null)]);
+      if (comps.length <= 1) return 0;
+      let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
+      const out = [];
+      comps.forEach(c => { if (c[1] < big / 2) bfs(c[0], 2, out); });
+      lastComps = comps.map(c => c[1]).sort((x, y) => y - x).slice(0, 8);
+      if (!out.length) return 0;
+      for (let m = 0; m < out.length; m++) {
+        const c = out[m]; st[c] = 0;
+        const i = c % NX, j = ((c - i) / NX) % NY, k = Math.floor(c / SK);
+        markCells(i - 1, i, j - 1, j, k - 1, k);
+      }
+      dropList = out;
+      return comps.length - comps.filter(c => c[1] >= big / 2).length;
+    }
+    return {
+      setRay, clearDrop, settleDrop, comps: () => lastComps,
+      // geänderte Blöcke neu vernetzen (höchstens budget ms); Rückgabe: Anzahl offener Blöcke
+      update(budget) {
+        const t0 = Date.now();
+        let left = 0;
+        for (let ci = 0; ci < dirty.length; ci++) {
+          if (!dirty[ci]) continue;
+          if (budget != null && Date.now() - t0 > budget) { left++; continue; }
+          dirty[ci] = 0;
+          const a = ci % cbx, b = Math.floor(ci / cbx) % cby, c = Math.floor(ci / (cbx * cby));
+          chunks[ci] = buildChunk(a, b, c);
+        }
+        return left;
+      },
+      chunks: () => chunks.filter(Boolean),
+      markAll() { dirty.fill(1); for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) colStatus(i, j); }
+    };
+  }
+  // Steuerung des Volumenmodells (Hauptprogramm)
+  const ABDEX_STEP_DEG = 1;   // größte Lageänderung je Schritt
+  // Werkzeug als Stapel von Kegelstümpfen [d0, d1, r0, r1, ...] (Abstand von der Spitze entlang der Achse); Profilwerkzeug:
+  // je Strecke des Profils ein Kegelstumpf (gleich geneigte Nachbarstrecken zusammengefasst)
+  function abdexToolSlices(q, rp) {
+    const L = q.toolLength > 0 ? q.toolLength : 100, R = q.toolRadius;
+    if (!rp) return [0, L, R, R];
+    let pts = rp.map(e => [e.dist, Math.abs(e.r)]).filter(e => isFinite(e[0]) && isFinite(e[1])).sort((a, b) => a[0] - b[0]);
+    // Profil vereinfachen (Douglas-Peucker, 0,05 mm) - Bögen liegen als sehr viele kurze Strecken vor
+    const dp = (P, tol) => {
+      if (P.length < 3) return P;
+      const keep = new Uint8Array(P.length); keep[0] = keep[P.length - 1] = 1;
+      const stack = [[0, P.length - 1]];
+      while (stack.length) {
+        const [i0, i1] = stack.pop(); const A = P[i0], B = P[i1], dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy) || 1;
+        let best = -1, bd = tol;
+        for (let m = i0 + 1; m < i1; m++) { const d = Math.abs((P[m][0] - A[0]) * dy - (P[m][1] - A[1]) * dx) / L; if (d > bd) { bd = d; best = m; } }
+        if (best >= 0) { keep[best] = 1; stack.push([i0, best], [best, i1]); }
+      }
+      return P.filter((_, m) => keep[m]);
+    };
+    pts = dp(pts, 0.08);
+    const out = [];
+    for (let k = 0; k + 1 < pts.length; k++) {
+      const [da, ra] = pts[k], [db, rb] = pts[k + 1];
+      if (!(db - da > 1e-6)) continue;
+      const n = out.length;
+      if (n && Math.abs(out[n - 3] - da) < 1e-9 && Math.abs(out[n - 1] - ra) < 1e-6) {
+        // gleiche Neigung -> verlängern
+        const m0 = (out[n - 1] - out[n - 2]) / (out[n - 3] - out[n - 4]), m1 = (rb - ra) / (db - da);
+        if (Math.abs(m0 - m1) < 1e-3) { out[n - 3] = db; out[n - 1] = rb; continue; }
+      }
+      if (ra > 1e-4 || rb > 1e-4) out.push(da, db, ra, rb);
+    }
+    return out.length ? out : [0, L, R, R];
+  }
+  // Schritte aus den Bahnpunkten: je Bahnstück eine Verschiebung mit fester Lage (bei Lageänderung in Teilschritten)
+  function abdexBuildSteps(list, hidden, profileOf) {
+    const steps = [], tool = [], idxOf = [], tools = [], toolKey = new Map();
+    const toolIdx = (key, mk) => { let t = toolKey.get(key); if (t === undefined) { t = tools.length; toolKey.set(key, t); tools.push(Float64Array.from(mk())); } return t; };
+    const ax3 = q => { const a = toolAxisDirection(q); if (!a) return [0, 0, 1]; const l = Math.hypot(a.x, a.y, a.z) || 1; return [a.x / l, a.y / l, a.z / l]; };
+    const push = (c, a, v, t, idx) => { steps.push(c[0], c[1], c[2], a[0], a[1], a[2], v[0], v[1], v[2]); tool.push(t); idxOf.push(idx); };
+    // Radiuskorrektur (senkrechtes Werkzeug, G41/G42): versetzte Strecken, Außenecken als Bogen, Innenecken gekürzt
+    const compRun = [];
+    const flushComp = () => {
+      if (!compRun.length) return;
+      const segs = compRun.map(e => {
+        const { p, q, t, idx } = e, dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy), r = q.toolRadius, s = q.comp === 'left' ? 1 : -1;
+        const nx = L > 1e-9 ? -dy / L * s * r : 0, ny = L > 1e-9 ? dx / L * s * r : 0;
+        return { a: [p.x + nx, p.y + ny, p.z], b: [q.x + nx, q.y + ny, q.z], u: L > 1e-9 ? [dx / L, dy / L] : null, s, r, v: [q.x, q.y, q.z], t, idx };
+      });
+      const extra = [];
+      for (let k = 0; k + 1 < segs.length; k++) {
+        const g = segs[k], hh = segs[k + 1];
+        if (!g.u || !hh.u || g.s !== hh.s) continue;
+        const cr = g.u[0] * hh.u[1] - g.u[1] * hh.u[0];
+        if (cr * g.s < -1e-9) {
+          // Außenecke: Bogen um den Eckpunkt
+          const a0 = Math.atan2(g.b[1] - g.v[1], g.b[0] - g.v[0]); let a1 = Math.atan2(hh.a[1] - g.v[1], hh.a[0] - g.v[0]);
+          while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI; while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+          const n = Math.max(1, Math.ceil(Math.abs(a1 - a0) / (5 * Math.PI / 180)));
+          const arc = []; for (let m = 0; m <= n; m++) { const an = a0 + (a1 - a0) * m / n; arc.push([g.v[0] + g.r * Math.cos(an), g.v[1] + g.r * Math.sin(an), g.v[2]]); }
+          extra[k] = arc;
+        } else if (cr * g.s > 1e-9) {
+          // Innenecke: am Schnittpunkt kürzen
+          const den = (g.b[0] - g.a[0]) * (hh.b[1] - hh.a[1]) - (g.b[1] - g.a[1]) * (hh.b[0] - hh.a[0]);
+          if (Math.abs(den) > 1e-12) {
+            const tt = ((hh.a[0] - g.a[0]) * (hh.b[1] - hh.a[1]) - (hh.a[1] - g.a[1]) * (hh.b[0] - hh.a[0])) / den;
+            if (tt > 0 && tt < 1) { const X = [g.a[0] + (g.b[0] - g.a[0]) * tt, g.a[1] + (g.b[1] - g.a[1]) * tt]; g.b = [X[0], X[1], g.b[2]]; hh.a = [X[0], X[1], hh.a[2]]; }
+          }
+        }
+      }
+      segs.forEach((g, k) => {
+        push(g.a, [0, 0, 1], [g.b[0] - g.a[0], g.b[1] - g.a[1], g.b[2] - g.a[2]], g.t, g.idx);
+        const arc = extra[k];
+        if (arc) for (let m = 0; m + 1 < arc.length; m++) push(arc[m], [0, 0, 1], [arc[m + 1][0] - arc[m][0], arc[m + 1][1] - arc[m][1], 0], g.t, segs[k + 1].idx);
+      });
+      compRun.length = 0;
+    };
+    let lastSawDir = null;
+    for (let i = 1; i < list.length; i++) {
+      const q = list[i], p = list[i - 1];
+      if (q.rapid || hidden(q) || !(q.toolRadius > 0)) { flushComp(); continue; }
+      if (q.toolIsBlade) {
+        flushComp();
+        const tB = q.toolLength > 0 ? q.toolLength : 4, R = q.toolRadius;
+        const tilted = ((q.a || 0) !== 0 || (q.b || 0) !== 0 || (q.c || 0) !== 0);
+        if (tilted) {
+          const a = ax3(q);
+          push([p.x, p.y, p.z], a, [q.x - p.x, q.y - p.y, q.z - p.z], toolIdx('saw|' + R + '|' + tB, () => [0, tB, R, R]), i);
+        } else {
+          // senkrechtes Sägeblatt in Bahnrichtung: Mitte um R über dem tiefsten Punkt, Blatt mittig zur Bahn
+          const dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy);
+          if (L > 1e-9) lastSawDir = [dx / L, dy / L];
+          if (!lastSawDir) continue;
+          push([p.x, p.y, p.z + R], [-lastSawDir[1], lastSawDir[0], 0], [dx, dy, q.z - p.z], toolIdx('sawv|' + R + '|' + tB, () => [-tB / 2, tB / 2, R, R]), i);
+        }
+        continue;
+      }
+      const rp = profileOf(q);
+      const t = toolIdx((rp ? 'p' + q.toolProfileId : 'c') + '|' + q.toolRadius + '|' + q.toolLength, () => abdexToolSlices(q, rp));
+      const a0 = ax3(p), a1 = ax3(q);
+      const vertical = a0[2] > 0.99999 && a1[2] > 0.99999;
+      if (vertical && (q.comp === 'left' || q.comp === 'right')) { compRun.push({ p, q, t, idx: i }); continue; }
+      flushComp();
+      const dot = Math.max(-1, Math.min(1, a0[0] * a1[0] + a0[1] * a1[1] + a0[2] * a1[2]));
+      const n = Math.max(1, Math.min(180, Math.ceil(Math.acos(dot) / (ABDEX_STEP_DEG * Math.PI / 180) - 1e-9)));
+      const v = [(q.x - p.x) / n, (q.y - p.y) / n, (q.z - p.z) / n];
+      for (let m = 0; m < n; m++) {
+        const f0 = m / n, fm = (m + 0.5) / n;
+        let a = n === 1 ? (dot > 0.99999 ? a1 : [(a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2, (a0[2] + a1[2]) / 2]) : [a0[0] + (a1[0] - a0[0]) * fm, a0[1] + (a1[1] - a0[1]) * fm, a0[2] + (a1[2] - a0[2]) * fm];
+        const l = Math.hypot(a[0], a[1], a[2]) || 1; a = [a[0] / l, a[1] / l, a[2] / l];
+        push([p.x + (q.x - p.x) * f0, p.y + (q.y - p.y) * f0, p.z + (q.z - p.z) * f0], a, v, t, i);
+      }
+    }
+    flushComp();
+    return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idxOf), tools };
+  }
+  // Gitterabstand: höchstens etwa 150 000 Strahlen (Krümmling 588 x 134 x 112 -> 1 mm)
+  function abdexGridH(box) {
+    const X = box.x1 - box.x0, Y = box.y1 - box.y0, Z = box.z1 - box.z0;
+    const A = X * Y + X * Z + Y * Z;
+    return Math.max(0.5, Math.min(5, Math.sqrt(A / 150000)));
+  }
+  let abdexWorkerUrl = null;
+  function abdexWorkerSource() {
+    // Worker: rechnet bis zum angeforderten Schritt und liefert die Änderungen; danach (Vorausrechnen) im Leerlauf weiter bis
+    // zum Programmende - die Zwischenstände machen spätere Sprünge schnell
+    return 'const CORE = (' + ABDEX_CORE.toString() + ')();\n' +
+      'let R = null, target = 0, req = 0, owe = false, timer = 0, ahead = 0;\n' +
+      'self.onmessage = e => { const m = e.data; if (m.type === "init") { R = CORE.makeRunner(m.cfg); ahead = 0; kick(); } else if (m.type === "goto") { target = m.n; req = m.req; owe = true; kick(); } };\n' +
+      'function kick() { if (!timer) timer = setTimeout(loop, 0); }\n' +
+      'function loop() { timer = 0; if (owe) { if (R.run(target, 30)) { owe = false; const d = R.takeDelta(); self.postMessage({ type: "deliver", req: req, n: R.cur, keys: d.keys, lens: d.lens, data: d.data }, [d.keys.buffer, d.lens.buffer, d.data.buffer]); } kick(); return; }\n' +
+      '  if (ahead < R.nSteps) { const n = Math.max(ahead, R.cur); R.run(R.nSteps, 30); ahead = Math.max(n, R.cur); if (ahead < R.nSteps) kick(); } }\n';
+  }
+  // Volumenmodell anlegen: Worker (oder Ersatz im Hauptprogramm), Hauptkopie der Strahlen, Vernetzer
+  function abdexStart(st, poly) {
+    const CORE = ABDEX_CORE();
+    const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+    const box = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), z0: st.zTop - st.T, z1: st.zTop };
+    const h = abdexGridH(box);
+    const D = CORE.create(box, h);
+    CORE.fillPrism(D, poly, box.z0, box.z1, 0, 1);
+    const S = st.dexSteps;
+    const nW = typeof Worker !== 'undefined' ? (window.__abdexWorkers != null ? window.__abdexWorkers : Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1))) : 0;
+    const dex = { CORE, D, box, h, mesher: abdexMesher(D), nSteps: S.tool.length, idx: S.idx, want: 0, shown: 0, req: 0, inflight: null, meshing: false,
+      mesh: null, workers: [], W: 1, roundK: 40, disposed: false, err: null, t0: 0, lastRoundMs: 0, ccN: -1, ccTimer: 0, dropped: 0 };
+    const cfgFor = (part, W) => ({ box, h, poly, z0: box.z0, z1: box.z1, steps: S.steps, tool: S.tool, tools: S.tools, part, W });
+    let workersOk = false;
+    if (nW > 0) {
+      try {
+        if (!abdexWorkerUrl) abdexWorkerUrl = URL.createObjectURL(new Blob([abdexWorkerSource()], { type: 'text/javascript' }));
+        for (let p = 0; p < nW; p++) {
+          const w = new Worker(abdexWorkerUrl);
+          w.onmessage = e => abdexOnMessage(dex, p, e.data);
+          w.onerror = ev => { dex.err = String(ev.message || ev); };
+          w.postMessage({ type: 'init', cfg: cfgFor(p, nW) });
+          dex.workers.push(w);
+        }
+        dex.W = nW; workersOk = true;
+      } catch (e) { dex.workers.forEach(w => { try { w.terminate(); } catch (e2) { /* egal */ } }); dex.workers = []; }
+    }
+    if (!workersOk) {
+      // ohne Worker: ein Teil im Hauptprogramm, zeitgeteilt
+      const R = CORE.makeRunner(cfgFor(0, 1));
+      dex.local = { R, target: 0, req: 0, timer: 0 };
+      dex.W = 1;
+    }
+    dex.dispose = () => { dex.disposed = true; dex.workers.forEach(w => { try { w.terminate(); } catch (e) { /* egal */ } }); dex.workers = []; if (dex.local && dex.local.timer) clearTimeout(dex.local.timer); };
+    dex.mesher.update();
+    dex.mesh = abdexMeshObject(dex);
+    dex.ccN = 0;   // Rohteil: ein Stück
+    return dex;
+  }
+  function abdexMeshObject(dex) {
+    const chunks = dex.mesher.chunks();
+    let nT = 0; chunks.forEach(c => { nT += c.nT; });
+    // Materialvolumen (cm³) aus den Z-Strahlen - für Anzeige/Prüfung
+    let len = 0; const R2 = dex.D.rays[2]; for (let m = 0; m < R2.length; m++) { const r = R2[m]; for (let q = 0; q < r.length; q += 2) len += r[q + 1] - r[q]; }
+    dex.vol = Math.round(len * dex.h * dex.h / 100) / 10;
+    return { tris: [], walls: [], faces3: null, rings: [], levels: [], bores: null, abtrag: true, dexel: { chunks, box: dex.box, nT } };
+  }
+  function abdexSend(dex, n) {
+    if (dex.ccTimer) { clearTimeout(dex.ccTimer); dex.ccTimer = 0; }
+    dex.mesher.clearDrop(); dex.ccN = -1; dex.dropped = 0;
+    dex.req++;
+    dex.inflight = { req: dex.req, n, got: 0, t0: performance.now() };
+    if (dex.workers.length) dex.workers.forEach(w => w.postMessage({ type: 'goto', n, req: dex.req }));
+    else {
+      const L = dex.local; L.target = n; L.req = dex.req;
+      const loop = () => {
+        L.timer = 0;
+        if (dex.disposed) return;
+        if (L.R.run(L.target, 25)) { const d = L.R.takeDelta(); abdexOnMessage(dex, 0, { type: 'deliver', req: L.req, n: L.R.cur, keys: d.keys, lens: d.lens, data: d.data }); }
+        else L.timer = setTimeout(loop, 0);
+      };
+      if (!L.timer) L.timer = setTimeout(loop, 0);
+    }
+  }
+  function abdexOnMessage(dex, part, m) {
+    if (dex.disposed || m.type !== 'deliver') return;
+    // Änderungen übernehmen (je Worker in Lieferreihenfolge, auch ältere Aufträge)
+    const KEY = dex.CORE.KEY;
+    let o = 0;
+    for (let q = 0; q < m.keys.length; q++) {
+      const key = m.keys[q], k = Math.floor(key / KEY), idx = key % KEY, len = m.lens[q];
+      const r = new Array(len); for (let z = 0; z < len; z++) r[z] = m.data[o + z];
+      o += len;
+      dex.mesher.setRay(k, idx, r);
+    }
+    const fl = dex.inflight;
+    if (!fl || m.req !== fl.req) return;
+    fl.got++;
+    if (fl.got < dex.W) return;
+    dex.lastRoundMs = performance.now() - fl.t0;
+    // vorwärts: Rundengröße so anpassen, dass eine Runde etwa 250 ms dauert
+    if (fl.n > dex.shown) dex.roundK = Math.max(5, Math.min(4000, Math.round(dex.roundK * Math.max(0.5, Math.min(2, 250 / Math.max(1, dex.lastRoundMs))))));
+    dex.inflight = null;
+    dex.meshN = fl.n;
+    abdexMeshStep(dex);
+  }
+  // Vernetzen in Zeitscheiben, danach anzeigen und ggf. die nächste Runde starten
+  function abdexMeshStep(dex) {
+    if (dex.disposed) return;
+    const left = dex.mesher.update(40);
+    if (left) { dex.meshing = true; setTimeout(() => abdexMeshStep(dex), 0); return; }
+    dex.meshing = false;
+    dex.shown = dex.meshN;
+    dex.mesh = abdexMeshObject(dex);
+    abtragMeshTarget = -1;   // neues Netz -> neu zeichnen
+    requestRender();
+    abdexKick(dex);
+    abdexProgressUI(dex);
+    // angekommen: abgetrennte Stücke entfernen (kurz verzögert - beim Abspielen nur, wenn die Rechnung mitkommt)
+    if (!dex.inflight && dex.shown === dex.want && dex.ccN !== dex.shown) {
+      if (dex.ccTimer) clearTimeout(dex.ccTimer);
+      dex.ccTimer = setTimeout(() => {
+        dex.ccTimer = 0;
+        if (dex.disposed || dex.inflight || dex.meshing || dex.shown !== dex.want || dex.ccN === dex.shown) return;
+        dex.ccN = dex.shown;
+        dex.dropped = window.__abdexNoCC ? 0 : dex.mesher.settleDrop();
+        if (dex.dropped) { dex.meshN = dex.shown; abdexMeshStep(dex); } else { abtragMeshTarget = -1; requestRender(); }
+      }, 200);
+    }
+  }
+  function abdexKick(dex) {
+    if (dex.disposed || dex.inflight || dex.meshing || dex.shown === dex.want) return;
+    const n = dex.want < dex.shown ? dex.want : Math.min(dex.want, dex.shown + dex.roundK);
+    abdexSend(dex, n);
+  }
+  // Netz für Bahnpunkt target (sofort das zuletzt fertige; Rechnung läuft im Hintergrund weiter)
+  function abdexBuildMesh(st, target) {
+    const dex = st.dex;
+    // Anzahl Schritte mit Bahnpunkt <= target
+    let lo = 0, hi = dex.idx.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (dex.idx[m] <= target) lo = m + 1; else hi = m; }
+    dex.want = lo;
+    abdexKick(dex);
+    abdexProgressUI(dex);
+    const nT = dex.mesh ? dex.mesh.dexel.nT : 0;
+    window.__lastAbtragInfo = { target, dexel: true, steps: dex.nSteps, want: dex.want, shown: dex.shown, pending: dex.shown !== dex.want || !!dex.inflight || dex.meshing || dex.ccN !== dex.shown, dropped: dex.dropped, comps: dex.mesher.comps(), vol: dex.vol,
+      workers: dex.workers.length, h: dex.h, tris: nT, roundMs: Math.round(dex.lastRoundMs), error: dex.err || undefined };
+    return dex.mesh;
   }
   // Vorberechnung: Kapseln (mit Index des Bahnpunkts, an dem sie entstehen), Bohrlochgruppen, Abbildung Welt -> DXF-Roh
   function abtragPrepare() {
@@ -21868,6 +22755,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       profCache.set(q.toolProfileId, rp && rp.length >= 2 ? rp : null);
       return profCache.get(q.toolProfileId);
     };
+    // Release 294: simultane 5-Achs-Bewegungen (die Werkzeugachse ändert sich während der Bewegung, mindestens 10 Bahnstücke,
+    // ohne Sägeblätter) -> Volumenmodell (Tri-Dexel) statt 2,5D-Taschen
+    {
+      let n5 = 0;
+      const cosT = Math.cos(0.2 * Math.PI / 180);
+      for (let i = 1; i < list.length && n5 < 10; i++) {
+        const q = list[i];
+        if (q.rapid || hidden(q) || !(q.toolRadius > 0) || q.toolIsBlade) continue;
+        const p = list[i - 1];
+        if (p.toolIsBlade || p.opIndex !== q.opIndex || Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z) < 0.01) continue;
+        const a0 = toolAxisDirection(p), a1 = toolAxisDirection(q);
+        if (!(a0 && a1) || (a0.x * a1.x + a0.y * a1.y + a0.z * a1.z) >= cosT * Math.hypot(a0.x, a0.y, a0.z) * Math.hypot(a1.x, a1.y, a1.z)) continue;
+        // nur Drehung um die Senkrechte bei gleicher Höhe (waagerechtes Profilwerkzeug entlang einer Kurve): das können die Querschnitte
+        const l0 = Math.hypot(a0.x, a0.y, a0.z) || 1, l1 = Math.hypot(a1.x, a1.y, a1.z) || 1;
+        if (Math.abs(a0.z / l0 - a1.z / l1) < 0.0035 && Math.abs(q.z - p.z) < 0.01) continue;
+        n5++;
+      }
+      if (n5 >= 10) {
+        const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
+        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0 };
+        st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
+        st.dex = abdexStart(st, poly);
+        return st;
+      }
+    }
     const PROF_STEP = 0.25;
     // senkrechtes Profilwerkzeug: Schichten von 0,25 mm; je Höhe der kleinste Radius von dort bis zur Oberseite (Taschen
     // von oben können keine Hinterschneidung darstellen)
@@ -22538,6 +23450,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return res;
   }
   function abtragBuildMesh(st, target) {
+    if (st.dexel) return abdexBuildMesh(st, target);   // Release 294
     const t0 = performance.now();
     abtragAdvance(st, target);
     const T = st.T;
@@ -22730,9 +23643,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return mesh;
   }
   // liefert das Netz für die aktuelle Wiedergabeposition (oder null); beim Abspielen höchstens alle 200 ms neu
+  // Release 294: Zustand verwerfen (Worker des Volumenmodells beenden)
+  function abtragDropState() { if (abtragState && abtragState.dex) abtragState.dex.dispose(); abtragState = null; }
   function ensureAbtragMesh() {
     if (!abtragOn || !abtragAvailable()) return null;
     if (!abtragState || abtragState.key !== abtragKey()) {
+      abtragDropState();
       try { abtragState = abtragPrepare(); } catch (e) { abtragState = null; window.__lastAbtragInfo = { error: String(e) }; }
       abtragMesh = null; abtragMeshTarget = -1;
       if (!abtragState) return null;
@@ -22754,7 +23670,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!chk) return;
     const avail = abtragAvailable(), canOn = avail || abtragCanAutoCreate();
     chk.disabled = !canOn;
-    if (!avail && abtragOn) { abtragOn = false; abtragState = null; abtragMesh = null; }
+    if (!avail && abtragOn) { abtragOn = false; abtragDropState(); abtragMesh = null; }
     chk.checked = abtragOn;
     el('abtragToggle').classList.toggle('is-disabled', !canOn);
     // Release 291: zweiter Haken "Abtrag" neben "Bauteil" - dieselbe Funktion
@@ -22764,8 +23680,29 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!abtragOn) abtragHidePath = false;
     const hb = el('btnAbtragHidePath');
     hb.disabled = !abtragOn;
+    const rb = el('btnAbtragReset'); if (rb) rb.disabled = !abtragOn;   // Release 294
+    if (!abtragOn) abdexProgressUI(null);
     hb.classList.toggle('active', abtragPathHidden());
     hb.setAttribute('aria-pressed', abtragPathHidden() ? 'true' : 'false');
+  }
+  // Release 294: Rohteil wiederherstellen - Wiedergabe stoppen, zum Programmanfang, Abtrag neu aufsetzen (Rohblock)
+  function resetAbtragStock() {
+    if (!abtragOn) return;
+    stopPlayback();
+    abtragDropState(); abtragMesh = null; abtragMeshTarget = -1;
+    bakeParams = null;
+    requestRender();
+  }
+  // Release 294: Rechenstand des Volumenmodells neben den Abtrag-Knöpfen
+  function abdexProgressUI(dex) {
+    const pe = el('abtragProgress');
+    if (!pe) return;
+    const busy = !!dex && (dex.shown !== dex.want || !!dex.inflight || dex.meshing);
+    pe.hidden = !busy;
+    if (busy) {
+      const tot = Math.max(1, dex.want), pc = dex.want > dex.shown ? Math.min(99, Math.floor(100 * dex.shown / tot)) : null;
+      pe.textContent = (currentLang === 'en' ? 'Computing removal' : 'Abtrag wird berechnet') + (pc != null ? ' … ' + pc + ' %' : ' …');
+    }
   }
   function toggleAbtragHidePath() {
     if (!abtragOn) return;
@@ -22779,7 +23716,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Release 291: noch kein Rohteil, aber Maße im Programmkopf -> Rohteil sofort anlegen (wie "Bauteil" mit Ok)
     if (on && !abtragAvailable() && abtragCanAutoCreate()) { partCreateTop = null; fillPartCreateFromProgram(); createRectPart(); }
     abtragOn = !!on && abtragAvailable();
-    abtragState = null; abtragMesh = null; abtragMeshTarget = -1;
+    abtragDropState(); abtragMesh = null; abtragMeshTarget = -1;
     // Einschalten -> zum Programmanfang (Wiedergabe gestoppt, Position 0)
     if (abtragOn && points.length) stopPlayback();
     updateAbtragUI();
@@ -22787,6 +23724,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     requestRender();
   }
 
+  const abdexScreenBuf = { sx: new Float64Array(0), sy: new Float64Array(0), sd: new Float64Array(0) };   // Release 294
   function drawMortiseBody(proj, mesh, baseZ) {
     const m = ctx.getTransform();
     const sc = m.a || 1;
@@ -22853,6 +23791,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const addB = v => { if (!v) return; if (v.x < bx0) bx0 = v.x; if (v.x > bx1) bx1 = v.x; if (v.y < by0) by0 = v.y; if (v.y > by1) by1 = v.y; };
     for (const t of mesh.tris) for (const p of t.v) addB(vert(p[0], p[1], t.z));
     if (mesh.faces3) for (const f of mesh.faces3) for (const p of f.v) addB(vert(p[0], p[1], p[2]));   // Release 278
+    // Release 294: Volumenmodell in Weltkoordinaten - Abbildung Welt -> Bildschirm ist affin (orthografisch)
+    const SW = (x, y, z) => { const pp = projU(toRender({ x, y, z })); return { x: (m.a * pp.x + m.e) * RS, y: (m.d * pp.y + m.f) * RS, d: pp.depth }; };
+    if (mesh.dexel) { const b = mesh.dexel.box; for (const x of [b.x0, b.x1]) for (const y of [b.y0, b.y1]) for (const z of [b.z0, b.z1]) addB(SW(x, y, z)); }
     for (const w of mesh.walls) { addB(vert(w.a[0], w.a[1], w.z0)); addB(vert(w.b[0], w.b[1], w.z0)); const aT = w.at || w.a, bT = w.bt || w.b; addB(vert(aT[0], aT[1], w.z1)); addB(vert(bT[0], bT[1], w.z1)); }
     const MG = 6;
     const X0 = Math.max(0, Math.floor(bx0) - MG), X1 = Math.min(W - 1, Math.ceil(bx1) + MG), Y0 = Math.max(0, Math.floor(by0) - MG), Y1 = Math.min(H - 1, Math.ceil(by1) + MG);
@@ -23013,6 +23954,72 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (fc > -EPSF) { triCulled++; if (zb && fc > EPSF) tri(A, B, C, 0, true); continue; }
         const kf = (f.kind === 'end1' || f.kind === 'end2') ? 0.9 : 1;
         tri(A, B, C, shade(fc, kf), false, TX && f.uv ? [f.uv[0], f.uv[1], f.uv[2], lightOf(fc, kf)] : null);
+      }
+    }
+    // Release 294: Volumenmodell (Tri-Dexel-Netz je Block) - Projektion je Ecke über die affine Abbildung, Rückseiten weg
+    if (mesh.dexel) {
+      const o = SW(0, 0, 0), ex = SW(1, 0, 0), ey = SW(0, 1, 0), ez = SW(0, 0, 1);
+      const Xx = ex.x - o.x, Xy = ey.x - o.x, Xz = ez.x - o.x, Yx = ex.y - o.y, Yy = ey.y - o.y, Yz = ez.y - o.y, Dx = ex.d - o.d, Dy = ey.d - o.d, Dz = ez.d - o.d;
+      const VA = { x: 0, y: 0, d: 0, l: 1 }, VB = { x: 0, y: 0, d: 0, l: 1 }, VC = { x: 0, y: 0, d: 0, l: 1 };
+      // Dreieck mit Licht je Ecke (wie tri(), Farbe je Pixel aus dem interpolierten Licht)
+      const PT = [null, null, null];
+      const triG = (a, b, c) => {
+        const area = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+        if (Math.abs(area) < 1e-6) return;
+        const gx = ((b.d - a.d) * (c.y - a.y) - (c.d - a.d) * (b.y - a.y)) / area;
+        const gl = ((b.l - a.l) * (c.y - a.y) - (c.l - a.l) * (b.y - a.y)) / area;
+        const minY = Math.max(0, Math.ceil(Math.min(a.y, b.y, c.y) - 0.5)), maxY = Math.min(H - 1, Math.ceil(Math.max(a.y, b.y, c.y) - 0.5) - 1);
+        PT[0] = a; PT[1] = b; PT[2] = c;
+        triDrawn++;
+        for (let y = minY; y <= maxY; y++) {
+          const py = y + 0.5;
+          let xl = Infinity, xr = -Infinity, dl = 0, dr = 0, ll = 0, lr = 0;
+          for (let e = 0; e < 3; e++) {
+            const p0 = PT[e], q0 = PT[(e + 1) % 3];
+            const sw = p0.y > q0.y || (p0.y === q0.y && p0.x > q0.x), p = sw ? q0 : p0, q = sw ? p0 : q0;
+            if (p.y <= py && q.y > py) {
+              const f = (py - p.y) / (q.y - p.y), x = p.x + f * (q.x - p.x), dd = p.d + f * (q.d - p.d), lv = p.l + f * (q.l - p.l);
+              if (x < xl) { xl = x; dl = dd; ll = lv; }
+              if (x > xr) { xr = x; dr = dd; lr = lv; }
+            }
+          }
+          if (xl === Infinity) continue;
+          const xs = Math.max(0, Math.ceil(xl - 0.5)), xe = Math.min(W - 1, Math.ceil(xr - 0.5) - 1);
+          const span = xr - xl > 1e-9;
+          const gxs = span ? (dr - dl) / (xr - xl) : gx, gls = span ? (lr - ll) / (xr - xl) : gl;
+          let d = dl + gxs * (xs + 0.5 - xl), lv = ll + gls * (xs + 0.5 - xl);
+          let i = y * W + xs;
+          for (let x = xs; x <= xe; x++, i++, d += gxs, lv += gls) {
+            if (d <= NEAR || d >= z2[i]) continue;
+            const L = lv < 0.4 ? 0.4 : lv;
+            const cc = pack(Math.min(255, (baseR * L + 0.5) | 0), Math.min(255, (baseG * L + 0.5) | 0), Math.min(255, (baseB * L + 0.5) | 0));
+            if (d < z1[i]) { z2[i] = z1[i]; c2[i] = c1[i]; z1[i] = d; c1[i] = cc; }
+            else { z2[i] = d; c2[i] = cc; }
+          }
+        }
+      };
+      let sx = abdexScreenBuf.sx, sy = abdexScreenBuf.sy, sd = abdexScreenBuf.sd;
+      const fx = fwd.x, fy = fwd.z, fz = fwd.y;
+      for (const ch of mesh.dexel.chunks) {
+        const P = ch.pos, nV = P.length / 3;
+        if (sx.length < nV) { sx = abdexScreenBuf.sx = new Float64Array(nV * 2); sy = abdexScreenBuf.sy = new Float64Array(nV * 2); sd = abdexScreenBuf.sd = new Float64Array(nV * 2); }
+        for (let v = 0; v < nV; v++) {
+          const x = P[3 * v], y = P[3 * v + 1], z = P[3 * v + 2];
+          sx[v] = o.x + Xx * x + Xy * y + Xz * z; sy[v] = o.y + Yx * x + Yy * y + Yz * z; sd[v] = o.d + Dx * x + Dy * y + Dz * z;
+        }
+        // Licht je Ecke aus der Punktnormalen (weich schattiert)
+        const VN = ch.vn;
+        let sl = abdexScreenBuf.sl;
+        if (!sl || sl.length < nV) sl = abdexScreenBuf.sl = new Float64Array(nV * 2);
+        for (let v = 0; v < nV; v++) { const f = VN[3 * v] * fx + VN[3 * v + 1] * fy + VN[3 * v + 2] * fz; sl[v] = 0.55 + 0.45 * (f < 0 ? -f : 0); }
+        const I = ch.idx, N = ch.nrm;
+        for (let t = 0; t < ch.nT; t++) {
+          const fc = N[3 * t] * fx + N[3 * t + 1] * fy + N[3 * t + 2] * fz;
+          if (fc > -EPSF) { triCulled++; continue; }
+          const a = I[3 * t], b = I[3 * t + 1], c = I[3 * t + 2];
+          VA.x = sx[a]; VA.y = sy[a]; VA.d = sd[a]; VA.l = sl[a]; VB.x = sx[b]; VB.y = sy[b]; VB.d = sd[b]; VB.l = sl[b]; VC.x = sx[c]; VC.y = sy[c]; VC.d = sd[c]; VC.l = sl[c];
+          triG(VA, VB, VC);
+        }
       }
     }
     // Release 251 (horizontale Bohrungen, "T"): jede Bohrung ist ein waagerechter Zylinder mit flachem Ende. Pro Pixel
@@ -30759,6 +31766,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 287
   el('chkAbtragPart').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 291
   el('btnAbtragHidePath').addEventListener('click', toggleAbtragHidePath);   // Release 288
+  el('btnAbtragReset').addEventListener('click', resetAbtragStock);   // Release 294
 
   // Release 184: siehe gotoAdjacentOp()/updateOpNavButtons() weiter oben für die vollständige
   // Herleitung. Ein deaktivierter Button (siehe `disabled`-Attribut, von updateOpNavButtons()
