@@ -12681,8 +12681,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 300;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 16:30 Uhr';
+  const APP_RELEASE_NUMBER = 301;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 17:00 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -13166,7 +13166,7 @@ XT G->M6 T
 V->F
 H->Z
 N X->/
-O ->/
+O ->;O
 Q->C
 R->A
 C=2->G41
@@ -13208,7 +13208,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -13263,6 +13263,28 @@ CORNERRADIUS=GFIL r=
       }
     }
     try { window.localStorage.setItem(LS_KEY_MIGRATION_FORMAT4_W, '1'); } catch (e) { /* s.o. */ }
+    return out;
+  }
+  // Release 301 (Sebastian: "Beim Maschinentyp SCM bitte folgendes im Standard einbauen beim SWITCHCASE: ... O ->;O ..."): die
+  // Nullpunktzeile "O X=.. Y=.. Z=.. f=1" wird zum Kommentar statt nur "O " zu löschen (sonst blieb "X=.. Y=.. Z=.." als
+  // Verfahrsatz stehen). Eine gespeicherte Konfiguration bekommt das EINMALIG: im Block "SCM" wird die alte Standardzeile
+  // "O ->/" durch "O ->;O" ersetzt; eine bewusst andere eigene Regel bleibt unangetastet.
+  const LS_KEY_MIGRATION_SCM_O = 'cncsim.migration.scmOComment301';
+  function migrateScmORule(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_O)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM"]', endTag = '[/MACHINETYPE Name="SCM"]';
+    const start = out.indexOf(openTag);
+    const end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      const blk = out.slice(start, end);
+      const nb = blk.replace(/^O ->\/[ \t]*$/m, 'O ->;O');
+      if (nb !== blk) {
+        out = out.slice(0, start) + nb + out.slice(end);
+        try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+      }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_O, '1'); } catch (e) { /* s.o. */ }
     return out;
   }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
