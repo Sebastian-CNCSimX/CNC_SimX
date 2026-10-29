@@ -1012,6 +1012,30 @@
   }
   .program-list-item-del:hover { background: var(--panel-2); }
   .program-list-item-del:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Release 300 (Sebastian: "Mehrere Programme nacheinander laden können und der Zwischenstand vom Rohblock wird gespeichert,
+     auch wenn der Rohblock gedreht wird"): Kopf (+ Add, Maschinentyp für alle), Infozeile, Zeilen mit Griff (Drag & Drop),
+     Nummer, "Drehung" und Stand, Fuß (Rohblock-Stand, nächstes Programm, von vorn) */
+  .program-list-menu { min-width: 470px; max-height: 460px; }
+  .program-list-head { display: flex; align-items: center; gap: 8px; padding: 0 4px 6px 0; border-bottom: 1px solid var(--border); }
+  .program-list-mt { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 12px; padding: 2px 9px; font-size: 11.5px; color: var(--ink-muted); white-space: nowrap; }
+  .program-list-mt.set { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .program-list-info { padding: 6px 8px; font-size: 11.5px; line-height: 1.45; color: var(--ink-muted); background: var(--panel-2); border-radius: 6px; margin: 4px 0; }
+  .program-list-grip { flex: 0 0 auto; width: 16px; text-align: center; color: var(--ink-faint); cursor: grab; font-size: 14px; letter-spacing: -2px; user-select: none; }
+  .program-list-nr { flex: 0 0 auto; width: 16px; text-align: right; color: var(--ink-muted); font-size: 12px; }
+  .program-list-rot { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .program-list-rot.on { border-color: #d07a00; background: rgba(208, 122, 0, .12); color: #b06400; font-weight: 600; }
+  .program-list-rot input { margin: 0; }
+  .program-list-state { flex: 0 0 auto; width: 92px; text-align: right; font-size: 11px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .program-list-state.done { color: #1d8a3a; }
+  .program-list-state.now { color: var(--accent); font-weight: 600; }
+  .program-list-turn { font-size: 11px; color: #b06400; background: rgba(208, 122, 0, .09); border-radius: 4px; padding: 2px 8px 2px 40px; }
+  .program-list-item.dragging { opacity: .45; }
+  .program-list-item.drop-before { box-shadow: inset 0 3px 0 var(--accent); }
+  .program-list-item.drop-after { box-shadow: inset 0 -3px 0 var(--accent); }
+  .program-list-foot { display: flex; align-items: center; gap: 6px; padding: 6px 2px 0; margin-top: 4px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--ink-muted); }
+  .program-list-foot .program-list-stand { flex: 1 1 auto; }
+  .program-list-foot button { font-family: inherit; font-size: 11.5px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .program-list-foot button:disabled { opacity: .4; cursor: default; }
 
   .dxf-layer-panel {
     flex: 1 1 auto;
@@ -1978,7 +2002,7 @@
   .abtrag-toggle.is-disabled { opacity: 0.5; cursor: default; }
   /* Release 291: so groß wie der Messen-Knopf (#btnMeasureTransport, 36 x 26 px) */
   .abtrag-path-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 26px; padding: 0; line-height: 1; box-sizing: border-box; }
-  .abtrag-part-toggle { margin-left: 6px; }
+  .part-create-abtrag-row { margin-top: 2px; }   /* Release 299 */
   .abtrag-path-btn:disabled { opacity: 0.45; cursor: default; }
   .abtrag-progress { margin-left: 6px; font-size: 12px; color: var(--muted, #667); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .speed-group, .jump-group {
@@ -3394,18 +3418,11 @@
            behandelt. Erstellen-Icon für Bauteil links von "DXF öffnen" einfügen. Rechts vom Icon ein Trennstrich." / "Eingaben für
            X, Y und Z ermöglichen. Z wie gehabt auch negativ unter Umständen.") -->
       <button class="toolbar-btn" id="btnPartCreateIcon" type="button" title="Bauteil erstellen: rechteckiges Bauteil mit X, Y und Z anlegen - wird wie eine importierte DXF behandelt" data-i18n-en-title="Create part: create a rectangular part with X, Y and Z - treated like an imported DXF" data-i18n-en="▭ Part">▭ Bauteil</button>
-      <!-- Release 291 (Sebastian: "Es gibt rechts neben "Bauteil" auch eine Checkbox für "Abtrag". Der unten bleibt vorhanden. Wenn ich
-           es neben "Bauteil" abhake, geht der Haken bei "Abtragssimulation" weg und umgekehrt auch. Das ist dieselbe Funktion an zwei
-           Stellen.") -->
-      <label class="layer-toggle abtrag-toggle abtrag-part-toggle is-disabled" id="abtragPartToggle" title="Abtragsimulation ein/aus (dieselbe Funktion wie „Abtragsimulation“ unten)" data-i18n-en-title="Material removal simulation on/off (same function as &quot;Material removal simulation&quot; below)">
-        <input type="checkbox" id="chkAbtragPart" disabled> <span data-i18n-en="Removal">Abtrag</span>
-      </label>
+      <!-- Release 299: der Haken "Abtrag" (Release 291) sitzt jetzt im Fenster "Bauteil erstellen" (#partCreateAbtrag) -->
       <span class="toolbar-sep" id="partCreateSep"></span>
-      <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF-Datei als Unterlage importieren (dieselbe Aktion wie 'Datei' → 'DXF Importieren')" data-i18n-en-title="Import a DXF file as an underlay (same action as 'File' → 'Import DXF')">📂 DXF</button>
-      <!-- Release 278 (Sebastian: "Es soll in der Symbolleiste im DXF-Bereich einen Button geben "DXF CS Krümmling", das Icon
-           dafür ist ein kleiner gelber Viertelkreis, als Text steht da "DXF CS" neben. Das öffnet dann den Modus, bei dem man
-           Krümmlings-DXF importieren kann.") -->
-      <button class="toolbar-btn" id="btnDxfKrmIcon" type="button" title="DXF CS Krümmling: Krümmling-DXF (Rechteck mit Handlauf) importieren und als 3D-Körper darstellen" data-i18n-en-title="DXF CS wreath: import a wreath DXF (rectangle with handrail) and show it as a 3D body"><svg class="krm-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 11 V1 A10 10 0 0 1 11 11 Z" fill="#f5c400" stroke="#b38f00" stroke-width="0.6"/></svg> DXF CS</button>
+      <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF importieren: DXF / 3D-DXF, CS Krümmling oder Setzstufe (dieselbe Aktion wie 'Datei' → 'DXF' → 'DXF importieren')" data-i18n-en-title="Import DXF: DXF / 3D DXF, CS wreath or riser (same action as 'File' → 'DXF' → 'Import DXF')">📂 DXF</button>
+      <!-- Release 296 (Sebastian: "Der Menüpunkt "DXF CS" verschwindet, da nicht mehr benötigt."): der Krümmling-Import ist jetzt
+           Teil des Fensters "DXF importieren" (#dxfImportPanel) -->
       <!-- "💾 DXF"/"💣 DXF" (Release 208, Sebastian, Punkte 5+6: "Rechts neben DXF-Laden
            (Symbolleiste) ein 'DXF speichern als...' Symbol (am besten einfach eine Diskette +
            DXF) einbauen" sowie "Rechts neben 'DXF speichern als...' (Symbolleiste) ein 'DXF
@@ -3644,8 +3661,18 @@
                  "Programm laden" (jetzt mit "multiple", siehe dort), neu hinzugekommene Dateien
                  werden NICHT automatisch aktiviert (siehe addFilesToProgramList() in app.js), bis
                  zu insgesamt 10 Programmen (Punkt 7, siehe #programListCount). -->
-            <button class="program-list-add" id="programListAddBtn" type="button">+ Add</button>
+            <!-- Release 300: Kopf mit "+ Add" und "Maschinentyp für alle", Infozeile (Bauteil/Drehung), Fuß mit Rohblock-Stand -->
+            <div class="program-list-head">
+              <button class="program-list-add" id="programListAddBtn" type="button">+ Add</button>
+              <span class="program-list-mt" id="programListMt" title="Der mit Ok bestätigte Maschinentyp gilt für alle Programme der Liste" data-i18n-en-title="The machine type confirmed with Ok applies to all programs of the list"></span>
+            </div>
+            <div class="program-list-info" id="programListInfo"></div>
             <div class="program-list-items" id="programListItems"></div>
+            <div class="program-list-foot" id="programListFoot">
+              <span class="program-list-stand" id="programListStand"></span>
+              <button type="button" id="btnProgramListNext" title="Nächstes Programm der Liste aktivieren - der Abtrag geht am bisherigen Rohblock weiter" data-i18n-en-title="Activate the next program of the list - removal continues on the current stock"><span data-i18n-en="▶ Next program">▶ Nächstes Programm</span></button>
+              <button type="button" id="btnProgramListRestart" title="Erstes Programm aktivieren und den Rohblock zurücksetzen" data-i18n-en-title="Activate the first program and reset the stock"><span data-i18n-en="⟲ From the start">⟲ Von vorn</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -4222,6 +4249,15 @@
       <label class="tool-data-field">Y (mm)<input type="text" id="partCreateY" class="filename-input" inputmode="decimal" spellcheck="false" value="200"></label>
       <label class="tool-data-field">Z (mm)<input type="text" id="partCreateZ" class="filename-input" inputmode="decimal" spellcheck="false" value="40"></label>
     </div>
+    <!-- Release 299 (Sebastian: "Der Menüpunnkt "[] Abtrag" bitte ins Menü "Bauteil" verschieben. Der soll automatisch angehakt sein,
+         wenn Bauteilmaße erkannt werden, aber auch nur dann. Wenn manuell welche eingegeben werden und die Werte auf 0mm (XYZ) stehen,
+         bleibt der Haken abgewählt, kann aber gewählt werden. Wenn gewählt/nicht gewählt sitzt der Haken dementsprechend bei
+         "Abtragsimulation".") -->
+    <div class="tool-data-row part-create-abtrag-row">
+      <label class="layer-toggle abtrag-toggle" id="partCreateAbtragToggle" title="Abtragsimulation mit diesem Rohteil (setzt beim Erstellen den Haken „Abtragsimulation“). Automatisch angehakt, wenn die Bauteilmaße aus dem Programmkopf erkannt wurden." data-i18n-en-title="Material removal simulation with this stock (sets &quot;Material removal simulation&quot; when creating). Checked automatically when the part dimensions were read from the program header.">
+        <input type="checkbox" id="partCreateAbtrag"> <span data-i18n-en="Removal">Abtrag</span>
+      </label>
+    </div>
     <div class="tool-data-row top-view-row">
       <button class="btn ghost" id="btnPartCreateTopLoad" type="button" data-i18n-en="Insert top view…">Draufsicht einfügen…</button>
       <button class="btn ghost small" id="btnPartCreateTopRemove" type="button" hidden data-i18n-en="Remove">Entfernen</button>
@@ -4239,22 +4275,40 @@
   </div>
 </div>
 
-<div class="paste-panel" id="dxfKrmPanel">
+<!-- Release 296 (Sebastian: "Den "DXF Import" und "DXF CS"-Import zusammenlegen ... Die Funktionen sind alle dieselben, nur ggf.
+     umbenannt und in einem Menü zusammengefasst"): ein Fenster für alle DXF-Importe. Die Knöpfe des früheren Dialogs
+     "DXF CS Krümmling" behalten ihre IDs (siehe app.js). -->
+<div class="paste-panel" id="dxfImportPanel">
   <div class="paste-card">
-    <h3 data-i18n-en="DXF CS wreath">DXF CS Krümmling</h3>
-    <p class="panel-hint" data-i18n-en="Imports a wreath DXF - a rectangle with the handrail inside (two end faces and four edge chains) - and shows the wreath as a 3D body. Fill colour, outline colour, transparency and texture come from the part definition 'Wreath, standing' and can be changed under 'DXF drawing settings'.">Importiert ein Krümmling-DXF - ein Rechteck mit dem Handlauf darin (zwei Stirnseiten und vier Kantenzüge) - und stellt den Krümmling als 3D-Körper dar. Füllfarbe, Outline-Farbe, Transparenz und Textur kommen aus der Bauteildefinition „Krümmling, stehend“ und lassen sich unter „DXF-Bauteil definieren“ ändern.</p>
-    <div class="tool-data-row"><button class="btn ghost" id="btnDxfKrmLoad" type="button" data-i18n-en="Load wreath DXF…">Krümmling-DXF laden…</button></div>
-    <p class="panel-hint" id="dxfKrmStatus"></p>
-    <!-- Release 283 (Sebastian: "... und der Seitenansicht (bisher nicht berücksichtigt, aber zur Kontrolle - oder du brauchst immer
-         beide?!)"): die Seitenansicht liefert die exakte Höhe jeder Kante, ohne sie wird die Höhe geschätzt -->
-    <div class="tool-data-row">
-      <button class="btn ghost" id="btnDxfKrmSideLoad" type="button" disabled data-i18n-en="Load side view DXF…">Seitenansicht-DXF laden…</button>
-      <button class="btn ghost small" id="btnDxfKrmSideRemove" type="button" hidden data-i18n-en="Remove side view">Seitenansicht entfernen</button>
+    <h3 data-i18n-en="Import DXF">DXF importieren</h3>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="DXF / 3D DXF">DXF / 3D-DXF</div>
+      <div class="tool-data-row"><button class="btn ghost" id="btnDxfImportPlain" type="button" data-i18n-en="Load DXF…">DXF laden…</button></div>
+      <p class="panel-hint" data-i18n-en="DXF, DXF with layers, 3D DXF, 3D DXF with layers.">DXF, DXF mit Layern, 3D-DXF, 3D-DXF mit Layern.</p>
     </div>
-    <p class="panel-hint" id="dxfKrmSideStatus"></p>
-    <label class="scale-option"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
+    <hr class="dxf-part-sep">
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="CS wreath DXF">CS Krümmling DXF</div>
+      <p class="panel-hint" data-i18n-en="Top view: rectangle with the handrail inside (two end faces and four edge chains), shown as a 3D body. Fill colour, outline colour, transparency and texture come from the part definition 'Wreath, standing'.">Draufsicht: Rechteck mit dem Handlauf darin (zwei Stirnseiten und vier Kantenzüge), dargestellt als 3D-Körper. Füllfarbe, Outline-Farbe, Transparenz und Textur kommen aus der Bauteildefinition „Krümmling, stehend“.</p>
+      <div class="tool-data-row"><button class="btn ghost" id="btnDxfKrmLoad" type="button" data-i18n-en="Load CS wreath top view DXF…">CS Krümmling Draufsicht-DXF laden…</button></div>
+      <p class="panel-hint" id="dxfKrmStatus"></p>
+      <!-- Release 283: die Seitenansicht liefert die exakte Höhe jeder Kante, ohne sie wird die Höhe geschätzt -->
+      <div class="tool-data-row">
+        <button class="btn ghost" id="btnDxfKrmSideLoad" type="button" disabled data-i18n-en="Load CS wreath side view DXF…">CS Krümmling Seitenansicht-DXF laden…</button>
+        <button class="btn ghost small" id="btnDxfKrmSideRemove" type="button" hidden data-i18n-en="Remove side view">Seitenansicht entfernen</button>
+      </div>
+      <p class="panel-hint" id="dxfKrmSideStatus"></p>
+      <label class="scale-option"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
+    </div>
+    <hr class="dxf-part-sep">
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Riser DXF">Setzstufen DXF</div>
+      <div class="tool-data-row"><button class="btn ghost" id="btnDxfRiserFrontLoad" type="button" data-i18n-en="Load riser front view DXF…">Setzstufe Frontansicht-DXF laden…</button></div>
+      <div class="tool-data-row"><button class="btn ghost" id="btnDxfRiserTopLoad" type="button" disabled data-i18n-en="Load riser top view DXF…">Setzstufe Draufsicht-DXF laden…</button></div>
+      <p class="panel-hint" id="dxfRiserStatus"></p>
+    </div>
     <div class="paste-actions">
-      <button class="btn primary" id="btnDxfKrmClose" type="button" data-i18n-en="Close">Schließen</button>
+      <button class="btn primary" id="btnDxfImportClose" type="button" data-i18n-en="Close">Schließen</button>
     </div>
   </div>
 </div>
@@ -12627,8 +12681,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 295;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 09:10 Uhr';
+  const APP_RELEASE_NUMBER = 300;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 16:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -17129,6 +17183,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Vorauswahl erhalten bleibt (siehe loadPersistedActiveMachineTypeName oben).
   function applyActiveMachineType() {
     activeMachineTypeName = machineTypeSelect.value || 'ISO';
+    // Release 300: bestätigter Maschinentyp eines Listenprogramms gilt für die ganze Liste
+    if (activeProgramId && programList.some(p => p.id === activeProgramId) && activeMachineTypeName !== listMachineType) {
+      listMachineType = activeMachineTypeName;
+      if (typeof renderProgramListUI === 'function') setTimeout(renderProgramListUI, 0);
+    }
     persistActiveMachineTypeName(activeMachineTypeName);
     setMachineTypePending(false);   // Release 274
     displayCurrentProgram();
@@ -17296,7 +17355,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     updateSidebarHeader();
     // Release 274: Abfrage nach dem Maschinentyp (Vorschlag aus suggestMachineType()) - die Testumgebung kann sie über
     // window.__cncsimNoMachineTypePrompt abschalten
-    if (window.__cncsimNoMachineTypePrompt !== true) openMachineTypePrompt(suggestion, filename);
+    // Release 300: Listenprogramm mit bereits bestätigtem Maschinentyp der Liste -> keine Abfrage (siehe loadListEntry())
+    if (window.__cncsimNoMachineTypePrompt !== true && !mtPromptSuppress) openMachineTypePrompt(suggestion, filename);
     // Release 208: "DXF speichern als..."/"DXF Polylinien auflösen" sind nur aktivierbar, solange
     // KEIN CNC-Programm geladen ist (siehe updateDxfUI(), Sebastian Punkt 7) - ein neu geladenes
     // Programm muss sie deshalb sofort ausgrauen, auch wenn sich dxfGeometry/dxfEntities selbst
@@ -17374,8 +17434,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   //    addFilesToProgramList() (siehe fileInputIntent weiter unten für die Unterscheidung, welcher
   //    der beiden Codepfade nach einer #fileInput-Auswahl greifen soll).
   // ============================================================
-  let programList = []; // [{id, filename, text}]
+  let programList = []; // [{id, filename, text}] - Release 300 zusätzlich: rotate, chainPts, chainKey
   let activeProgramId = null;
+  // Release 300 (Sebastian: "b Der Maschinentyp wird ausgewählt und gespeichert. Wenn ich zum anderen Programm wechsle wird das
+  // bisher wieder auf Anfang gesetzt, es soll aber der Maschinentyp für alle Programme aus der Liste direkt gültig sein"): der
+  // zuletzt mit Ok bestätigte Maschinentyp eines Listenprogramms gilt für alle Programme der Liste (keine erneute Abfrage)
+  let listMachineType = null;
+  let mtPromptSuppress = false;
   let programListIdCounter = 0;
   const PROGRAM_LIST_MAX = 10;
   // Release 116, Sebastian: "Sobald eine List aktiv(iert) worden ist und nur noch ein Programm
@@ -17418,7 +17483,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Programmliste direkt vom ursprünglichen File-Objekt mit aufgenommen, damit sie beim
         // späteren Aktivieren (activateProgramFromList() weiter unten) an loadText()
         // durchgereicht werden können - dieselben Felder wie beim klassischen Einzel-Ladepfad.
-        const entry = { id: 'p' + (++programListIdCounter), filename: r.file.name, text: r.text, size: r.file.size, lastModified: r.file.lastModified };
+        const entry = { id: 'p' + (++programListIdCounter), filename: r.file.name, text: r.text, size: r.file.size, lastModified: r.file.lastModified, rotate: false, chainPts: null, chainKey: null };
         programList.push(entry);
         addedEntries.push(entry);
       });
@@ -17457,6 +17522,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (rawProgramText != null) clearProgram();
     programList = [];
     activeProgramId = null;
+    listMachineType = null;   // Release 300: neue Liste -> Maschinentyp neu wählen
     addFilesToProgramList(files);
   }
 
@@ -17467,9 +17533,74 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const entry = programList.find(p => p.id === id);
     if (!entry) return;
     activeProgramId = id;
-    loadText(entry.text, entry.filename, { size: entry.size, lastModified: entry.lastModified });
+    // Release 300: Bahnen der Programme davor erfassen (Zwischenstand des Rohblocks, siehe abtragChainSteps())
+    captureListChain(entry);
+    loadListEntry(entry);
     renderProgramListUI();
   }
+  // Release 300: Listenprogramm laden - mit dem Maschinentyp der Liste (ohne Abfrage), falls schon einer bestätigt wurde
+  function loadListEntry(entry) {
+    mtPromptSuppress = !!listMachineType;
+    try { loadText(entry.text, entry.filename, { size: entry.size, lastModified: entry.lastModified }); } finally { mtPromptSuppress = false; }
+    if (listMachineType && Array.from(machineTypeSelect.options).some(o => o.value === listMachineType)) {
+      machineTypeSelect.value = listMachineType;
+      applyActiveMachineType();
+    }
+  }
+  // Release 300 (Sebastian: "e Ich starte die Abtragssimulation, wenn diese fertig ist, wird der bisherige Stand vom Bauteil
+  // gespeichert / f Ich starte das zweite Programm und es geht bei dem Bauteil weiter wie bisher"): der Zwischenstand entsteht,
+  // indem die Bahnen aller Programme VOR dem aktiven (mit Maschinentyp der Liste, ganzes Programm) vor dessen eigenen Bahnen
+  // abgetragen werden. Je Programm werden die Bahnpunkte einmal erfasst (entry.chainPts) - dafür wird es kurz geladen, danach
+  // wird das aktive Programm geladen (keine Zwischendarstellung, alles im selben Durchlauf).
+  function listChainKey() { return listMachineType || ''; }
+  function captureListEntryPoints(entry) {
+    loadListEntry(entry);
+    if (scopeMode.type !== 'all') setScope({ type: 'all' });
+    entry.chainPts = points.map(p => {
+      const ax = toolAxisDirection(p);
+      return { x: p.x, y: p.y, z: p.z, a: p.a, b: p.b, c: p.c, rapid: p.rapid, comp: p.comp, toolRadius: p.toolRadius, toolLength: p.toolLength, toolIsBlade: p.toolIsBlade, toolProfileId: p.toolProfileId, axisOverride: ax ? { x: ax.x, y: ax.y, z: ax.z } : null };
+    });
+    entry.chainCuts = entry.chainPts.filter(p => !p.rapid && p.toolRadius > 0).length;
+    entry.chainKey = listChainKey();
+  }
+  function captureListChain(entry) {
+    if (!listMachineType) return false;
+    const k = programList.indexOf(entry);
+    let did = false;
+    for (let j = 0; j < k; j++) {
+      const e = programList[j];
+      if (e.chainPts && e.chainKey === listChainKey()) continue;
+      captureListEntryPoints(e);
+      did = true;
+    }
+    return did;
+  }
+  // nach Umsortieren/Drehung: fehlende Erfassungen nachholen (das aktive Programm wird dann neu geladen)
+  function refreshListChain() {
+    const entry = programList.find(p => p.id === activeProgramId);
+    if (entry && captureListChain(entry)) loadListEntry(entry);
+    if (typeof resetAbtragStock === 'function') resetAbtragStock();
+    renderProgramListUI();
+  }
+  // Zwischenstand für die Abtragsimulation: Bahnen der Programme davor mit der Anzahl der Drehungen danach (bis einschließlich des
+  // aktiven Programms) - null ohne Liste/Maschinentyp bzw. beim ersten Programm
+  function listChainInfo() {
+    if (!activeProgramId || programList.length < 2 || !listMachineType) return null;
+    const k = programList.findIndex(e => e.id === activeProgramId);
+    if (k <= 0) return null;
+    const prev = [];
+    for (let j = 0; j < k; j++) {
+      const e = programList[j];
+      if (!e.chainPts || e.chainKey !== listChainKey()) return null;
+      let flips = 0;
+      for (let m = j + 1; m <= k; m++) if (programList[m].rotate) flips++;
+      prev.push({ pts: e.chainPts, flip: flips % 2 === 1 });
+    }
+    return { k, prev, sig: programList.slice(0, k + 1).map(e => e.id + ':' + (e.rotate ? 1 : 0) + ':' + (e.chainKey || '')).join(',') };
+  }
+  window.__debug_listChainInfo = () => { const c = listChainInfo(); return c ? { k: c.k, n: c.prev.length, flips: c.prev.map(p => p.flip), pts: c.prev.map(p => p.pts.length), sig: c.sig } : null; };
+  window.__debug_programList = () => programList.map(e => ({ id: e.id, name: e.filename, rotate: !!e.rotate, captured: !!e.chainPts, cuts: e.chainCuts, active: e.id === activeProgramId }));
+  window.__debug_listMachineType = () => listMachineType;
 
   // Rotes "x" je Zeile (Punkt 4) - entfernt genau diesen einen Eintrag aus der Liste. War der
   // Eintrag gerade aktiv, wird zusätzlich die Anzeige geleert (dieselbe clearProgram()-Logik wie
@@ -17524,6 +17655,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (rawProgramText != null) clearProgram();
     programList = [];
     activeProgramId = null;
+    listMachineType = null;   // Release 300
     renderProgramListUI();
   }
 
@@ -17533,6 +17665,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // beim Klicken daneben schließen SOLL, betrifft also nicht die in Release 112 entfernte
   // Backdrop-Klick-Logik der 16 Editier-Dialoge.
   function openProgramListMenu() {
+    renderProgramListUI();   // Release 300: Bauteil/Maschinentyp/Stand aktuell anzeigen
     programListMenu.hidden = false;
     programListTrigger.setAttribute('aria-expanded', 'true');
   }
@@ -17567,8 +17700,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ? T('Maximal ' + PROGRAM_LIST_MAX + ' Programme erreicht - bitte zuerst ein Programm aus der Liste entfernen', 'Maximum of ' + PROGRAM_LIST_MAX + ' programs reached - please remove a program from the list first')
       : T('Weitere(s) CNC-Programm(e) zur Liste hinzufügen', 'Add more CNC program(s) to the list');
     programListItems.innerHTML = '';
-    programList.forEach(entry => {
+    // Release 300: Kopf/Infozeile/Fuß und je Zeile Griff (Drag & Drop), Nummer, "Drehung", Stand
+    const activeIdx = programList.findIndex(p => p.id === activeProgramId);
+    const mtEl = el('programListMt');
+    mtEl.classList.toggle('set', !!listMachineType);
+    mtEl.textContent = listMachineType ? T('⚙ Maschinentyp für alle: ', '⚙ Machine type for all: ') + listMachineType : T('⚙ Maschinentyp: noch nicht bestätigt', '⚙ Machine type: not confirmed yet');
+    const part = dxfCreatedPart;
+    el('programListInfo').innerHTML = (part
+      ? T('Bauteil (Rohblock ', 'Part (stock ') + [part.x, part.y, Math.abs(part.z)].map(v => fmtDim(v)).join(' × ') + T(') gilt für alle Programme.', ') applies to all programs.')
+      : T('Bauteil im ersten Programm anlegen – es gilt für alle Programme.', 'Create the part in the first program – it applies to all programs.'))
+      + '<br>' + T('Der Abtrag geht über die Liste weiter; „Drehung“ = Rohblock 180° um die X-Achse drehen, <b>vor</b> dem Programm.', 'Removal continues through the list; “Rotation” = turn the stock 180° about the X axis, <b>before</b> the program.');
+    let dragId = null;
+    const clearDropMarks = () => programListItems.querySelectorAll('.drop-before, .drop-after').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+    programList.forEach((entry, idx) => {
+      if (entry.rotate) {
+        const turn = document.createElement('div');
+        turn.className = 'program-list-turn';
+        turn.textContent = T('⟲ Drehung 180° um die X-Achse: Unterkante (an X) klappt nach oben weg', '⟲ Rotation 180° about the X axis: the lower edge (at X) turns upwards');
+        programListItems.appendChild(turn);
+      }
       const row = document.createElement('div');
+      row.dataset.id = entry.id;
       row.className = 'program-list-item' + (entry.id === activeProgramId ? ' active' : '');
       const nameBtn = document.createElement('button');
       nameBtn.type = 'button';
@@ -17588,10 +17740,58 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         e.stopPropagation();
         removeProgramFromList(entry.id);
       });
+      const grip = document.createElement('span');
+      grip.className = 'program-list-grip';
+      grip.textContent = '⋮⋮';
+      grip.title = T('Ziehen, um die Reihenfolge zu ändern', 'Drag to change the order');
+      row.draggable = true;
+      row.addEventListener('dragstart', (e) => { dragId = entry.id; row.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', entry.id); } catch (err) { /* egal */ } });
+      row.addEventListener('dragend', () => { dragId = null; row.classList.remove('dragging'); clearDropMarks(); });
+      row.addEventListener('dragover', (e) => {
+        if (!dragId || dragId === entry.id) return;
+        e.preventDefault();
+        const r = row.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+        clearDropMarks(); row.classList.add(after ? 'drop-after' : 'drop-before');
+      });
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const r = row.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+        const from = dragId; dragId = null; clearDropMarks();
+        if (from) moveProgramInList(from, entry.id, after);
+      });
+      const nr = document.createElement('span');
+      nr.className = 'program-list-nr';
+      nr.textContent = String(idx + 1);
+      const rot = document.createElement('label');
+      rot.className = 'program-list-rot' + (entry.rotate ? ' on' : '');
+      rot.title = T('Rohblock vor diesem Programm um 180° um die X-Achse drehen (die Unterkante an der X-Achse klappt nach oben weg)', 'Turn the stock 180° about the X axis before this program (the lower edge at the X axis turns upwards)');
+      const rotChk = document.createElement('input');
+      rotChk.type = 'checkbox';
+      rotChk.checked = !!entry.rotate;
+      rotChk.className = 'program-list-rot-chk';
+      rotChk.addEventListener('change', () => { entry.rotate = rotChk.checked; refreshListChain(); });
+      rot.appendChild(rotChk);
+      rot.appendChild(document.createTextNode(' ' + T('Drehung', 'Rotation')));
+      const st = document.createElement('span');
+      st.className = 'program-list-state';
+      if (idx === activeIdx) { st.classList.add('now'); st.textContent = T('● aktiv', '● active'); }
+      else if (activeIdx >= 0 && idx < activeIdx) {
+        st.classList.add('done');
+        st.textContent = entry.chainPts && !entry.chainCuts ? T('✓ leer', '✓ empty') : T('✓ abgetragen', '✓ removed');
+      } else st.textContent = T('○ wartet', '○ waiting');
+      row.insertBefore(nr, row.firstChild);
+      row.insertBefore(grip, row.firstChild);
       row.appendChild(nameBtn);
+      row.appendChild(rot);
+      row.appendChild(st);
       row.appendChild(delBtn);
       programListItems.appendChild(row);
     });
+    el('programListStand').textContent = activeIdx >= 0
+      ? T('Rohblock-Stand: Programm ', 'Stock state: program ') + (activeIdx + 1) + T(' von ', ' of ') + programList.length
+      : T('Noch kein Programm aktiv', 'No program active yet');
+    el('btnProgramListNext').disabled = !(programList.length && activeIdx < programList.length - 1);
+    el('btnProgramListRestart').disabled = !programList.length;
     // "CNC-Programmliste löschen" (Punkt 6) - nur aktiv, solange überhaupt mindestens ein
     // Programm in der Liste ist (auch dann, wenn die Dropdownliste selbst wegen showList===false
     // noch gar nicht sichtbar ist, z. B. bei genau einem geladenen Programm).
@@ -17601,6 +17801,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   programListTrigger.addEventListener('click', () => {
     if (programListMenu.hidden) openProgramListMenu(); else closeProgramListMenu();
+  });
+  // Release 300 (Sebastian: "c Ich kann die Reihenfolge der Programme per Drag 'n Drop verschieben"): Eintrag "from" vor bzw. nach
+  // "to" einsortieren; der Zwischenstand folgt der neuen Reihenfolge
+  function moveProgramInList(fromId, toId, after) {
+    const from = programList.findIndex(p => p.id === fromId);
+    if (from < 0 || fromId === toId) return;
+    const [e] = programList.splice(from, 1);
+    let to = programList.findIndex(p => p.id === toId);
+    if (to < 0) { programList.splice(from, 0, e); return; }
+    programList.splice(after ? to + 1 : to, 0, e);
+    refreshListChain();
+  }
+  window.__debug_moveProgramInList = moveProgramInList;
+  el('btnProgramListNext').addEventListener('click', () => {
+    const k = programList.findIndex(p => p.id === activeProgramId);
+    if (k < programList.length - 1) activateProgramFromList(programList[k + 1].id);
+  });
+  el('btnProgramListRestart').addEventListener('click', () => {
+    if (!programList.length) return;
+    activateProgramFromList(programList[0].id);
+    if (typeof resetAbtragStock === 'function') resetAbtragStock();
   });
   programListAddBtn.addEventListener('click', () => {
     if (programListAddBtn.disabled) return;
@@ -21848,7 +22069,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function abtragKey() {
     return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
       // Release 290: Profilwerkzeuge (Werkzeug-DXF) gehen in den Abtrag ein
-      useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(',')].join('|');
+      useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(','),
+      // Release 300: Zwischenstand aus den Programmen davor (Reihenfolge, Drehungen)
+      (() => { const c = listChainInfo(); return c ? c.sig : ''; })()].join('|');
   }
   // ============================================================================================================
   // Release 294 (Sebastian, Krümmling: "1 Bei "Seitenbahnen 1 | 1" wird nichts abgetragen bzw. nicht überall korrekt / 2
@@ -22558,6 +22781,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     flushComp();
     return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idxOf), tools };
   }
+  // Release 300 (Sebastian: "g Ich muss danach das Bauteil drehen können, das heißt das bisherige Fräsergebnis wird um 180% auf
+  // den Kopf gestellt. Die Drehung erfolgt so, dass die Kante, die unten an der X Achse anliegt nach oben (entlang der Y-Achse)
+  // weggedreht wird."): Werkzeugschritte der Programme davor (jeweils in ihrer eigenen Lage berechnet, inkl. Radiuskorrektur) vor
+  // die des aktiven Programms setzen. Liegt dazwischen eine ungerade Zahl von Drehungen, werden ihre Schritte um 180° um die
+  // Achse parallel zu X durch die Mitte des Rohteils gedreht: y -> 2·yM - y, z -> 2·zM - z (Achse und Bewegung: y, z negiert).
+  // Die Rohteil-Grundfläche bleibt dabei dieselbe. Index -1: diese Schritte gehören zu jedem Bahnpunkt (schon vor dem ersten).
+  function abtragChainSteps(chain, cur, poly, zTop, T, profileOf) {
+    const ys = poly.map(q => q[1]), yM = (Math.min(...ys) + Math.max(...ys)) / 2, zM = zTop - T / 2;
+    const steps = [], tool = [], idx = [], tools = [];
+    const add = (S, flip, idxOf) => {
+      const base = tools.length;
+      S.tools.forEach(t => tools.push(t));
+      for (let n = 0; n < S.tool.length; n++) {
+        const o = n * 9, v = S.steps;
+        if (flip) steps.push(v[o], 2 * yM - v[o + 1], 2 * zM - v[o + 2], v[o + 3], -v[o + 4], -v[o + 5], v[o + 6], -v[o + 7], -v[o + 8]);
+        else for (let m = 0; m < 9; m++) steps.push(v[o + m]);
+        tool.push(base + S.tool[n]);
+        idx.push(idxOf(S.idx[n]));
+      }
+    };
+    chain.prev.forEach(pr => add(abdexBuildSteps(pr.pts, () => false, profileOf), pr.flip, () => -1));
+    add(cur, false, i => i);
+    return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idx), tools };
+  }
   // Gitterabstand: höchstens etwa 150 000 Strahlen (Krümmling 588 x 134 x 112 -> 1 mm)
   function abdexGridH(box) {
     const X = box.x1 - box.x0, Y = box.y1 - box.y0, Z = box.z1 - box.z0;
@@ -22690,6 +22937,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const n = dex.want < dex.shown ? dex.want : Math.min(dex.want, dex.shown + dex.roundK);
     abdexSend(dex, n);
   }
+  // Release 300 (Tests): Materialintervalle des Volumenmodells entlang Z an der Stelle x/y (Welt)
+  window.__debug_abdexZAt = (x, y) => {
+    const st = abtragState; if (!st || !st.dex) return null;
+    const D = st.dex.D, i = Math.round((x - D.g.x0) / D.h), j = Math.round((y - D.g.y0) / D.h);
+    if (i < 0 || j < 0 || i > D.nx || j > D.ny) return null;
+    const r = D.rays[2][i + j * (D.nx + 1)];
+    return r ? Array.from(r).map(v => Math.round(v * 100) / 100) : null;
+  };
   // Netz für Bahnpunkt target (sofort das zuletzt fertige; Rechnung läuft im Hintergrund weiter)
   function abdexBuildMesh(st, target) {
     const dex = st.dex;
@@ -22772,10 +23027,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (Math.abs(a0.z / l0 - a1.z / l1) < 0.0035 && Math.abs(q.z - p.z) < 0.01) continue;
         n5++;
       }
-      if (n5 >= 10) {
+      // Release 300: mit Zwischenstand aus den Programmen davor (CNC-Liste) immer das Volumenmodell - gedrehte Bearbeitungen
+      // lassen sich mit den 2,5D-Taschen von oben nicht darstellen
+      const chain = listChainInfo();
+      if (n5 >= 10 || chain) {
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
-        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0 };
+        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0 };
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
+        if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
         st.dex = abdexStart(st, poly);
         return st;
       }
@@ -23006,8 +23265,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const rAt = abtragProfileR;
     // Gruppen: gleiche Bahn (auch in Gegenrichtung) oder gerade, parallele Bahnen; Abdeckung je Durchgang als Indexbereich
     const groups = [];
+    // Release 298: auch hin und zurück auf derselben Geraden (Sattelwange: letzte Abräumbahn "X2625.225 Y255.016 -> X2744.426
+    // Y394.307 -> X2625.225 Y255.016") - vorher galt nur Anfang -> Ende als Richtung; bei gleichem Anfangs- und Endpunkt wurde
+    // daraus eine gekrümmte Einzelbahn, deren Querschnitt an beiden Enden ins Bauteil hinein verlängert wurde (Strich quer über
+    // die Oberseite). Richtung jetzt zum entferntesten Punkt.
     const straightDir = P => {
-      const a = P[0], b = P[P.length - 1], L = Math.hypot(b.x - a.x, b.y - a.y);
+      const a = P[0];
+      let b = P[P.length - 1], L = Math.hypot(b.x - a.x, b.y - a.y);
+      P.forEach(p => { const l = Math.hypot(p.x - a.x, p.y - a.y); if (l > L + 1e-9) { L = l; b = p; } });
       if (L < 1e-6) return null;
       const t = [(b.x - a.x) / L, (b.y - a.y) / L];
       return P.every(p => Math.abs(-(p.x - a.x) * t[1] + (p.y - a.y) * t[0]) < 0.05) ? t : null;
@@ -23021,10 +23286,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (g) { ps.wOff = 0; ps.from = rev ? n - done : 0; ps.to = rev ? n - 1 : done - 1; g.passes.push(ps); return; }
       const t = straightDir(P);
       if (t) {
-        g = groups.find(q => q.line && Math.abs(q.t[0] * t[1] - q.t[1] * t[0]) < 1e-3);
+        // Release 298 (Sebastian, Sattelwange: "Die Sattelfräsungen beim Abräumen verschwinden teilweise nicht ganz ... und es gibt
+        // einen schwarzen Strich"): parallele gerade Bahnen wurden bisher IMMER zu einer Gruppe zusammengefasst - auch die
+        // Abräumbahnen verschiedener Sättel (alle Trittstufen sind parallel, aber ~190 mm quer versetzt). Wo sich ihre
+        // Längsbereiche überlappen (Sattelende an der Stufenspitze), entstand ein gemeinsamer Querschnitt über beide Sättel:
+        // Material blieb stehen und die Abschnittsgrenze zeichnete einen Strich quer über die Oberseite. Jetzt nur noch Bahnen,
+        // die quer höchstens so weit auseinanderliegen, wie ein Werkzeug im Bauteil reicht (2 x Radius + Stärke + 10 mm).
+        const rOf = o => o.spec.type === 'profile' ? Math.max(0, ...o.spec.rp.map(q => Math.abs(q.r))) : (o.spec.R || 0);
+        const latOf = q => -((P[0].x - q.O.x) * q.d[0] + (P[0].y - q.O.y) * q.d[1]);
+        g = groups.find(q => q.line && Math.abs(q.t[0] * t[1] - q.t[1] * t[0]) < 1e-3 &&
+          q.passes.some(o => Math.abs(o.wOff - latOf(q)) <= 2 * Math.max(rOf(o), rOf(ps)) + st.T + 10));
         if (!g) { g = { line: true, t, O: { x: P[0].x, y: P[0].y }, d: P[0].d, passes: [] }; groups.push(g); }
         const sOf = p => (p.x - g.O.x) * g.t[0] + (p.y - g.O.y) * g.t[1];
-        ps.s0 = sOf(P[0]); ps.s1 = sOf(P[done - 1]);
+        // Release 298: Bereich über alle gefahrenen Punkte (hin und zurück)
+        const sv = P.slice(0, done).map(sOf);
+        ps.s0 = Math.min(...sv); ps.s1 = Math.max(...sv);
         ps.wOff = -((P[0].x - g.O.x) * g.d[0] + (P[0].y - g.O.y) * g.d[1]);
         g.passes.push(ps);
         return;
@@ -23057,7 +23333,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     };
     const push = (v, r, kind, uv) => faces3.push({ v, r, kind, uv: uv || planarUV(v) });
     let cutMP = [[CwRing.map(p => st.toRaw(p[0], p[1]))]];
-    const info = { groups: groups.length, skipped: 0, sections: 0, faces: 0, ms: 0 };
+    const info = { groups: groups.length, lineGroups: groups.filter(g => g.line).length, skipped: 0, sections: 0, faces: 0, ms: 0 };
     // Silhouette K eines Durchgangs im Querschnitt (w = Richtung -d der Bezugsbahn, z); Achse durch den programmierten Punkt
     // eCut (Release 293): Querschnitt im Abstand e vor bzw. hinter der Werkzeugstellung - jeder Radius schrumpft auf sqrt(r² - e²)
     // (Rotationskörper bzw. Sägescheibe, Achse quer zur Bahn): so entsteht das runde Bahnende mit dem Fräserradius
@@ -23347,6 +23623,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const n = Math.max(1, Math.ceil(L / 0.5));
         const samp = [];
         for (let k = 0; k <= n; k++) { const t = k / n, X = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; samp.push({ t, X, pos: inBand(X[0] - nOut[0] * 0.01, X[1] - nOut[1] * 0.01) ? posOf(X) : null }); }
+        // Release 298 (Sebastian, Sattelwange: "es gibt einen schwarzen Strich"): die Stirnfläche begann erst am ersten
+        // Abtastpunkt (alle 0,5 mm) innerhalb des Bandes - bis zu 0,5 mm hinter dem Ende der Bauteilwand. Dort klaffte ein
+        // Spalt, und weil die Fläche dort schon nicht mehr die volle Höhe hatte, wurde eine senkrechte Umrisslinie quer über
+        // die Wand gezeichnet. Jetzt beginnt und endet sie genau auf der Bandgrenze.
+        for (let k = 0; k + 1 < bandW.length; k++) {
+          const p = bandW[k], q = bandW[k + 1], vx = b[0] - a[0], vy = b[1] - a[1], ex = q[0] - p[0], ey = q[1] - p[1], den = vx * ey - vy * ex;
+          if (Math.abs(den) < 1e-12) continue;
+          const t = ((p[0] - a[0]) * ey - (p[1] - a[1]) * ex) / den, u = ((p[0] - a[0]) * vy - (p[1] - a[1]) * vx) / den;
+          if (!(t > 1e-9 && t < 1 - 1e-9 && u >= 0 && u <= 1)) continue;
+          const X = [a[0] + vx * t, a[1] + vy * t], ps = posOf(X);
+          if (ps) samp.push({ t, X, pos: ps });
+        }
+        samp.sort((p, q) => p.t - q.t);
         const all = [];
         for (let k = 0; k < samp.length; k++) {
           const s0 = samp[k], s1 = samp[k + 1]; all.push(s0);
@@ -23462,20 +23751,80 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
       });
     });
-    let outContour = contour;
-    if (cutMP && !cutMP.length) outContour = [];   // das ganze Bauteil liegt im Band
+    let outContour = contour, outContours = [contour];
+    if (cutMP && !cutMP.length) { outContour = []; outContours = []; }   // das ganze Bauteil liegt im Band
     else if (cutMP && cutMP.length) {
       const area = ring => { let a = 0; for (let k = 0; k + 1 < ring.length; k++) a += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1]; return Math.abs(a / 2); };
-      const best = cutMP.slice().sort((p, q) => area(q[0]) - area(p[0]))[0];
-      outContour = best[0].slice(0, -1).map(([x, y]) => ({ x, y }));
+      // Release 298 (Sebastian, Sattelwange: "Zeile 277 im CNC Code. Da verschwinden Teile vom Bauteil. Später tauchen sie wieder
+      // auf."): trennt ein schräg geführter Durchgang (Sattelschmiege abräumen) das Bauteil quer ganz durch, zerfällt die Kontur
+      // in mehrere Stücke - bisher wurde nur das größte weitergegeben, alle übrigen verschwanden, bis der Durchgang wieder
+      // höher lag. Jetzt alle Stücke (größtes zuerst).
+      const sorted = cutMP.slice().sort((p, q) => area(q[0]) - area(p[0])).filter((pc, k) => k === 0 || area(pc[0]) > 0.5);
+      outContours = sorted.map(pc => pc[0].slice(0, -1).map(([x, y]) => ({ x, y })));
+      outContour = outContours[0];
       info.pieces = cutMP.length;
     }
     info.faces = faces3.length;
     info.ms = Math.round(performance.now() - t0);
-    const res = { faces3, rings, bands, contour: outContour, info };
+    const res = { faces3, rings, bands, contour: outContour, contours: outContours, info };
     if (st.sweepCache.size > 40) st.sweepCache.clear();
     st.sweepCache.set(key, res);
     return res;
+  }
+  // Release 298: zwei Netze von buildMortiseMesh() zusammenführen (mehrere Bauteilstücke)
+  function abtragMergeMesh(a, b) {
+    a.tris = a.tris.concat(b.tris); a.walls = a.walls.concat(b.walls); a.rings = a.rings.concat(b.rings);
+    (b.levels || []).forEach(l => { if (!a.levels.some(q => Math.abs(q.depth - l.depth) < 1e-9)) a.levels.push(l); });
+    (b.levelsBelow || []).forEach(l => { if (!a.levelsBelow.some(q => Math.abs(q.depth - l.depth) < 1e-9)) a.levelsBelow.push(l); });
+    a.clamped = a.clamped || b.clamped; a.throughOverlap = a.throughOverlap || b.throughOverlap;
+    if (b.bores) a.bores = (a.bores || []).concat(b.bores);
+    return a;
+  }
+  // Release 298: Fertigteil im ENDSTAND des Programms (einmal je Zustand berechnet) - Stücke, die dort eindeutig das Fertigteil
+  // sind (nicht am Rohteilrand, einziges Stück oder in einer geschlossenen, ganz gefahrenen Bahn), sonst null
+  function abtragFinalKept(st, stockRing) {
+    if (st.finalKept !== undefined) return st.finalKept;
+    st.finalKept = null;
+    try {
+      abtragAdvance(st, Infinity);
+      const T = st.T;
+      const through = Array.from(st.levels.entries()).filter(([d, mp]) => mp && mp.length && d >= T - 1e-6).map(([, mp]) => mp);
+      if (!through.length) return null;
+      const T1 = through.length === 1 ? through[0] : abtragOp('union', ...through);
+      const pieces = abtragOp('difference', [[stockRing]], T1);
+      const area = ring => { let a = 0; for (let k = 0; k + 1 < ring.length; k++) a += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1]; return Math.abs(a / 2); };
+      const big = pieces.filter(pc => area(pc[0]) > 1);
+      const onStock = ([x, y]) => {
+        for (let k = 0; k + 1 < stockRing.length; k++) {
+          const a = stockRing[k], b = stockRing[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy || 1;
+          const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / l2));
+          if (Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t) < 1e-2) return true;
+        }
+        return false;
+      };
+      let kept = big.filter(pc => !pc[0].some(onStock));
+      if (!kept.length && big.length === 1) kept = big.slice();
+      if (!kept.length && big.length > 1) {
+        // geschlossene, durchgefräste Bahnen (Anfang und Ende höchstens einen Werkzeugdurchmesser auseinander)
+        const polys = (st.loops || []).filter(lp => lp.length >= 3).filter(lp => {
+          const a = lp[0], b = lp[lp.length - 1], q = st.list && st.list[b.idx];
+          return Math.hypot(a.x - b.x, a.y - b.y) <= Math.max(1, 2 * ((q && q.toolRadius) || 0) + 0.5);
+        }).map(lp => lp.map(q => st.toRaw(q.x, q.y)));
+        const inPoly = (pl, x, y) => { let c = false; for (let i = 0, j = pl.length - 1; i < pl.length; j = i++) { const a = pl[i], b = pl[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+        const innerPt = pc => {
+          const flat = [], holes = []; let n = 0;
+          pc.forEach((ring, ri) => { if (ri) holes.push(n); ring.slice(0, -1).forEach(([x, y]) => { flat.push(x, y); n++; }); });
+          const ix = earcut(flat, holes.length ? holes : null); let best = null, ba = -1;
+          for (let k = 0; k + 2 < ix.length; k += 3) { const ax = flat[ix[k] * 2], ay = flat[ix[k] * 2 + 1], bx = flat[ix[k + 1] * 2], by = flat[ix[k + 1] * 2 + 1], cx = flat[ix[k + 2] * 2], cy = flat[ix[k + 2] * 2 + 1]; const a = Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)); if (a > ba) { ba = a; best = [(ax + bx + cx) / 3, (ay + by + cy) / 3]; } }
+          return best;
+        };
+        const inner = big.filter(pc => { const q = innerPt(pc); return !!q && polys.some(pl => inPoly(pl, q[0], q[1])); });
+        if (inner.length && inner.length < big.length) kept = inner;
+      }
+      if (kept.length && kept.length < big.length) st.finalKept = kept;
+      else if (kept.length === 1 && big.length === 1) st.finalKept = kept;
+    } catch (e) { st.finalKept = null; }
+    return st.finalKept;
   }
   function abtragBuildMesh(st, target) {
     if (st.dexel) return abdexBuildMesh(st, target);   // Release 294
@@ -23486,6 +23835,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let pockets = Array.from(st.levels.entries()).filter(([, mp]) => mp && mp.length).map(([depth, mp]) => ({ depth, mp, loops: [], layer: 'Abtrag' }));
     let contour = dxfKonturLoop.map(p => ({ x: p.x, y: p.y }));
     const info = { target, caps: st.done, levels: pockets.length, pieces: 1, waste: 0, kept: 1, removed: false, tilted: st.tilted };
+    let extraPieces = [];
     const through = pockets.filter(p => p.depth >= T - 1e-6);
     if (through.length) {
       try {
@@ -23509,7 +23859,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Dann gilt als Fertigteil, was innerhalb einer durchgefrästen Bahn liegt (Konturbahn rund um das Teil).
         // Release 291: nur noch EIN Stück übrig (der Abfall wurde ganz weggefräst, z. B. Rohteil nur 10 mm größer) - das ist das Fertigteil
         if (!kept.length && big.length === 1) { kept = big.slice(); waste = []; info.keptSingle = true; }
+        // Release 298 (Sebastian, Sattelwange: "Beim Übergang zwischen Zeile 156 -> 157 ist das auch"): berühren alle Stücke den
+        // Rohteilrand, entschied bisher die Lage in einer durchgefrästen Bahn - auch einer erst TEILWEISE gefahrenen. Bei der
+        // Sattelwange (Kontur oben und unten getrennt gefräst) schloss die angefangene untere Konturbahn ein Dreieck von 354 mm²
+        // ein, das als Fertigteil galt - das ganze Bauteil verschwand. Jetzt zählt zuerst der Endstand des Programms: was dort
+        // eindeutig das Fertigteil ist, bestimmt, welche Stücke jetzt schon Abfall sind (Stücke ohne Anteil am Fertigteil).
         if (!kept.length && waste.length > 1) {
+          const fin = abtragFinalKept(st, stockRing);
+          abtragAdvance(st, target);   // abtragFinalKept() rechnet bis zum Programmende - Zustand wieder auf die aktuelle Stelle
+          if (fin && fin.length) {
+            const ov = pc => { try { const x = abtragOp('intersection', [pc], fin); let a = 0; x.forEach(poly => poly.forEach((ring, ri) => { a += (ri ? -1 : 1) * area(ring); })); return a; } catch (e) { return 0; } };
+            const inF = big.filter(pc => ov(pc) > Math.max(1, area(pc[0]) * 1e-4));
+            if (inF.length && inF.length < big.length) { kept = inF; waste = big.filter(pc => !inF.includes(pc)); info.keptByFinal = true; }
+            else if (inF.length) info.keptAllFinal = true;
+          }
+        }
+        if (!kept.length && waste.length > 1 && !info.keptAllFinal) {
           const polys = (st.loops || []).map(lp => lp.filter(q => q.idx <= target).map(q => st.toRaw(q.x, q.y))).filter(pl => pl.length >= 3);
           const inPoly = (pl, x, y) => { let c = false; for (let i = 0, j = pl.length - 1; i < pl.length; j = i++) { const a = pl[i], b = pl[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
           const innerPt = pc => {   // Punkt sicher im Stück: Schwerpunkt des größten Dreiecks
@@ -23527,7 +23892,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (kept.length && (waste.length || info.keptSingle)) {
           kept.sort((p, q) => area(q[0]) - area(p[0]));
           contour = kept[0][0].slice(0, -1).map(([x, y]) => ({ x, y }));
-          const holes = kept[0].slice(1);
+          // Release 298: weitere Fertigteil-Stücke werden mit dargestellt (vorher nur das größte)
+          extraPieces = kept.slice(1).map(pc => pc[0].slice(0, -1).map(([x, y]) => ({ x, y })));
+          const holes = [].concat(...kept.map(pc => pc.slice(1)));
           pockets = pockets.filter(p => p.depth < T - 1e-6);
           if (holes.length) pockets.push({ depth: T, mp: holes.map(r => [r]), loops: [], layer: 'Abtrag' });
           info.removed = !info.keptSingle;   // Release 291: bei nur einem Stück gab es nichts zu entfernen (Kontur wird trotzdem übernommen)
@@ -23538,13 +23905,29 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     const z0 = dxfKonturLoop[0].z || 0;
     // Release 290: waagerechte Profilwerkzeuge (Omega) - Band aus der Kontur, gekrümmte Flächen dazu
-    let sweepRes = null;
-    try { sweepRes = abtragSweeps(st, target, contour); } catch (e) { info.sweepError = String(e); sweepRes = null; }
-    if (sweepRes) contour = sweepRes.contour;
-    let mesh = null;
-    if (contour.length >= 3) { try { mesh = buildMortiseMesh(contour.map(p => ({ x: p.x, y: p.y, z: z0 })), pockets, dxfThickness, null, { allowPlain: true }); } catch (e) { info.error = String(e); mesh = null; } }
+    // Release 298: jedes Fertigteil-Stück und jedes Teilstück nach dem Querschnitt-Band bekommt ein eigenes Netz (zusammengeführt)
+    let sweepRes = null, mesh = null;
+    [contour].concat(extraPieces).forEach(pcC => {
+      if (!pcC || pcC.length < 3) return;
+      let sr = null;
+      try { sr = abtragSweeps(st, target, pcC); } catch (e) { info.sweepError = String(e); sr = null; }
+      const outs = sr ? sr.contours : [pcC];
+      if (sr) {
+        if (!sweepRes) sweepRes = { faces3: [], rings: [], bands: [], info: { sections: 0, skipped: 0, groups: 0, lineGroups: 0 } };
+        sweepRes.faces3 = sweepRes.faces3.concat(sr.faces3); sweepRes.rings = sweepRes.rings.concat(sr.rings); sweepRes.bands = sweepRes.bands.concat(sr.bands);
+        sweepRes.info.sections += sr.info.sections || 0; sweepRes.info.skipped += sr.info.skipped || 0;
+        sweepRes.info.groups += sr.info.groups || 0; sweepRes.info.lineGroups += sr.info.lineGroups || 0;
+      }
+      outs.forEach(c => {
+        if (!c || c.length < 3) return;
+        let m = null;
+        try { m = buildMortiseMesh(c.map(p => ({ x: p.x, y: p.y, z: z0 })), pockets, dxfThickness, null, { allowPlain: true }); } catch (e) { info.error = String(e); m = null; }
+        if (m) { info.meshPieces = (info.meshPieces || 0) + 1; info.topArea = Math.round((info.topArea || 0) + ((m.info && m.info.topArea) || 0)); mesh = mesh ? abtragMergeMesh(mesh, m) : m; }
+      });
+    });
+    if (sweepRes && !sweepRes.info.skipped) delete sweepRes.info.skipped;
     // Release 290: ganzes Bauteil im Querschnitt-Band (z. B. Schmiegen vorn und hinten) - nur die Querschnittsflächen
-    else if (sweepRes) mesh = { topZ: dxfThickness > 0 ? dxfThickness : 0, botZ: dxfThickness > 0 ? 0 : dxfThickness, levels: [], levelsBelow: [], tris: [], walls: [], rings: [], info: {} };
+    if (!mesh && sweepRes) mesh = { topZ: dxfThickness > 0 ? dxfThickness : 0, botZ: dxfThickness > 0 ? 0 : dxfThickness, levels: [], levelsBelow: [], tris: [], walls: [], rings: [], info: {} };
     // waagerechte Bohrungen (bis zur aktuellen Position)
     const bores = [];
     const zTopP = st.zTop, zBotP = st.zTop - st.T;
@@ -23662,6 +24045,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     info.sweeps = sweepRes ? sweepRes.info.sections : 0;
     info.sweepFaces = sweepRes ? sweepRes.faces3.length : 0;
+    if (sweepRes) { info.sweepGroups = sweepRes.info.groups; info.sweepLineGroups = sweepRes.info.lineGroups; }
     if (sweepRes && sweepRes.info.skipped) info.sweepSkipped = sweepRes.info.skipped;
     if (mesh && st.softDepths && st.softDepths.size) mesh.rings = mesh.rings.filter(r => r.pts.length && r.pts[0].length > 2 || !st.softDepths.has(Math.round((mesh.topZ - r.z) * 100) / 100));
     info.bores = bores.filter(b => b.kind === 'A').length;
@@ -23701,9 +24085,6 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!avail && abtragOn) { abtragOn = false; abtragDropState(); abtragMesh = null; }
     chk.checked = abtragOn;
     el('abtragToggle').classList.toggle('is-disabled', !canOn);
-    // Release 291: zweiter Haken "Abtrag" neben "Bauteil" - dieselbe Funktion
-    const chk2 = el('chkAbtragPart');
-    if (chk2) { chk2.disabled = !canOn; chk2.checked = abtragOn; el('abtragPartToggle').classList.toggle('is-disabled', !canOn); }
     // Release 288: "CNC-Bahn verstecken" nur bei aktiver Abtragsimulation; aus -> Bahn wieder sichtbar
     if (!abtragOn) abtragHidePath = false;
     const hb = el('btnAbtragHidePath');
@@ -23742,7 +24123,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function setAbtragOn(on) {
     // Release 291: noch kein Rohteil, aber Maße im Programmkopf -> Rohteil sofort anlegen (wie "Bauteil" mit Ok)
-    if (on && !abtragAvailable() && abtragCanAutoCreate()) { partCreateTop = null; fillPartCreateFromProgram(); createRectPart(); }
+    if (on && !abtragAvailable() && abtragCanAutoCreate()) { partCreateTop = null; fillPartCreateFromProgram(); createRectPart({ auto: true }); }
     abtragOn = !!on && abtragAvailable();
     abtragDropState(); abtragMesh = null; abtragMeshTarget = -1;
     // Einschalten -> zum Programmanfang (Wiedergabe gestoppt, Position 0)
@@ -25031,6 +25412,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function toolAxisDirection(p) {
+    // Release 300: erfasste Bahnpunkte eines anderen Listenprogramms tragen ihre Achse fest mit (siehe captureListEntryPoints())
+    if (p.axisOverride) return p.axisOverride;
     // Reichenbacher-Winkelkorrektur (44. Runde) - nur aktiv, wenn der Schalter sichtbar
     // (Maschinentyp "Reichenbacher" bestätigt) UND angehakt ist, siehe
     // reichenbacherCorrectionActive() weiter oben.
@@ -26779,7 +27162,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   ctxItems.clearProgram.addEventListener('click', clearProgram);
   ctxItems.clearProgramList.addEventListener('click', clearProgramList); // Release 118
   ctxItems.toggleAllOps.addEventListener('click', toggleAllOps);
-  ctxItems.loadDxf.addEventListener('click', () => el('dxfFileInput').click());
+  ctxItems.loadDxf.addEventListener('click', () => openDxfImportPanel());   // Release 296: Fenster "DXF importieren"
   ctxItems.clearDxf.addEventListener('click', clearDxf);
   ctxItems.toggleDxfLayers.addEventListener('click', toggleAllDxfLayers);
   ctxItems.moveDxf.addEventListener('click', openDxfMovePanel);
@@ -29017,6 +29400,36 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // zusätzlich durch view.x()/view.y() (bzw. view.invY() für das Ziehen der Referenzmarker).
   // Zoom wie in der 3D-Sim: Faktor exp(-deltaY*0.0012) pro Mausrad-Ereignis, der Punkt unter dem
   // Cursor bleibt dabei an derselben Stelle; Verschieben mit gedrückter rechter Maustaste.
+  // Release 297 (Sebastian: "Die Darstellung der beiden Werkzeuge ist im Werkzeugprofilimport stark
+  // verzerrt."): Die 2D-Vorschau in "Werkzeug-DXF einlesen" und "Spannfutter bearbeiten" skalierte
+  // Breite (r -> 90 % der halben Canvasbreite) und Höhe (dist -> volle Canvashöhe) bislang
+  // UNABHÄNGIG voneinander - ein schlanker V-Nut-Fräser (14 x 115 mm) oder Fingerfräser
+  // (16 x 158 mm) wurde dadurch auf die volle Breite aufgeblasen. Jetzt EIN gemeinsamer
+  // Maßstab für r und dist (der kleinere der beiden, damit das Profil ganz hineinpasst), das
+  // Profil mittig. Gemeinsam genutzt von draw(), buildMapping() (Messfunktion) und dem
+  // Ziehen/Treffertest der Referenzmarker, damit alle dieselbe Zuordnung verwenden.
+  function dxfProfilePreviewFit(prof, w, h) {
+    const padding = 24;
+    let dMin = Infinity, dMax = -Infinity, rMax = 0;
+    (prof || []).forEach(p => {
+      if (p.dist < dMin) dMin = p.dist;
+      if (p.dist > dMax) dMax = p.dist;
+      if (Math.abs(p.r) > rMax) rMax = Math.abs(p.r);
+    });
+    if (!Number.isFinite(dMin)) { dMin = 0; dMax = 0; }
+    const span = (dMax - dMin) || 1;
+    const sH = (h - padding * 2) / span;
+    const sW = rMax > 1e-9 ? ((w - padding * 2) / 2 * 0.9) / rMax : Infinity;
+    const sc = Math.min(sH, sW);
+    const mid = (dMin + dMax) / 2;
+    return {
+      padding: padding, scale: sc, distMin: dMin, distMax: dMax, rMax: rMax,
+      xOf: (r) => w / 2 + r * sc,
+      yOf: (dist) => h / 2 - (dist - mid) * sc,
+      distOf: (y) => mid + (h / 2 - y) / sc
+    };
+  }
+
   function createDxfPreviewViewport(canvas, redraw) {
     const K_MIN = 0.5, K_MAX = 60;
     const v = { k: 1, ox: 0, oy: 0 };
@@ -29299,15 +29712,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const w = canvas.width, h = canvas.height;
       const prof = activeProfile();
       if (!prof || prof.length < 2) return { toScreen: () => null, points: [] };
-      const distVals = prof.map(p => p.dist);
-      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
-      const padding = 24;
-      const drawableH = h - padding * 2;
-      const drawableW = w - padding * 2;
-      const distSpan = (distMax - distMin) || 1;
-      const yOf = (dist) => padding + drawableH * (1 - (dist - distMin) / distSpan);
-      const xOf = (r) => w / 2 + (r / rMax) * (drawableW / 2) * 0.9;
+      const fit = dxfProfilePreviewFit(prof, w, h); // Release 297: gleicher Maßstab für r und dist
+      const yOf = fit.yOf, xOf = fit.xOf;
       const points = [];
       prof.forEach(p => {
         points.push({ r: p.r, dist: p.dist });
@@ -29378,9 +29784,30 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const n = parseFloat(String(s == null ? '' : s).trim().replace(',', '.'));
       return Number.isFinite(n) ? n : null;
     }
+    // Release 297 (Sebastian: "Beim "V-Nut Fräser" stimmt auch der Längenreferenzpunkt nicht. Der
+    // Fräser ist 115,01mm lang, der Referenzpunkt aber angeblich bei 165,012."): Die Felder zeigten
+    // bislang immer die ROHE DXF-Y-Koordinate des Referenzpunkts. Bei Sebastians bisherigen
+    // Werkzeug-DXFs liegt der DXF-Nullpunkt AUF dem Werkzeug (Omega_Fraeser.DXF: Y -85..49,6, dort
+    // hat Sebastian selbst "Längenreferenzpunkt: -80, Radiusreferenzpunkt -85" vorgegeben;
+    // Fingerfräser: oberes Ende bei Y=0; Minizinkenfräser: Spitze bei Y=0) - die rohe Koordinate
+    // ist dort bewusst gewählt und bleibt deshalb unverändert. Der V-Nut-Fräser liegt dagegen
+    // komplett UNTERHALB des Nullpunkts (Y -165,012..-50, der Nullpunkt ist also bloß eine
+    // zufällige Zeichnungsposition 50 mm über dem Werkzeug) - die Spitze erschien als "-165,012"
+    // statt als die tatsächliche Werkzeuglänge. Regel jetzt: Liegt der DXF-Nullpunkt nicht im
+    // Längenbereich des Profils, werden beide Felder relativ zum OBEREN Werkzeugende angezeigt/
+    // eingegeben (oben = 0, nach unten negativ - genau wie bei einem oben bei Y=0 gezeichneten
+    // Werkzeug), sonst wie bisher roh. Intern (und in den gespeicherten Profilen) bleiben
+    // lengthRef/radiusRef unverändert DXF-Koordinaten, damit bereits gespeicherte Profile und die
+    // 3D-Darstellung (buildToolProfileForRender(): dist - lengthRef) unverändert weiterlaufen.
+    function refZero() {
+      const { min, max } = distRange();
+      return (min <= 1e-9 && max >= -1e-9) ? 0 : max;
+    }
+    function refFromField(n) { return n + refZero(); }
     function syncRefInputsFromState() {
-      lengthRefInput.value = fmtNum(lengthRef);
-      radiusRefInput.value = fmtNum(radiusRef);
+      const z = refZero();
+      lengthRefInput.value = fmtNum(lengthRef - z);
+      radiusRefInput.value = fmtNum(radiusRef - z);
     }
 
     // Zeichnet die 2D-Vorschau: die Werkzeugkontur ACHSSYMMETRISCH gespiegelt (r nach links UND
@@ -29400,15 +29827,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
         ctx.fillText(T('Keine DXF-Datei geladen', 'No DXF file loaded'), w / 2, h / 2);
         return;
       }
-      const distVals = prof.map(p => p.dist);
-      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
-      const padding = 24;
-      const drawableH = h - padding * 2;
-      const drawableW = w - padding * 2;
-      const distSpan = (distMax - distMin) || 1;
-      function yOf(dist) { return view.y(padding + drawableH * (1 - (dist - distMin) / distSpan)); }
-      function xOf(r) { return view.x(w / 2 + (r / rMax) * (drawableW / 2) * 0.9); }
+      const fit = dxfProfilePreviewFit(prof, w, h); // Release 297: unverzerrt (siehe dxfProfilePreviewFit())
+      const padding = fit.padding;
+      function yOf(dist) { return view.y(fit.yOf(dist)); }
+      function xOf(r) { return view.x(fit.xOf(r)); }
 
       // Silhouette - rechte Kontur hoch, linke (gespiegelte) Kontur wieder runter, als ein
       // einziger geschlossener Pfad.
@@ -29487,14 +29909,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     function yToDistHelpers() {
       const rect = canvas.getBoundingClientRect();
       const scaleY = canvas.height / rect.height;
-      const padding = 24;
-      const drawableH = canvas.height - padding * 2;
-      const { min, max } = distRange();
-      const span = (max - min) || 1;
+      const fit = dxfProfilePreviewFit(activeProfile(), canvas.width, canvas.height); // Release 297
       return {
         canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
-        distOf: (canvasY) => min + (1 - (view.invY(canvasY) - padding) / drawableH) * span,
-        yOf: (dist) => view.y(padding + drawableH * (1 - (dist - min) / span))
+        distOf: (canvasY) => fit.distOf(view.invY(canvasY)),
+        yOf: (dist) => view.y(fit.yOf(dist))
       };
     }
     function hitTestMarker(clientYOffsetInRect) {
@@ -29555,14 +29974,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
     lengthRefInput.addEventListener('change', () => {
       const n = evalCalcExpression(lengthRefInput.value); // Release 245: rechnen erlaubt
-      if (n !== null) lengthRef = n;
+      if (n !== null) lengthRef = refFromField(n); // Release 297: Feld = relativ zum oberen Werkzeugende
       clampRefs();
       syncRefInputsFromState();
       draw();
     });
     radiusRefInput.addEventListener('change', () => {
       const n = parseNum(radiusRefInput.value);
-      if (n !== null) radiusRef = n;
+      if (n !== null) radiusRef = refFromField(n); // Release 297
       clampRefs();
       syncRefInputsFromState();
       draw();
@@ -29806,9 +30225,9 @@ Sebastian Bäcker (Anschrift wie oben)`,
       // am globalen Enter-Shortcut-Mechanismus, der von vielen anderen Dialogen unverändert so
       // gebraucht wird) etwas zu ändern.
       const typedLengthRef = evalCalcExpression(lengthRefInput.value); // Release 245
-      if (typedLengthRef !== null) lengthRef = typedLengthRef;
+      if (typedLengthRef !== null) lengthRef = refFromField(typedLengthRef); // Release 297: relativ zum oberen Ende
       const typedRadiusRef = parseNum(radiusRefInput.value);
-      if (typedRadiusRef !== null) radiusRef = typedRadiusRef;
+      if (typedRadiusRef !== null) radiusRef = refFromField(typedRadiusRef);
       clampRefs();
       syncRefInputsFromState();
       const saved = saveToolDxfProfile({
@@ -29873,15 +30292,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
       const w = canvas.width, h = canvas.height;
       const prof = activeProfile();
       if (!prof || prof.length < 2) return { toScreen: () => null, points: [] };
-      const distVals = prof.map(p => p.dist);
-      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
-      const padding = 24;
-      const drawableH = h - padding * 2;
-      const drawableW = w - padding * 2;
-      const distSpan = (distMax - distMin) || 1;
-      const yOf = (dist) => padding + drawableH * (1 - (dist - distMin) / distSpan);
-      const xOf = (r) => w / 2 + (r / rMax) * (drawableW / 2) * 0.9;
+      const fit = dxfProfilePreviewFit(prof, w, h); // Release 297: gleicher Maßstab für r und dist
+      const yOf = fit.yOf, xOf = fit.xOf;
       const points = [];
       prof.forEach(p => {
         points.push({ r: p.r, dist: p.dist });
@@ -29960,15 +30372,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
         ctx.fillText(T('Keine DXF-Datei geladen', 'No DXF file loaded'), w / 2, h / 2);
         return;
       }
-      const distVals = prof.map(p => p.dist);
-      const distMin = Math.min.apply(null, distVals), distMax = Math.max.apply(null, distVals);
-      const rMax = Math.max.apply(null, prof.map(p => Math.abs(p.r))) || 1;
-      const padding = 24;
-      const drawableH = h - padding * 2;
-      const drawableW = w - padding * 2;
-      const distSpan = (distMax - distMin) || 1;
-      function yOf(dist) { return view.y(padding + drawableH * (1 - (dist - distMin) / distSpan)); }
-      function xOf(r) { return view.x(w / 2 + (r / rMax) * (drawableW / 2) * 0.9); }
+      const fit = dxfProfilePreviewFit(prof, w, h); // Release 297: unverzerrt (siehe dxfProfilePreviewFit())
+      const padding = fit.padding;
+      function yOf(dist) { return view.y(fit.yOf(dist)); }
+      function xOf(r) { return view.x(fit.xOf(r)); }
 
       const ordered = (prof[0].dist <= prof[prof.length - 1].dist) ? prof : prof.slice().reverse();
       ctx.beginPath();
@@ -30019,14 +30426,11 @@ Sebastian Bäcker (Anschrift wie oben)`,
     function yToDistHelpers() {
       const rect = canvas.getBoundingClientRect();
       const scaleY = canvas.height / rect.height;
-      const padding = 24;
-      const drawableH = canvas.height - padding * 2;
-      const { min, max } = distRange();
-      const span = (max - min) || 1;
+      const fit = dxfProfilePreviewFit(activeProfile(), canvas.width, canvas.height); // Release 297
       return {
         canvasY: (clientYOffsetInRect) => clientYOffsetInRect * scaleY,
-        distOf: (canvasY) => min + (1 - (view.invY(canvasY) - padding) / drawableH) * span,
-        yOf: (dist) => view.y(padding + drawableH * (1 - (dist - min) / span))
+        distOf: (canvasY) => fit.distOf(view.invY(canvasY)),
+        yOf: (dist) => view.y(fit.yOf(dist))
       };
     }
     function hitTestMarker(clientYOffsetInRect) {
@@ -31797,7 +32201,6 @@ Sebastian Bäcker (Anschrift wie oben)`,
 
   btnStop.addEventListener('click', stopPlayback);
   el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 287
-  el('chkAbtragPart').addEventListener('change', (e) => setAbtragOn(e.target.checked));   // Release 291
   el('btnAbtragHidePath').addEventListener('click', toggleAbtragHidePath);   // Release 288
   el('btnAbtragReset').addEventListener('click', resetAbtragStock);   // Release 294
 
@@ -32358,6 +32761,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     if (!v) return;
     applyViewAngles(v.theta, v.phi);
   }
+  window.__debug_viewPreset = k => applyViewPreset(k);   // Release 300 (Tests/Vorschau)
 
   // "Gesamtes Programm": alle Arbeitsgänge inkl. bereits bearbeiteter Bereiche zeigen
   btnWholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
@@ -32602,13 +33006,41 @@ Sebastian Bäcker (Anschrift wie oben)`,
   // ============================================================
   // DXF-Import: Verdrahtung (Sebastian, siehe loadDxfText()/clearDxf()/updateDxfUI() weiter oben)
   // ============================================================
-  el('btnDxfImport').addEventListener('click', () => el('dxfFileInput').click());
+  // Release 296: "Datei -> DXF -> DXF importieren", das Symbol "📂 DXF" und "Rechtsklick -> DXF -> DXF laden" öffnen das Fenster
+  // "DXF importieren" (DXF / 3D-DXF, CS Krümmling, Setzstufe)
+  el('btnDxfImport').addEventListener('click', () => openDxfImportPanel());
   // "DXF laden"-Symbolleisten-Icon (68. Runde) - zweiter, gleichwertiger Auslöser derselben Aktion
   // wie #btnDxfImport oben, nach demselben Muster wie #btnLoadFileIcon neben #btnLoadFile (siehe
   // Kommentar bei #btnDxfImportIcon in template_top.html).
-  el('btnDxfImportIcon').addEventListener('click', () => el('dxfFileInput').click());
-  // Release 278: "DXF CS Krümmling" - Dialog, Import (nur Rechteck mit Handlauf), Spiegeln oben/unten
-  const dxfKrmPanel = el('dxfKrmPanel');
+  el('btnDxfImportIcon').addEventListener('click', () => openDxfImportPanel());
+  // Release 278: "DXF CS Krümmling" - Import (nur Rechteck mit Handlauf), Spiegeln oben/unten; seit Release 296 im Fenster
+  // "DXF importieren"
+  const dxfImportPanel = el('dxfImportPanel');
+  let dxfRiserImportPending = false;   // Release 296: nächste geladene DXF ist die Frontansicht einer Setzstufe
+  function updateRiserImportUI() {
+    const front = !!dxfGeometry && !dxfKrm && dxfPartType === 'riser';
+    el('btnDxfRiserTopLoad').disabled = !(dxfGeometry && !dxfKrm);
+    el('dxfRiserStatus').textContent = front
+      ? T('Frontansicht: ', 'Front view: ') + (dxfFilename || '') + (dxfTopView ? T(' - Draufsicht: ', ' - top view: ') + dxfTopView.name : '')
+      : T('Erst die Frontansicht laden, dann die Draufsicht (Breite wie die Frontansicht). Bestätigt wird im Fenster „DXF-Bauteil definieren“.', 'Load the front view first, then the top view (same width as the front view). Confirm in the window "DXF drawing settings".');
+  }
+  function openDxfImportPanel() { updateKrmPanel(); updateRiserImportUI(); dxfImportPanel.classList.add('open'); }
+  function closeDxfImportPanel() { dxfImportPanel.classList.remove('open'); }
+  // "DXF laden" (DXF, DXF mit Layern, 3D-DXF) - unverändert der Dateidialog des DXF-Imports
+  el('btnDxfImportPlain').addEventListener('click', () => { closeDxfImportPanel(); dxfRiserImportPending = false; el('dxfFileInput').click(); });
+  // Setzstufe: Frontansicht = DXF-Import mit Bauteil "Setzstufe", danach "DXF-Bauteil definieren"
+  el('btnDxfRiserFrontLoad').addEventListener('click', () => { closeDxfImportPanel(); dxfRiserImportPending = true; el('dxfFileInput').click(); });
+  // Setzstufe: Draufsicht = "Draufsicht einfügen" in "DXF-Bauteil definieren" (Bauteil Setzstufe), dort mit Ok übernehmen
+  el('btnDxfRiserTopLoad').addEventListener('click', () => {
+    if (!dxfGeometry || dxfKrm) return;
+    closeDxfImportPanel();
+    openDxfThicknessForRiser();
+    el('dxfTopViewFileInput').click();
+  });
+  function openDxfThicknessForRiser() {
+    openDxfThicknessPanel();
+    if (dxfPartTypeSelect.value !== 'riser') { dxfPartTypeSelect.value = 'riser'; dxfPartTypeSelect.dispatchEvent(new Event('change')); }
+  }
   function setKrmStatus(text, isError) {
     const st = el('dxfKrmStatus');
     st.textContent = text;
@@ -32628,6 +33060,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
   }
   function updateKrmPanel() {
     updateKrmSideStatus();   // Release 283
+    if (typeof updateRiserImportUI === 'function') updateRiserImportUI();   // Release 296
     const cb = el('dxfKrmFlip');
     cb.disabled = !dxfKrm;
     cb.checked = !!(dxfKrm && dxfKrmFlip);
@@ -32685,8 +33118,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     requestRender();
     return true;
   }
-  el('btnDxfKrmIcon').addEventListener('click', () => { updateKrmPanel(); dxfKrmPanel.classList.add('open'); });
-  el('btnDxfKrmClose').addEventListener('click', () => dxfKrmPanel.classList.remove('open'));
+  el('btnDxfImportClose').addEventListener('click', closeDxfImportPanel);
   el('btnDxfKrmLoad').addEventListener('click', () => el('dxfKrmFileInput').click());
   el('dxfKrmFileInput').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
@@ -32721,6 +33153,8 @@ Sebastian Bäcker (Anschrift wie oben)`,
   el('btnPartCreateIcon').addEventListener('click', () => {
     partCreateTop = null; el('partCreateFrontSelect').value = 'up';
     fillPartCreateFromProgram();
+    // Release 299: "Abtrag" nur angehakt, wenn die Maße aus dem Programmkopf erkannt wurden (sonst 0 / 0 / 0, Haken frei wählbar)
+    el('partCreateAbtrag').checked = !!partCreatePrefill;
     showPartCreateError(''); refreshPartCreateTopUI();
     partCreatePanel.classList.add('open');
     el('partCreateX').focus(); el('partCreateX').select();
@@ -32743,7 +33177,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
     });
   });
   el('btnPartCreateTopRemove').addEventListener('click', () => { partCreateTop = null; refreshPartCreateTopUI(); });
-  function createRectPart() {
+  function createRectPart(opts) {
     const X = partCreateNum('partCreateX'), Y = partCreateNum('partCreateY'), Z = partCreateNum('partCreateZ');
     if (!(X > 0) || !(Y > 0)) { showPartCreateError(T('X und Y müssen größer 0 sein.', 'X and Y must be greater than 0.')); return; }
     if (Z === null) { showPartCreateError(T('Bitte für Z eine Zahl eingeben (auch negativ möglich).', 'Please enter a number for Z (negative is possible).')); return; }
@@ -32771,8 +33205,10 @@ Sebastian Bäcker (Anschrift wie oben)`,
     updateDxfUI();
     requestRender();
     partCreatePanel.classList.remove('open');
+    // Release 299: Haken "Abtrag" im Fenster -> "Abtragsimulation" ein bzw. aus (nicht beim automatischen Anlegen aus setAbtragOn())
+    if (!(opts && opts.auto)) setAbtragOn(el('partCreateAbtrag').checked);
   }
-  el('btnPartCreateOk').addEventListener('click', createRectPart);
+  el('btnPartCreateOk').addEventListener('click', () => createRectPart());
   // Release 283: Seitenansicht laden/entfernen
   el('btnDxfKrmSideLoad').addEventListener('click', () => el('dxfKrmSideFileInput').click());
   el('dxfKrmSideFileInput').addEventListener('change', (e) => {
@@ -32799,8 +33235,14 @@ Sebastian Bäcker (Anschrift wie oben)`,
   });
   el('dxfFileInput').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
+    const riser = dxfRiserImportPending;
+    dxfRiserImportPending = false;
     if (!f) return;
-    readFileAsText(f, (text) => loadDxfText(text, f.name));
+    readFileAsText(f, (text) => {
+      loadDxfText(text, f.name);
+      // Release 296: Setzstufe Frontansicht -> "DXF-Bauteil definieren" mit Bauteil Setzstufe (dort auch "Draufsicht einfügen")
+      if (riser && dxfGeometry && !dxfKrm) openDxfThicknessForRiser();
+    });
     e.target.value = '';
   });
 
