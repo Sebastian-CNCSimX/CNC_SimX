@@ -1257,6 +1257,9 @@
      verteilt - mit drei direkten Kindern würde das neue Zahnrad stattdessen mittig zwischen Titel
      und Knopf landen statt unmittelbar links neben #btnOpsToggle zu kleben. */
   .ops-col-head-actions { display: flex; align-items: center; gap: 4px; }
+  /* Release 305: Pfostendrehung oben/unten (nur bei erkanntem Pfosten) */
+  .post-rot-select { font: inherit; font-size: 11px; height: 22px; padding: 0 2px; max-width: 150px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--ink); }
+  .ops-col.collapsed .ops-col-head .post-rot-select { display: none; }
   .ops-col.collapsed .ops-col-head { padding: 9px 4px; }
   .ops-col.collapsed .ops-col-head-row { justify-content: center; }
   .ops-col.collapsed .ops-col-title { display: none; }
@@ -3720,6 +3723,11 @@
                      echten Klick auf #btnColumnScale (öffnet #columnScalePanel, dieselbe
                      "Spalteneinstellungen" wie im Menü "Einstellungen" -> "Erscheinungsbild" ->
                      "Spalten"), statt dessen Logik zu duplizieren. -->
+                <!-- Release 305 (Sebastian: 'Wenn das CNC-Programm einen Pfosten erkennt, soll es eine Auswahl (Dropdownmenü) im Bereich 'Arbeitsgänge' geben, direkt zwischen dem 'Programm bearbeiten'-Icon und 'Spalteneinstellen'. Auswahl 'Pfostendrehung oben' und 'Pfostendrehung unten' ... Standardauswahl ist 'Pfostendrehung oben'): nur bei erkanntem Pfosten sichtbar -->
+                <select id="postRotDirSelect" class="post-rot-select" hidden title="Drehrichtung des Pfostens zwischen den Seiten (;side): oben = Unterkante an X klappt nach oben weg, unten = Oberkante klappt nach unten weg" data-i18n-en-title="Rotation direction of the post between the sides (;side): up = the bottom edge at X turns upwards, down = the top edge turns downwards">
+                  <option value="up" data-i18n-en="Post rotation up">Pfostendrehung oben</option>
+                  <option value="down" data-i18n-en="Post rotation down">Pfostendrehung unten</option>
+                </select>
                 <button class="ops-toggle-btn ops-col-settings-btn" id="btnOpsColumnSettings" type="button" title="Spalteneinstellungen" data-i18n-en-title="Column settings">⚙</button>
                 <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen" data-i18n-en-title="Expand/collapse the processing steps column">»</button>
               </div>
@@ -4388,6 +4396,7 @@
           <option value="riser" data-i18n-en="Riser">Setzstufe</option>
           <option value="stringer" data-i18n-en="Stringer">Wange</option>
           <option value="handrail" data-i18n-en="Handrail">Handlauf</option>
+          <option value="post" data-i18n-en="Post">Pfosten</option><!-- Release 302 -->
         </select>
       </label>
     </div>
@@ -4673,6 +4682,7 @@
           <option value="riser" data-i18n-en="Riser">Setzstufe</option>
           <option value="stringer" data-i18n-en="Stringer">Wange</option>
           <option value="handrail" data-i18n-en="Handrail">Handlauf</option>
+          <option value="post" data-i18n-en="Post">Pfosten</option><!-- Release 302 -->
           <option value="krmStanding" data-i18n-en="Wreath, standing">Krümmling, stehend</option>
         </select>
       </label>
@@ -12681,8 +12691,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 301;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 17:00 Uhr';
+  const APP_RELEASE_NUMBER = 305;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 18:45 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -16228,7 +16238,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Release 253: zusätzlich 'undefined' ("- undefiniert -", Standard: nur Stärke, keine Erkennung von Bearbeitungen)
   // und 'handrail' (Handlauf, Auswahl wie bei der Wange); "Wange, gestemmt" heißt jetzt "Wange".
   let dxfPartType = 'undefined';
-  const DXF_PART_TYPES = ['undefined', 'tread', 'riser', 'stringer', 'handrail'];
+  const DXF_PART_TYPES = ['undefined', 'tread', 'riser', 'stringer', 'handrail', 'post'];   // 'post' = Pfosten (Release 302)
   const isMortisePart = t => t === 'stringer' || t === 'handrail';   // Einstemmungen (Wange, Handlauf)
   const isStepPart = t => t === 'tread' || t === 'riser';             // Schmiegenerkennung (Stufe, Setzstufe)
   // Release 253: vertikale Taschen aus Kreisen (alle Layer außer Kontur/COMPASS), eine Taschentiefe; bei Stufe,
@@ -16256,7 +16266,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Die Bohrungstiefe kommt immer aus dem Symbol (T/U) und ist deshalb keine Einstellung.
   const LS_KEY_DXF_PART_DEFAULTS = 'cncsim.dxfPartDefaults';
   // Release 262: Standard-Füllfarben je Bauteil ("- undefiniert -" bleibt beim bisherigen Blau)
-  const DXF_PART_DEFAULT_FILL = { undefined: '#3399ff', tread: '#aaffaa', riser: '#8cff8c', stringer: '#ffba75', handrail: '#ffffa8', krmStanding: '#ffffa8' };
+  const DXF_PART_DEFAULT_FILL = { undefined: '#3399ff', tread: '#aaffaa', riser: '#8cff8c', stringer: '#ffba75', handrail: '#ffffa8', krmStanding: '#ffffa8', post: '#77ffbb' };   // Release 302: Pfosten; Release 304 (Sebastian: "Bitte als Standardfarbe beim Bauteil "Pfosten" #77ffbb eintragen")
   // Release 260 (Sebastian: "Import einer Textur unter Einstellungen -> DXF -> Textur. Die Textur wird wie ein
   // Spannfutterprofil bzw. Werkzeugprofil abgelegt und auch exportiert beim Einstellungsexport."): Texturliste in
   // localStorage (LS_KEY_DXF_TEXTURES) und im Einstellungsexport (Feld dxfTextures). Das Bild wird beim Import auf
@@ -16406,7 +16416,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         handrail: { thickness: DXF_THICKNESS_PREFILL, mortise: mortise(), vpocket: vpocket(), T: defaultBoreDefaults(), U: defaultBoreDefaults(), groove: defaultGrooveDefaults(), profileId: null },   // profileId seit Release 281
         // Release 279 (Sebastian: "Bei der DXF-Bauteildefinition ein neues Bauteil "Krümmling, stehend" ... Stärke -> nicht
         // gebraucht ... Füllung -> wie gehabt ... Bearbeitungen ... nicht gebraucht"): nur Füllung/Farben/Transparenz/Textur
-        krmStanding: { profileId: null }   // Release 280: Bauteilprofil (id) oder null
+        krmStanding: { profileId: null },   // Release 280: Bauteilprofil (id) oder null
+        // Release 302 (Sebastian: "Neuer Bauteiltyp: Pfosten ... mit Grafik (Textur) oder einer Farbe inkl. Transparenz"): nur
+        // Stärke und Füllung - Bearbeitungen kommen beim Pfosten aus dem CNC-Programm (Abtragsimulation)
+        post: { thickness: DXF_THICKNESS_PREFILL }
       }
     };
   }
@@ -16438,6 +16451,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const defFill = DXF_PART_DEFAULT_FILL[t] || '#3399ff';
       b.fillColor = hex(s.fillColor, defFill);
       if (migrateColor && b.fillColor === '#3399ff') b.fillColor = defFill;
+      if (t === 'post' && b.fillColor === '#e8c39e') b.fillColor = defFill;   // Release 304: alte Pfosten-Standardfarbe aus R302/R303
       b.outlineColor = hex(s.outlineColor, '#000000');
       // Release 260: Füllung 'color' | 'texture' und gewählte Textur (id; eine gelöschte Textur fällt beim Zeichnen auf die Füllfarbe zurück)
       b.fillMode = s.fillMode === 'texture' ? 'texture' : 'color';
@@ -16469,6 +16483,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const n = String(name || '').toLowerCase();
     if (/setzstufe|riser/.test(n)) return 'riser';
     if (/handlauf|handrail/.test(n)) return 'handrail';
+    if (/pfosten|(^|[^a-z])post([^a-z]|$)/.test(n)) return 'post';   // Release 302
     if (/wange|stringer/.test(n)) return 'stringer';
     if (/stufe|tread/.test(n)) return 'tread';
     return null;
@@ -16585,7 +16600,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Release 270 (Sebastian: "In der Wange gibt es den Layer "Schmiege_vorn", aber ich hab die Bearbeitung nicht mehr zur
   // Auswahl."): seit Release 253 hatten nur Stufe/Setzstufe Schmiegen. Jetzt alle Bauteile außer "- undefiniert -" (dort laut
   // Release 253 nur die Stärke) - also auch Wange und Handlauf ("Auswahl wie bei Wangen").
-  function hasSchmiegePart(t) { return t !== 'undefined'; }
+  function hasSchmiegePart(t) { return t !== 'undefined' && t !== 'post'; }   // Release 302: Pfosten wie "- undefiniert -"
   function getActiveSchmiegeRings() { return !hasSchmiegePart(dxfPartType) ? null : (dxfLayerSchmiegeRings || (dxfNamedSchmiegeEnabled ? dxfSchmiegeRings : null)); }
   // "DXF skalieren" (Release 84, Sebastian: "Wenn ich ein DXF importiere, kann das manchmal sein,
   // dass das in cm exportiert worden ist, dann wird eine Seite nicht 98cm groß importiert, sondern
@@ -17314,6 +17329,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   function loadText(text, filename, fileMeta) {
     rawProgramText = text;
+    postRotDir = 'up';   // Release 305: Standard "Pfostendrehung oben" je Programm
     rawProgramFilename = filename;
     rawProgramFileSize = fileMeta && typeof fileMeta.size === 'number' ? fileMeta.size : null;
     rawProgramFileDate = fileMeta && typeof fileMeta.lastModified === 'number' ? new Date(fileMeta.lastModified) : null;
@@ -17623,6 +17639,119 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   window.__debug_listChainInfo = () => { const c = listChainInfo(); return c ? { k: c.k, n: c.prev.length, flips: c.prev.map(p => p.flip), pts: c.prev.map(p => p.pts.length), sig: c.sig } : null; };
   window.__debug_programList = () => programList.map(e => ({ id: e.id, name: e.filename, rotate: !!e.rotate, captured: !!e.chainPts, cuts: e.chainCuts, active: e.id === activeProgramId }));
   window.__debug_listMachineType = () => listMachineType;
+
+  // ============================================================================================================
+  // Release 302 (Sebastian: "Wunsch ist den Pfosten drehen zu können: Wenn ein CNC-Programm für Pfosten geladen worden ist, soll der Pfosten auch dementsprechend gedreht werden wie auch beim Krümmling ... Die Bearbeitungen sollen dann immer mitwandern, wenn der Pfosten gedreht wird. Es gibt eine automatische Erkennung von Pfosten!"
+  // "1 ... Es gibt ein ";s i d e  1" als Kommentar vor dem ersten Arbeitsgang ... Die Drehung erfolgt dann nur bei geladenem
+  // Bauteil und immer an der Y-Achse entlang so wie beim Krümmling. Wenn kein Bauteil vorhanden ist, werden die CNC-Bahnen
+  // simuliert. / 2 Die Erkennung soll am besten über ";*s*i*d*e*" erfolgen ... auch über ";*s*e*i*t*e*" / 3 Wenn keine
+  // Bearbeitungen zwischen ;side2 und ;side3 z.B. stattfinden, wird der Pfosten zwei mal gedreht."):
+  // Pfosten = das Programm enthält mindestens eine Kommentarzeile, die nur aus "side" bzw. "seite" (beliebig mit Leerzeichen/
+  // Unterstrichen zwischen den Buchstaben) und optional einer Nummer besteht. Jede weitere Seitenmarke = 90° Drehung um eine
+  // Achse parallel zu X durch die Mitte des Rohteils; die Unterkante an der X-Achse klappt nach oben weg (wie R300), d. h.
+  // (y, z) -> (z, -y) relativ zur Mitte. Die Bahnen und der Abtrag früherer Seiten werden um (aktuelle Seite - ihre Seite)
+  // Vierteldrehungen mitgedreht, später Seiten entsprechend zurück - so liegt alles am Bauteil in seiner aktuellen Lage.
+  // Bewusst streng (nur die Marke in der Zeile), damit Kommentare wie "... Code-Abschnitte" nicht als s-i-d-e zählen.
+  // Release 303 (Sebastian: "2 Bei HOMAG wird noch nicht die Pfostenbearbeitung erkannt?! Das Schema ist dort "KM="s i d e  1""
+  // ... 3 Generell soll vor dem ersten erkannten Arbeitsgang nach "*s*i*d*e*1" gesucht werden bzw. "*s*e*i*t*e*1", das sollte
+  // ja alles abdecken - bei allen Maschinen."): Seitenmarke = Kommentar in jeder Schreibweise (; // # KM="…" (…) {…}), dessen
+  // Inhalt nur "side"/"seite" (beliebige Leerzeichen/Unterstriche zwischen den Buchstaben) und eine Nummer ist. Pfosten nur, wenn
+  // VOR dem ersten erkannten Arbeitsgang eine Marke mit Nummer 1 steht; danach zählt jede weitere Marke als Drehung.
+  const POST_COMMENT_RE = /^\s*(?:N\d+\s*)?(?:;|\/\/|#|KM\s*=\s*"|\(|\{)(.*?)["\)\}]?\s*$/i;
+  const POST_SIDE_RE = /^[\s_.:#-]*(?:s[\s_]*i[\s_]*d[\s_]*e|s[\s_]*e[\s_]*i[\s_]*t[\s_]*e)[\s_.:#-]*(\d*)[\s_.]*$/i;
+  function postSideNumber(line) {
+    const m = POST_COMMENT_RE.exec(line);
+    if (!m) return null;
+    const k = POST_SIDE_RE.exec(m[1]);
+    return k ? (k[1] === '' ? 0 : parseInt(k[1], 10)) : null;
+  }
+  let postSideCache = { text: null, cur: null, lines: [] };
+  function postSideLines() {
+    if (postSideCache.text !== rawProgramText || postSideCache.cur !== current) {
+      let lines = [];
+      if (typeof rawProgramText === 'string') {
+        const all = rawProgramText.split(/\r?\n/);
+        const ops = current && current.sections ? current.sections.filter(x => x.type === 'arbeitsgang') : [];
+        const firstOp = ops.length ? Math.min(...ops.map(x => x.startIdx)) : all.length;
+        const marks = [];
+        all.forEach((l, i) => { const n = postSideNumber(l); if (n !== null) marks.push({ i, n }); });
+        const first = marks.find(m => m.i < firstOp && m.n === 1);
+        if (first) lines = marks.filter(m => m.i >= first.i).map(m => m.i);
+      }
+      postSideCache = { text: rawProgramText, cur: current, lines };
+    }
+    return postSideCache.lines;
+  }
+  function isPostProgram() { return postSideLines().length > 0; }
+  function postQuarterOfLine(L) {
+    const sl = postSideLines();
+    let n = 0;
+    for (let i = 0; i < sl.length && sl[i] <= L; i++) n++;
+    return Math.max(0, n - 1);
+  }
+  // nur mit Bauteil (Rohteil aus "Bauteil erstellen") - ohne Bauteil werden nur die CNC-Bahnen simuliert
+  function postRotationActive() { return postSideLines().length > 1 && !!dxfCreatedPart && !!dxfKonturLoop && !!dxfThickness && !dxfKrm; }
+  function postCurrentQuarter() {
+    if (!postRotationActive() || !points.length) return 0;
+    const p = points[Math.max(0, Math.min(points.length - 1, scrubIdx))];
+    return p && p.lineIdx != null ? postQuarterOfLine(p.lineIdx) : 0;
+  }
+  // Drehachse: parallel zu X durch die Mitte des Rohteils (Weltkoordinaten)
+  function postPivot() {
+    const ys = dxfKonturLoop.map(p => dxfTransformPoint({ x: p.x, y: p.y, z: 0 }).y);
+    const zBase = dxfTransformPoint({ x: 0, y: 0, z: dxfKonturLoop[0].z || 0 }).z;
+    const zTop = zBase + Math.max(0, dxfThickness);
+    return { yM: (Math.min(...ys) + Math.max(...ys)) / 2, zM: zTop - Math.abs(dxfThickness) / 2 };
+  }
+  // Release 305 (Sebastian: "Wenn das CNC-Programm einen Pfosten erkennt, soll es eine Auswahl (Dropdownmenü) im Bereich "Arbeitsgänge" geben, direkt zwischen dem "Programm bearbeiten"-Icon und "Spalteneinstellen". Auswahl "Pfostendrehung oben" und "Pfostendrehung unten" ... Standardauswahl ist "Pfostendrehung oben"): "Aktuell ist die "Pfostendrehung oben" implementiert, aber der sollte auch ggf. anders herum drehbar
+  // sein. Dementsprechend wird das Bauteil anders herum gedreht. Das CNC-Programm bleibt dasselbe, nur die bisherigen
+  // Bearbeitungen werden anders herum dargestellt." - 'down' dreht je Seite in Gegenrichtung ((y,z) -> (-z,y)); eine
+  // Vierteldrehung rückwärts = drei vorwärts. Gilt je geladenem Programm, Standard "oben".
+  let postRotDir = 'up';
+  const postTurns = d => (postRotDir === 'down' ? (4 - d) % 4 : d);
+  function updatePostRotDirUI() {
+    const sel = el('postRotDirSelect');
+    if (!sel) return;
+    sel.hidden = !isPostProgram();
+    sel.value = postRotDir;
+  }
+  el('postRotDirSelect').addEventListener('change', () => {
+    postRotDir = el('postRotDirSelect').value === 'down' ? 'down' : 'up';
+    bakeParams = null;
+    requestRender();
+  });
+  window.__debug_postRotDir = () => postRotDir;
+  // Anzeige der Bahn: wird je Bild in computeBakeParams() gesetzt (null = keine Drehung)
+  let postDisp = null;
+  function postDisplayState() {
+    if (!postRotationActive()) return null;
+    const pv = postPivot();
+    return { q: postCurrentQuarter(), yM: pv.yM, zM: pv.zM };
+  }
+  function postViewPoint(p) {
+    if (!postDisp || p.lineIdx == null) return p;
+    const d = postTurns((((postDisp.q - postQuarterOfLine(p.lineIdx)) % 4) + 4) % 4);   // Release 305: Richtung
+    if (!d) return p;
+    let py = p.y - postDisp.yM, pz = p.z - postDisp.zM;
+    for (let k = 0; k < d; k++) { const t = py; py = pz; pz = -t; }
+    return { x: p.x, y: postDisp.yM + py, z: postDisp.zM + pz };
+  }
+  // Volumenmodell: Werkzeugschritte (Lage, Achse, Bewegung) um (qCur - Seite des Schritts) Vierteldrehungen drehen
+  function abtragPostSteps(S, list, qCur, pv) {
+    const v = Float64Array.from(S.steps);
+    for (let n = 0; n < S.tool.length; n++) {
+      const i = S.idx[n];
+      if (i < 0 || !list[i] || list[i].lineIdx == null) continue;
+      const d = postTurns((((qCur - postQuarterOfLine(list[i].lineIdx)) % 4) + 4) % 4);   // Release 305: Richtung
+      if (!d) continue;
+      const o = n * 9;
+      let py = v[o + 1] - pv.yM, pz = v[o + 2] - pv.zM, ay = v[o + 4], az = v[o + 5], my = v[o + 7], mz = v[o + 8];
+      for (let k = 0; k < d; k++) { let t = py; py = pz; pz = -t; t = ay; ay = az; az = -t; t = my; my = mz; mz = -t; }
+      v[o + 1] = pv.yM + py; v[o + 2] = pv.zM + pz; v[o + 4] = ay; v[o + 5] = az; v[o + 7] = my; v[o + 8] = mz;
+    }
+    return { steps: v, tool: S.tool, idx: S.idx, tools: S.tools };
+  }
+  window.__debug_postInfo = () => ({ sides: postSideLines().slice(), isPost: isPostProgram(), active: postRotationActive(), q: postCurrentQuarter(), partType: dxfPartType, offset: Object.assign({}, dxfOffset), part: dxfCreatedPart ? Object.assign({}, dxfCreatedPart) : null });
 
   // Rotes "x" je Zeile (Punkt 4) - entfernt genau diesen einen Eintrag aus der Liste. War der
   // Eintrag gerade aktiv, wird zusätzlich die Anzeige geleert (dieselbe clearProgram()-Logik wie
@@ -18404,7 +18533,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Release 283: Draufsicht (Setzstufe / erstelltes Bauteil) - Körper = Schnitt von Front- und Draufsicht, braucht das Netz
     const topV = dxfTopView && dxfThickness && dxfKonturLoop ? dxfTopView : null;
     const wantTex = (isDxfTextureActive() && !!dxfThickness) || !!railProf || !!topV;
-    if (dxfPartType === 'undefined') {             // Release 253: "- undefiniert -" = keine Erkennung von Bearbeitungen
+    if (dxfPartType === 'undefined' || dxfPartType === 'post') {             // Release 253 (Release 302: Pfosten ebenso): "- undefiniert -" = keine Erkennung von Bearbeitungen
       if (wantTex) { try { dxfMortiseMesh = buildMortiseMesh(dxfKonturLoop, [], dxfThickness, null, { allowPlain: true }); } catch (e) { dxfMortiseMesh = null; } if (dxfMortiseMesh) { if (topV) applyTopViewToMesh(dxfMortiseMesh, topV, false); dxfMortiseMesh.info.boreCount = 0; window.__lastMortiseInfo = dxfMortiseMesh.info; } }
       return;
     }
@@ -19277,6 +19406,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Zeile wo der Arbeitsgangkommentar steht"); der kleine "3D"-Button daneben schaltet
   // stattdessen wie bisher die 3D-Szene auf diesen Arbeitsgang um (kumulative Ansicht).
   function renderOpsColumn(lineColors) {
+    updatePostRotDirUI();   // Release 305
     opsListEl.innerHTML = '';
     const ops = current.sections.filter(s => s.type === 'arbeitsgang');
     if (!ops.length) {
@@ -20589,6 +20719,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // vergleichen zu müssen.
       dxfHiddenLayersVersion,
       segments,
+      // Release 302: Pfosten - Bahnen früherer/späterer Seiten liegen gedreht am Bauteil
+      postQ: (postDisp = postDisplayState()) ? postDisp.q + ':' + postDisp.yM + ':' + postDisp.zM + ':' + postRotDir : '',   // Release 305: + Richtung
     };
   }
 
@@ -20611,6 +20743,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfMortiseMesh === b.dxfMortiseMesh && a.dxfPartType === b.dxfPartType && a.dxfKrm === b.dxfKrm &&
       a.dxfOutlineColor === b.dxfOutlineColor && a.dxfTexKey === b.dxfTexKey && a.mortiseScale === b.mortiseScale &&
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
+      a.postQ === b.postQ &&   // Release 302
       a.segments === b.segments;
   }
 
@@ -22055,6 +22188,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (rawProgramText == null) return null;
     const d = readProgramPartDims(rawProgramText, activeMachineTypeName);
     const r3 = v => Math.round(v * 1000) / 1000;
+    // Release 302: Pfosten - Querschnitt muss für die Drehung quadratisch bleiben: Y = Breite aus dem Kopf (ohne +10, ohne
+    // Verschiebung um Y -5); bei SCM Z positiv (danach Verschiebung um -Z, siehe createRectPart)
+    // Release 303 (Sebastian: "Bauteilmaße: X=1684.225 Y=80.000 Z=80.000"): beim Pfosten auch X ohne +10
+    if (d && isPostProgram()) return { x: r3(d.x), y: r3(d.y), z: r3(programDimFamily(activeMachineTypeName) === 'scm' ? d.z : (d.neg ? -d.z : d.z)), read: true, post: true };
     return d ? { x: r3(d.x + 10), y: r3(d.y + 10), z: r3(d.neg ? -d.z : d.z), read: true } : { x: 0, y: 0, z: 0, read: false };
   }
   // Abtragsimulation ohne Rohteil einschaltbar, wenn die Maße aus dem Programmkopf kommen (das Rohteil entsteht dann sofort)
@@ -22093,7 +22230,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Release 290: Profilwerkzeuge (Werkzeug-DXF) gehen in den Abtrag ein
       useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(','),
       // Release 300: Zwischenstand aus den Programmen davor (Reihenfolge, Drehungen)
-      (() => { const c = listChainInfo(); return c ? c.sig : ''; })()].join('|');
+      (() => { const c = listChainInfo(); return c ? c.sig : ''; })(),
+      // Release 302: Pfosten - aktuelle Seite (Vierteldrehungen) bestimmt die Lage aller Bearbeitungen
+      postRotationActive() ? 'post' + postCurrentQuarter() + postRotDir : ''].join('|');   // Release 305: + Richtung
   }
   // ============================================================================================================
   // Release 294 (Sebastian, Krümmling: "1 Bei "Seitenbahnen 1 | 1" wird nichts abgetragen bzw. nicht überall korrekt / 2
@@ -23052,10 +23191,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // Release 300: mit Zwischenstand aus den Programmen davor (CNC-Liste) immer das Volumenmodell - gedrehte Bearbeitungen
       // lassen sich mit den 2,5D-Taschen von oben nicht darstellen
       const chain = listChainInfo();
-      if (n5 >= 10 || chain) {
+      const post = postRotationActive();   // Release 302: Pfosten mit Drehung -> ebenfalls immer das Volumenmodell
+      if (n5 >= 10 || chain || post) {
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
         const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0 };
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
+        if (post) { const tg = list[Math.max(0, Math.min(list.length - 1, offset + scrubIdx))]; st.dexSteps = abtragPostSteps(st.dexSteps, list, tg && tg.lineIdx != null ? postQuarterOfLine(tg.lineIdx) : 0, postPivot()); st.post = true; }
         if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
         st.dex = abdexStart(st, poly);
         return st;
@@ -25282,7 +25423,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.beginPath();
       let started = false;
       for (let i = startAt; i < revealCount; i++) {
-        const p = proj(toRender(seg.points[i]));
+        const p = proj(toRender(postViewPoint(seg.points[i])));   // Release 302: Pfosten
         if (!p) { started = false; continue; }
         if (!started) { ctx.moveTo(p.x, p.y); started = true; }
         else ctx.lineTo(p.x, p.y);
@@ -25307,8 +25448,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (let i = startAt; i < revealCount; i++) {
       const rapid = seg.points[i].rapid;
       if (rapid && !showRapid) { flush(); pathRapid = null; continue; }
-      const a = proj(toRender(seg.points[i - 1]));
-      const b = proj(toRender(seg.points[i]));
+      const a = proj(toRender(postViewPoint(seg.points[i - 1])));   // Release 302: Pfosten
+      const b = proj(toRender(postViewPoint(seg.points[i])));
       if (!a || !b) { flush(); pathRapid = null; continue; }
       if (!pathOpen || rapid !== pathRapid) {
         flush();
@@ -33215,7 +33356,17 @@ Sebastian Bäcker (Anschrift wie oben)`,
     // Release 291: Maße aus dem Programmkopf unverändert übernommen -> Rohteil um Y -5 mm verschieben (an der Vorderkante wird
     // etwas abgetragen)
     const pf = partCreatePrefill;
-    if (pf && Math.abs(pf.x - X) < 1e-9 && Math.abs(pf.y - Y) < 1e-9) dxfOffset = { x: 0, y: -5, z: 0 };
+    const post = isPostProgram();   // Release 302
+    if (!post && pf && Math.abs(pf.x - X) < 1e-9 && Math.abs(pf.y - Y) < 1e-9) dxfOffset = { x: 0, y: -5, z: 0 };
+    // Release 302 (Sebastian: "4 Besonderheit SCM: Beim "Bauteil" wird die Länge ausgegeben ... Nur bei SCM soll dann eine
+    // Verschiebung des Bauteils über "DXF verschieben" stattfinden. Das ist immer die Länge in X negativ ... und bei der
+    // Bauteilhöhe (Z-Wert) auch den negativen Wert ... NUR BEI SCM bitte und nur beim Pfosten (wenn erkannt) automatisch."):
+    // X = -Länge, Z = -Höhe (bei positiver Stärke; ein nach unten angelegtes Bauteil liegt schon unter 0)
+    // Release 303 (Sebastian: "Verschiebung in X um Bauteillänge im negativen rausnehmen, das war fehlerhaft von mir ...
+    // Verschiebung: X0 Y0 Z-80 (nicht mehr -1684.225)"): nur noch Z = -Höhe
+    if (post && programDimFamily(activeMachineTypeName) === 'scm') dxfOffset = { x: 0, y: 0, z: zz > 0 ? -zz : 0 };
+    // Release 302 (Punkt 5): erkannter Pfosten -> Bauteil "Pfosten" mit dessen Füllung/Farbe/Textur/Transparenz
+    if (post) { dxfPartType = 'post'; applyPartDefaultsToState('post'); }
     partCreatePrefill = null;
     dxfTopView = top; dxfTopFrontDown = frontDown;
     dxfThickness = zz;
@@ -33902,7 +34053,7 @@ Sebastian Bäcker (Anschrift wie oben)`,
       return;
     }
     const mortise = isMortisePart(t), step = isStepPart(t);
-    const vertical = mortise || t === 'tread' || t === 'riser', horizontal = t !== 'undefined';   // Setzstufe vertikal seit Release 258
+    const vertical = mortise || t === 'tread' || t === 'riser', horizontal = t !== 'undefined' && t !== 'post';   // Setzstufe vertikal seit Release 258; Pfosten (R302) ohne
     dxfMortiseRow.hidden = !mortise;
     dxfPocketRow.hidden = t !== 'tread';
     el('dxfVPocketRow').hidden = !vertical;
