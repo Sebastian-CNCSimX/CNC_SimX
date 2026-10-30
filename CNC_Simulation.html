@@ -12691,8 +12691,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 305;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 18:45 Uhr';
+  const APP_RELEASE_NUMBER = 310;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 21:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -22764,11 +22764,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // abgetrennte Stücke (Abfall, z. B. nach dem Trennschnitt): Zusammenhangskomponenten der Knoten im Material; behalten wird
     // das größte Stück und jedes, das mindestens halb so groß ist - die übrigen fallen weg (Knoten als "außen" gesetzt)
     let dropList = null, vis = null, que = null, lastComps = null;
+    let bfsTouch = false;
     function bfs(s0, mark, collect) {
       let hd = 0, tl = 0; que[tl++] = s0; vis[s0] = mark;
+      bfsTouch = false;
       while (hd < tl) {
         const c = que[hd++];
         if (collect) collect.push(c);
+        if (!bfsTouch) { const i = c % NX, j = ((c - i) / NX) % NY; if (i <= 1 || i >= NX - 2 || j <= 1 || j >= NY - 2) bfsTouch = true; }
         let d = c + 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
         d = c - 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
         d = c + NX; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
@@ -22790,12 +22793,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const N = NX * NY * NZ;
       if (!vis) { vis = new Uint8Array(N); que = new Int32Array(N); } else vis.fill(0);
       const comps = [];
-      for (let s0 = 0; s0 < N; s0++) if (st[s0] && !vis[s0]) comps.push([s0, bfs(s0, 1, null)]);
+      for (let s0 = 0; s0 < N; s0++) if (st[s0] && !vis[s0]) { const n = bfs(s0, 1, null); comps.push([s0, n, bfsTouch]); }
       if (comps.length <= 1) return 0;
       let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
+      // Release 309: behalten wird das größte Stück und jedes mit mindestens 70 % seiner Größe (vorher 50 %: bei der Sattelwange
+      // blieb der abgetrennte Streifen über den Sätteln mit ~60 % der Wange stehen)
+      const keepC = c => c[1] >= big * 0.7;
       const out = [];
-      comps.forEach(c => { if (c[1] < big / 2) bfs(c[0], 2, out); });
-      lastComps = comps.map(c => c[1]).sort((x, y) => y - x).slice(0, 8);
+      comps.forEach(c => { if (!keepC(c)) bfs(c[0], 2, out); });
+      lastComps = comps.slice().sort((x, y) => y[1] - x[1]).slice(0, 8).map(c => c[2] ? -c[1] : c[1]);   // Release 309: negativ = berührt den Rohteilrand
       if (!out.length) return 0;
       for (let m = 0; m < out.length; m++) {
         const c = out[m]; st[c] = 0;
@@ -22803,10 +22809,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         markCells(i - 1, i, j - 1, j, k - 1, k);
       }
       dropList = out;
-      return comps.length - comps.filter(c => c[1] >= big / 2).length;
+      return comps.length - comps.filter(keepC).length;
+    }
+    // Release 310 (Sebastian: "Wenn die Schmiegen abgetragen werden und er zur nächsten Schmiege fährt, blendet sich das Material
+    // immer mal wieder ein, was schon wegberechnet worden ist ... Wird da was "nachkalkuliert" beim Sprung zwischen den Zeilen?"):
+    // vorwärts bleibt Abfall Abfall - schon entfernte Stücke nach jeder neuen Rechenrunde sofort wieder ausblenden (bisher wurden
+    // sie bei jeder Runde zurückgeholt und erst ~200 ms nach dem Ankommen erneut entfernt)
+    function reDrop() {
+      if (!dropList) return 0;
+      let n = 0;
+      for (let m = 0; m < dropList.length; m++) {
+        const c = dropList[m];
+        if (!st[c]) continue;
+        st[c] = 0; n++;
+        const i = c % NX, j = ((c - i) / NX) % NY, k = Math.floor(c / SK);
+        markCells(i - 1, i, j - 1, j, k - 1, k);
+      }
+      return n;
     }
     return {
-      setRay, clearDrop, settleDrop, comps: () => lastComps,
+      setRay, clearDrop, settleDrop, reDrop, comps: () => lastComps,
       // geänderte Blöcke neu vernetzen (höchstens budget ms); Rückgabe: Anzahl offener Blöcke
       update(budget) {
         const t0 = Date.now();
@@ -22967,10 +22989,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idx), tools };
   }
   // Gitterabstand: höchstens etwa 150 000 Strahlen (Krümmling 588 x 134 x 112 -> 1 mm)
-  function abdexGridH(box) {
+  function abdexGridH(box, rays) {
     const X = box.x1 - box.x0, Y = box.y1 - box.y0, Z = box.z1 - box.z0;
     const A = X * Y + X * Z + Y * Z;
-    return Math.max(0.5, Math.min(5, Math.sqrt(A / 150000)));
+    return Math.max(0.5, Math.min(5, Math.sqrt(A / (rays || 150000))));   // Release 309: Strahlenbudget je Programmart
   }
   let abdexWorkerUrl = null;
   function abdexWorkerSource() {
@@ -22988,7 +23010,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const CORE = ABDEX_CORE();
     const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
     const box = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), z0: st.zTop - st.T, z1: st.zTop };
-    const h = abdexGridH(box);
+    const h = abdexGridH(box, st.rays);
     const D = CORE.create(box, h);
     CORE.fillPrism(D, poly, box.z0, box.z1, 0, 1);
     const S = st.dexSteps;
@@ -23032,7 +23054,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function abdexSend(dex, n) {
     if (dex.ccTimer) { clearTimeout(dex.ccTimer); dex.ccTimer = 0; }
-    dex.mesher.clearDrop(); dex.ccN = -1; dex.dropped = 0;
+    // Release 310: nur rückwärts die entfernten Stücke zurückholen (dort kommt Material wieder dazu); vorwärts bleiben sie weg
+    if (n < dex.shown) { dex.mesher.clearDrop(); dex.dropped = 0; }
+    dex.ccN = -1;
     dex.req++;
     dex.inflight = { req: dex.req, n, got: 0, t0: performance.now() };
     if (dex.workers.length) dex.workers.forEach(w => w.postMessage({ type: 'goto', n, req: dex.req }));
@@ -23067,6 +23091,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (fl.n > dex.shown) dex.roundK = Math.max(5, Math.min(4000, Math.round(dex.roundK * Math.max(0.5, Math.min(2, 250 / Math.max(1, dex.lastRoundMs))))));
     dex.inflight = null;
     dex.meshN = fl.n;
+    dex.mesher.reDrop();   // Release 310
     abdexMeshStep(dex);
   }
   // Vernetzen in Zeitscheiben, danach anzeigen und ggf. die nächste Runde starten
@@ -23192,9 +23217,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // lassen sich mit den 2,5D-Taschen von oben nicht darstellen
       const chain = listChainInfo();
       const post = postRotationActive();   // Release 302: Pfosten mit Drehung -> ebenfalls immer das Volumenmodell
-      if (n5 >= 10 || chain || post) {
+      // Release 309 (Sebastian: "Bau das bitte so ein" - Vorschau Volumenmodell am Sattel-Innenwinkel): Programme mit schräg
+      // gestelltem Fräser (weder senkrecht noch waagerecht, z. B. Sattelschmiegen) rechnen mit dem Volumenmodell -
+      // die Querschnitt-Näherung (R290-R308) bildete die Ecken nicht sauber ab. Feineres Raster (bis 600 000 Strahlen).
+      let nTilt = 0;
+      for (let i = 1; i < list.length && nTilt < 2; i++) {
+        const q = list[i];
+        if (q.rapid || hidden(q) || !(q.toolRadius > 0) || Math.hypot(q.x - list[i - 1].x, q.y - list[i - 1].y, q.z - list[i - 1].z) < 0.01) continue;
+        if (kinds[i] === 'tilt') nTilt++;   // nur Fräser - geneigte Sägeschnitte sind Ebenen, die kann die Querschnitt-Rechnung
+      }
+      const tiltDex = nTilt >= 2;
+      if (n5 >= 10 || chain || post || tiltDex) {
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
-        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0 };
+        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, rays: tiltDex && n5 < 10 ? 600000 : 150000 };
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
         if (post) { const tg = list[Math.max(0, Math.min(list.length - 1, offset + scrubIdx))]; st.dexSteps = abtragPostSteps(st.dexSteps, list, tg && tg.lineIdx != null ? postQuarterOfLine(tg.lineIdx) : 0, postPivot()); st.post = true; }
         if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
@@ -23228,11 +23263,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           run.slice(k, m + 1).forEach(j => { const q = list[j]; if (P.length && Math.hypot(q.x - P[P.length - 1].x, q.y - P[P.length - 1].y) < 1e-6) { P[P.length - 1].d = dirOfP(q); P[P.length - 1].idx = j; return; } P.push({ x: q.x, y: q.y, d: dirOfP(q), idx: j }); });
           if (P.length >= 2) {
             const q = list[run[m]], ax = toolAxisDirection(q);
-            let ok = true;
             // quer zur Achse: waagerechter Anteil der Achse (an jedem Streckenende) senkrecht zur Strecke
-            for (let i = 0; i + 1 < P.length; i++) { const dx = P[i + 1].x - P[i].x, dy = P[i + 1].y - P[i].y, l = Math.hypot(dx, dy) || 1, d = P[i + 1].d; if (Math.abs((d[0] * dx + d[1] * dy) / l) > 0.1) ok = false; }
-            if (ok) sweeps.push({ id: sweeps.length, P, zc: q.z, a: { x: ax.x, y: ax.y, z: ax.z }, spec: specOf(q) });
-            else tilted += P.length - 1;
+            // Release 307 (Sebastian: "Da passt noch was nicht bei den Sattelschmiegen ... Die Schmiegen werden nicht richtig
+            // dargestellt."): bisher fiel der GANZE Durchgang weg, sobald eine Strecke nicht quer zur Achse lief - bei den Sattel-
+            // schmiegen fährt der Fräser am Ende der tieferen Bahnen kurz in Achsrichtung zum Innenwinkel und zurück, dadurch fehlten
+            // die unteren Bahnen und die Schmiege blieb unten senkrecht stehen. Jetzt wird der Durchgang an solchen Strecken
+            // geteilt; nur sie selbst bleiben unberücksichtigt.
+            const spec = specOf(q), a = { x: ax.x, y: ax.y, z: ax.z };
+            let cur = [P[0]];
+            const flush = () => { if (cur.length >= 2) sweeps.push({ id: sweeps.length, P: cur, zc: q.z, a, spec }); };
+            for (let i = 0; i + 1 < P.length; i++) {
+              const dx = P[i + 1].x - P[i].x, dy = P[i + 1].y - P[i].y, l = Math.hypot(dx, dy) || 1, d = P[i + 1].d;
+              if (Math.abs((d[0] * dx + d[1] * dy) / l) > 0.1) {
+                flush(); cur = [P[i + 1]];
+                // Release 308 (Sebastian: "In den Ecken entstehen "komische Ecken" ... Das sieht nicht korrekt aus."): die Strecke
+                // in Achsrichtung (Fräser fährt am Bahnende in den Sattel-Innenwinkel) räumt dort Material - als Folge von
+                // Werkzeugabdrücken: kurze Durchgänge quer zur Achse (0,5 mm), Abstand <= R/2, die R293-Kappen runden sie ab.
+                const sp = specOf(q), Rr = sp.type === 'profile' ? Math.max(0, ...sp.rp.map(o => Math.abs(o.r))) : (sp.R || 0);
+                if (Rr > 0 && l > 1e-6) {
+                  const tq = [-d[1], d[0]], nS = Math.max(1, Math.ceil(l / Math.max(0.5, Rr / 2)));
+                  for (let k = 0; k <= nS; k++) {
+                    const f = k / nS, cx = P[i].x + dx * f, cy = P[i].y + dy * f, dd = P[i + 1].d;
+                    sweeps.push({ id: sweeps.length, P: [{ x: cx - tq[0] * 0.25, y: cy - tq[1] * 0.25, d: dd, idx: P[i + 1].idx }, { x: cx + tq[0] * 0.25, y: cy + tq[1] * 0.25, d: dd, idx: P[i + 1].idx }], zc: q.z, a, spec, imprint: true });
+                  }
+                } else tilted++;
+              }
+              else cur.push(P[i + 1]);
+            }
+            flush();
           }
         }
         k = Math.max(m, k + 1);
@@ -23635,7 +23693,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         return { x: c.x, y: c.y, d: c.end.d, cap: true, zt: W.map(w => ev(sOf(w), w, true)), zb: W.map(w => ev(sOf(w), w, false)) };
       });
       let P = Praw.map(p => Object.assign({}, p, { zt: ZT, zb: ZB }));
-      const E = sec.rMax + 2;
+      // Release 306 (Sebastian: "Bei dem Programm werden die Schmiegen irgendwie weitergefräst beim Abtrag, obwohl da nie ein
+      // Fräser herfährt"): Verlängerung über ein Bahnende außerhalb des Bauteils nur um die Reichweite des Werkzeugs IN
+      // Bahnrichtung (Radius) - bisher sec.rMax, die größte Ausdehnung des Querschnitts. Beim geneigten 200-mm-Fräser
+      // (Sattelschmiege) waren das ~200 mm: die Schmiege lief vom Sattel-Innenwinkel quer über die Wange weiter.
+      const E = (cap && cap.passes ? passRadius(cap.passes) : sec.rMax) + 2;
       if (extS) { const t = tang(P[0], P[1]); P.unshift({ x: P[0].x - t[0] * E, y: P[0].y - t[1] * E, d: P[0].d, zt: ZT, zb: ZB }); }
       if (extE) { const t = tang(P[P.length - 2], P[P.length - 1]); P.push({ x: P[P.length - 1].x + t[0] * E, y: P[P.length - 1].y + t[1] * E, d: P[P.length - 1].d, zt: ZT, zb: ZB }); }
       if (capSL.length) P = capPts(capSL).reverse().concat(P);
@@ -24207,6 +24269,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       mesh.faces3 = sweepRes.faces3; mesh.rings = split.concat(sweepRes.rings);
     }
     info.sweeps = sweepRes ? sweepRes.info.sections : 0;
+    info.imprints = (st.sweeps || []).filter(sw => sw.imprint && sw.P[0].idx <= target).length;   // Release 308
     info.sweepFaces = sweepRes ? sweepRes.faces3.length : 0;
     if (sweepRes) { info.sweepGroups = sweepRes.info.groups; info.sweepLineGroups = sweepRes.info.lineGroups; }
     if (sweepRes && sweepRes.info.skipped) info.sweepSkipped = sweepRes.info.skipped;
