@@ -1260,6 +1260,10 @@
   /* Release 305: Pfostendrehung oben/unten (nur bei erkanntem Pfosten) */
   .post-rot-select { font: inherit; font-size: 11px; height: 22px; padding: 0 2px; max-width: 150px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--ink); }
   .ops-col.collapsed .ops-col-head .post-rot-select { display: none; }
+  .post-rot-select { max-width: none; flex: 0 0 auto; }
+  /* Release 312: dicker Trennstrich vor dem ersten Arbeitsgang einer neuen Pfostenseite (;side n) */
+  .op-side-sep { border-top: 3px solid var(--ink); margin: 8px 2px 4px; padding-top: 2px; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+  .ops-col.collapsed .op-side-sep { font-size: 0; margin: 6px 0 3px; }
   .ops-col.collapsed .ops-col-head { padding: 9px 4px; }
   .ops-col.collapsed .ops-col-head-row { justify-content: center; }
   .ops-col.collapsed .ops-col-title { display: none; }
@@ -3724,9 +3728,11 @@
                      "Spalteneinstellungen" wie im Menü "Einstellungen" -> "Erscheinungsbild" ->
                      "Spalten"), statt dessen Logik zu duplizieren. -->
                 <!-- Release 305 (Sebastian: 'Wenn das CNC-Programm einen Pfosten erkennt, soll es eine Auswahl (Dropdownmenü) im Bereich 'Arbeitsgänge' geben, direkt zwischen dem 'Programm bearbeiten'-Icon und 'Spalteneinstellen'. Auswahl 'Pfostendrehung oben' und 'Pfostendrehung unten' ... Standardauswahl ist 'Pfostendrehung oben'): nur bei erkanntem Pfosten sichtbar -->
-                <select id="postRotDirSelect" class="post-rot-select" hidden title="Drehrichtung des Pfostens zwischen den Seiten (;side): oben = Unterkante an X klappt nach oben weg, unten = Oberkante klappt nach unten weg" data-i18n-en-title="Rotation direction of the post between the sides (;side): up = the bottom edge at X turns upwards, down = the top edge turns downwards">
-                  <option value="up" data-i18n-en="Post rotation up">Pfostendrehung oben</option>
-                  <option value="down" data-i18n-en="Post rotation down">Pfostendrehung unten</option>
+                <!-- Release 311 (Sebastian: "neuer Tooltip: bei "Pfostendrehung oben" -> "Pfosten wird vom Bediener weg gedreht",
+                     bei "Pfostendrehung unten" -> "Pfosten wird zum Bediener gedreht""): Tooltip folgt der Auswahl (updatePostRotDirUI) -->
+                <select id="postRotDirSelect" class="post-rot-select" hidden title="Pfosten wird vom Bediener weg gedreht" data-i18n-en-title="The post is turned away from the operator">
+                  <option value="up" data-i18n-en="Post rotation up" title="Pfosten wird vom Bediener weg gedreht" data-i18n-en-title="The post is turned away from the operator">Pfostendrehung oben</option>
+                  <option value="down" data-i18n-en="Post rotation down" title="Pfosten wird zum Bediener gedreht" data-i18n-en-title="The post is turned towards the operator">Pfostendrehung unten</option>
                 </select>
                 <button class="ops-toggle-btn ops-col-settings-btn" id="btnOpsColumnSettings" type="button" title="Spalteneinstellungen" data-i18n-en-title="Column settings">⚙</button>
                 <button class="ops-toggle-btn" id="btnOpsToggle" type="button" title="Arbeitsgänge-Spalte ein-/ausklappen" data-i18n-en-title="Expand/collapse the processing steps column">»</button>
@@ -12691,8 +12697,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 310;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 21:30 Uhr';
+  const APP_RELEASE_NUMBER = 312;
+  const APP_RELEASE_TIMESTAMP = '31.10.2026, 22:15 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -17714,9 +17720,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!sel) return;
     sel.hidden = !isPostProgram();
     sel.value = postRotDir;
+    // Release 311: Tooltip der Auswahl (DE/EN, applyLanguage() tauscht über data-i18n-en-title / dataset.i18nDeTitle)
+    const de = postRotDir === 'down' ? 'Pfosten wird zum Bediener gedreht' : 'Pfosten wird vom Bediener weg gedreht';
+    const en = postRotDir === 'down' ? 'The post is turned towards the operator' : 'The post is turned away from the operator';
+    sel.dataset.i18nDeTitle = de; sel.setAttribute('data-i18n-en-title', en);
+    sel.setAttribute('title', currentLang === 'en' ? en : de);
   }
   el('postRotDirSelect').addEventListener('change', () => {
     postRotDir = el('postRotDirSelect').value === 'down' ? 'down' : 'up';
+    updatePostRotDirUI();   // Release 311: Tooltip
     bakeParams = null;
     requestRender();
   });
@@ -19077,6 +19089,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const OPTITLE_FONT = '11.5px "Open Sans", ui-sans-serif, system-ui, sans-serif';
   const OP3D_FONT = '10px "Open Sans", ui-sans-serif, system-ui, sans-serif';
   const OPS_HEAD_TITLE_FONT = '600 11px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .ops-col-title
+  const POST_ROT_FONT = '400 11px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .post-rot-select (Release 312)
   const OPS_SHOWALL_FONT = '10px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .ops-showall-btn
   const DXF_LAYER_FONT = '12.5px "Open Sans", ui-sans-serif, system-ui, sans-serif'; // .dxf-layer-name (Release 108, siehe computeDxfLayerContentWidth())
 
@@ -19141,8 +19154,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // eigene 4px-"gap" dieses Sub-Wrappers, beides zusätzlich zum bisherigen Platzbedarf.
     const settingsBtnW = 20; // .ops-col-settings-btn teilt sich .ops-toggle-btn { width: 20px }
     const actionsGap = 4; // .ops-col-head-actions { gap: 4px }
-    const titleW = textWidth('ARBEITSGÄNGE', OPS_HEAD_TITLE_FONT);
-    const headRowW = headPad + titleW + headRowGap + settingsBtnW + actionsGap + toggleBtnW;
+    // Release 312 (Sebastian: "Die Spalte für "Arbeitsgänge" sollte breiter werden. Die Anzahl der Arbeitsgänge wird verschluckt,
+    // wenn die Pfostendrehung oben/unten da steht"): Titel mit Anzahl "(N)" messen (inkl. letter-spacing .06em) und bei einem
+    // Pfosten die Auswahl "Pfostendrehung oben/unten" dazurechnen
+    const titleTxt = T('ARBEITSGÄNGE', 'PROCESSING STEPS') + ' (' + ops.length + ')';
+    const titleW = textWidth(titleTxt, OPS_HEAD_TITLE_FONT) + titleTxt.length * 0.66;
+    const postSelW = isPostProgram() ? Math.max(textWidth(T('Pfostendrehung oben', 'Post rotation up'), POST_ROT_FONT), textWidth(T('Pfostendrehung unten', 'Post rotation down'), POST_ROT_FONT)) + 30 + actionsGap : 0;
+    const headRowW = headPad + titleW + headRowGap + postSelW + settingsBtnW + actionsGap + toggleBtnW;
 
     const showAllBtnChrome = 14 + 2 + 4; // Innenabstand 7px*2, Rahmen 1px*2, ein Zwischenraum 4px
     const eyeGlyphW = Math.ceil(textWidth('👁', OPS_HEAD_TITLE_FONT));
@@ -19423,7 +19441,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Spaltentitel ("Arbeitsgänge (7)") statt wie bisher separat in der CNC-Programmcode-
     // Überschrift (siehe #opCount/renderTree() oben).
     opsColTitleEl.textContent = T('Arbeitsgänge', 'Processing steps') + ' (' + ops.length + ')';
+    // Release 312 (Sebastian: "Wenn du ein Pfostenprogramm erkennst und der Indikator für eine neue Seite kommt (z.B: s i d e 3),
+    // dann soll ein dicker Trennstrich bei "Arbeitsgänge" vor dem jeweiligen Arbeitsgang auftauchen wo das "s i d e 3"
+    // rauskommt."): je weiterer Seitenmarke ein Trennstrich vor dem ersten Arbeitsgang danach
+    const sideSep = new Map();
+    if (isPostProgram()) {
+      const sl = postSideLines(), allL = typeof rawProgramText === 'string' ? rawProgramText.split(/\r?\n/) : [];
+      sl.forEach((L, k) => {
+        if (k === 0) return;
+        const op = ops.find(o => o.startIdx > L);
+        const nr = postSideNumber(allL[L] || '');
+        if (op && !sideSep.has(op.index)) sideSep.set(op.index, nr || k + 1);
+      });
+    }
     ops.forEach(sec => {
+      if (sideSep.has(sec.index)) {
+        const sep = document.createElement('div');
+        sep.className = 'op-side-sep';
+        sep.textContent = T('Seite ', 'Side ') + sideSep.get(sec.index);
+        opsListEl.appendChild(sep);
+      }
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'op-item';
