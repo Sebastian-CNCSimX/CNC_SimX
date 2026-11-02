@@ -12697,8 +12697,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 312;
-  const APP_RELEASE_TIMESTAMP = '31.10.2026, 22:15 Uhr';
+  const APP_RELEASE_NUMBER = 315;
+  const APP_RELEASE_TIMESTAMP = '02.11.2026, 14:30 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, Sebastian, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12881,6 +12881,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // von Kommentaren in den betroffenen Zeilen). Ein Programm, dessen SCM-Dialekt tatsächlich
   // inkrementelle I/J-Werte verwendet, müsste diese Zeile in "Maschinentypen bearbeiten" wieder auf
   // "IJMODE=incremental" ändern bzw. entfernen (siehe 5.12a der Doku).
+  // Release 313: die Regel unten ist inzwischen "C=1->G42" (C=1 = Radiuskorrektur rechts bei SCM), siehe migrateScmC1Rule.
   // Release 144 (Sebastian, an einem realen SCM-Sägeprogramm mit zwei nahezu identischen
   // ";Saegen"-Blöcken, die sich nur im Kopfzeilen-Stil und im literalen "C=1" bzw. "C=2"
   // unterscheiden: "Beim Sägen (SCM) geht noch was nicht korrekt vonstatten: Im CNC Code steht
@@ -13186,7 +13187,8 @@ O ->;O
 Q->C
 R->A
 C=2->G41
-C=1->;C=1
+C=1->G42
+C=0->G40
 PB->;PB
 XN X=->;X=
 X=-->;X=
@@ -13224,7 +13226,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -13301,6 +13303,54 @@ CORNERRADIUS=GFIL r=
       }
     }
     try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_O, '1'); } catch (e) { /* s.o. */ }
+    return out;
+  }
+  // Release 313 (Sebastian: "Beim Maschinentyp SCM in der Austauschdatei folgendes austauschen: C=1->G42 Vorher stand da
+  // C=1->;C=1 - das ist grob falsch."): C=1 ist bei SCM die Fräserradiuskorrektur rechts (wie C=2 = G41 links). Gespeicherte
+  // Konfigurationen bekommen das EINMALIG: im Block "SCM" wird genau die alte Standardzeile "C=1->;C=1" ersetzt; eine bewusst
+  // andere eigene Regel bleibt unangetastet.
+  const LS_KEY_MIGRATION_SCM_C1 = 'cncsim.migration.scmC1G42_313';
+  function migrateScmC1Rule(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_C1)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM"]', endTag = '[/MACHINETYPE Name="SCM"]';
+    const start = out.indexOf(openTag);
+    const end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      const blk = out.slice(start, end);
+      const nb = blk.replace(/^C=1->;C=1[ \t]*$/m, 'C=1->G42');
+      if (nb !== blk) {
+        out = out.slice(0, start) + nb + out.slice(end);
+        try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+      }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_C1, '1'); } catch (e) { /* s.o. */ }
+    return out;
+  }
+  // Release 315 (Sebastian: "Bitte auch C=0->G40 einbauen als Maschinentypregel für SCM"): C=0 = Radiuskorrektur aus. Gespeicherte
+  // Konfigurationen bekommen die Regel EINMALIG direkt nach "C=1->..." (sonst vor dem Ende der Austauschregeln), nur wenn es im
+  // Block "SCM" noch keine eigene "C=0->"-Regel gibt.
+  const LS_KEY_MIGRATION_SCM_C0 = 'cncsim.migration.scmC0G40_315';
+  function migrateScmC0Rule(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_C0)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM"]', endTag = '[/MACHINETYPE Name="SCM"]';
+    const start = out.indexOf(openTag);
+    const end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      const blk = out.slice(start, end), nl = blk.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+      let nb = blk;
+      if (!/^C=0->/m.test(blk)) {
+        const m = blk.match(/^C=1->[^\r\n]*$/m);
+        if (m) nb = blk.slice(0, m.index + m[0].length) + nl + 'C=0->G40' + blk.slice(m.index + m[0].length);
+        else { const k = blk.indexOf('[/SWITCHCASEMACHINE]'); if (k !== -1) nb = blk.slice(0, k) + 'C=0->G40' + nl + blk.slice(k); }
+      }
+      if (nb !== blk) {
+        out = out.slice(0, start) + nb + out.slice(end);
+        try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) { /* s.o. */ }
+      }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_C0, '1'); } catch (e) { /* s.o. */ }
     return out;
   }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
@@ -22800,24 +22850,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     // abgetrennte Stücke (Abfall, z. B. nach dem Trennschnitt): Zusammenhangskomponenten der Knoten im Material; behalten wird
     // das größte Stück und jedes, das mindestens halb so groß ist - die übrigen fallen weg (Knoten als "außen" gesetzt)
-    let dropList = null, vis = null, que = null, lastComps = null;
-    let bfsTouch = false;
-    function bfs(s0, mark, collect) {
-      let hd = 0, tl = 0; que[tl++] = s0; vis[s0] = mark;
-      bfsTouch = false;
-      while (hd < tl) {
-        const c = que[hd++];
-        if (collect) collect.push(c);
-        if (!bfsTouch) { const i = c % NX, j = ((c - i) / NX) % NY; if (i <= 1 || i >= NX - 2 || j <= 1 || j >= NY - 2) bfsTouch = true; }
-        let d = c + 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-        d = c - 1; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-        d = c + NX; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-        d = c - NX; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-        d = c + SK; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-        d = c - SK; if (st[d] && vis[d] !== mark) { vis[d] = mark; que[tl++] = d; }
-      }
-      return tl;
-    }
+    let dropList = null, lastComps = null;
     function clearDrop() {
       if (!dropList) return;
       const cols = new Set();
@@ -22825,28 +22858,74 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       cols.forEach(col => { const i = col % NX, j = (col - i) / NX; colStatus(i, j); markCells(i - 2, i + 1, j - 2, j + 1, 0, nz); });
       dropList = null;
     }
+    // Release 315 (Sebastian: "Die Performance bei der Setzstufe als Volumenkörper ist etwas langsam"): Zusammenhang über
+    // senkrechte Läufe (je Spalte die Materialabschnitte aus den Z-Strahlen) mit Union-Find statt Knoten für Knoten - bei der
+    // Setzstufe (952 x 189 x 55, Raster 0,64 mm) ~39 Mio. Knoten gegen ~0,5 Mio. Läufe; Ergebnis gleich (6er-Nachbarschaft:
+    // Läufe übereinander verbunden, wenn sie sich berühren; in Nachbarspalten, wenn sich ihre Höhenbereiche überdecken).
+    let runK0 = null, runK1 = null, runCol = null, runStart = null, uf = null, ufSize = null;
     function settleDrop() {
       clearDrop();
-      const N = NX * NY * NZ;
-      if (!vis) { vis = new Uint8Array(N); que = new Int32Array(N); } else vis.fill(0);
-      const comps = [];
-      for (let s0 = 0; s0 < N; s0++) if (st[s0] && !vis[s0]) { const n = bfs(s0, 1, null); comps.push([s0, n, bfsTouch]); }
-      if (comps.length <= 1) return 0;
+      const nCol = NX * NY;
+      if (!runStart) runStart = new Int32Array(nCol + 1);
+      let nR = 0, cap = runK0 ? runK0.length : 0;
+      const grow = () => { cap = Math.max(1024, cap * 2); const a = new Int32Array(cap), b = new Int32Array(cap), c = new Int32Array(cap); if (runK0) { a.set(runK0); b.set(runK1); c.set(runCol); } runK0 = a; runK1 = b; runCol = c; };
+      for (let col = 0; col < nCol; col++) {
+        runStart[col] = nR;
+        const r = R2[col];
+        for (let m = 0; m < r.length; m += 2) {
+          const k0 = Math.max(0, Math.ceil((r[m] - gz0) * ih)), k1 = Math.min(nz, Math.floor((r[m + 1] - gz0) * ih));
+          if (k0 > k1) continue;
+          if (nR > runStart[col] && k0 <= runK1[nR - 1] + 1) { if (k1 > runK1[nR - 1]) runK1[nR - 1] = k1; continue; }
+          if (nR >= cap) grow();
+          runK0[nR] = k0; runK1[nR] = k1; runCol[nR] = col; nR++;
+        }
+      }
+      runStart[nCol] = nR;
+      if (!uf || uf.length < nR) { uf = new Int32Array(Math.max(nR, 1024)); ufSize = new Float64Array(uf.length); }
+      for (let m = 0; m < nR; m++) uf[m] = m;
+      const find = x => { while (uf[x] !== x) { uf[x] = uf[uf[x]]; x = uf[x]; } return x; };
+      const join = (x, y) => { x = find(x); y = find(y); if (x !== y) { if (x < y) uf[y] = x; else uf[x] = y; } };
+      const link = (ca, cb) => {
+        let p = runStart[ca], pe = runStart[ca + 1], q = runStart[cb], qe = runStart[cb + 1];
+        while (p < pe && q < qe) {
+          if (Math.max(runK0[p], runK0[q]) <= Math.min(runK1[p], runK1[q])) join(p, q);
+          if (runK1[p] < runK1[q]) p++; else q++;
+        }
+      };
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+        const col = i + NX * j;
+        if (runStart[col] === runStart[col + 1]) continue;
+        if (i + 1 < NX) link(col, col + 1);
+        if (j + 1 < NY) link(col, col + NX);
+      }
+      // Komponenten: Größe (Knoten), Rand berührt, erster Lauf
+      const comps = [], compOf = new Map();
+      for (let m = 0; m < nR; m++) {
+        const root = find(m);
+        let c = compOf.get(root);
+        if (!c) { c = [m, 0, false, root]; compOf.set(root, c); comps.push(c); }
+        c[1] += runK1[m] - runK0[m] + 1;
+        if (!c[2]) { const col = runCol[m], i = col % NX, j = (col - i) / NX; if (i <= 1 || i >= NX - 2 || j <= 1 || j >= NY - 2) c[2] = true; }
+      }
+      if (comps.length <= 1) { lastComps = comps.map(c => c[2] ? -c[1] : c[1]); return 0; }
       let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
       // Release 309: behalten wird das größte Stück und jedes mit mindestens 70 % seiner Größe (vorher 50 %: bei der Sattelwange
       // blieb der abgetrennte Streifen über den Sätteln mit ~60 % der Wange stehen)
       const keepC = c => c[1] >= big * 0.7;
-      const out = [];
-      comps.forEach(c => { if (!keepC(c)) bfs(c[0], 2, out); });
+      const dropRoot = new Set();
+      comps.forEach(c => { if (!keepC(c)) dropRoot.add(c[3]); });
       lastComps = comps.slice().sort((x, y) => y[1] - x[1]).slice(0, 8).map(c => c[2] ? -c[1] : c[1]);   // Release 309: negativ = berührt den Rohteilrand
-      if (!out.length) return 0;
-      for (let m = 0; m < out.length; m++) {
-        const c = out[m]; st[c] = 0;
-        const i = c % NX, j = ((c - i) / NX) % NY, k = Math.floor(c / SK);
-        markCells(i - 1, i, j - 1, j, k - 1, k);
+      if (!dropRoot.size) return 0;
+      const out = [];
+      for (let m = 0; m < nR; m++) {
+        if (!dropRoot.has(find(m))) continue;
+        const col = runCol[m], i = col % NX, j = (col - i) / NX;
+        for (let k = runK0[m]; k <= runK1[m]; k++) { const c = col + SK * k; if (!st[c]) continue; st[c] = 0; out.push(c); }
+        markCells(i - 1, i, j - 1, j, runK0[m] - 1, runK1[m]);
       }
+      if (!out.length) return 0;
       dropList = out;
-      return comps.length - comps.filter(keepC).length;
+      return dropRoot.size;
     }
     // Release 310 (Sebastian: "Wenn die Schmiegen abgetragen werden und er zur nächsten Schmiege fährt, blendet sich das Material
     // immer mal wieder ein, was schon wegberechnet worden ist ... Wird da was "nachkalkuliert" beim Sprung zwischen den Zeilen?"):
@@ -22978,7 +23057,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy);
           if (L > 1e-9) lastSawDir = [dx / L, dy / L];
           if (!lastSawDir) continue;
-          push([p.x, p.y, p.z + R], [-lastSawDir[1], lastSawDir[0], 0], [dx, dy, q.z - p.z], toolIdx('sawv|' + R + '|' + tB, () => [-tB / 2, tB / 2, R, R]), i);
+          // Release 315 (Sebastian: "Ja, bitte bei G41 = C2 und G42 = C1 zur Korrekturseite versetzen."): Sägeblatt
+          // mit Radiuskorrektur liegt mit der Blattfläche auf der Bahn, das Blatt zur Korrekturseite (G41 links, G42 rechts der
+          // Schnittrichtung) - ohne Korrektur weiter mittig.
+          const sc = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0), o0 = -tB / 2 + sc * tB / 2;
+          push([p.x, p.y, p.z + R], [-lastSawDir[1], lastSawDir[0], 0], [dx, dy, q.z - p.z], toolIdx('sawv|' + R + '|' + tB + '|' + sc, () => [o0, o0 + tB, R, R]), i);
         }
         continue;
       }
@@ -23263,10 +23346,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (q.rapid || hidden(q) || !(q.toolRadius > 0) || Math.hypot(q.x - list[i - 1].x, q.y - list[i - 1].y, q.z - list[i - 1].z) < 0.01) continue;
         if (kinds[i] === 'tilt') nTilt++;   // nur Fräser - geneigte Sägeschnitte sind Ebenen, die kann die Querschnitt-Rechnung
       }
-      const tiltDex = nTilt >= 2;
+      // Release 314 (Sebastian, Faltwerk-Setzstufe: "Beim 3. Arbeitsgang (Schmiegen fuer Z-Setzstufen) bleiben "Flügel" stehen" /
+      // "Bei "Federnut fuer Z-Setzstufen" sägt ein Sägeblatt eine Nut an der Kante ... ergibt keine Nut nach dem Abtrag"): Sägeblätter
+      // mit programmierter Lage (Dreh-/Kippwinkel) - liegende Scheibe (Scheibenfräser für Federnuten, Achse senkrecht) oder schräg/
+      // waagerecht gestellte Säge - rechnen im Volumenmodell: die Nut liegt unter Material (von oben nicht darstellbar, das 2,5D-Modell
+      // hielt die Scheibe zudem für ein stehendes Blatt), und abgesägte Streifen an Enden/Kanten fallen dort als Abfall weg.
+      let nBlade5 = 0;
+      for (let i = 1; i < list.length && !nBlade5; i++) {
+        const q = list[i];
+        if (q.rapid || hidden(q) || !q.toolIsBlade || !(q.toolRadius > 0) || Math.hypot(q.x - list[i - 1].x, q.y - list[i - 1].y, q.z - list[i - 1].z) < 0.01) continue;
+        if ((q.a || 0) !== 0 || (q.b || 0) !== 0 || (q.c || 0) !== 0) nBlade5++;
+      }
+      const tiltDex = nTilt >= 2 || nBlade5 > 0;
       if (n5 >= 10 || chain || post || tiltDex) {
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
-        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, rays: tiltDex && n5 < 10 ? 600000 : 150000 };
+        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, rays: tiltDex && n5 < 10 ? (nTilt >= 2 ? 600000 : 400000) : 150000 };   // Release 315: nur Sägen mit Lage (ebene Schnitte) - 400 000 reichen
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
         if (post) { const tg = list[Math.max(0, Math.min(list.length - 1, offset + scrubIdx))]; st.dexSteps = abtragPostSteps(st.dexSteps, list, tg && tg.lineIdx != null ? postQuarterOfLine(tg.lineIdx) : 0, postPivot()); st.post = true; }
         if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
@@ -23350,7 +23444,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const ux = dx / L, uy = dy / L, w = (q.toolLength > 0 ? q.toolLength : 4) / 2, Rb = q.toolRadius || 0;
           const below = Math.max(0, depth - T);   // Blatt unter der Unterseite: halbe Sehne dort als Überstand
           const ext = Rb > below ? Math.sqrt(Rb * Rb - (Rb - below) * (Rb - below)) : 0;
-          const nx = -uy * w, ny = ux * w, P = [a[0] - ux * ext, a[1] - uy * ext], Q = [b[0] + ux * ext, b[1] + uy * ext];
+          // Release 315 (Sebastian: "Ja, bitte bei G41 = C2 und G42 = C1 zur Korrekturseite versetzen."): Sägeblatt
+          // mit Radiuskorrektur liegt mit der Blattfläche auf der Bahn, das Blatt zur Korrekturseite (G41 links, G42 rechts der
+          // Schnittrichtung) - ohne Korrektur weiter mittig.
+          const sc = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0), ox = -uy * w * sc, oy = ux * w * sc;
+          const nx = -uy * w, ny = ux * w, P = [a[0] - ux * ext + ox, a[1] - uy * ext + oy], Q = [b[0] + ux * ext + ox, b[1] + uy * ext + oy];
           pushCap(run[k + 1], [[P[0] + nx, P[1] + ny], [Q[0] + nx, Q[1] + ny], [Q[0] - nx, Q[1] - ny], [P[0] - nx, P[1] - ny]], depth);
         }
         continue;
@@ -23366,7 +23464,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // Strecke ein Nutstück: senkrechtes Prisma über dem Viereck Spitzenlinie -> Schaftseite, Höhe = Werkzeugdurchmesser.
         // Die runden Enden liefern die Bohrlochgruppen an Anfang und Ende (sie reichen dazu bis zur Schaftseite der Nut zurück).
         const dirOf = q => { const ax = toolAxisDirection(q); const d = [-ax.x, -ax.y], L = Math.hypot(d[0], d[1]) || 1; return [d[0] / L, d[1] / L]; };
-        const sMinOf = d => { let m = Infinity; run.forEach(j => { const v = list[j].x * d[0] + list[j].y * d[1]; if (v < m) m = v; }); return m; };
+        // Release 313 (Sebastian: "Beim "Zapfen 5-Achs" wird in der Stufenkante seitlich oben und unten Material abgetragen. Das
+        // passiert auch, aber das Restholz verschwindet nicht"): die Schaftseite lag bisher 5 mm hinter der flachsten Spitze des Laufs -
+        // taucht das liegende Werkzeug von oben ein (Spitze auf der Zapfenschulter, Werkzeug nach außen), blieb nur eine schmale Nut
+        // und das Holz zwischen Nut und Kante stehen. Das Werkzeug räumt aber auf seiner ganzen Länge: Schaftseite = Spitze - Länge.
+        const sMinOf = d => { let m = Infinity; run.forEach(j => { const Lt = list[j].toolLength > 5 ? list[j].toolLength - 5 : 0, v = list[j].x * d[0] + list[j].y * d[1] - Lt; if (v < m) m = v; }); return m; };
         // Release 292 (Sebastian: ""Nut fuer Glasfuellung Vorderkante": Die Fräsung ist erst richtig, dann wird da plötzlich ein
         // riesengroßer Kreis raus, obwohl es nur eine Bewegung nach in X und Y ist"): jede Strecke zwischen zwei Bahnpunkten wird
         // als eigene Verbindung gemerkt (hlinks) - die Gruppe wird nur noch dann als EIN umschriebener Kreis gezeichnet, wenn ihre
@@ -23433,6 +23535,42 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const ux = dx / L, uy = dy / L, s = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0);
         const nx = -uy * s * r, ny = ux * s * r;
         segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: qIdx, prof: profileOf(q), zTip: Math.min(p0.z, q.z), ramp });
+      }
+      // Release 313 (Sebastian: "Bei der Kontur wird in Zeile 41 ein Bogen gefahren. Es wird mehr abgetragen als die
+      // Fräserposition hergibt"): an Innenecken mit kurzen Stücken (Bogen in Sehnen, Eckenverrundung GFIL r=2 < Fräserradius)
+      // reichte das Kürzen benachbarter Strecken nicht - die versetzten Stücke bildeten Schleifen, ihre Enden lagen im Material
+      // (runde "Beulen"). Wie die Steuerung: schneiden sich zwei versetzte Strecken derselben Korrektur und Tiefe mit höchstens
+      // 40 Stücken dazwischen (Schleife kürzer als 6 x Radius), entfällt alles dazwischen.
+      {
+        const X2 = (g, h) => {
+          const den = (g.b[0] - g.a[0]) * (h.b[1] - h.a[1]) - (g.b[1] - g.a[1]) * (h.b[0] - h.a[0]);
+          if (Math.abs(den) < 1e-12) return null;
+          const t = ((h.a[0] - g.a[0]) * (h.b[1] - h.a[1]) - (h.a[1] - g.a[1]) * (h.b[0] - h.a[0])) / den;
+          const u = ((h.a[0] - g.a[0]) * (g.b[1] - g.a[1]) - (h.a[1] - g.a[1]) * (g.b[0] - g.a[0])) / den;
+          return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9 ? [g.a[0] + (g.b[0] - g.a[0]) * t, g.a[1] + (g.b[1] - g.a[1]) * t] : null;
+        };
+        const keep = segs.map(() => true);
+        for (let i = 0; i < segs.length; i++) {
+          const g = segs[i];
+          if (!keep[i] || !g.s || !g.u) continue;
+          let len = 0, best = -1, bx = null;
+          for (let j = i + 2; j < Math.min(segs.length, i + 42); j++) {
+            const m = segs[j - 1];
+            if (!m.u || m.s !== g.s || Math.abs(m.depth - g.depth) > 1e-6 || m.prof !== g.prof) break;
+            len += Math.hypot(m.b[0] - m.a[0], m.b[1] - m.a[1]);
+            if (len > 6 * g.r) break;
+            const h = segs[j];
+            if (!h.u || h.s !== g.s || Math.abs(h.depth - g.depth) > 1e-6) break;
+            const X = X2(g, h);
+            if (X) { best = j; bx = X; }
+          }
+          if (best > 0) {
+            g.b = bx; segs[best].a = bx;
+            for (let m = i + 1; m < best; m++) keep[m] = false;
+            i = best - 1;
+          }
+        }
+        if (keep.some(k => !k)) { const s2 = segs.filter((_, k) => keep[k]); segs.length = 0; s2.forEach(x => segs.push(x)); }
       }
       for (let k = 0; k < segs.length; k++) {
         const g = segs[k], h = segs[k + 1];
@@ -26669,6 +26807,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // gleichwertigen, da die Scheibe symmetrisch ist) Stirnseiten in Weltkoordinaten "top" wird
       // (und damit, wo das Spannfutter ansetzt), bleibt dadurch identisch zu Release 144.
       const half = p.toolLength / 2;
+      // Release 315 (Sebastian: "Ja, bitte bei G41 = C2 und G42 = C1 zur Korrekturseite versetzen."): Sägeblatt mit Radiuskorrektur
+      // liegt mit der Blattfläche auf der Bahn, das Blatt zur Korrekturseite (G41 links, G42 rechts der Schnittrichtung).
+      const sawSide = p.comp === 'left' ? -1 : (p.comp === 'right' ? 1 : 0);
+      center.x += axis.x * half * sawSide; center.y += axis.y * half * sawSide;
       tip = { x: center.x - axis.x * half, y: center.y - axis.y * half, z: center.z - axis.z * half };
       top = { x: center.x + axis.x * half, y: center.y + axis.y * half, z: center.z + axis.z * half };
     } else {
