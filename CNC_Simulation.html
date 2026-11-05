@@ -333,7 +333,7 @@
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
   
-  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase, #btnDxf3dSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   
   #millTimeG0FeedRow, #millTimeToolChangeCountRow { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
@@ -2816,10 +2816,34 @@
 <div class="paste-panel" id="dxf3dPanel">
   <div class="paste-card">
     <h3>3D DXF</h3>
-    <div class="dpd-layout"><div class="dpd-main">
-    <p class="panel-hint" data-i18n-en="Applies to all layers of a 3D DXF (faces) for which the chosen layer preset (below) has no entry. Groups and single layers can be set differently in the DXF layer list (click the small colour box). Ok also resets the settings of the groups and layers of the loaded file.">Gilt für alle Layer einer 3D-DXF (Flächen), für die die gewählte Layer-Vorbelegung (unten) keinen Eintrag hat. Gruppen und einzelne Layer lassen sich in der DXF-Layer-Liste abweichend einstellen (Klick auf das kleine Farbkästchen). Ok setzt dabei auch die Einstellungen der Gruppen und Layer der geladenen Datei zurück.</p>
-    <label class="scale-option"><input type="checkbox" id="dxf3dFillCheck"> <span data-i18n-en="Filled">Ausgefüllt</span></label>
+    
+    <p class="panel-hint" id="dxf3dIntroHint" data-i18n-en="Recognised layer names take over the predefined parameters. Layers without a match use the settings under ‚Fill‘.">Erkannte Layernamen übernehmen die vordefinierten Parameter. Ohne passenden Layer gelten die Einstellungen unter ‚Füllung‘.</p>
+    
+    <div class="scale-group-title" data-i18n-en="Layer preset">Layer-Vorbelegung</div>
+    <p class="panel-hint" data-i18n-en="Colour, fill, transparency, texture and visibility per 3D DXF layer type. Layer type = layer name without the number (e.g. TREAD12 → TREAD). Chosen in the DXF layer list.">Farbe, Füllung, Transparenz, Textur und Sichtbarkeit je 3D-DXF-Layertyp. Layertyp = Layername ohne Zahl (z. B. TREAD12 → TREAD). Auswahl über die DXF-Layer-Liste.</p>
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Preset">Vorbelegung</span><select id="dxf3dPresetEditSelect" class="filename-input"></select></label>
+      <label class="tool-data-field"><span data-i18n-en="Name">Name</span><input type="text" id="dxf3dPresetName" class="filename-input" maxlength="60" spellcheck="false"></label>
+    </div>
+    <div class="dxf3d-preset-actions">
+      <button class="btn ghost small" id="btnDxf3dPresetNew" type="button" data-i18n-en="New (copy)">Neu (Kopie)</button>
+      <button class="btn ghost small" id="btnDxf3dPresetDelete" type="button" data-i18n-en="Delete">Löschen</button>
+      <button class="btn ghost small" id="btnDxf3dPresetRestore" type="button" title="Die eingebauten Vorbelegungen auf den Auslieferungszustand zurücksetzen (eigene bleiben erhalten)" data-i18n-en-title="Reset the built-in presets to their original state (own presets are kept)" data-i18n-en="Restore standard">Standard wiederherstellen</button>
+    </div>
+    <div class="dxf3d-preset-table-wrap">
+      <table class="dxf3d-preset-table" id="dxf3dPresetTable">
+        <thead><tr><th data-i18n-en="Layer">Layer</th><th data-i18n-en="Show">Anzeigen</th><th data-i18n-en="Filled">Ausgefüllt</th><th data-i18n-en="Colour">Farbe</th><th data-i18n-en="Transparency (%)">Transparenz (%)</th><th data-i18n-en="Fill / texture">Füllung / Textur</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="dxf3d-preset-add">
+      <input type="text" id="dxf3dPresetNewType" class="filename-input" maxlength="40" spellcheck="false" placeholder="z. B. WALL" data-i18n-en-placeholder="e.g. WALL">
+      <button class="btn ghost small" id="btnDxf3dPresetAddType" type="button" data-i18n-en="Add layer">Layer hinzufügen</button>
+    </div>
     <hr class="dxf-part-sep">
+    <div class="dpd-layout"><div class="dpd-main">
+    <div class="scale-group-title" data-i18n-en="Fill">Füllung</div>
+    <label class="scale-option" id="dxf3dFillOption" title="Bei aktiviertem ‚Ausgefüllt‘ werden Füllung (Farbe/Textur) und Transparenz angezeigt. Ohne ‚Ausgefüllt‘ werden nur die DXF-Linien dargestellt." data-i18n-en-title="With ‚Filled‘ switched on, the fill (colour/texture) and transparency are shown. Without ‚Filled‘ only the DXF lines are drawn."><input type="checkbox" id="dxf3dFillCheck"> <span data-i18n-en="Filled">Ausgefüllt</span></label>
     <div class="tool-data-row">
       <label class="tool-data-field dpd-narrow"><span data-i18n-en="Fill">Füllung</span>
         <select id="dxf3dFillMode" class="filename-input">
@@ -2842,29 +2866,6 @@
       <canvas id="dxf3dTextureCanvas"></canvas>
       <div class="dxf-tex-thumb-info" id="dxf3dTextureInfo"></div>
     </div>
-    </div>
-    
-    <hr class="dxf-part-sep">
-    <div class="scale-group-title" data-i18n-en="Layer preset">Layer-Vorbelegung</div>
-    <p class="panel-hint" data-i18n-en="Colours, fill, transparency, textures and hidden layers per layer type for 3D DXF files. Layer type = layer name without the number (TREAD12 → TREAD). Choose the preset in the DXF layer list.">Farben, Füllung, Transparenz, Texturen und ausgeblendete Layer je Layertyp für 3D-DXF-Dateien. Layertyp = Layername ohne die Zahl (TREAD12 → TREAD). Gewählt wird die Vorbelegung in der DXF-Layer-Liste.</p>
-    <div class="tool-data-row">
-      <label class="tool-data-field"><span data-i18n-en="Preset">Vorbelegung</span><select id="dxf3dPresetEditSelect" class="filename-input"></select></label>
-      <label class="tool-data-field"><span data-i18n-en="Name">Name</span><input type="text" id="dxf3dPresetName" class="filename-input" maxlength="60" spellcheck="false"></label>
-    </div>
-    <div class="dxf3d-preset-actions">
-      <button class="btn ghost small" id="btnDxf3dPresetNew" type="button" data-i18n-en="New (copy)">Neu (Kopie)</button>
-      <button class="btn ghost small" id="btnDxf3dPresetDelete" type="button" data-i18n-en="Delete">Löschen</button>
-      <button class="btn ghost small" id="btnDxf3dPresetRestore" type="button" title="Die eingebauten Vorbelegungen auf den Auslieferungszustand zurücksetzen (eigene bleiben erhalten)" data-i18n-en-title="Reset the built-in presets to their original state (own presets are kept)" data-i18n-en="Restore standard">Standard wiederherstellen</button>
-    </div>
-    <div class="dxf3d-preset-table-wrap">
-      <table class="dxf3d-preset-table" id="dxf3dPresetTable">
-        <thead><tr><th data-i18n-en="Layer">Layer</th><th data-i18n-en="Show">Anzeigen</th><th data-i18n-en="Filled">Ausgefüllt</th><th data-i18n-en="Colour">Farbe</th><th data-i18n-en="Transparency (%)">Transparenz (%)</th><th data-i18n-en="Fill / texture">Füllung / Textur</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div class="dxf3d-preset-add">
-      <input type="text" id="dxf3dPresetNewType" class="filename-input" maxlength="40" spellcheck="false" placeholder="z. B. WALL" data-i18n-en-placeholder="e.g. WALL">
-      <button class="btn ghost small" id="btnDxf3dPresetAddType" type="button" data-i18n-en="Add layer">Layer hinzufügen</button>
     </div>
     <p class="panel-hint dxf-dia-warn" id="dxf3dWarning" hidden></p>
     <div class="paste-actions">
@@ -10305,8 +10306,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 330;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 13:55 Uhr';
+  const APP_RELEASE_NUMBER = 331;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 15:10 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -12567,8 +12568,19 @@ Innen (kleiner Radius)/Stufen schlichten 5-Achs
 Innen (kleiner Radius)/Setzstufen schlichten 5-Achs
 Außen (großer Radius)/Handlaufprofil 5-Achs
 Innen (kleiner Radius)/Handlaufprofil 5-Achs
+Zapfen
+Köpfe sägen
+Koepfe saegen
+Bohrungen horizontal
+Koepfe fraesen
 `;
   // SIM_SAVE:OPNAMES_DEFAULT:END
+  // Release 331 (SB: ""Arbeitsgang-Namen" unten ergänzen: Zapfen / Köpfe sägen / Koepfe saegen / Bohrungen horizontal / Koepfe
+  // fraesen / Köpfe sägen"): die fünf Namen (das doppelte "Köpfe sägen" nur einmal) stehen am Ende der Vorgabeliste. Eine schon
+  // gespeicherte eigene Liste bekommt sie einmalig unten angehängt (nur fehlende, Merker cncsim.migration.opNames331).
+  // Bewusst NACH der SIM_SAVE-Endmarke, damit "CNC Sim speichern" die Konstanten nicht mit der Vorgabeliste ersetzt.
+  const OPNAMES_ADDED_331 = ['Zapfen', 'Köpfe sägen', 'Koepfe saegen', 'Bohrungen horizontal', 'Koepfe fraesen'];
+  const LS_KEY_OPNAMES_MIG331 = 'cncsim.migration.opNames331';
 
   // Zerlegt den Text der Arbeitsgang-Namensliste (ein Name je Zeile, siehe DEFAULT_OPNAME_TEXT
   // oben bzw. das Bearbeiten-Panel) in ein Array - Leerzeilen werden uebersprungen, exakte
@@ -12603,7 +12615,14 @@ Innen (kleiner Radius)/Handlaufprofil 5-Achs
   const LS_KEY_OPNAMES = 'cncsim.opNameListText';
   function loadPersistedOpNameList() {
     try {
-      const saved = window.localStorage.getItem(LS_KEY_OPNAMES);
+      let saved = window.localStorage.getItem(LS_KEY_OPNAMES);
+      // Release 331: neue Vorgabenamen einmalig unten an eine gespeicherte Liste anhängen
+      if (saved != null && window.localStorage.getItem(LS_KEY_OPNAMES_MIG331) == null) {
+        const have = new Set(saved.split(/\r?\n/).map(t => t.trim()));
+        const add = OPNAMES_ADDED_331.filter(n => !have.has(n));
+        if (add.length) { saved = saved.replace(/\s*$/, '') + '\n' + add.join('\n') + '\n'; window.localStorage.setItem(LS_KEY_OPNAMES, saved); }
+        window.localStorage.setItem(LS_KEY_OPNAMES_MIG331, '1');
+      }
       return saved != null ? saved : DEFAULT_OPNAME_TEXT;
     } catch (e) {
       return DEFAULT_OPNAME_TEXT;
