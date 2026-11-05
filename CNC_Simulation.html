@@ -10305,8 +10305,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 326;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 08:43 Uhr';
+  const APP_RELEASE_NUMBER = 327;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 09:21 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -10314,13 +10314,17 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // (siehe Abschnitt 2 der Doku), bewusst eine einzige Konstante an dieser "single source of
   // truth"-Stelle direkt neben APP_RELEASE_NUMBER. Zeigt auf eine kleine, von SB selbst
   // gepflegte JSON-Datei in seinem eigenen, öffentlichen GitHub-Repo (https://github.com/
-  // SB-CNCSimX/CNC_SimX) - Claude aktualisiert dort bei jedem künftigen Release sowohl
+  // Sebastian-CNCSimX/CNC_SimX) - Claude aktualisiert dort bei jedem künftigen Release sowohl
   // diese Datei als auch die eigentliche CNC_Simulation.html; SB lädt beide jeweils über
   // die GitHub-Weboberfläche hoch ("Add file" -> "Upload files"). Erwartetes Format von
   // latest.json: {"release": 93, "timestamp": "18.09.2026, 08:15 Uhr",
   // "htmlUrl": "https://raw.githubusercontent.com/.../CNC_Simulation.html"} - siehe
   // checkForUpdate() weiter unten für die vollständige Ablauflogik.
-  const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/SB-CNCSimX/CNC_SimX/main/latest.json';
+  // Release 327 (SB: "Aktuell kann ich das Versionsupdate nicht prüfen: "Versionsprüfung nicht möglich ... HTTP 404" ... Internet ist
+  // da ... Die Datei ist auch im Github drin und verfügbar"): die Datenschutz-Umstellung in R318 (Name -> "SB") hatte auch den
+  // GitHub-Kontonamen in dieser Adresse ersetzt (SB-CNCSimX statt Sebastian-CNCSimX) - seit R318 lief jede Versionsprüfung auf
+  // HTTP 404. Der Kontoname ist Teil der Adresse und muss exakt so bleiben (Ausnahme von der "nur SB"-Regel).
+  const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
 
   // ============================================================
   // Standard-Maschinentypdatei (31. Runde, Benutzer: "Bitte starte mit der Umsetzung lt.
