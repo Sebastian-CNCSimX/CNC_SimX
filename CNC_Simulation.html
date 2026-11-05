@@ -2850,7 +2850,7 @@
     <div class="dxf3d-preset-actions">
       <button class="btn ghost small" id="btnDxf3dPresetNew" type="button" data-i18n-en="New (copy)">Neu (Kopie)</button>
       <button class="btn ghost small" id="btnDxf3dPresetDelete" type="button" data-i18n-en="Delete">Löschen</button>
-      <button class="btn ghost small" id="btnDxf3dPresetRestore" type="button" title="Die vier eingebauten Vorbelegungen auf den Auslieferungszustand zurücksetzen (eigene bleiben erhalten)" data-i18n-en-title="Reset the four built-in presets to their original state (own presets are kept)" data-i18n-en="Restore standard">Standard wiederherstellen</button>
+      <button class="btn ghost small" id="btnDxf3dPresetRestore" type="button" title="Die eingebauten Vorbelegungen auf den Auslieferungszustand zurücksetzen (eigene bleiben erhalten)" data-i18n-en-title="Reset the built-in presets to their original state (own presets are kept)" data-i18n-en="Restore standard">Standard wiederherstellen</button>
     </div>
     <div class="dxf3d-preset-table-wrap">
       <table class="dxf3d-preset-table" id="dxf3dPresetTable">
@@ -10292,8 +10292,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 324;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 07:17 Uhr';
+  const APP_RELEASE_NUMBER = 325;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 07:59 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -20406,13 +20406,44 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const hex = (r, g, b) => rgbToHex({ r, g, b });
     const std = (mod) => DXF3D_STD_LAYERS.map(([type, r, g, b]) => Object.assign({ type, color: hex(r, g, b), fill: true, transparency: type === 'GLASS' ? 75 : 0, textureId: '', hidden: false }, mod ? mod(type) : {}));
     const keep = t => t === 'GLASS' || t === 'WELL' || t === 'FLOOR';
+    // Release 325 (SB: "2 ... "Ohne Decke": die Layer "WELL" und "FLOOR" sind deaktiviert" - ebenso bei den beiden Eiche-Varianten)
+    const well = t => t === 'WELL' || t === 'FLOOR';
+    const noWell = mod => t => Object.assign({}, mod ? mod(t) : {}, well(t) ? { hidden: true } : {});
+    const oak = t => (keep(t) ? {} : { textureId: 'std_eiche' });
+    const oakWhite = t => (keep(t) ? {} : (t === 'HANDRAIL' || t === 'BAR' || t === 'STRING') ? { color: '#ffffff' } : { textureId: 'std_eiche' });
     return [
       { id: 'std', name: 'Standard', nameEn: 'Standard', layers: std() },
-      { id: 'std50', name: 'Standard 50% transparent', nameEn: 'Standard 50% transparent', layers: std(t => (t === 'GLASS' ? {} : { transparency: 50 })) },
-      { id: 'oak', name: 'Eiche', nameEn: 'Oak', layers: std(t => (keep(t) ? {} : { textureId: 'std_eiche' })) },
-      { id: 'oakWhite', name: 'Eiche, Wange/Handlauf weiß', nameEn: 'Oak, stringer/handrail white',
-        layers: std(t => (keep(t) ? {} : (t === 'HANDRAIL' || t === 'BAR' || t === 'STRING') ? { color: '#ffffff' } : { textureId: 'std_eiche' })) },
+      // Release 325 (SB: "1 "Standard, 50% transparent" ändern in: "Decke 75% transparent" (EN Name: "Well 75% transparency") -> Die Layer
+      // "WELL" und "FLOOR" sind 75% transparent. Die restlichen Layer haben ihre Farbe, sind aber voll ausgefüllt (Transparenz 0%).")
+      { id: 'well75', name: 'Decke 75% transparent', nameEn: 'Well 75% transparency', layers: std(t => ({ transparency: well(t) ? 75 : 0 })) },
+      { id: 'noWell', name: 'Ohne Decke', nameEn: 'Without well hole', layers: std(noWell()) },
+      { id: 'oak', name: 'Eiche', nameEn: 'Oak', layers: std(oak) },
+      { id: 'oakNoWell', name: 'Eiche, ohne Decke', nameEn: 'Oak without well hole', layers: std(noWell(oak)) },
+      { id: 'oakWhite', name: 'Eiche, Wange/Handlauf weiß', nameEn: 'Oak, stringer/handrail white', layers: std(oakWhite) },
+      { id: 'oakWhiteNoWell', name: 'Eiche, Wange/Handlauf weiß, ohne Decke', nameEn: 'Oak, stringer/handrail white, without well hole', layers: std(noWell(oakWhite)) },
     ];
+  }
+  // Release 325: einmalige Umstellung gespeicherter Vorbelegungen (Merker, wie bei den Maschinentypen) - "Standard 50% transparent"
+  // (id std50) wird durch "Decke 75% transparent" ersetzt (auch als gewählte Vorbelegung), die neuen eingebauten Vorbelegungen
+  // kommen hinter ihre Vorgänger dazu. Eigene Vorbelegungen bleiben unverändert; bewusst gelöschte eingebaute kommen nicht wieder
+  // (außer über "Standard wiederherstellen").
+  const LS_KEY_MIGRATION_DXF3D_PRESETS = 'cncsim.migration.dxf3dPresets325';
+  function migrateDxf3dPresets(list) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_DXF3D_PRESETS)) return list; } catch (e) { return list; }
+    const b = builtinDxf3dPresets(), byId = id => b.find(p => p.id === id);
+    const i50 = list.findIndex(p => p.id === 'std50');
+    if (i50 >= 0) list.splice(i50, 1, byId('well75'));
+    [['noWell', 'well75'], ['oakNoWell', 'oak'], ['oakWhiteNoWell', 'oakWhite']].forEach(([id, after]) => {
+      if (list.some(p => p.id === id)) return;
+      const j = list.findIndex(p => p.id === after);
+      if (j >= 0) list.splice(j + 1, 0, byId(id)); else list.push(byId(id));
+    });
+    try {
+      if (window.localStorage.getItem(LS_KEY_DXF3D_ACTIVE_PRESET) === 'std50') window.localStorage.setItem(LS_KEY_DXF3D_ACTIVE_PRESET, 'well75');
+      window.localStorage.setItem(LS_KEY_DXF3D_PRESETS, JSON.stringify(list));
+      window.localStorage.setItem(LS_KEY_MIGRATION_DXF3D_PRESETS, '1');
+    } catch (e) { /* wie bei den übrigen Einstellungen */ }
+    return list;
   }
   const dxfLayerType = name => String(name).replace(/[\s_\-.]*\d+$/, '').toUpperCase();
   const dxfGroupType = key => String(key).replace(/[\s_\-.]+$/, '').toUpperCase();
@@ -20433,7 +20464,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (dxf3dPresetsCache) return dxf3dPresetsCache;
     let list = null;
     try { list = JSON.parse(window.localStorage.getItem(LS_KEY_DXF3D_PRESETS) || 'null'); } catch (e) { list = null; }
-    list = Array.isArray(list) ? list.map(normalizeDxf3dPreset).filter(Boolean) : builtinDxf3dPresets();
+    list = Array.isArray(list) ? migrateDxf3dPresets(list.map(normalizeDxf3dPreset).filter(Boolean)) : builtinDxf3dPresets();   // Release 325: Umstellung
     dxf3dPresetsCache = list;
     return list;
   }
@@ -20444,6 +20475,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // Name in der aktuellen Sprache (die eingebauten Vorbelegungen haben einen englischen Namen, solange sie nicht umbenannt wurden)
   const dxf3dPresetName = p => (currentLang === 'en' && p.nameEn ? p.nameEn : p.name);
   function readDxf3dActivePresetId() {
+    readDxf3dPresets();   // Release 325: zuerst lesen - die einmalige Umstellung kann die gewählte (std50 -> well75) ändern
     let id = null;
     try { id = window.localStorage.getItem(LS_KEY_DXF3D_ACTIVE_PRESET); } catch (e) { id = null; }
     return id === null ? 'std' : id;   // noch nie gewählt: "Standard"
