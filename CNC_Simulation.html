@@ -10305,8 +10305,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 329;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 13:05 Uhr';
+  const APP_RELEASE_NUMBER = 330;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 13:55 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -20909,7 +20909,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       // da arbeiten wir in Z positiv)"): SCM-Programme mit Nullpunkt unten - "O ... f=1" (Krümmling-Postprozessor), "O ... Z=-DZ"
       // oder überwiegend positive Z-Werte in den G0-G3-Sätzen - bekommen die Stärke positiv
       if (neg && fam === 'scm') {
-        let pos = 0, ng = 0, oPos = false;
+        // Release 330 (SB: "Wenn ich das Programm einlese und "Bauteil" auswähle, wird hier nicht die korrekte Bauteildimension
+        // übernommen. Bei anderen SCM Maschinen wird die Stärke negativ ausgegeben. Das ist nötig bei diesem Maschinentyp."):
+        // Die reine Zählung "mehr positive als negative Z-Sätze" kippte gewöhnliche SCM-Programme mit Nullpunkt oben, deren
+        // Einstemmungen/Bohrungen oft auf Z50/Z5 an- und abfahren (SCMMaterialstaerkeNichtKorrektAusBauteil.CNC: 45 positive gegen
+        // 34 negative Sätze, Fräsen bis Z-51). Sie gilt jetzt nur noch, wenn kein Satz tiefer als die halbe Stärke unter Z0 fährt
+        // (mnZ) - Programme mit Nullpunkt unten liegen beim Fräsen über Z0 und sind zudem über "O ... f=1" / "O Z=-DZ" erkannt.
+        let pos = 0, ng = 0, oPos = false, mnZ = Infinity;
         for (const l of lines) {
           if (/^\s*O\s/i.test(l)) {
             if (/\bf\s*=/i.test(l)) oPos = true;
@@ -20918,9 +20924,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             continue;
           }
           const m = l.match(/^\s*G0*[0-3](?![0-9D]).*?\bZ\s*([+-]?\d+(?:\.\d+)?)/i);
-          if (m) { const v = parseFloat(m[1]); if (v > 1e-6) pos++; else if (v < -1e-6) ng++; }
+          if (m) { const v = parseFloat(m[1]); if (v > 1e-6) pos++; else if (v < -1e-6) ng++; if (v < mnZ) mnZ = v; }
         }
-        if (oPos || pos > ng) neg = false;
+        if (oPos || (pos > ng && !(mnZ < -Math.abs(z || 0) / 2))) neg = false;
       }
       return { x, y, z: z == null ? 0 : Math.abs(z), neg, family: fam };
     };
