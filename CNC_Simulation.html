@@ -10305,8 +10305,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 328;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 11:52 Uhr';
+  const APP_RELEASE_NUMBER = 329;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 13:05 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -17133,9 +17133,23 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // wie bei G02/G03-Bogenradien "R..", siehe Bekannte Einschränkungen).
     {
       const rawLinesForTools = rawProgramText.replace(/\r\n/g, '\n').split('\n');
+      // Release 329 (SB: "Es gibt Werkzeugdaten, die übergeben worden sind, aber nicht bei den Arbeitsgängen erkannt werden. Vor dem
+      // 2. "Koepfe saegen" (wo Fräsbahnen erkannt werden) werden RADIUS und BLADE übergeben (LENGTH ist dann ja zweitrangig, weil das
+      // ein Sägeblatt ist). Wieso taucht die Säge nicht auf?"): ein Arbeitsgang ohne eigene Werkzeugdaten (RADIUS/LENGTH/BLADE/
+      // TOOLTYPE) und ohne eigenen Werkzeugwechsel (XT, M6, T-Wort, "WERKZEUGWECHSEL") arbeitet mit dem Werkzeug, das noch in der
+      // Spindel steckt - er übernimmt das des vorigen Arbeitsgangs (sec.toolInherited). Typisch bei doppelten Arbeitsgang-Kommentaren:
+      // der erste Abschnitt enthält nur den Werkzeugwechsel. Nach einem Werkzeugwechsel ohne Daten ist das Werkzeug unbekannt - dann
+      // wird nichts übernommen.
+      const TOOL_CHANGE_RE = /^\s*XT\b|^\s*T\d|\bM0?6\b|WERKZEUGWECHSEL/i;
+      let lastTool = null;
       current.sections.forEach(sec => {
         if (sec.type !== 'arbeitsgang') return;
-        const toolData = CNCParser.extractToolData(rawLinesForTools.slice(sec.startIdx, sec.endIdx + 1));
+        const secLines = rawLinesForTools.slice(sec.startIdx, sec.endIdx + 1);
+        const toolData = CNCParser.extractToolData(secLines);
+        const ownTool = toolData.radius !== null || toolData.length !== null || toolData.toolType !== null || toolData.isBlade;
+        const toolChange = secLines.some(l => TOOL_CHANGE_RE.test(l));
+        if (!ownTool && !toolChange && lastTool) { Object.assign(sec, lastTool); sec.toolInherited = true; return; }   // Release 329
+        sec.toolInherited = false;
         sec.toolRadius = toolData.radius;
         sec.toolLength = toolData.length;
         // "TOOLTYPE" (60. Runde, siehe extractToolData()/Dialog "+Werkzeug (T)"): eine manuell per
@@ -17185,6 +17199,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // für ein gespeichertes Spannfutter-(Werkzeughalter-)Profil (chuckDxfProfiles), siehe
         // CHUCK_PROFILE_RE/extractToolData() in parser.js.
         sec.chuckProfileId = resolveProfileMarker('chuck', toolData.chuckProfileId);
+        // Release 329: Werkzeug merken (bzw. nach einem Werkzeugwechsel ohne Daten vergessen)
+        if (ownTool) lastTool = { toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolType: sec.toolType, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId };
+        else if (toolChange) lastTool = null;
       });
     }
     // ALLE Leerzeilen werden in der Programm-Ansicht ausgeblendet (Benutzer, 20. Runde: "Wenn
@@ -18144,6 +18161,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // (scopeMode.index), dir +1 (vorwärts) oder -1 (rückwärts). Liefert den nächsten SICHTBAREN
   // Nachbar-Arbeitsgang in Programmreihenfolge, übergeht dabei beliebig viele dazwischenliegende
   // ausgeblendete Arbeitsgänge, oder null, wenn keiner mehr folgt (= "wie Programmende/-anfang").
+  // Release 329 (SB: "Beim Programm im Anhang ist am Ende ein erkannter Arbeitskommentar am Anfang. Wenn da keine CNC-Bewegung erkannt wird, sollte trotzdem ein Playbutton aktiv sein (generell) und wenn man abspielt, springt man in den nächsten Arbeitsgang. Das passiert leider öfter, dass man doppelte Kommentare hat. Sobald dort eine Bewegung erkannt ist, soll die auch passieren, aber vorher "einfach überspringen", wenn es nichts darzustellen gibt."):
+  // hat ein Arbeitsgang eine darstellbare Bewegung (mindestens zwei Bahnpunkte, wie die Wiedergabe sie braucht)? Je Programm
+  // einmal gerechnet (current._opMotion).
+  function opHasMotion(sec) {
+    if (!current || !sec) return false;
+    if (!current._opMotion) current._opMotion = new Map();
+    let v = current._opMotion.get(sec.index);
+    if (v === undefined) {
+      const g = resolveActiveMtGeometryParams();
+      v = extractMotion(sec.lines, sec.startIdx, newModalState(), new Set(), g.activeIJMode, g.activeChiralityFlip, g.activeCornerRadiusMarkerRegex).length > 1;
+      current._opMotion.set(sec.index, v);
+    }
+    return v;
+  }
+  // nächster sichtbarer Arbeitsgang MIT Bewegung (leere werden "einfach übersprungen")
+  function findAdjacentPlayableOp(curIndex, dir) {
+    let sec = findAdjacentVisibleOp(curIndex, dir);
+    while (sec && !opHasMotion(sec)) sec = findAdjacentVisibleOp(sec.index, dir);
+    return sec;
+  }
   function findAdjacentVisibleOp(curIndex, dir) {
     const opSections = getOpSections();
     const curIdx = opSections.findIndex(sec => sec.index === curIndex);
@@ -18313,6 +18350,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (points.length > 1) {
       transportEl.hidden = false;
       scrubEl.max = String(points.length - 1);
+      scrubEl.value = '0';
+    } else if (mode.type === 'op' && findAdjacentPlayableOp(mode.index, 1)) {
+      // Release 329: Arbeitsgang ohne Bewegung - Leiste bleibt, Play springt in den nächsten Arbeitsgang mit Bewegung
+      transportEl.hidden = false;
+      scrubEl.max = '0';
       scrubEl.value = '0';
     } else {
       transportEl.hidden = true;
@@ -25880,7 +25922,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         // (siehe dort, Punkt 3) überspringt dabei automatisch etwaige ausgeblendete Arbeitsgänge
         // und liefert null, wenn kein sichtbarer Arbeitsgang mehr folgt (letzter Arbeitsgang bzw.
         // alle nachfolgenden ausgeblendet) - dann wie bisher stoppen.
-        const nextOp = scopeMode.type === 'op' ? findAdjacentVisibleOp(scopeMode.index, 1) : null;
+        const nextOp = scopeMode.type === 'op' ? findAdjacentPlayableOp(scopeMode.index, 1) : null;   // Release 329: leere überspringen
         if (nextOp) {
           flashCodeLine(nextOp.startIdx);
           setScope({ type: 'op', index: nextOp.index });
@@ -31330,7 +31372,21 @@ Max Mustermann (Anschrift wie oben)`,
     }
   }, false);
 
+  // Release 329: Play bei einem Arbeitsgang ohne Bewegung -> in den nächsten Arbeitsgang mit Bewegung springen und abspielen
+  function playFromNextPlayableOp() {
+    const nx = scopeMode.type === 'op' ? findAdjacentPlayableOp(scopeMode.index, 1) : null;
+    if (!nx) return;
+    flashCodeLine(nx.startIdx);
+    setScope({ type: 'op', index: nx.index });
+    playing = true;
+    hasStarted = true;
+    updatePlayIcon();
+    stepPlayback._last = null;
+    requestRender();
+    requestAnimationFrame(stepPlayback);
+  }
   btnPlay.addEventListener('click', () => {
+    if (points.length <= 1 && scopeMode.type === 'op') { if (!playing) playFromNextPlayableOp(); else { playing = false; updatePlayIcon(); } return; }   // Release 329
     if (!points.length) return;
     playing = !playing;
     updatePlayIcon();
