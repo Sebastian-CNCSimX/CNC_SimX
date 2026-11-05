@@ -10305,8 +10305,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 327;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 09:21 Uhr';
+  const APP_RELEASE_NUMBER = 328;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 11:52 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -21184,7 +21184,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     // Zwischenstände (Änderungen seit dem vorigen Zwischenstand), Lieferung der Änderungen gegenüber dem zuletzt Gelieferten
     function makeRunner(cfg) {
       const D = create(cfg.box, cfg.h);
-      fillPrism(D, cfg.poly, cfg.z0, cfg.z1, cfg.part, cfg.W);
+      // Release 328: Start mit gespeichertem Zwischenstand der CNC-Liste (nur die Strahlen dieses Teils), sonst das Rohteil
+      if (cfg.startRays) {
+        for (let k = 0; k < 3; k++) { const src = cfg.startRays[k], dst = D.rays[k]; for (let idx = 0; idx < dst.length; idx++) dst[idx] = (cfg.W <= 1 || rowOf(D, k, idx) % cfg.W === cfg.part) && src[idx] ? src[idx].slice() : []; }
+      } else fillPrism(D, cfg.poly, cfg.z0, cfg.z1, cfg.part, cfg.W);
       const KEY = 1 << 24;
       const initRays = D.rays.map(rs => rs.map(r => r.slice()));   // Ausgangsstand (Rohteil)
       let cur = 0, base = 0, since = new Set();   // Stand = Zwischenstand base + Änderungen "since"
@@ -21731,6 +21734,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // die des aktiven Programms setzen. Liegt dazwischen eine ungerade Zahl von Drehungen, werden ihre Schritte um 180° um die
   // Achse parallel zu X durch die Mitte des Rohteils gedreht: y -> 2·yM - y, z -> 2·zM - z (Achse und Bewegung: y, z negiert).
   // Die Rohteil-Grundfläche bleibt dabei dieselbe. Index -1: diese Schritte gehören zu jedem Bahnpunkt (schon vor dem ersten).
+  // Release 328 (SB: "Wenn man die Abtragssimulation benutzt und ein Programm abfährt, was aus mehreren Unterprogrammen besteht, rechnet die Abtragssimulation bei jedem neuen Programm den letzten Stand aus, während das aktuelle Programm abträgt. Dadurch hängt man immer etwas hinterher. Kann der letzte Stand des Volumenkörpers zwischengespeichert werden, so dass das nächste Programm direkt abträgt und nicht erst den letzten Stand nachbuffert?"):
+  // Zwischenspeicher des Volumenkörpers je Stand der CNC-Liste. Schlüssel = Rohteil + Gitter + Werkzeugprofile + Maschinentyp +
+  // Kette bis einschließlich des Programms (Reihenfolge, Drehungen). Gespeichert wird am Ende eines Listenprogramms (alle Schritte,
+  // ganzes Programm, keine ausgeblendeten Arbeitsgänge); das nächste Programm startet damit (bei "Drehung" um 180° um X gedreht)
+  // und rechnet nur noch seine eigenen Schritte. Ohne passenden Zwischenstand (z. B. direkt ins dritte Programm gesprungen) wie
+  // bisher mit allen Schritten der Programme davor. Höchstens 6 Stände (älteste fallen weg).
+  const abdexChainSnaps = new Map();
+  function abdexChainSnapPut(key, snap) {
+    abdexChainSnaps.delete(key);
+    abdexChainSnaps.set(key, snap);
+    while (abdexChainSnaps.size > 6) abdexChainSnaps.delete(abdexChainSnaps.keys().next().value);
+  }
+  function abdexChainBaseKey(poly, zTop, T, rays) {
+    return [JSON.stringify(poly.map(q => [Math.round(q[0] * 1e4), Math.round(q[1] * 1e4)])), zTop, T, rays, listChainKey(), useToolProfileShapes,
+      toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(',')].join('|');
+  }
+  window.__debug_clearChainSnaps = () => abdexChainSnaps.clear();   // Release 328: Diagnose/Test (Gegenprobe ohne Zwischenstand)
+  const abdexChainSig = k => programList.slice(0, k + 1).map(e => e.id + ':' + (e.rotate ? 1 : 0)).join(',');
+  // 180° um X auf dem symmetrischen Gitter: Index j -> ny - j, k -> nz - k; Intervalle in y bzw. z gespiegelt (y -> y0 + y1 - y)
+  function abdexFlipRays(snap) {
+    const { box, nx, ny, nz } = snap, R = snap.rays, sY = box.y0 + box.y1, sZ = box.z0 + box.z1;
+    const mir = (r, S) => { const o = new Array(r.length); for (let q = 0; q < r.length; q += 2) { o[r.length - 2 - q] = S - r[q + 1]; o[r.length - 1 - q] = S - r[q]; } return o; };
+    const out = [new Array(R[0].length), new Array(R[1].length), new Array(R[2].length)];
+    for (let k = 0; k <= nz; k++) for (let j = 0; j <= ny; j++) out[0][(ny - j) + (nz - k) * (ny + 1)] = R[0][j + k * (ny + 1)].slice();
+    for (let k = 0; k <= nz; k++) for (let i = 0; i <= nx; i++) out[1][i + (nz - k) * (nx + 1)] = mir(R[1][i + k * (nx + 1)], sY);
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) out[2][i + (ny - j) * (nx + 1)] = mir(R[2][i + j * (nx + 1)], sZ);
+    return out;
+  }
   function abtragChainSteps(chain, cur, poly, zTop, T, profileOf) {
     const ys = poly.map(q => q[1]), yM = (Math.min(...ys) + Math.max(...ys)) / 2, zM = zTop - T / 2;
     const steps = [], tool = [], idx = [], tools = [];
@@ -21772,13 +21803,23 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
     const box = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), z0: st.zTop - st.T, z1: st.zTop };
     const h = abdexGridH(box, st.rays);
+    // Release 328 (SB: "Wenn man die Abtragssimulation benutzt und ein Programm abfährt, was aus mehreren Unterprogrammen besteht, rechnet die Abtragssimulation bei jedem neuen Programm den letzten Stand aus, während das aktuelle Programm abträgt. Dadurch hängt man immer etwas hinterher. Kann der letzte Stand des Volumenkörpers zwischengespeichert werden, so dass das nächste Programm direkt abträgt und nicht erst den letzten Stand nachbuffert?"): im Listenbetrieb
+    // das Gitter in Y und Z symmetrisch um die Rohteilmitte auf ein Vielfaches von h erweitern (nur leere Zellen) - dann ist die
+    // "Drehung" (180° um X) eines gespeicherten Zwischenstands eine exakte Umnummerierung der Strahlen (abdexFlipRays())
+    if (st.symGrid) {
+      const padY = (Math.ceil((box.y1 - box.y0) / h - 1e-9) * h - (box.y1 - box.y0)) / 2, padZ = (Math.ceil((box.z1 - box.z0) / h - 1e-9) * h - (box.z1 - box.z0)) / 2;
+      box.y0 -= padY; box.y1 += padY; box.z0 -= padZ; box.z1 += padZ;
+    }
+    const zS0 = st.zTop - st.T, zS1 = st.zTop;   // Rohteil (die Box kann größer sein)
     const D = CORE.create(box, h);
-    CORE.fillPrism(D, poly, box.z0, box.z1, 0, 1);
+    if (st.startRays) D.rays = st.startRays.map(R => R.slice());   // flach genügt (siehe abdexChainSnapPut-Aufruf)
+    else CORE.fillPrism(D, poly, zS0, zS1, 0, 1);
     const S = st.dexSteps;
     const nW = typeof Worker !== 'undefined' ? (window.__abdexWorkers != null ? window.__abdexWorkers : Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1))) : 0;
     const dex = { CORE, D, box, h, mesher: abdexMesher(D), nSteps: S.tool.length, idx: S.idx, want: 0, shown: 0, req: 0, inflight: null, meshing: false,
-      mesh: null, workers: [], W: 1, roundK: 40, disposed: false, err: null, t0: 0, lastRoundMs: 0, ccN: -1, ccTimer: 0, dropped: 0 };
-    const cfgFor = (part, W) => ({ box, h, poly, z0: box.z0, z1: box.z1, steps: S.steps, tool: S.tool, tools: S.tools, part, W });
+      mesh: null, workers: [], W: 1, roundK: 40, disposed: false, err: null, t0: 0, lastRoundMs: 0, ccN: -1, ccTimer: 0, dropped: 0,
+      snapKey: st.snapKey || null, snapUsed: !!st.startRays };   // Release 328
+    const cfgFor = (part, W) => ({ box, h, poly, z0: zS0, z1: zS1, steps: S.steps, tool: S.tool, tools: S.tools, part, W, startRays: st.startRays || null });
     let workersOk = false;
     if (nW > 0) {
       try {
@@ -21852,6 +21893,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (fl.n > dex.shown) dex.roundK = Math.max(5, Math.min(4000, Math.round(dex.roundK * Math.max(0.5, Math.min(2, 250 / Math.max(1, dex.lastRoundMs))))));
     dex.inflight = null;
     dex.meshN = fl.n;
+    // Release 328: Programmende erreicht -> Volumenkörper (alle Strahlen, ohne Abfall-Markierung) für das nächste Programm merken
+    if (dex.snapKey && fl.n === dex.nSteps) abdexChainSnapPut(dex.snapKey, { box: dex.box, h: dex.h, nx: dex.D.nx, ny: dex.D.ny, nz: dex.D.nz, rays: dex.D.rays.map(R => R.slice()) });   // flach: setRay() ersetzt Strahlen, ändert keine
     dex.mesher.reDrop();   // Release 310
     abdexMeshSoon(dex);
   }
@@ -21920,6 +21963,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     abdexProgressUI(dex);
     const nT = dex.mesh ? dex.mesh.dexel.nT : 0;
     window.__lastAbtragInfo = { target, dexel: true, steps: dex.nSteps, want: dex.want, shown: dex.shown, pending: dex.shown !== dex.want || !!dex.inflight || dex.meshing || dex.ccN !== dex.shown, dropped: dex.dropped, comps: dex.mesher.comps(), vol: dex.vol,
+      chainSnap: dex.snapUsed, chainSnapSaved: !!(dex.snapKey && abdexChainSnaps.has(dex.snapKey)),   // Release 328
       workers: dex.workers.length, h: dex.h, tris: nT, meshes: dex.nMesh || 0, roundMs: Math.round(dex.lastRoundMs), error: dex.err || undefined };
     return dex.mesh;
   }
@@ -22020,9 +22064,23 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
         const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, rays: tiltDex && n5 < 10 ? (nTilt >= 2 ? 600000 : (post || chain ? 150000 : 400000)) : 150000 };   // Release 315: nur Sägen mit Lage (ebene Schnitte) - 400 000 reichen; Release 316: Pfosten/CNC-Liste wie bis R313 mit 150 000 (Pfosten ruckelte)
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
+        // Release 328: Listenbetrieb (siehe abdexChainSnaps) - Zwischenstand merken bzw. verwenden
+        const listK = programList.length >= 2 && listMachineType ? programList.findIndex(e => e.id === activeProgramId) : -1;
+        let snapPrev = null;
+        if (listK >= 0 && !post) {
+          st.symGrid = true;
+          const base = abdexChainBaseKey(poly, zTop, T, st.rays);
+          if (!hiddenOpIndexes.size && scopeMode.type === 'all') st.snapKey = base + '#' + abdexChainSig(listK);
+          if (chain && listK >= 1) snapPrev = abdexChainSnaps.get(base + '#' + abdexChainSig(listK - 1)) || null;
+        }
         if (post) { const tg = list[Math.max(0, Math.min(list.length - 1, offset + scrubIdx))]; st.dexSteps = abtragPostSteps(st.dexSteps, list, tg && tg.lineIdx != null ? postQuarterOfLine(tg.lineIdx) : 0, postPivot()); st.post = true; }
-        if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
+        if (snapPrev) st.startRays = programList[listK].rotate ? abdexFlipRays(snapPrev) : snapPrev.rays;   // Release 328: nur eigene Schritte
+        else if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
         st.dex = abdexStart(st, poly);
+        // Release 328: der gespeicherte Stand gehört zu genau diesem Gitter - sonst (anderes Strahlenbudget) wie bisher mit allen Schritten
+        if (snapPrev && (st.dex.h !== snapPrev.h || st.dex.D.nx !== snapPrev.nx || st.dex.D.ny !== snapPrev.ny || st.dex.D.nz !== snapPrev.nz)) {
+          st.dex.dispose(); st.startRays = null; st.dexSteps = abtragChainSteps(chain, abdexBuildSteps(list, hidden, profileOf), poly, zTop, T, profileOf); st.dex = abdexStart(st, poly);
+        }
         return st;
       }
     }
