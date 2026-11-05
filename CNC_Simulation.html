@@ -1551,6 +1551,9 @@
   .scale-group { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
   .scale-group-title { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
   
+  #dxfImportPanel .panel-hint.dxf-import-gap { margin-top: -2px; }
+  #dxfImportPanel .scale-option.dxf-import-gap { margin-top: 2px; }
+  
   #dxfThicknessPanel .paste-card, #dxfPartDefaultsPanel .paste-card { max-height: calc(100vh - 48px); overflow-y: auto; }
   
   #dxfThicknessPanel { background: transparent; pointer-events: none; }
@@ -2521,28 +2524,29 @@
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="DXF / 3D DXF">DXF / 3D-DXF</div>
       <div class="tool-data-row"><button class="btn ghost" id="btnDxfImportPlain" type="button" data-i18n-en="Load DXF…">DXF laden…</button></div>
-      <p class="panel-hint" data-i18n-en="DXF, DXF with layers, 3D DXF, 3D DXF with layers.">DXF, DXF mit Layern, 3D-DXF, 3D-DXF mit Layern.</p>
+      
+      <p class="panel-hint dxf-import-gap" data-i18n-en="DXF, DXF with layers, 3D DXF, 3D DXF with layers.">DXF, DXF mit Layern, 3D-DXF, 3D-DXF mit Layern.</p>
     </div>
     <hr class="dxf-part-sep">
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="CS wreath DXF">CS Krümmling DXF</div>
       <p class="panel-hint" data-i18n-en="Top view: rectangle with the handrail inside (two end faces and four edge chains), shown as a 3D body. Fill colour, outline colour, transparency and texture come from the part definition 'Wreath, standing'.">Draufsicht: Rechteck mit dem Handlauf darin (zwei Stirnseiten und vier Kantenzüge), dargestellt als 3D-Körper. Füllfarbe, Outline-Farbe, Transparenz und Textur kommen aus der Bauteildefinition „Krümmling, stehend“.</p>
       <div class="tool-data-row"><button class="btn ghost" id="btnDxfKrmLoad" type="button" data-i18n-en="Load CS wreath top view DXF…">CS Krümmling Draufsicht-DXF laden…</button></div>
-      <p class="panel-hint" id="dxfKrmStatus"></p>
+      <p class="panel-hint dxf-import-gap" id="dxfKrmStatus"></p>
       
       <div class="tool-data-row">
         <button class="btn ghost" id="btnDxfKrmSideLoad" type="button" disabled data-i18n-en="Load CS wreath side view DXF…">CS Krümmling Seitenansicht-DXF laden…</button>
         <button class="btn ghost small" id="btnDxfKrmSideRemove" type="button" hidden data-i18n-en="Remove side view">Seitenansicht entfernen</button>
       </div>
       <p class="panel-hint" id="dxfKrmSideStatus"></p>
-      <label class="scale-option"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
+      <label class="scale-option dxf-import-gap"><input type="checkbox" id="dxfKrmFlip" disabled> <span data-i18n-en="Top face down (mirrored)">Oberkante unten (gespiegelt)</span></label>
     </div>
     <hr class="dxf-part-sep">
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="Riser DXF">Setzstufen DXF</div>
       <div class="tool-data-row"><button class="btn ghost" id="btnDxfRiserFrontLoad" type="button" data-i18n-en="Load riser front view DXF…">Setzstufe Frontansicht-DXF laden…</button></div>
       <div class="tool-data-row"><button class="btn ghost" id="btnDxfRiserTopLoad" type="button" disabled data-i18n-en="Load riser top view DXF…">Setzstufe Draufsicht-DXF laden…</button></div>
-      <p class="panel-hint" id="dxfRiserStatus"></p>
+      <p class="panel-hint dxf-import-gap" id="dxfRiserStatus"></p>
     </div>
     <div class="paste-actions">
       <button class="btn primary" id="btnDxfImportClose" type="button" data-i18n-en="Close">Schließen</button>
@@ -3353,7 +3357,7 @@
   <div class="paste-card">
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
     
-    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Net milling time&lt;/strong&gt;&lt;br&gt;This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. The machine&#x27;s actual cycle time will be longer!"><strong>Nettofräszeit</strong><br>Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. Die reale Zykluszeit der Maschine wird länger ausfallen!</p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Net milling time&lt;/strong&gt;&lt;br&gt;This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. &lt;strong&gt;The machine&#x27;s actual cycle time will be longer!&lt;/strong&gt;"><strong>Nettofräszeit</strong><br>Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. <strong>Die reale Zykluszeit der Maschine wird länger ausfallen!</strong></p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with G0&lt;/strong&gt;&lt;br&gt;“Milling time with G0” additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ."><strong>Fräszeit mit G0</strong><br>„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with tool changes&lt;/strong&gt;&lt;br&gt;“Milling time with tool changes” additionally adds the time for tool changes (number of tool changes × time per tool change, both entered below) on top of “Milling time with G0”."><strong>Fräszeit mit Werkzeugwechsel</strong><br>„Fräszeit mit Werkzeugwechsel" addiert zusätzlich die Zeit für die Werkzeugwechsel (Anzahl Werkzeugwechsel × Dauer Werkzeugwechsel, beide unten eingegeben) auf die „Fräszeit mit G0" drauf.</p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;G0 feed rate&lt;/strong&gt;&lt;br&gt;Feed rate of G0 movements."><strong>G0 Vorschub</strong><br>Vorschub im G0.</p>
@@ -3361,6 +3365,14 @@
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Number of tool changes&lt;/strong&gt;&lt;br&gt;The number of tool changes in the CNC program. Default value if no processing steps are detected = 0. If processing steps are detected = number of processing steps."><strong>Anzahl Werkzeugwechsel</strong><br>Anzahl der Werkzeugwechsel im CNC-Programm. Standardwert, wenn kein Arbeitsgang erkannt wird = 0. Wenn Arbeitsgänge erkannt werden = Anzahl der Arbeitsgänge.</p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Tool change time&lt;/strong&gt;&lt;br&gt;Estimated time required for each tool change."><strong>Dauer Werkzeugwechsel</strong><br>Richtwert, die jeder Werkzeugwechsel benötigt.</p>
     <div id="millTimeEmptyState" class="panel-hint" data-i18n-en="No CNC program is currently loaded." hidden>Es ist aktuell kein CNC-Programm geladen.</div>
+    
+    <div class="tool-data-row" id="millTimeScopeRow" hidden>
+      <label class="tool-data-field"><select id="millTimeScopeSelect" class="filename-input">
+        <option value="current" data-i18n-en="Milling time: current program">Fräszeit: aktuelles Programm</option>
+        <option value="list" data-i18n-en="Milling time: entire list">Fräszeit: gesamte Liste</option>
+      </select></label>
+    </div>
+    <p class="panel-hint" id="millTimeScopeInfo" hidden></p>
     <div id="millTimeResultState">
       <div class="menu-info-row">
         <span class="menu-info-label" data-i18n-en="Length">Länge</span>
@@ -3686,7 +3698,8 @@
 <div class="paste-panel" id="partProfilePanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Part profile">Bauteilprofil</h3>
-    <p class="panel-hint" data-i18n-en="Reads the cross-section profile of a handrail (e.g. an omega profile) from a DXF file. The saved profiles can be selected under &quot;Part definition&quot; and &quot;DXF drawing settings&quot; for the wreath (&quot;Wreath, standing&quot;) and are drawn along the wreath there.">Liest das Querschnittsprofil eines Handlaufs (z. B. ein Omegaprofil) aus einer DXF-Datei. Die gespeicherten Profile sind in der „Bauteildefinition“ und bei „DXF-Bauteil definieren“ für den Krümmling („Krümmling, stehend“) auswählbar und werden dort über den Krümmling gezogen.</p>
+    
+    <p class="panel-hint" data-i18n-en="Reads the handrail profile from a DXF file, e.g. an omega profile. The saved profiles can be selected for the part &quot;Handrail&quot; and for &quot;Wreath, standing&quot;.">Liest das Handlaufprofil aus einer DXF-Datei ein, z.B. ein Omegaprofil. Die gespeicherten Profile sind im Bauteil „Handlauf“ und beim „Krümmling, stehend“ auswählbar.</p>
     <div class="tool-dxf-import-body">
       <div class="tool-dxf-import-controls">
         <div class="scale-group">
@@ -10292,8 +10305,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
   // hochgezählt, damit sie konsistent mit der Doku bleibt (dort als "Release 139" bezeichnet) und
   // damit eine künftig aus dieser Datei erzeugte CNC_Simulation.release.html exakt dieselbe
   // Nummer anzeigt wie die Master-Datei, aus der sie gebaut wurde.
-  const APP_RELEASE_NUMBER = 325;
-  const APP_RELEASE_TIMESTAMP = '05.11.2026, 07:59 Uhr';
+  const APP_RELEASE_NUMBER = 326;
+  const APP_RELEASE_TIMESTAMP = '05.11.2026, 08:43 Uhr';
 
   // "Versionsupdate prüfen" (Release 93, SB, wörtlich: "der Benutzer klickt auf
   // 'Versionsupdate prüfen' (unter Info) und das Programm schaut, ob es eine aktuellere Version
@@ -15535,7 +15548,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const activeIdx = programList.findIndex(p => p.id === activeProgramId);
     const mtEl = el('programListMt');
     mtEl.classList.toggle('set', !!listMachineType);
-    mtEl.textContent = listMachineType ? T('⚙ Maschinentyp für alle: ', '⚙ Machine type for all: ') + listMachineType : T('⚙ Maschinentyp: noch nicht bestätigt', '⚙ Machine type: not confirmed yet');
+    // Release 326 (SB: "Wenn mehrere Programme mit "+ Liste" geladen werden hat sich ein Zahnradsymbol bei "Maschinentyp für alle:"
+    // reingeschlichen. Das ist aber ohne Funktion. Das Zahnradsymbol bitte entfernen an der Stelle, aber auch nur da."): ohne "⚙"
+    mtEl.textContent = listMachineType ? T('Maschinentyp für alle: ', 'Machine type for all: ') + listMachineType : T('Maschinentyp: noch nicht bestätigt', 'Machine type: not confirmed yet');
     const part = dxfCreatedPart;
     el('programListInfo').innerHTML = (part
       ? T('Bauteil (Rohblock ', 'Part (stock ') + [part.x, part.y, Math.abs(part.z)].map(v => fmtDim(v)).join(' × ') + T(') gilt für alle Programme.', ') applies to all programs.')
@@ -18376,20 +18391,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // oder ohne Sections) liefert bewusst [], NICHT die O/G92-Ersatzaufteilung aus dem else-Zweig von
   // computeApproxMillingTime() - diese Ersatz-Chunks gelten nicht als "erkannte Arbeitsgänge" im
   // Sinne dieses Vorschlags.
-  function getOpSections() {
-    return (current && current.sections.length) ? current.sections.filter(s => s.type === 'arbeitsgang') : [];
+  // Release 326: optional für ein anderes zerlegtes Programm (Fräszeit der gesamten Liste), Standard: das aktuelle
+  function getOpSections(cur = current) {
+    return (cur && cur.sections.length) ? cur.sections.filter(s => s.type === 'arbeitsgang') : [];
   }
   // Wird vom btnMillTime-Klick-Handler weiter unten verwendet, um #millTimeToolChangeCountInput
   // beim Öffnen des Panels frisch vorzubelegen - siehe dort.
-  function countDetectedOps() {
-    return getOpSections().length;
+  function countDetectedOps(cur = current) {
+    return getOpSections(cur).length;
   }
-  function computeApproxMillingTime() {
-    if (!current || !current.sections.length) {
+  function computeApproxMillingTime(cur = current) {
+    if (!cur || !cur.sections.length) {
       return { ok: false };
     }
     const { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex } = resolveActiveMtGeometryParams();
-    const opSections = getOpSections();
+    const opSections = getOpSections(cur);
     const ptsPerChunk = [];
     if (opSections.length) {
       opSections.forEach(sec => {
@@ -18399,7 +18415,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     } else {
       // Kein Arbeitsgang-Schema erkannt - dieselbe "O"/G92-Aufteilung wie im Fallback-Zweig von
       // setScope() (siehe dort), damit auch ein unstrukturiertes Programm vollständig erfasst wird.
-      splitAtOriginResets(current.lines).forEach(chunk => {
+      splitAtOriginResets(cur.lines).forEach(chunk => {
         const state = newModalState();
         const pts = extractMotion(chunk.lines, chunk.startIdx, state, new Set(), activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
         if (pts.length) ptsPerChunk.push(pts);
@@ -18449,6 +18465,44 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     return { ok: true, lengthMm, timeSeconds, segmentsWithoutFeed, feedScaleFactor, rapidLengthMm };
   }
+
+  // Release 326 (SB: "Wenn über "+ Liste" mehrere Programme geladen worden sind, sollte die Fräszeitberechnung einmal die gesamte
+  // Fräszeit aller Programme berechnen, die in der Liste sind ... Die gesamte Länge der Fräsbahnen, die Nettofräszeit, die Fräszeit
+  // mit G0 und Fräszeit mit Werkzeugzeugwechsel soll auch für die gesamte Liste berechnet und ausgegeben werden"): jedes Programm
+  // der Liste wird wie in displayCurrentProgram() mit dem Maschinentyp der Liste aufbereitet und zerlegt - ohne es zu laden (die
+  // Wiedergabe, ausgeblendete Arbeitsgänge, der Abtrag usw. des aktiven Programms bleiben unberührt); das aktive Programm
+  // nimmt sein bereits zerlegtes "current". braceCommentsOff gilt je Programm (Zerlegen und extractMotion) und wird danach
+  // wiederhergestellt. Summe von Länge, Zeit, G0-Strecke, Abschnitten ohne Vorschub und erkannten Arbeitsgängen.
+  function millTimeForListText(rawText) {
+    const mtName = listMachineType || activeMachineTypeName;
+    const mt = mtName && mtName.toLowerCase() !== 'iso' ? machineTypes.find(m => m.name.toLowerCase() === mtName.toLowerCase()) : null;
+    let raw = rawText;
+    if (mtName === BIESSE_CIX_NAME) raw = trimBiesseCixPreamble(raw).text;
+    const prevBrace = braceCommentsOff;
+    try {
+      braceCommentsOff = !!(mt && CNCSwap.rulesUseBracesAsCode(mt.switchRules));
+      let text = raw;
+      if (mt) {
+        if (mt.switchRules.length) text = applySwapRules(text, mt.switchRules);
+        if (mt.calcRules.length) text = applyAxisCalc(text, mt.calcRules, !braceCommentsOff);
+      }
+      const cur = CNCParser.parse(text, raw, opNameList);
+      return { res: computeApproxMillingTime(cur), ops: countDetectedOps(cur) };
+    } finally { braceCommentsOff = prevBrace; }
+  }
+  function computeListMillingTime() {
+    if (programList.length < 2) return { ok: false };
+    const sum = { ok: true, lengthMm: 0, timeSeconds: 0, rapidLengthMm: 0, segmentsWithoutFeed: 0, feedScaleFactor, ops: 0, programs: 0 };
+    programList.forEach(entry => {
+      const r = entry.id === activeProgramId && current ? { res: computeApproxMillingTime(), ops: countDetectedOps() } : millTimeForListText(entry.text);
+      if (!r.res.ok) return;
+      sum.lengthMm += r.res.lengthMm; sum.timeSeconds += r.res.timeSeconds; sum.rapidLengthMm += r.res.rapidLengthMm;
+      sum.segmentsWithoutFeed += r.res.segmentsWithoutFeed; sum.ops += r.ops; sum.programs++;
+    });
+    return sum.programs ? sum : { ok: false };
+  }
+  window.__debug_listMillingTime = () => computeListMillingTime();   // Diagnose/Test
+  window.__debug_millingTime = () => computeApproxMillingTime();
 
   function boundsOf(pts) {
     if (!pts.length) return null;
@@ -20415,7 +20469,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       { id: 'std', name: 'Standard', nameEn: 'Standard', layers: std() },
       // Release 325 (SB: "1 "Standard, 50% transparent" ändern in: "Decke 75% transparent" (EN Name: "Well 75% transparency") -> Die Layer
       // "WELL" und "FLOOR" sind 75% transparent. Die restlichen Layer haben ihre Farbe, sind aber voll ausgefüllt (Transparenz 0%).")
-      { id: 'well75', name: 'Decke 75% transparent', nameEn: 'Well 75% transparency', layers: std(t => ({ transparency: well(t) ? 75 : 0 })) },
+      // Release 326 (SB: "Glass sollte auch so bleiben. Das hab ich wohl verpeilt."): GLASS wie bei Standard 75 %
+      { id: 'well75', name: 'Decke 75% transparent', nameEn: 'Well 75% transparency', layers: std(t => ({ transparency: well(t) || t === 'GLASS' ? 75 : 0 })) },
       { id: 'noWell', name: 'Ohne Decke', nameEn: 'Without well hole', layers: std(noWell()) },
       { id: 'oak', name: 'Eiche', nameEn: 'Oak', layers: std(oak) },
       { id: 'oakNoWell', name: 'Eiche, ohne Decke', nameEn: 'Oak without well hole', layers: std(noWell(oak)) },
@@ -20428,7 +20483,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   // kommen hinter ihre Vorgänger dazu. Eigene Vorbelegungen bleiben unverändert; bewusst gelöschte eingebaute kommen nicht wieder
   // (außer über "Standard wiederherstellen").
   const LS_KEY_MIGRATION_DXF3D_PRESETS = 'cncsim.migration.dxf3dPresets325';
+  // Release 326: zweite einmalige Umstellung - in "Decke 75% transparent" (well75) GLASS von 0 % auf 75 %, sofern dort noch 0 %
+  // steht (selbst geänderte Werte bleiben). Läuft nach der Umstellung aus R325.
+  const LS_KEY_MIGRATION_DXF3D_GLASS = 'cncsim.migration.dxf3dGlass326';
+  function migrateDxf3dPresetsGlass(list) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_DXF3D_GLASS)) return list; } catch (e) { return list; }
+    const w = list.find(p => p.id === 'well75');
+    const g = w && w.layers.find(l => l.type === 'GLASS');
+    if (g && g.transparency === 0) g.transparency = 75;
+    try {
+      window.localStorage.setItem(LS_KEY_DXF3D_PRESETS, JSON.stringify(list));
+      window.localStorage.setItem(LS_KEY_MIGRATION_DXF3D_GLASS, '1');
+    } catch (e) { /* wie bei den übrigen Einstellungen */ }
+    return list;
+  }
   function migrateDxf3dPresets(list) {
+    list = migrateDxf3dPresets325(list);
+    return migrateDxf3dPresetsGlass(list);
+  }
+  function migrateDxf3dPresets325(list) {
     try { if (window.localStorage.getItem(LS_KEY_MIGRATION_DXF3D_PRESETS)) return list; } catch (e) { return list; }
     const b = builtinDxf3dPresets(), byId = id => b.find(p => p.id === id);
     const i50 = list.findIndex(p => p.id === 'std50');
@@ -28014,6 +28087,8 @@ Max Mustermann (Anschrift wie oben)`,
       ? `${hours} hrs ${minutesPart} min ${secondsPart} sec`
       : `${hours} Std. ${minutesPart} Min ${secondsPart} Sek.`;
   }
+  // Release 326: Auswahl aktuelles Programm / gesamte Liste (siehe btnMillTime und computeListMillingTime())
+  const millTimeScopeRow = el('millTimeScopeRow'), millTimeScopeSelect = el('millTimeScopeSelect'), millTimeScopeInfo = el('millTimeScopeInfo');
   function runApproxMillingTime() {
     // "Vorschubskalierung" (Release 176, Punkt 1+2, hierher verschoben aus dem entfernten
     // #feedScalingPanel/dessen eigenem "Übernehmen"-Knopf - siehe #millTimePanel in
@@ -28071,7 +28146,11 @@ Max Mustermann (Anschrift wie oben)`,
       millTimeToolChangeDurationWarning.hidden = true;
       applyToolChangeDuration(enteredToolChangeDuration);
     }
-    const result = computeApproxMillingTime();
+    // Release 326: aktuelles Programm oder gesamte Liste (siehe computeListMillingTime())
+    const listScope = !millTimeScopeRow.hidden && millTimeScopeSelect.value === 'list';
+    const result = listScope ? computeListMillingTime() : computeApproxMillingTime();
+    millTimeScopeInfo.hidden = !(listScope && result.ok);
+    if (listScope && result.ok) millTimeScopeInfo.textContent = T(result.programs + ' Programme der Liste zusammengerechnet.', result.programs + ' programs of the list added up.');
     if (!result.ok) {
       millTimeEmptyState.hidden = false;
       millTimeResultState.hidden = true;
@@ -28131,8 +28210,19 @@ Max Mustermann (Anschrift wie oben)`,
     // aktuellen, persistierten Wert vorbefüllt.
     millTimeToolChangeDurationInput.value = String(toolChangeDuration);
     millTimeToolChangeDurationWarning.hidden = true;
+    millTimeScopeRow.hidden = programList.length < 2;   // Release 326
+    millTimeScopeSelect.value = 'current';
     runApproxMillingTime();
     millTimePanel.classList.add('open');
+  });
+  // Release 326: Wechsel aktuelles Programm <-> gesamte Liste - Anzahl Werkzeugwechsel neu vorschlagen (erkannte Arbeitsgänge
+  // des Programms bzw. aller Programme der Liste), dann neu rechnen
+  millTimeScopeSelect.addEventListener('change', () => {
+    if (millTimeScopeSelect.value === 'list') { const r = computeListMillingTime(); toolChangeCount = r.ok ? r.ops : countDetectedOps(); }
+    else toolChangeCount = countDetectedOps();
+    millTimeToolChangeCountInput.value = String(toolChangeCount);
+    millTimeToolChangeCountWarning.hidden = true;
+    runApproxMillingTime();
   });
   el('btnMillTimeRecalc').addEventListener('click', runApproxMillingTime);
   el('btnMillTimeClose').addEventListener('click', () => millTimePanel.classList.remove('open'));
