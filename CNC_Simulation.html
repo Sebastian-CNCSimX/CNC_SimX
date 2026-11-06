@@ -287,6 +287,8 @@
   .context-menu[hidden] { display: none; }
   .context-menu-divider { height: 1px; background: var(--border); margin: 4px 2px; }
   
+  .context-menu .menu-item[hidden], .context-menu .context-menu-divider[hidden] { display: none; }
+  
   .menu-submenu { position: relative; }
   .submenu-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
   .submenu-arrow { color: var(--ink-muted); font-size: 11px; }
@@ -3889,6 +3891,9 @@
       <button class="menu-item" id="ctxClearDxf" type="button" data-i18n-en="Delete DXF">DXF löschen</button>
       <button class="menu-item" id="ctxToggleDxfLayers" type="button" data-i18n-en="Hide DXF layers">DXF-Layer ausblenden</button>
       <button class="menu-item" id="ctxMoveDxf" type="button" data-i18n-en="Move DXF">DXF verschieben</button>
+      
+      <div class="context-menu-divider" id="ctxDxf3dSep" hidden></div>
+      <button class="menu-item" id="ctxDxf3dSettings" type="button" data-i18n-en="3D DXF" hidden>3D DXF</button>
     </div>
   </div>
   <div class="context-menu-divider"></div>
@@ -8102,8 +8107,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 333;
-  const APP_RELEASE_TIMESTAMP = '06.11.2026, 07:46 Uhr';
+  const APP_RELEASE_NUMBER = 334;
+  const APP_RELEASE_TIMESTAMP = '06.11.2026, 08:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -18362,6 +18367,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     clearDxf: el('ctxClearDxf'),
     toggleDxfLayers: el('ctxToggleDxfLayers'),
     moveDxf: el('ctxMoveDxf'),
+    dxf3dSettings: el('ctxDxf3dSettings'),
     toggleGrid: el('ctxToggleGrid'),
     opColor: el('ctxBtnOpColor'),
     menuColor: el('ctxBtnMenuColor'),
@@ -18397,6 +18403,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctxItems.moveDxf.disabled = btnDxfMoveMenu.disabled;
     ctxItems.toggleDxfLayers.disabled = !dxfLayers.length;
     ctxItems.toggleDxfLayers.textContent = dxfHiddenLayers.size > 0 ? T('DXF-Layer anzeigen', 'Show DXF layers') : T('DXF-Layer ausblenden', 'Hide DXF layers');
+    const is3dDxf = !!dxfHasFaces();
+    ctxItems.dxf3dSettings.hidden = !is3dDxf;
+    el('ctxDxf3dSep').hidden = !is3dDxf;
 
     ctxItems.toggleGrid.textContent = gridVisible ? T('Raster aus', 'Grid off') : T('Raster an', 'Grid on');
   }
@@ -18441,6 +18450,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   ctxItems.clearDxf.addEventListener('click', clearDxf);
   ctxItems.toggleDxfLayers.addEventListener('click', toggleAllDxfLayers);
   ctxItems.moveDxf.addEventListener('click', openDxfMovePanel);
+  ctxItems.dxf3dSettings.addEventListener('click', () => el('btnDxf3dSettings').click());
   ctxItems.toggleGrid.addEventListener('click', () => setGridVisible(!gridVisible));
   ctxItems.opColor.addEventListener('click', () => el('btnOpColor').click());
   ctxItems.menuColor.addEventListener('click', () => el('btnMenuColor').click());
