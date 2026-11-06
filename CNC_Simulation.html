@@ -1257,7 +1257,7 @@
   .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .toolbar-btn:disabled:hover { color: var(--ink-muted); border-color: var(--border); }
   
-  #btnLoadFileIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
+  #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
   #btnPartCreateIcon, #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -1410,6 +1410,14 @@
   }
   .speed-btn:hover { border-color: var(--accent); color: var(--accent); }
   .speed-btn.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  
+  .speed-custom { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+  .speed-custom-input { width: 44px; height: 26px; box-sizing: border-box; padding: 0 6px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--ink); font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif; font-size: 11.5px; text-align: right; }
+  .speed-custom-input:focus { outline: none; border-color: var(--accent); }
+  .speed-custom-input.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .speed-custom-input.invalid { border-color: #d33; box-shadow: inset 0 0 0 1px #d33; }
+  .speed-custom-x { font-size: 11.5px; color: var(--font-speed, var(--ink-muted)); }
   .jump-group input[type="number"] {
     width: 104px;
     height: 26px;
@@ -1768,6 +1776,8 @@
             <div class="submenu-dropdown" id="submenuFileCncProgramDropdown" hidden>
               <button class="menu-item" id="btnLoadFile" type="button" data-i18n-en="Load CNC-Program">CNC-Programm laden</button>
               
+              <button class="menu-item" id="btnLoadFileWithPart" type="button" title="CNC-Programm laden und das Bauteil aus dem Programmkopf (Maße, Stärke) direkt anlegen - Abtragsimulation an" data-i18n-en="Load CNC-Program with part" data-i18n-en-title="Load a CNC program and create the part from the program header (dimensions, thickness) right away - material removal simulation on">CNC-Programm mit Bauteil laden</button>
+              
               <button class="menu-item" id="btnNewProgramList" type="button" title="Öffnet einen Datei-Dialog mit Mehrfachauswahl (bis zu 10 Programme) und ersetzt die aktuelle CNC-Programmliste durch die getroffene Auswahl" data-i18n-en="New CNC-Program list" data-i18n-en-title="Opens a file dialog with multi-selection (up to 10 programs) and replaces the current CNC program list with the selection made">CNC-Programmliste neu</button>
               <button class="menu-item" id="btnSaveAsProgram" type="button" disabled title="Lädt den aktuell geladenen (ggf. bearbeiteten) Programmtext als Datei herunter" data-i18n-en="Save CNC-Program as…" data-i18n-en-title="Downloads the currently loaded (possibly edited) program text as a file">CNC-Programm speichern als…</button>
               
@@ -2011,6 +2021,8 @@
       
       <button class="toolbar-btn" id="btnLoadFileIcon" type="button" title="CNC-Programm laden (dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Programm laden')" data-i18n-en-title="Load CNC program (same action as 'File' → 'CNC-Program' → 'Load program')">📂 CNC</button>
       
+      <button class="toolbar-btn" id="btnLoadFileWithPartIcon" type="button" title="CNC-Programm mit Bauteil laden (dieselbe Aktion wie 'Datei' → 'CNC' → 'CNC-Programm mit Bauteil laden')" data-i18n-en-title="Load CNC program with part (same action as 'File' → 'CNC' → 'Load CNC-Program with part')">▭ CNC</button>
+      
       <button class="toolbar-btn" id="btnEditProgramToolbarIcon" type="button" disabled title="Geladenes CNC-Programm bearbeiten (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm bearbeiten')" data-i18n-en-title="Edit the loaded CNC program (same action as 'Edit' → 'CNC' → 'Edit CNC-Program')">✎ CNC</button>
       
       <button class="toolbar-btn" id="btnClearProgramIcon" type="button" disabled title="Geladenes CNC-Programm wieder entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm löschen')" data-i18n-en-title="Remove the loaded CNC program again (same action as 'Edit' → 'CNC' → 'Delete CNC-Program')"><span class="dxf-delete-glyph">✕</span> CNC</button>
@@ -2081,9 +2093,14 @@
         
         <button class="speed-btn" data-speed="0.5" type="button" data-i18n-en="0.5x">0,5x</button>
         <button class="speed-btn active" data-speed="1" type="button">1x</button>
+        
+        <button class="speed-btn" data-speed="2" type="button">2x</button>
+        <button class="speed-btn" data-speed="3" type="button">3x</button>
         <button class="speed-btn" data-speed="5" type="button">5x</button>
         <button class="speed-btn" data-speed="10" type="button">10x</button>
         <button class="speed-btn" data-speed="20" type="button">20x</button>
+        
+        <span class="speed-custom" id="speedCustomWrap" title="Eigene Geschwindigkeit (0,1 bis 100, eine Nachkommastelle, Komma oder Punkt) - Enter übernimmt" data-i18n-en-title="Custom speed (0.1 to 100, one decimal place, comma or point) - Enter applies"><input type="text" id="speedCustomInput" class="speed-custom-input" inputmode="decimal" spellcheck="false" autocomplete="off" maxlength="8"><span class="speed-custom-x">x</span></span>
       </div>
       <div class="jump-group">
         <label for="jumpLineInput" data-i18n-en="Jump to line:">Sprung in Zeile:</label>
@@ -8107,8 +8124,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 334;
-  const APP_RELEASE_TIMESTAMP = '06.11.2026, 08:25 Uhr';
+  const APP_RELEASE_NUMBER = 335;
+  const APP_RELEASE_TIMESTAMP = '06.11.2026, 12:00 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10768,10 +10785,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (rawProgramText == null) return;
     machineTypeSelect.value = machineTypePromptSelect.value;
     applyActiveMachineType();
+    setTimeout(() => loadWithPartAfterLoad(), 0);
   });
   el('btnMachineTypePromptCancel').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
     if (rawProgramText != null) setMachineTypePending(true);
+    loadWithPartPending = false;
   });
   el('machineTypePendingHint').addEventListener('click', () => setMachineTypePending(false));
 
@@ -18171,7 +18190,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (ts - stepPlayback._last > 130 / Math.min(1, playSpeed)) {
       stepPlayback._last = ts;
       if (scrubIdx < points.length - 1) {
-        scrubIdx = Math.min(scrubIdx + Math.max(1, Math.round(playSpeed)), points.length - 1);
+
+        let stepN = 1;
+        if (playSpeed > 1) { stepPlayback._acc = (stepPlayback._acc || 0) + playSpeed; stepN = Math.floor(stepPlayback._acc + 1e-9); stepPlayback._acc -= stepN; }
+        scrubIdx = Math.min(scrubIdx + Math.max(1, stepN), points.length - 1);
         scrubEl.value = String(scrubIdx);
         updateReadoutAndHighlight();
         requestRender();
@@ -18509,9 +18531,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (intent === 'add') {
       addFilesToProgramList(files);
     } else {
-      readFileAsText(files[0], (text) => loadTextClassic(text, files[0].name, { size: files[0].size, lastModified: files[0].lastModified }));
+      readFileAsText(files[0], (text) => {
+        loadTextClassic(text, files[0].name, { size: files[0].size, lastModified: files[0].lastModified });
+        if (intent === 'withPart') { loadWithPartPending = true; loadWithPartAfterLoad(); }
+      });
     }
   });
+  let loadWithPartPending = false;
+  function loadWithPartAfterLoad() {
+    if (!loadWithPartPending) return;
+    if (machineTypePromptPanel.classList.contains('open')) return;
+    loadWithPartPending = false;
+    if (rawProgramText == null || !points.length) return;
+    const pf = programPartPrefill();
+    if (!pf || !pf.read || !pf.z) return;
+    const fmt = v => String(v).replace('.', currentLang === 'en' ? '.' : ',');
+    const replaceNote = (dxfGeometry && !dxfCreatedPart) ? T('\n\nDie geladene DXF wird dabei ersetzt.', '\n\nThe loaded DXF will be replaced.') : '';
+    const ok = confirm(T('Im Programm wurden Bauteilmaße gefunden: X ' + fmt(pf.x) + ' / Y ' + fmt(pf.y) + ' / Z ' + fmt(pf.z) + ' mm.\n\nMit Bauteil laden?',
+      'Part dimensions were found in the program: X ' + fmt(pf.x) + ' / Y ' + fmt(pf.y) + ' / Z ' + fmt(pf.z) + ' mm.\n\nLoad with part?') + replaceNote);
+    if (!ok) return;
+    if (dxfGeometry || dxfCreatedPart) clearDxf();
+    setAbtragOn(true);
+  }
+  const startLoadWithPart = () => { fileInputIntent = 'withPart'; el('fileInput').click(); };
+  el('btnLoadFileWithPart').addEventListener('click', startLoadWithPart);
+  el('btnLoadFileWithPartIcon').addEventListener('click', startLoadWithPart);
 
   el('btnNewProgramList').addEventListener('click', () => el('fileInputList').click());
   el('btnNewProgramListIcon').addEventListener('click', () => el('fileInputList').click());
@@ -21862,8 +21906,39 @@ Max Mustermann (Anschrift wie oben)`,
     b.addEventListener('click', () => {
       playSpeed = parseFloat(b.dataset.speed) || 1;
       speedButtons.forEach(x => x.classList.toggle('active', x === b));
+      speedCustomInput.classList.remove('active', 'invalid');
+      stepPlayback._acc = 0;
     });
   });
+  const SPEED_MIN = 0.1, SPEED_MAX = 100;
+  function parseSpeedInput(text) {
+    const t = String(text == null ? '' : text).trim().replace(/x$/i, '').trim().replace(',', '.');
+    const m = t.match(/^(\d*)(?:\.(\d*))?$/);
+    if (!m || (!m[1] && !m[2])) return null;
+    const ip = parseInt(m[1] || '0', 10), fr = m[2] || '';
+    let tenths = ip * 10 + (fr.length ? parseInt(fr[0], 10) : 0);
+    if (fr.length > 1 && parseInt(fr[1], 10) >= 5) tenths += 1;
+    const v = tenths / 10;
+    return v >= SPEED_MIN - 1e-9 && v <= SPEED_MAX + 1e-9 ? v : null;
+  }
+  window.__parseSpeedInput = parseSpeedInput;
+  const fmtSpeed = v => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', currentLang === 'en' ? '.' : ','));
+  const speedCustomInput = el('speedCustomInput');
+  function applySpeedCustomInput() {
+    const raw = speedCustomInput.value;
+    if (!raw.trim()) { speedCustomInput.classList.remove('invalid'); return; }
+    const v = parseSpeedInput(raw);
+    if (v == null) { speedCustomInput.classList.add('invalid'); return; }
+    speedCustomInput.classList.remove('invalid');
+    speedCustomInput.value = fmtSpeed(v);
+    playSpeed = v;
+    stepPlayback._acc = 0;
+    speedButtons.forEach(x => x.classList.remove('active'));
+    speedCustomInput.classList.add('active');
+  }
+  speedCustomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applySpeedCustomInput(); speedCustomInput.blur(); } e.stopPropagation(); });
+  speedCustomInput.addEventListener('change', applySpeedCustomInput);
+  window.__getPlaySpeed = () => playSpeed;
 
   btnJumpLine.addEventListener('click', jumpToLine);
   jumpLineInput.addEventListener('keydown', (e) => {
