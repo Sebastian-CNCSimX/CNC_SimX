@@ -8232,8 +8232,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 340;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 12:13 Uhr';
+  const APP_RELEASE_NUMBER = 341;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 13:58 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11950,7 +11950,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function parseObjText(text, mats) {
     const V = [], VT = [];
     const groups = [], groupIndex = new Map(), matList = [], matIndex = new Map();
-    const pos = [], uvs = [], tg = [], tm = [], vix = [];
+    const pos = [], uvs = [], tg = [], tm = [], vix = [], eflags = [];
     let g = -1, m = -1, faces = 0;
     const useGroup = name => { const key = name || T('(ohne Gruppe)', '(no group)'); let i = groupIndex.get(key); if (i === undefined) { i = groups.length; groups.push({ name: key, faces: 0, tris: 0, mat: -1 }); groupIndex.set(key, i); } return i; };
     const useMat = name => { let i = matIndex.get(name); if (i === undefined) { const src = mats.get(name) || { name, kd: [0.75, 0.75, 0.75], map: null, alpha: 1, hasKd: false }; i = matList.length; matList.push({ name, kd: src.kd, map: src.map, alpha: src.alpha, hasKd: !!src.hasKd }); matIndex.set(name, i); } return i; };
@@ -11975,6 +11975,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (ids.length < 3) continue;
         faces++; groups[g].faces++; if (groups[g].mat < 0) groups[g].mat = m;
         for (const tri of objTriangulate(ids.map(x => V[x[0]]))) {
+          let ef = 0; const nn = ids.length;
+          for (let j = 0; j < 3; j++) { const a = tri[j], b = tri[(j + 1) % 3]; if ((b - a + nn) % nn === 1 || (a - b + nn) % nn === 1) ef |= 1 << j; }
+          eflags.push(ef);
           for (const j of tri) { const [vi, ti] = ids[j]; pos.push(V[vi][0], V[vi][1], V[vi][2]); vix.push(vi); if (ti >= 0) uvs.push(VT[ti][0], VT[ti][1]); else uvs.push(0, 0); }
           tg.push(g); tm.push(m); groups[g].tris++;
         }
@@ -11994,7 +11997,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     const verts = new Float32Array(V.length * 3); V.forEach((v, i) => { verts[i * 3] = v[0]; verts[i * 3 + 1] = v[1]; verts[i * 3 + 2] = v[2]; });
     return { pos: P, uv: new Float32Array(uvs), tg: Uint16Array.from(tg), tm: Uint16Array.from(tm), shade, groups, mats: matList, bounds: b, faces, vertices: V.length,
-      verts, vix: Uint32Array.from(vix) };
+      verts, vix: Uint32Array.from(vix), eflags: Uint8Array.from(eflags) };
   }
   async function objDecodeTexture(bytes, name) {
     const type = /\.png$/i.test(name) ? 'image/png' : /\.bmp$/i.test(name) ? 'image/bmp' : 'image/jpeg';
@@ -12181,7 +12184,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (LT) {
         const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
         let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
-        const gr = lk.grain; let k = gr[0] * nx + gr[1] * ny + gr[2] * nz;
+        const gr = objTriGrain(i) || lk.grain; let k = gr[0] * nx + gr[1] * ny + gr[2] * nz;
         let ax = gr[0] - k * nx, ay = gr[1] - k * ny, az = gr[2] - k * nz, al = Math.hypot(ax, ay, az);
         if (al < 0.2) { k = nz; ax = -k * nx; ay = -k * ny; az = 1 - k * nz; al = Math.hypot(ax, ay, az) || 1; }
         ax /= al; ay /= al; az /= al;
@@ -12234,8 +12237,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           if (z === Infinity) { out[k] = C[k]; continue; }
           let c = C[k];
           if (!lowQ && x > 0 && y > 0 && x < W - 1 && y < H - 1) {
-            const d = Math.max(Math.abs(z - Z[k + 1]), Math.abs(z - Z[k - 1]), Math.abs(z - Z[k + W]), Math.abs(z - Z[k - W]));
-            if (d > thr) c = ((((c & 255) * 0.55) | 0) | (((((c >>> 8) & 255) * 0.55) | 0) << 8) | (((((c >>> 16) & 255) * 0.55) | 0) << 16) | 0xFF000000) >>> 0;
+            const zl = Z[k - 1], zr = Z[k + 1], zu = Z[k - W], zd = Z[k + W];
+            const lx = zl + zr - 2 * z, ly = zu + zd - 2 * z;
+            if (lx > thr || ly > thr) c = ((((c & 255) * 0.72) | 0) | (((((c >>> 8) & 255) * 0.72) | 0) << 8) | (((((c >>> 16) & 255) * 0.72) | 0) << 16) | 0xFF000000) >>> 0;
           }
           if (DD && (c >>> 24) === 255) {
             const d = dIdx(x, y);
@@ -12381,6 +12385,35 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     objModel.grains = null;
     objVersion++;
   }
+  function objTriGrain(i) {
+    const M = objModel;
+    if (!M.compOf) {
+      const nv = M.verts.length / 3, par = new Int32Array(nv);
+      for (let v = 0; v < nv; v++) par[v] = v;
+      const find = v => { while (par[v] !== v) { par[v] = par[par[v]]; v = par[v]; } return v; };
+      const V = M.vix, nt = M.tg.length;
+      for (let t = 0; t < nt; t++) { const a = find(V[t * 3]), b = find(V[t * 3 + 1]), c = find(V[t * 3 + 2]); if (b !== a) par[b] = a; if (c !== a && find(c) !== a) par[find(c)] = a; }
+      const id = new Map(), compOf = new Int32Array(nt);
+      for (let t = 0; t < nt; t++) { const r = find(V[t * 3]); let c = id.get(r); if (c === undefined) { c = id.size; id.set(r, c); } compOf[t] = c; }
+      const best = new Float64Array(id.size), G = new Float32Array(id.size * 3), has = new Uint8Array(id.size), P = M.pos;
+      for (let t = 0; t < nt; t++) {
+        const c = compOf[t];
+        for (let j = 0; j < 3; j++) {
+          if (!((M.eflags[t] >> j) & 1)) continue;
+          const a = t * 9 + j * 3, b = t * 9 + ((j + 1) % 3) * 3;
+          const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], len = Math.hypot(dx, dy);
+          if (len > best[c] && Math.abs(dz) < 0.2 * len) { best[c] = len; const n = Math.hypot(dx, dy, dz); G[c * 3] = dx / n; G[c * 3 + 1] = dy / n; G[c * 3 + 2] = dz / n; has[c] = 1; }
+        }
+      }
+      M.compOf = compOf; M.compGrain = G; M.compHas = has; M.compCount = id.size;
+    }
+    const c = M.compOf[i];
+    if (!M.compHas[c]) return null;
+    if (!M.compGrainArr) M.compGrainArr = [];
+    return M.compGrainArr[c] || (M.compGrainArr[c] = [M.compGrain[c * 3], M.compGrain[c * 3 + 1], M.compGrain[c * 3 + 2]]);
+  }
+  window.__objComponentCount = () => { if (!objModel) return 0; objTriGrain(0); return objModel.compCount; };
+  window.__objTriGrain = i => (objModel ? objTriGrain(i) : null);
   function objGroupGrain(gi) {
     const M = objModel;
     if (!M.grains) M.grains = new Map();
@@ -12391,6 +12424,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (let i = 0; i < M.tg.length; i++) {
       if (M.tg[i] !== gi) continue;
       for (let j = 0; j < 3; j++) {
+        if (M.eflags && !((M.eflags[i] >> j) & 1)) continue;
         const a = i * 9 + j * 3, b = i * 9 + ((j + 1) % 3) * 3;
         const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], len = Math.hypot(dx, dy);
         if (len > best && Math.abs(dz) < 0.2 * len) { best = len; const n = Math.hypot(dx, dy, dz); g = [dx / n, dy / n, dz / n]; }
@@ -12493,6 +12527,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 341, date: '09.11.2026', items: [
+      { de: 'OBJ-Viewer: Kantenlinien sind jetzt fein (1 Pixel) und dezent; auf schräg gesehenen Flächen erscheinen keine dunklen Streifen mehr.',
+        en: 'OBJ viewer: edge lines are now thin (1 pixel) and subtle; surfaces seen at an angle no longer show dark stripes.' },
+      { de: 'OBJ mit Holztextur aus der Vorbelegung (z. B. Eiche): Die Maserung läuft jetzt je Bauteil – bei jeder Stufe entlang der Stufe, auch bei Wendelstufen – wie bei der 3D-DXF.',
+        en: 'OBJ with wood texture from the preset (e.g. oak): the grain now runs per part – along each tread, also on winder treads – as in the 3D DXF.' },
+    ] },
     { release: 340, date: '09.11.2026', items: [
       { de: 'OBJ und 3D-DXF zusammen: Was näher an der Kamera liegt, verdeckt jetzt korrekt das Dahinterliegende – eine 3D-DXF vor einem OBJ wirkt nicht mehr durchsichtig; Glas der DXF bleibt vor dem OBJ sichtbar.',
         en: 'OBJ and 3D DXF together: whatever is closer to the camera now correctly hides what is behind it – a 3D DXF in front of an OBJ no longer looks see-through; DXF glass stays visible in front of the OBJ.' },
