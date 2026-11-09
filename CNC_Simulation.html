@@ -297,6 +297,14 @@
   .obj-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .obj-group-count { color: var(--ink-muted); font-size: 11px; }
   .changelog-body { max-height: min(60vh, 520px); overflow: auto; padding-right: 4px; }
+  
+  #objSettingsPanel .paste-card { width: min(900px, 96vw); max-height: calc(100vh - 48px); overflow-y: auto; }
+  .obj-preset-field { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--ink-muted); }
+  .obj-preset-hint { font-size: 11.5px; color: var(--ink-muted); margin: 0; }
+  .obj-preset-hint[hidden] { display: none; }
+  .obj-pt-mode { min-width: 130px; }
+  .obj-pt-tex { min-width: 150px; }
+  #settingsObjSep { height: 1px; background: var(--border); margin: 6px 0 0; }
   .changelog-release { margin: 0 0 12px; }
   .changelog-release h4 { margin: 0 0 4px; font-size: 13px; }
   .changelog-release .changelog-date { color: var(--ink-muted); font-weight: 400; margin-left: 6px; }
@@ -1933,6 +1941,14 @@
             </div>
           </div>
           
+          <div id="settingsObjSep"></div>
+          <div class="menu-submenu" id="submenuObjSettings">
+            <button class="menu-item submenu-trigger" id="submenuObjSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="OBJ &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">OBJ <span class="submenu-arrow">▸</span></button>
+            <div class="submenu-dropdown" id="submenuObjSettingsDropdown" hidden>
+              <button class="menu-item" id="btnObjSettings" type="button" title="Farben und Texturen der OBJ-Gruppen, Vorbelegungen bearbeiten" data-i18n-en="OBJ settings" data-i18n-en-title="Colours and textures of the OBJ groups, edit presets">OBJ-Einstellungen</button>
+            </div>
+          </div>
+          
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings" data-i18n-en-title="Loads a settings file previously downloaded via 'Export Settings' and replaces all settings contained in it">Einstellungen importieren</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
         </div>
@@ -2220,6 +2236,11 @@
         
         <div class="obj-group-panel" id="objGroupPanel" hidden>
           <div class="obj-file-name" id="objFileNameLabel"></div>
+          
+          <label class="obj-preset-field" id="objPresetField"><span data-i18n-en="Preset">Vorbelegung</span>
+            <select id="objPresetSelect" class="filename-input" title="Farben, Texturen und ausgeblendete Gruppen je Gruppenname (Einstellungen → OBJ → OBJ-Einstellungen)" data-i18n-en-title="Colours, textures and hidden groups per group name (Settings → OBJ → OBJ settings)"></select>
+          </label>
+          <p class="obj-preset-hint" id="objPresetNoMatch" hidden data-i18n-en="No known groups – shown as in the file.">Keine bekannten Gruppen – Darstellung wie in der Datei.</p>
           <button class="ops-showall-btn" id="btnShowAllObjGroups" type="button" data-i18n-en="Hide all groups">Alle Gruppen ausblenden</button>
           <div class="obj-group-list" id="objGroupList"></div>
         </div>
@@ -2869,6 +2890,37 @@
   </div>
 </div>
 
+<div class="paste-panel" id="objSettingsPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="OBJ settings">OBJ-Einstellungen</h3>
+    <p class="panel-hint" data-i18n-en="Recognised group names take over the predefined colour or texture. Groups without an entry - and files without known groups - are shown as in the OBJ.">Erkannte Gruppennamen übernehmen die vordefinierte Farbe bzw. Textur. Gruppen ohne Eintrag – und Dateien ohne bekannte Gruppen – werden wie in der OBJ dargestellt.</p>
+    <div class="scale-group-title" data-i18n-en="Preset">Vorbelegung</div>
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Preset">Vorbelegung</span><select id="objPresetEditSelect" class="filename-input"></select></label>
+      <label class="tool-data-field"><span data-i18n-en="Name">Name</span><input type="text" id="objPresetName" class="filename-input" maxlength="60" spellcheck="false"></label>
+    </div>
+    <div class="dxf3d-preset-actions">
+      <button class="btn ghost small" id="btnObjPresetNew" type="button" data-i18n-en="New (copy)">Neu (Kopie)</button>
+      <button class="btn ghost small" id="btnObjPresetDelete" type="button" data-i18n-en="Delete">Löschen</button>
+      <button class="btn ghost small" id="btnObjPresetRestore" type="button" title="Die eingebauten Vorbelegungen auf den Auslieferungszustand zurücksetzen (eigene bleiben erhalten)" data-i18n-en-title="Reset the built-in presets to their original state (own presets are kept)" data-i18n-en="Restore standard">Standard wiederherstellen</button>
+    </div>
+    <div class="dxf3d-preset-table-wrap">
+      <table class="dxf3d-preset-table" id="objPresetTable">
+        <thead><tr><th data-i18n-en="Group">Gruppe</th><th data-i18n-en="Show">Anzeigen</th><th data-i18n-en="Display">Darstellung</th><th data-i18n-en="Colour">Farbe</th><th data-i18n-en="Texture">Textur</th><th data-i18n-en="Transparency (%)">Transparenz (%)</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="dxf3d-preset-add">
+      <input type="text" id="objPresetNewGroup" class="filename-input" maxlength="60" spellcheck="false" placeholder="z. B. Podest" data-i18n-en-placeholder="e.g. Landing">
+      <button class="btn ghost small" id="btnObjPresetAddGroup" type="button" data-i18n-en="Add group">Gruppe hinzufügen</button>
+    </div>
+    <p class="panel-hint dxf-dia-warn" id="objSettingsWarning" hidden></p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnObjSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnObjSettingsOk" type="button">Ok</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="changelogPanel">
   <div class="paste-card">
     <h3>Changelog</h3>
@@ -8180,8 +8232,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 336;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 07:39 Uhr';
+  const APP_RELEASE_NUMBER = 337;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 08:33 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11986,6 +12038,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       model.missingTextures = model.mats.filter(m => m.map && !m.tex).map(m => m.map);
       objModel = model;
       objHiddenGroups.clear();
+      applyObjPreset(readObjActivePresetId());
       objVersion++;
       sidebarView = 'objGroups';
       updateObjUI();
@@ -12037,14 +12090,33 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const W = Math.max(1, Math.ceil(cvMain.width * RS)), H = Math.max(1, Math.ceil(cvMain.height * RS));
     const buf = objRasterBuf(W, H), Z = buf.Z, C = buf.C;
     Z.fill(Infinity);
+    C.fill(0);
     const P = M.pos, UV = M.uv;
     const mats = M.mats.map(mt => ({ tex: lowQ ? null : (mt.tex || null), rgb: mt.tex ? mt.tex.avg : [mt.kd[0] * 255, mt.kd[1] * 255, mt.kd[2] * 255] }));
+    const looks = M.groups.map((g, gi) => {
+      const lk = M.looks && M.looks[gi];
+      if (!lk || lk.mode === 'obj') return null;
+      const alpha = 1 - (lk.transparency || 0) / 100;
+      if (lk.mode === 'color') { const c = hexToRgb(lk.color) || { r: 200, g: 200, b: 200 }; return { flat: [c.r, c.g, c.b], alpha }; }
+      const TX = getDxfTextureRender(lk.textureId);
+      if (!TX) return { flat: [190, 150, 100], alpha };
+      const a = dxf3dTexAvg(TX);
+      return lowQ ? { flat: [a.r, a.g, a.b], alpha } : { TX, grain: objGroupGrain(gi), alpha };
+    });
     const hidden = objHiddenGroups;
     const sx = new Float32Array(3), sy = new Float32Array(3), sz = new Float32Array(3);
     let drawn = 0, bx0 = W, by0 = H, bx1 = -1, by1 = -1;
     const pt = { x: 0, y: 0, z: 0 };
-    for (let i = 0; i < n; i++) {
+    const triAlpha = i => { const lk = looks[M.tg[i]]; return lk ? lk.alpha : (M.mats[M.tm[i]].alpha == null ? 1 : M.mats[M.tm[i]].alpha); };
+    const glassList = [];
+    for (let pass = 0; pass < 2; pass++) {
+    if (pass === 1) glassList.sort((a, b) => b.d - a.d);
+    const cnt = pass === 0 ? n : glassList.length;
+    for (let ii = 0; ii < cnt; ii++) {
+      const i = pass === 0 ? ii : glassList[ii].i;
       if (hidden.size && hidden.has(M.tg[i])) continue;
+      const ta = pass === 0 ? triAlpha(i) : glassList[ii].a;
+      if (ta <= 0.001) continue;
       const o = i * 9;
       let ok = true;
       for (let j = 0; j < 3; j++) {
@@ -12059,10 +12131,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const x0 = Math.max(0, Math.floor(Math.min(sx[0], sx[1], sx[2]))), x1 = Math.min(W - 1, Math.ceil(Math.max(sx[0], sx[1], sx[2])));
       const y0 = Math.max(0, Math.floor(Math.min(sy[0], sy[1], sy[2]))), y1 = Math.min(H - 1, Math.ceil(Math.max(sy[0], sy[1], sy[2])));
       if (x1 < x0 || y1 < y0) continue;
+      if (pass === 0 && ta < 0.999) { glassList.push({ i, a: ta, d: (sz[0] + sz[1] + sz[2]) / 3 }); continue; }
       drawn++;
       if (x0 < bx0) bx0 = x0; if (x1 > bx1) bx1 = x1; if (y0 < by0) by0 = y0; if (y1 > by1) by1 = y1;
-      const mt = mats[M.tm[i]], TX = mt.tex, sh = M.shade[i];
-      const cr = Math.min(255, mt.rgb[0] * sh) | 0, cg = Math.min(255, mt.rgb[1] * sh) | 0, cb = Math.min(255, mt.rgb[2] * sh) | 0;
+      const lk = looks[M.tg[i]], mt = lk ? null : mats[M.tm[i]], TX = lk ? null : mt.tex, sh = M.shade[i];
+      const LT = lk && lk.TX ? lk.TX : null;
+      const base = lk ? (lk.flat || [0, 0, 0]) : mt.rgb;
+      const cr = Math.min(255, base[0] * sh) | 0, cg = Math.min(255, base[1] * sh) | 0, cb = Math.min(255, base[2] * sh) | 0;
+      let lu0 = 0, lv0 = 0, lu1 = 0, lv1 = 0, lu2 = 0, lv2 = 0, llv = 0;
+      if (LT) {
+        const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
+        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+        const gr = lk.grain; let k = gr[0] * nx + gr[1] * ny + gr[2] * nz;
+        let ax = gr[0] - k * nx, ay = gr[1] - k * ny, az = gr[2] - k * nz, al = Math.hypot(ax, ay, az);
+        if (al < 0.2) { k = nz; ax = -k * nx; ay = -k * ny; az = 1 - k * nz; al = Math.hypot(ax, ay, az) || 1; }
+        ax /= al; ay /= al; az /= al;
+        const bx = ny * az - nz * ay, by = nz * ax - nx * az, bz = nx * ay - ny * ax;
+        const U = j => P[o + j * 3] * ax + P[o + j * 3 + 1] * ay + P[o + j * 3 + 2] * az, Vv = j => P[o + j * 3] * bx + P[o + j * 3 + 1] * by + P[o + j * 3 + 2] * bz;
+        lu0 = U(0); lv0 = Vv(0); lu1 = U(1); lv1 = Vv(1); lu2 = U(2); lv2 = Vv(2);
+        const d3 = Math.hypot(ux, uy, uz), d2 = Math.hypot(sx[1] - sx[0], sy[1] - sy[0]);
+        llv = dxfTexLevel(LT, (d2 > 1e-6 ? d3 / d2 : 0) / LT.mmpx);
+      }
       const flat = (cr | (cg << 8) | (cb << 16) | 0xFF000000) >>> 0;
       const inv = 1 / area, u = i * 6;
       const u0 = UV[u], v0 = UV[u + 1], u1 = UV[u + 2], v1 = UV[u + 3], u2 = UV[u + 4], v2 = UV[u + 5];
@@ -12075,8 +12164,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const w2 = 1 - w0 - w1; if (w2 < -1e-7) continue;
           const zz = w0 * sz[0] + w1 * sz[1] + w2 * sz[2], k = row + x;
           if (zz >= Z[k]) continue;
+          if (pass === 1) {
+            const old = C[k], oa = (old >>> 24) / 255, na = ta + oa * (1 - ta), f = oa * (1 - ta);
+            const r = (cr * ta + (old & 255) * f) / na, g = (cg * ta + ((old >>> 8) & 255) * f) / na, b = (cb * ta + ((old >>> 16) & 255) * f) / na;
+            C[k] = ((r | 0) | ((g | 0) << 8) | ((b | 0) << 16) | (Math.round(na * 255) << 24)) >>> 0;
+            continue;
+          }
           Z[k] = zz;
-          if (TX) {
+          if (LT) {
+            const c = dxfTexSample(LT, w0 * lu0 + w1 * lu1 + w2 * lu2, w0 * lv0 + w1 * lv1 + w2 * lv2, llv, sh);
+            C[k] = ((c & 255) | (((c >>> 8) & 255) << 8) | (((c >>> 16) & 255) << 16) | 0xFF000000) >>> 0;
+          } else if (TX) {
             let tu = w0 * u0 + w1 * u1 + w2 * u2, tv = w0 * v0 + w1 * v1 + w2 * v2;
             tu -= Math.floor(tu); tv -= Math.floor(tv);
             const c = TX.px[Math.min(TX.h - 1, ((1 - tv) * TX.h) | 0) * TX.w + Math.min(TX.w - 1, (tu * TX.w) | 0)];
@@ -12085,6 +12183,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
       }
     }
+    }
     const out = buf.out;
     if (bx1 >= bx0 && by1 >= by0) {
       const bb = M.bounds, thr = Math.max(8, 0.004 * Math.hypot(bb.maxx - bb.minx, bb.maxy - bb.miny, bb.maxz - bb.minz));
@@ -12092,7 +12191,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const row = y * W;
         for (let x = bx0; x <= bx1; x++) {
           const k = row + x, z = Z[k];
-          if (z === Infinity) { out[k] = 0; continue; }
+          if (z === Infinity) { out[k] = C[k]; continue; }
           let c = C[k];
           if (!lowQ && x > 0 && y > 0 && x < W - 1 && y < H - 1) {
             const d = Math.max(Math.abs(z - Z[k + 1]), Math.abs(z - Z[k - 1]), Math.abs(z - Z[k + W]), Math.abs(z - Z[k - W]));
@@ -12116,13 +12215,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     objGroupListEl.innerHTML = '';
     if (!objModel) return;
     el('objFileNameLabel').textContent = objModel.name;
+    fillObjPresetSelect(el('objPresetSelect'), readObjActivePresetId(), true);
+    el('objPresetNoMatch').hidden = !(readObjActivePresetId() && !objModel.presetMatched);
     objModel.groups.forEach((g, i) => {
       const row = document.createElement('label'); row.className = 'obj-group-row';
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !objHiddenGroups.has(i); cb.dataset.group = g.name;
       cb.addEventListener('change', () => { if (cb.checked) objHiddenGroups.delete(i); else objHiddenGroups.add(i); objVersion++; updateObjShowAllBtn(); bakeParams = null; requestRender(); });
       const sw = document.createElement('span'); sw.className = 'obj-group-swatch';
-      const mt = objModel.mats[g.mat];
-      if (mt && mt.tex) sw.style.backgroundImage = 'url(' + mt.tex.url + ')';
+      const mt = objModel.mats[g.mat], lk = objModel.looks && objModel.looks[i];
+      const libTex = lk && lk.mode === 'texture' ? getDxfTextureById(lk.textureId) : null;
+      if (lk && lk.mode === 'color') sw.style.background = lk.color;
+      else if (libTex) sw.style.backgroundImage = 'url(' + libTex.dataUrl + ')';
+      else if (mt && mt.tex) sw.style.backgroundImage = 'url(' + mt.tex.url + ')';
       else if (mt) sw.style.background = 'rgb(' + mt.kd.map(v => Math.round(v * 255)).join(',') + ')';
       const nm = document.createElement('span'); nm.className = 'obj-group-name'; nm.textContent = g.name;
       const ct = document.createElement('span'); ct.className = 'obj-group-count'; ct.textContent = '(' + g.faces + ')';
@@ -12144,6 +12248,185 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     el('btnObjDeleteFileMenu').disabled = !objModel;
     if (sidebarView === 'objGroups') renderObjGroupList();
   }
+
+  const LS_KEY_OBJ_PRESETS = 'cncsim.objPresets', LS_KEY_OBJ_ACTIVE_PRESET = 'cncsim.objActivePreset';
+  const OBJ_LIGHT_GREY = '#e6e6e6';
+  const OBJ_WOOD_GROUPS = ['Wangen', 'Stufen', 'Setzstufen', 'Pfosten', 'Handläufe', 'Stäbe'];
+  const OBJ_STD_GROUPS = OBJ_WOOD_GROUPS.concat(['Lichter', 'Decke', 'Fussboden', 'Glasfüllungen']);
+  const OBJ_GLASS = { mode: 'color', color: '#00ffff', transparency: 75 };
+  const objNorm = n => String(n || '').trim().toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/\s+/g, ' ');
+  function builtinObjPresets() {
+    const ceil = n => n === 'Decke' || n === 'Fussboden';
+    const make = f => OBJ_STD_GROUPS.map(name => Object.assign({ name, show: true, mode: 'obj', color: '#ffffff', textureId: '', transparency: 0 }, name === 'Glasfüllungen' ? OBJ_GLASS : (f(name) || {})));
+    const grey = n => (ceil(n) ? { mode: 'color', color: OBJ_LIGHT_GREY } : null);
+    const hide = n => (ceil(n) ? { show: false, mode: 'color', color: OBJ_LIGHT_GREY } : null);
+    const oak = n => (OBJ_WOOD_GROUPS.includes(n) ? { mode: 'texture', textureId: 'std_eiche' } : null);
+    const white = n => (n === 'Wangen' || n === 'Stäbe' || n === 'Handläufe' ? { mode: 'color', color: '#ffffff' } : oak(n));
+    return [
+      { id: 'std', name: 'Standard', nameEn: 'Standard', groups: make(grey) },
+      { id: 'noWell', name: 'Ohne Decke', nameEn: 'Without ceiling', groups: make(hide) },
+      { id: 'oakNoWell', name: 'Eiche, ohne Decke', nameEn: 'Oak, without ceiling', groups: make(n => oak(n) || hide(n)) },
+      { id: 'oakWhite', name: 'Eiche, Wange/Handlauf weiß', nameEn: 'Oak, stringer/handrail white', groups: make(n => white(n) || grey(n)) },
+      { id: 'oakWhiteNoWell', name: 'Eiche, Wange/Handlauf weiß, ohne Decke', nameEn: 'Oak, stringer/handrail white, without ceiling', groups: make(n => white(n) || hide(n)) },
+    ];
+  }
+  function normalizeObjPreset(pr) {
+    const groups = Array.isArray(pr && pr.groups) ? pr.groups.filter(g => g && String(g.name || '').trim()).map(g => ({
+      name: String(g.name).trim().slice(0, 60), show: g.show !== false, mode: ['obj', 'color', 'texture'].includes(g.mode) ? g.mode : 'obj',
+      color: /^#[0-9a-f]{6}$/i.test(g.color) ? g.color.toLowerCase() : '#ffffff', textureId: typeof g.textureId === 'string' ? g.textureId : '',
+      transparency: Number.isFinite(+g.transparency) ? Math.max(0, Math.min(100, Math.round(+g.transparency))) : 0 })) : [];
+    return { id: String(pr.id || ('own_' + Date.now())), name: String(pr.name || '').trim() || 'Vorbelegung', nameEn: pr.nameEn || '', groups };
+  }
+  function readObjPresets() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_OBJ_PRESETS);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length) {
+          const out = list.map(normalizeObjPreset);
+          if (!window.localStorage.getItem('cncsim.migration.objGlass337')) {
+            const ids = builtinObjPresets().map(b => b.id);
+            out.forEach(pr => { if (ids.includes(pr.id) && !pr.groups.some(g => objNorm(g.name) === objNorm('Glasfüllungen'))) pr.groups.push(Object.assign({ name: 'Glasfüllungen', show: true, textureId: '' }, OBJ_GLASS)); });
+            window.localStorage.setItem(LS_KEY_OBJ_PRESETS, JSON.stringify(out));
+            window.localStorage.setItem('cncsim.migration.objGlass337', '1');
+          }
+          return out;
+        }
+      }
+    } catch (e) {  }
+    return builtinObjPresets();
+  }
+  function writeObjPresets(list) { try { window.localStorage.setItem(LS_KEY_OBJ_PRESETS, JSON.stringify(list)); } catch (e) {  } }
+  function readObjActivePresetId() {
+    let id = 'std';
+    try { const v = window.localStorage.getItem(LS_KEY_OBJ_ACTIVE_PRESET); if (v != null) id = v; } catch (e) {  }
+    return id && readObjPresets().some(p => p.id === id) ? id : (id === '' ? '' : 'std');
+  }
+  function writeObjActivePresetId(id) { try { window.localStorage.setItem(LS_KEY_OBJ_ACTIVE_PRESET, id); } catch (e) {  } }
+  const objPresetLabel = p => (currentLang === 'en' && p.nameEn ? p.nameEn : p.name);
+  function fillObjPresetSelect(sel, id, withNone) {
+    sel.innerHTML = '';
+    if (withNone) { const o = document.createElement('option'); o.value = ''; o.textContent = T('– keine (wie in der Datei) –', '– none (as in the file) –'); sel.appendChild(o); }
+    readObjPresets().forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = objPresetLabel(p); sel.appendChild(o); });
+    sel.value = id;
+  }
+  function applyObjPreset(id) {
+    if (!objModel) return;
+    const pr = id ? readObjPresets().find(p => p.id === id) : null;
+    const byName = new Map();
+    if (pr) pr.groups.forEach(g => { const k = objNorm(g.name); if (!byName.has(k)) byName.set(k, g); });
+    const looks = objModel.groups.map(g => byName.get(objNorm(g.name)) || null);
+    objModel.presetMatched = looks.some(Boolean);
+    objModel.looks = objModel.presetMatched ? looks : objModel.groups.map(() => null);
+    objHiddenGroups.clear();
+    objModel.looks.forEach((lk, i) => { if (lk && !lk.show) objHiddenGroups.add(i); });
+    objModel.grains = null;
+    objVersion++;
+  }
+  function objGroupGrain(gi) {
+    const M = objModel;
+    if (!M.grains) M.grains = new Map();
+    let g = M.grains.get(gi);
+    if (g) return g;
+    let best = 0; g = [1, 0, 0];
+    const P = M.pos;
+    for (let i = 0; i < M.tg.length; i++) {
+      if (M.tg[i] !== gi) continue;
+      for (let j = 0; j < 3; j++) {
+        const a = i * 9 + j * 3, b = i * 9 + ((j + 1) % 3) * 3;
+        const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], len = Math.hypot(dx, dy);
+        if (len > best && Math.abs(dz) < 0.2 * len) { best = len; const n = Math.hypot(dx, dy, dz); g = [dx / n, dy / n, dz / n]; }
+      }
+    }
+    M.grains.set(gi, g);
+    return g;
+  }
+  el('objPresetSelect').addEventListener('change', () => {
+    const id = el('objPresetSelect').value;
+    writeObjActivePresetId(id);
+    applyObjPreset(id);
+    renderObjGroupList(); bakeParams = null; requestRender();
+  });
+  window.__getObjLooks = () => objModel ? objModel.groups.map((g, i) => { const lk = objModel.looks && objModel.looks[i]; return { name: g.name, mode: lk ? lk.mode : 'obj', color: lk && lk.mode === 'color' ? lk.color : null, tex: lk && lk.mode === 'texture' ? lk.textureId : null, transparency: lk ? (lk.transparency || 0) : 0, hidden: objHiddenGroups.has(i) }; }) : null;
+
+  const objSettingsPanel = el('objSettingsPanel');
+  let objPresetWork = null, objPresetEditId = null;
+  function objWorkCur() { return objPresetWork.find(p => p.id === objPresetEditId) || objPresetWork[0]; }
+  function renderObjPresetEditor() {
+    const cur = objWorkCur();
+    objPresetEditId = cur.id;
+    const sel = el('objPresetEditSelect'); sel.innerHTML = '';
+    objPresetWork.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = objPresetLabel(p); sel.appendChild(o); });
+    sel.value = cur.id;
+    el('objPresetName').value = objPresetLabel(cur);
+    el('btnObjPresetDelete').disabled = objPresetWork.length <= 1;
+    const tb = el('objPresetTable').querySelector('tbody'); tb.innerHTML = '';
+    cur.groups.forEach((g, gi) => {
+      const tr = document.createElement('tr');
+      const td = () => { const c = document.createElement('td'); tr.appendChild(c); return c; };
+      const n = td(); n.className = 'dxf3d-pt-type'; n.textContent = g.name;
+      const show = document.createElement('input'); show.type = 'checkbox'; show.checked = g.show; show.className = 'obj-pt-show';
+      show.addEventListener('change', () => { g.show = show.checked; }); td().appendChild(show);
+      const mode = document.createElement('select'); mode.className = 'filename-input obj-pt-mode';
+      [['obj', T('Wie in der OBJ', 'As in the OBJ')], ['color', T('Farbe', 'Colour')], ['texture', T('Textur', 'Texture')]].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; mode.appendChild(o); });
+      mode.value = g.mode; td().appendChild(mode);
+      const col = document.createElement('input'); col.type = 'color'; col.value = g.color; col.className = 'obj-pt-color';
+      col.addEventListener('input', () => { g.color = col.value.toLowerCase(); }); td().appendChild(col);
+      const tex = document.createElement('select'); tex.className = 'filename-input obj-pt-tex';
+      fillDxf3dTextureOptions(tex, g.textureId);
+      tex.addEventListener('change', () => { g.textureId = tex.value; }); td().appendChild(tex);
+      const tr2 = document.createElement('input'); tr2.type = 'text'; tr2.inputMode = 'decimal'; tr2.className = 'filename-input dxf3d-pt-tr obj-pt-tr';
+      tr2.value = String(g.transparency || 0);
+      tr2.addEventListener('input', () => { const v = parseDxf3dPercent(tr2.value); if (v !== null) g.transparency = v; }); td().appendChild(tr2);
+      const upd = () => { col.disabled = g.mode !== 'color'; tex.disabled = g.mode !== 'texture'; if (g.mode === 'texture' && !g.textureId) g.textureId = tex.value; };
+      mode.addEventListener('change', () => { g.mode = mode.value; upd(); }); upd();
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'btn ghost small dxf3d-pt-del'; del.textContent = '×';
+      del.title = T('Eintrag entfernen', 'Remove entry');
+      del.addEventListener('click', () => { cur.groups.splice(gi, 1); renderObjPresetEditor(); }); td().appendChild(del);
+      tb.appendChild(tr);
+    });
+  }
+  function openObjSettingsPanel() {
+    objPresetWork = JSON.parse(JSON.stringify(readObjPresets()));
+    objPresetEditId = readObjActivePresetId() || objPresetWork[0].id;
+    el('objSettingsWarning').hidden = true;
+    el('objPresetNewGroup').value = '';
+    renderObjPresetEditor();
+    objSettingsPanel.classList.add('open');
+  }
+  el('objPresetEditSelect').addEventListener('change', () => { objPresetEditId = el('objPresetEditSelect').value; renderObjPresetEditor(); });
+  el('objPresetName').addEventListener('input', () => { const cur = objWorkCur(); cur.name = el('objPresetName').value; cur.nameEn = ''; });
+  el('btnObjPresetNew').addEventListener('click', () => {
+    const cur = objWorkCur(), cp = JSON.parse(JSON.stringify(cur));
+    cp.id = 'own_' + Date.now(); cp.name = objPresetLabel(cur) + T(' (Kopie)', ' (copy)'); cp.nameEn = '';
+    objPresetWork.push(cp); objPresetEditId = cp.id; renderObjPresetEditor();
+  });
+  el('btnObjPresetDelete').addEventListener('click', () => {
+    if (objPresetWork.length <= 1) return;
+    objPresetWork = objPresetWork.filter(p => p.id !== objPresetEditId); objPresetEditId = objPresetWork[0].id; renderObjPresetEditor();
+  });
+  el('btnObjPresetRestore').addEventListener('click', () => {
+    const b = builtinObjPresets();
+    b.forEach(bp => { const i = objPresetWork.findIndex(p => p.id === bp.id); if (i >= 0) objPresetWork[i] = bp; else objPresetWork.push(bp); });
+    renderObjPresetEditor();
+  });
+  el('btnObjPresetAddGroup').addEventListener('click', () => {
+    const name = el('objPresetNewGroup').value.trim(), cur = objWorkCur();
+    if (!name) return;
+    if (cur.groups.some(g => objNorm(g.name) === objNorm(name))) { el('objSettingsWarning').textContent = T('Diese Gruppe ist schon in der Vorbelegung.', 'This group is already in the preset.'); el('objSettingsWarning').hidden = false; return; }
+    cur.groups.push({ name, show: true, mode: 'obj', color: '#ffffff', textureId: '', transparency: 0 });
+    el('objPresetNewGroup').value = ''; el('objSettingsWarning').hidden = true; renderObjPresetEditor();
+  });
+  el('btnObjSettingsCancel').addEventListener('click', () => objSettingsPanel.classList.remove('open'));
+  el('btnObjSettingsOk').addEventListener('click', () => {
+    if (objPresetWork.some(p => !String(p.name || '').trim())) { el('objSettingsWarning').textContent = T('Bitte jeder Vorbelegung einen Namen geben.', 'Please give every preset a name.'); el('objSettingsWarning').hidden = false; return; }
+    writeObjPresets(objPresetWork.map(normalizeObjPreset));
+    const act = readObjActivePresetId();
+    if (act && !objPresetWork.some(p => p.id === act)) writeObjActivePresetId('std');
+    objSettingsPanel.classList.remove('open');
+    if (objModel) { applyObjPreset(readObjActivePresetId()); renderObjGroupList(); bakeParams = null; requestRender(); }
+  });
+  el('btnObjSettings').addEventListener('click', openObjSettingsPanel);
   const openObjFileDialog = () => el('objFileInput').click();
   el('objFileInput').addEventListener('change', (e) => { const files = e.target.files ? Array.from(e.target.files) : []; e.target.value = ''; if (files.length) loadObjFiles(files); });
   el('btnObjImport').addEventListener('click', openObjFileDialog);
@@ -12152,6 +12435,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 337, date: '09.11.2026', items: [
+      { de: 'Neu: Einstellungen → OBJ → OBJ-Einstellungen – Farben und Texturen der OBJ-Gruppen festlegen, mit eigenen Vorbelegungen.',
+        en: 'New: Settings → OBJ → OBJ settings – set colours and textures of the OBJ groups, with your own presets.' },
+      { de: 'Mitgelieferte Vorbelegungen: Standard (Decke/Fußboden hellgrau), Ohne Decke, Eiche ohne Decke, Eiche mit Wange/Handlauf weiß (mit und ohne Decke).',
+        en: 'Included presets: Standard (ceiling/floor light grey), Without ceiling, Oak without ceiling, Oak with white stringer/handrail (with and without ceiling).' },
+      { de: 'Die Vorbelegung wird im Reiter „OBJ-Gruppen“ gewählt; OBJ-Dateien ohne bekannte Gruppen werden wie in der Datei dargestellt.',
+        en: 'The preset is chosen in the "OBJ groups" tab; OBJ files without known groups are shown as in the file.' },
+      { de: 'Eine Gruppe „Glasfüllungen“ wird wie Glas bei der 3D-DXF dargestellt: türkis (#00ffff) und 75 % transparent.',
+        en: 'A group "Glasfüllungen" (glass fillings) is shown like glass in the 3D DXF: cyan (#00ffff) and 75 % transparent.' },
+    ] },
     { release: 336, date: '09.11.2026', items: [
       { de: 'Neu: OBJ-Viewer – 3D-Modelle (z. B. Treppen aus dem Planer) als ZIP oder OBJ-Datei laden und wie eine 3D-DXF drehen, zoomen und verschieben; Texturen und Farben aus der Datei.',
         en: 'New: OBJ viewer – load 3D models (e.g. stairs from the planner) as ZIP or OBJ file and rotate, zoom and pan them like a 3D DXF; textures and colours from the file.' },
@@ -13763,7 +14056,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfHiddenLayersVersion,
       dxfLayerColorVersion,
       dxf3dFillKey: dxf3dFillVersion + '|' + dxfTexVersion + '|' + dxf3dFillLowQ(),
-      objKey: objVersion + '|' + objLowQ(),
+      objKey: objVersion + '|' + objLowQ() + '|' + dxfTexVersion,
       segments,
       postQ: (postDisp = postDisplayState()) ? postDisp.q + ':' + postDisp.yM + ':' + postDisp.zM + ':' + postRotDir : '',
     };
