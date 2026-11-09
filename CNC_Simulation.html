@@ -8232,8 +8232,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 339;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 11:36 Uhr';
+  const APP_RELEASE_NUMBER = 340;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 12:13 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12121,6 +12121,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const VIX = M.vix;
     Z.fill(Infinity);
     C.fill(0);
+    const DD = dxf3dLastDepth, dsc = DD ? DD.RS / RS : 0;
+    const dIdx = (x, y) => { const dx = ((x + 0.5) * dsc) | 0, dy = ((y + 0.5) * dsc) | 0; return dx < DD.bx0 || dx > DD.bx1 || dy < DD.by0 || dy > DD.by1 ? -1 : dy * DD.W + dx; };
+    if (DD) {
+      for (let y = 0; y < H; y++) { const row = y * W; for (let x = 0; x < W; x++) { const d = dIdx(x, y); if (d >= 0) Z[row + x] = DD.Z[d]; } }
+    }
     const P = M.pos, UV = M.uv;
     const mats = M.mats.map(mt => ({ tex: lowQ ? null : (mt.tex || null), rgb: mt.tex ? mt.tex.avg : [mt.kd[0] * 255, mt.kd[1] * 255, mt.kd[2] * 255] }));
     const looks = M.groups.map((g, gi) => {
@@ -12225,11 +12230,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const row = y * W;
         for (let x = bx0; x <= bx1; x++) {
           const k = row + x, z = Z[k];
+          if ((C[k] >>> 24) === 0) { out[k] = 0; continue; }
           if (z === Infinity) { out[k] = C[k]; continue; }
           let c = C[k];
           if (!lowQ && x > 0 && y > 0 && x < W - 1 && y < H - 1) {
             const d = Math.max(Math.abs(z - Z[k + 1]), Math.abs(z - Z[k - 1]), Math.abs(z - Z[k + W]), Math.abs(z - Z[k - W]));
             if (d > thr) c = ((((c & 255) * 0.55) | 0) | (((((c >>> 8) & 255) * 0.55) | 0) << 8) | (((((c >>> 16) & 255) * 0.55) | 0) << 16) | 0xFF000000) >>> 0;
+          }
+          if (DD && (c >>> 24) === 255) {
+            const d = dIdx(x, y);
+            if (d >= 0 && DD.GA[d] > 0.001 && DD.GZ[d] < z) {
+              const ga = DD.GA[d], k1 = 1 - ga;
+              c = ((Math.min(255, DD.GR[d] + (c & 255) * k1) | 0) | ((Math.min(255, DD.GG[d] + ((c >>> 8) & 255) * k1) | 0) << 8) | ((Math.min(255, DD.GB[d] + ((c >>> 16) & 255) * k1) | 0) << 16) | 0xFF000000) >>> 0;
+            }
           }
           out[k] = c;
         }
@@ -12480,6 +12493,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 340, date: '09.11.2026', items: [
+      { de: 'OBJ und 3D-DXF zusammen: Was näher an der Kamera liegt, verdeckt jetzt korrekt das Dahinterliegende – eine 3D-DXF vor einem OBJ wirkt nicht mehr durchsichtig; Glas der DXF bleibt vor dem OBJ sichtbar.',
+        en: 'OBJ and 3D DXF together: whatever is closer to the camera now correctly hides what is behind it – a 3D DXF in front of an OBJ no longer looks see-through; DXF glass stays visible in front of the OBJ.' },
+    ] },
     { release: 339, date: '09.11.2026', items: [
       { de: 'OBJ-Viewer: große Modelle (z. B. ganze Geschosse mit vielen Geländerstäben) lassen sich deutlich flüssiger drehen und zoomen.',
         en: 'OBJ viewer: large models (e.g. whole storeys with many balusters) can be rotated and zoomed much more smoothly.' },
@@ -14170,6 +14187,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.fillRect(0, 0, w, h);
       if (gridVisible) drawGrid(proj);
       drawAxisGizmo(proj);
+      dxf3dLastDepth = null;
       drawDxf(proj);
       drawObjModel(proj);
       segments.forEach(seg => {
@@ -15197,6 +15215,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxf3dLastFilled = 0;
   const dxf3dFillLowQ = () => (performance.now() < viewInteractionUntil && dxf3dLastFilled > 0);
   const dxf3dRasterBufs = new Map();
+  let dxf3dLastDepth = null;
   function dxf3dRasterBuf(W, H) {
     const k = W + 'x' + H;
     let b = dxf3dRasterBufs.get(k);
@@ -15206,6 +15225,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const g = cv.getContext('2d');
     const img = g.createImageData(W, H);
     b = { W, H, Z: new Float32Array(W * H), R: new Float32Array(W * H), G: new Float32Array(W * H), B: new Float32Array(W * H), A: new Float32Array(W * H),
+      GR: new Float32Array(W * H), GG: new Float32Array(W * H), GB: new Float32Array(W * H), GA: new Float32Array(W * H), GZ: new Float32Array(W * H),
       cv, g, img, out: new Uint32Array(img.data.buffer) };
     dxf3dRasterBufs.set(k, b);
     return b;
@@ -15277,7 +15297,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     bx0 = Math.max(0, Math.floor(bx0)); by0 = Math.max(0, Math.floor(by0)); bx1 = Math.min(W - 1, Math.ceil(bx1)); by1 = Math.min(H - 1, Math.ceil(by1));
     let px = 0, textured = 0;
     if (bx1 >= bx0 && by1 >= by0) {
-      for (let y = by0; y <= by1; y++) { const o = y * W; Z.fill(Infinity, o + bx0, o + bx1 + 1); A.fill(0, o + bx0, o + bx1 + 1); }
+      for (let y = by0; y <= by1; y++) { const o = y * W; Z.fill(Infinity, o + bx0, o + bx1 + 1); A.fill(0, o + bx0, o + bx1 + 1); buf.GA.fill(0, o + bx0, o + bx1 + 1); buf.GR.fill(0, o + bx0, o + bx1 + 1); buf.GG.fill(0, o + bx0, o + bx1 + 1); buf.GB.fill(0, o + bx0, o + bx1 + 1); buf.GZ.fill(Infinity, o + bx0, o + bx1 + 1); }
       const tri = (it, i0, i1, i2, blend) => {
         const p0 = it.P[i0], p1 = it.P[i1], p2 = it.P[i2];
         const area = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
@@ -15309,7 +15329,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
               r = c & 255; g = (c >>> 8) & 255; b = (c >>> 16) & 255;
             }
             if (!blend) { Z[idx] = zz; R[idx] = r; G[idx] = g; B[idx] = b; A[idx] = 1; }
-            else { const k = 1 - a; R[idx] = r * a + R[idx] * k; G[idx] = g * a + G[idx] * k; B[idx] = b * a + B[idx] * k; A[idx] = a + A[idx] * k; }
+            else {
+              const k = 1 - a; R[idx] = r * a + R[idx] * k; G[idx] = g * a + G[idx] * k; B[idx] = b * a + B[idx] * k; A[idx] = a + A[idx] * k;
+              buf.GR[idx] = r * a + buf.GR[idx] * k; buf.GG[idx] = g * a + buf.GG[idx] * k; buf.GB[idx] = b * a + buf.GB[idx] * k; buf.GA[idx] = a + buf.GA[idx] * k;
+              if (zz < buf.GZ[idx]) buf.GZ[idx] = zz;
+            }
             px++;
           }
         }
@@ -15337,6 +15361,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.restore();
     }
     dxf3dLastFilled = opaque.length + glass.length;
+    dxf3dLastDepth = bx1 >= bx0 && by1 >= by0 ? { W, H, RS, Z, GR: buf.GR, GG: buf.GG, GB: buf.GB, GA: buf.GA, GZ: buf.GZ, bx0, by0, bx1, by1 } : null;
     window.__lastDxfFillInfo = { faces: opaque.length + glass.length, textured, lowQ, px, ms: Math.round(performance.now() - t0) };
     return filled;
   }
