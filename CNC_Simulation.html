@@ -287,6 +287,22 @@
   .context-menu[hidden] { display: none; }
   .context-menu-divider { height: 1px; background: var(--border); margin: 4px 2px; }
   
+  .obj-group-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; min-height: 0; overflow: auto; }
+  .obj-group-panel[hidden] { display: none; }
+  .obj-file-name { font-size: 11.5px; color: var(--ink-muted); word-break: break-all; }
+  .obj-group-row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 6px; font-size: 12.5px; cursor: pointer; }
+  .obj-group-row:hover { background: var(--panel-2); }
+  .obj-group-row input { margin: 0; }
+  .obj-group-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); flex: none; background-size: cover; }
+  .obj-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .obj-group-count { color: var(--ink-muted); font-size: 11px; }
+  .changelog-body { max-height: min(60vh, 520px); overflow: auto; padding-right: 4px; }
+  .changelog-release { margin: 0 0 12px; }
+  .changelog-release h4 { margin: 0 0 4px; font-size: 13px; }
+  .changelog-release .changelog-date { color: var(--ink-muted); font-weight: 400; margin-left: 6px; }
+  .changelog-release ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.45; }
+  .changelog-empty { color: var(--ink-muted); font-size: 12.5px; }
+  
   .context-menu .menu-item[hidden], .context-menu .context-menu-divider[hidden] { display: none; }
   
   .menu-submenu { position: relative; }
@@ -1257,7 +1273,7 @@
   .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .toolbar-btn:disabled:hover { color: var(--ink-muted); border-color: var(--border); }
   
-  #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon,
+  #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon, #btnObjLoadIcon,
   #btnPartCreateIcon, #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -1798,6 +1814,14 @@
             </div>
           </div>
           
+          <div class="menu-submenu" id="submenuFileObj">
+            <button class="menu-item submenu-trigger" id="submenuFileObjTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="OBJ &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">OBJ <span class="submenu-arrow">▸</span></button>
+            <div class="submenu-dropdown" id="submenuFileObjDropdown" hidden>
+              <button class="menu-item" id="btnObjImport" type="button" title="3D-Modell (OBJ) anzeigen: ZIP-Datei mit OBJ, MTL und Texturen - oder die Einzeldateien zusammen auswählen" data-i18n-en="Import OBJ" data-i18n-en-title="Show a 3D model (OBJ): ZIP file with OBJ, MTL and textures - or select the single files together">OBJ importieren</button>
+              <button class="menu-item" id="btnObjDeleteFileMenu" type="button" disabled title="Angezeigtes OBJ-Modell wieder entfernen" data-i18n-en="Delete OBJ" data-i18n-en-title="Remove the displayed OBJ model again">OBJ löschen</button>
+            </div>
+          </div>
+          
         </div>
       </div>
       
@@ -1953,6 +1977,9 @@
         
         <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Info">?</button>
         <div class="menu-dropdown" id="menuInfoDropdown" hidden>
+          
+          <button class="menu-item" id="btnChangelog" type="button" title="Änderungen der Releases nachlesen" data-i18n-en-title="Read the changes of the releases">Changelog</button>
+          <div class="context-menu-divider" id="changelogSep"></div>
           <div class="menu-info-row">
             <span class="menu-info-label">Version</span>
             <span class="menu-info-value" id="infoVersionValue"></span>
@@ -2002,6 +2029,8 @@
     
     <input type="file" id="fileInputList" hidden multiple>
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
+    
+    <input type="file" id="objFileInput" hidden multiple accept=".zip,.obj,.mtl,.jpg,.jpeg,.png,.bmp">
     <input type="file" id="dxfKrmFileInput" hidden accept=".dxf">
     <input type="file" id="dxfKrmSideFileInput" hidden accept=".dxf">
     <input type="file" id="settingsFileInput" hidden accept="application/json,.json">
@@ -2050,6 +2079,9 @@
       
       <button class="toolbar-btn" id="btnDxfScale" type="button" disabled title="Importiertes DXF mit einem frei wählbaren Faktor skalieren (z. B. 10 bei versehentlich in cm statt mm exportierten Dateien) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Scale the imported DXF by a freely selectable factor (e.g. 10 for files accidentally exported in cm instead of mm) - only available once a DXF has been imported">🔍 DXF</button>
       <button class="toolbar-btn" id="btnDxfDeleteIcon" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported"><span class="dxf-delete-glyph">✕</span> DXF</button>
+      
+      <span class="toolbar-sep" id="objLoadSep"></span>
+      <button class="toolbar-btn" id="btnObjLoadIcon" type="button" title="OBJ laden: 3D-Modell als ZIP (OBJ + MTL + Texturen) oder OBJ-Datei anzeigen (dasselbe wie 'Datei' → 'OBJ' → 'OBJ importieren')" data-i18n-en-title="Load OBJ: show a 3D model as ZIP (OBJ + MTL + textures) or OBJ file (same as 'File' → 'OBJ' → 'Import OBJ')">📂 OBJ</button>
     </div>
     
     <div class="toolbar-row" id="toolbarRow3">
@@ -2129,6 +2161,7 @@
         <div class="sidebar-tabs" id="sidebarTabs">
           <button class="sidebar-tab active" id="sidebarTabCode" type="button" role="tab" aria-selected="true" disabled data-i18n-en="CNC program code">CNC-Programmcode</button>
           <button class="sidebar-tab" id="sidebarTabDxf" type="button" role="tab" aria-selected="false" hidden disabled data-i18n-en="DXF layers">DXF-Layer</button>
+          <button class="sidebar-tab" id="sidebarTabObj" type="button" role="tab" aria-selected="false" hidden disabled data-i18n-en="OBJ groups">OBJ-Gruppen</button>
         </div>
         
         <button class="prog-toggle-btn sidebar-edit-btn" id="btnEditProgramIcon" type="button" disabled title="Öffnet den geladenen Programmtext zum direkten Bearbeiten (dasselbe wie „Bearbeiten“ → „CNC“ → „CNC-Programm bearbeiten“)" data-i18n-en-title="Opens the loaded program text for direct editing (same as 'Edit' → 'CNC' → 'Edit CNC-Program')">✎</button>
@@ -2183,6 +2216,12 @@
           </label>
           <button class="ops-showall-btn dxf-layer-showall-btn" id="btnShowAllDxfLayers" type="button" title="Alle Layer in der 3D-Ansicht ausblenden" data-i18n-en-title="Hide all layers in the 3D view" hidden><span class="eye-glyph">👁</span> <span class="dxf-showall-label">Alle Layer ausblenden</span></button>
           <div class="dxf-layer-list" id="dxfLayerList"></div>
+        </div>
+        
+        <div class="obj-group-panel" id="objGroupPanel" hidden>
+          <div class="obj-file-name" id="objFileNameLabel"></div>
+          <button class="ops-showall-btn" id="btnShowAllObjGroups" type="button" data-i18n-en="Hide all groups">Alle Gruppen ausblenden</button>
+          <div class="obj-group-list" id="objGroupList"></div>
         </div>
         <div class="resizer ops-resizer" id="opsResizer" title="Arbeitsgänge-Spalte in der Breite anpassen" data-i18n-en-title="Adjust the width of the processing steps column" hidden></div>
         <div class="ops-col" id="opsCol" hidden>
@@ -2830,6 +2869,15 @@
   </div>
 </div>
 
+<div class="paste-panel" id="changelogPanel">
+  <div class="paste-card">
+    <h3>Changelog</h3>
+    <div class="changelog-body" id="changelogBody"></div>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnChangelogClose" type="button" data-i18n-en="Close">Schließen</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="dxf3dPanel">
   <div class="paste-card">
     <h3>3D DXF</h3>
@@ -3911,6 +3959,14 @@
       
       <div class="context-menu-divider" id="ctxDxf3dSep" hidden></div>
       <button class="menu-item" id="ctxDxf3dSettings" type="button" data-i18n-en="3D DXF" hidden>3D DXF</button>
+    </div>
+  </div>
+  <div class="context-menu-divider"></div>
+  
+  <div class="menu-submenu" id="ctxSubmenuObj">
+    <button class="menu-item submenu-trigger" id="ctxObjTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="OBJ &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">OBJ <span class="submenu-arrow">▸</span></button>
+    <div class="submenu-dropdown" id="ctxObjDropdown" hidden>
+      <button class="menu-item" id="ctxObjLoad" type="button" data-i18n-en="Load OBJ">OBJ laden</button>
     </div>
   </div>
   <div class="context-menu-divider"></div>
@@ -8124,8 +8180,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 335;
-  const APP_RELEASE_TIMESTAMP = '06.11.2026, 12:00 Uhr';
+  const APP_RELEASE_NUMBER = 336;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 07:39 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10025,6 +10081,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const sidebarTabsEl = el('sidebarTabs');
   const sidebarTabCode = el('sidebarTabCode');
   const sidebarTabDxf = el('sidebarTabDxf');
+  const sidebarTabObj = el('sidebarTabObj'), objGroupPanelEl = el('objGroupPanel');
   const dxfLayerPanelEl = el('dxfLayerPanel');
   const dxfLayerListEl = el('dxfLayerList');
   const dxfLayerEmptyStateEl = el('dxfLayerEmptyState');
@@ -11387,20 +11444,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function updateSidebarHeader() {
     const hasProgram = rawProgramText != null;
     const hasDxf = !!dxfGeometry;
+    const hasObj = !!objModel;
     if (sidebarView === 'dxfLayers' && !hasDxf) sidebarView = 'code';
-    const dual = hasProgram && hasDxf;
+    if (sidebarView === 'objGroups' && !hasObj) sidebarView = 'code';
+    if (sidebarView === 'code' && !hasProgram) sidebarView = hasDxf ? 'dxfLayers' : hasObj ? 'objGroups' : 'code';
+    const n = (hasProgram ? 1 : 0) + (hasDxf ? 1 : 0) + (hasObj ? 1 : 0);
+    const dual = n >= 2;
     sidebarTabsEl.classList.toggle('dual', dual);
-    sidebarTabCode.hidden = !(dual || !hasDxf);
-    sidebarTabDxf.hidden = !(dual || (hasDxf && !hasProgram));
+    sidebarTabCode.hidden = !(hasProgram || n === 0);
+    sidebarTabDxf.hidden = !hasDxf;
+    sidebarTabObj.hidden = !hasObj;
     sidebarTabCode.disabled = !dual;
     sidebarTabDxf.disabled = !dual;
+    sidebarTabObj.disabled = !dual;
     sidebarTabCode.classList.toggle('active', sidebarView === 'code');
     sidebarTabDxf.classList.toggle('active', sidebarView === 'dxfLayers');
+    sidebarTabObj.classList.toggle('active', sidebarView === 'objGroups');
     sidebarTabCode.setAttribute('aria-selected', sidebarView === 'code' ? 'true' : 'false');
     sidebarTabDxf.setAttribute('aria-selected', sidebarView === 'dxfLayers' ? 'true' : 'false');
+    sidebarTabObj.setAttribute('aria-selected', sidebarView === 'objGroups' ? 'true' : 'false');
     treeEl.hidden = sidebarView !== 'code';
     dxfLayerPanelEl.hidden = sidebarView !== 'dxfLayers';
+    objGroupPanelEl.hidden = sidebarView !== 'objGroups';
     if (sidebarView === 'dxfLayers') renderDxfLayerList();
+    if (sidebarView === 'objGroups') renderObjGroupList();
   }
 
   function renderDxfLayerList() {
@@ -11726,6 +11793,393 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function closeDxfFillPop() { if (dxfFillPop) dxfFillPop.hidden = true; dxfFillTarget = null; }
 
+
+  const OBJ_UNIT_MM = 10;
+  const OBJ_ZIP_MAX_BYTES = 200 * 1024 * 1024;
+  const OBJ_WANTED_RE = /\.(obj|mtl|jpe?g|png|bmp)$/i;
+  let objModel = null, objVersion = 0, objLastMs = 0, objLoading = false;
+  const objHiddenGroups = new Set();
+  const objLowQ = () => !!objModel && performance.now() < viewInteractionUntil && objLastMs > 12;
+
+  function objError(de, en) { const e = new Error(T(de, en)); e.objUser = true; return e; }
+  async function inflateRaw(bytes, budget) {
+    if (typeof DecompressionStream === 'undefined') throw objError('Dieser Browser kann keine ZIP-Dateien entpacken.', 'This browser cannot unpack ZIP files.');
+    const ds = new DecompressionStream('deflate-raw');
+    const reader = new Blob([bytes]).stream().pipeThrough(ds).getReader();
+    const parts = []; let n = 0;
+    for (;;) {
+      const r = await reader.read();
+      if (r.done) break;
+      n += r.value.length;
+      if (n > budget.left) { try { reader.cancel(); } catch (e) {  } throw objError('Das ZIP-Archiv ist entpackt zu groß (über 200 MB) - Import abgebrochen.', 'The ZIP archive is too large when unpacked (over 200 MB) - import cancelled.'); }
+      parts.push(r.value);
+    }
+    budget.left -= n;
+    const out = new Uint8Array(n); let o = 0;
+    for (const q of parts) { out.set(q, o); o += q.length; }
+    return out;
+  }
+  async function readZipEntries(buf) {
+    const u8 = new Uint8Array(buf), dv = new DataView(buf);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+    if (eocd < 0) throw objError('Die Datei ist kein gültiges ZIP-Archiv.', 'The file is not a valid ZIP archive.');
+    const count = dv.getUint16(eocd + 10, true), cdOff = dv.getUint32(eocd + 16, true);
+    if (count === 0xFFFF || cdOff === 0xFFFFFFFF) throw objError('ZIP64-Archive werden nicht unterstützt.', 'ZIP64 archives are not supported.');
+    const budget = { left: OBJ_ZIP_MAX_BYTES }, out = [];
+    let p = cdOff;
+    for (let k = 0; k < count; k++) {
+      if (p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) throw objError('Das ZIP-Archiv ist beschädigt.', 'The ZIP archive is damaged.');
+      const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true);
+      const csize = dv.getUint32(p + 20, true), nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+      const lho = dv.getUint32(p + 42, true);
+      const nameBytes = u8.subarray(p + 46, p + 46 + nlen);
+      const name = (flags & 0x800) ? new TextDecoder('utf-8').decode(nameBytes) : decodeBuffer(nameBytes.slice().buffer);
+      p += 46 + nlen + xlen + clen;
+      const base = name.split(/[\\/]/).pop();
+      if (!base || name.endsWith('/') || !OBJ_WANTED_RE.test(base)) continue;
+      if (flags & 1) throw objError('Verschlüsselte ZIP-Einträge werden nicht unterstützt: ' + base, 'Encrypted ZIP entries are not supported: ' + base);
+      if (csize === 0xFFFFFFFF || lho === 0xFFFFFFFF) throw objError('ZIP64-Archive werden nicht unterstützt.', 'ZIP64 archives are not supported.');
+      if (lho + 30 > u8.length || dv.getUint32(lho, true) !== 0x04034b50) throw objError('Das ZIP-Archiv ist beschädigt.', 'The ZIP archive is damaged.');
+      const dataOff = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      const raw = u8.subarray(dataOff, dataOff + csize);
+      let data;
+      if (method === 0) { if (raw.length > budget.left) throw objError('Das ZIP-Archiv ist entpackt zu groß (über 200 MB) - Import abgebrochen.', 'The ZIP archive is too large when unpacked (over 200 MB) - import cancelled.'); budget.left -= raw.length; data = raw.slice(); }
+      else if (method === 8) data = await inflateRaw(raw, budget);
+      else throw objError('Nicht unterstützte ZIP-Kompression (Methode ' + method + ').', 'Unsupported ZIP compression (method ' + method + ').');
+      out.push({ name: base, data });
+    }
+    return out;
+  }
+  window.__readZipEntries = buf => readZipEntries(buf);
+
+  function parseMtlText(text) {
+    const mats = new Map(); let cur = null;
+    for (const raw of text.split(/\r\n|\r|\n/)) {
+      const line = raw.trim(); if (!line || line[0] === '#') continue;
+      const sp = line.search(/\s/), key = sp < 0 ? line : line.slice(0, sp), rest = sp < 0 ? '' : line.slice(sp + 1).trim();
+      if (key === 'newmtl') { cur = { name: rest, kd: [0.75, 0.75, 0.75], map: null, alpha: 1 }; mats.set(rest, cur); }
+      else if (!cur) continue;
+      else if (key === 'Kd') { const v = rest.split(/\s+/).map(Number); if (v.length >= 3 && v.every(isFinite)) cur.kd = v.slice(0, 3); }
+      else if (key === 'map_Kd') { const t = rest.split(/\s+/); let i = 0; while (i < t.length - 1 && t[i][0] === '-') { i += t[i] === '-s' || t[i] === '-o' || t[i] === '-t' ? 4 : 2; } cur.map = t.slice(Math.min(i, t.length - 1)).join(' '); }
+      else if (key === 'd') { const v = Number(rest.split(/\s+/)[0]); if (isFinite(v)) cur.alpha = Math.max(0, Math.min(1, v)); }
+      else if (key === 'Tr') { const v = Number(rest.split(/\s+/)[0]); if (isFinite(v)) cur.alpha = Math.max(0, Math.min(1, 1 - v)); }
+    }
+    return mats;
+  }
+  function objTriangulate(P) {
+    const n = P.length;
+    if (n === 3) return [[0, 1, 2]];
+    let nx = 0, ny = 0, nz = 0;
+    for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]); }
+    const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+    const k = ax > ay && ax > az ? 0 : ay > az ? 1 : 2, u = k === 0 ? 1 : 0, w = k === 2 ? 1 : 2;
+    const sg = (k === 0 ? nx : k === 1 ? -ny : nz) >= 0 ? 1 : -1;
+    const q = P.map(p => [p[u], p[w] * sg]);
+    const cr = (a, b, c) => (q[b][0] - q[a][0]) * (q[c][1] - q[a][1]) - (q[b][1] - q[a][1]) * (q[c][0] - q[a][0]);
+    const out = []; let rem = P.map((_, i) => i), guard = 0;
+    while (rem.length > 3 && guard++ < 4 * n) {
+      let cut = false;
+      for (let j = 0; j < rem.length; j++) {
+        const a = rem[(j + rem.length - 1) % rem.length], b = rem[j], c = rem[(j + 1) % rem.length];
+        if (cr(a, b, c) <= 1e-12) continue;
+        let inside = false;
+        for (const t of rem) { if (t === a || t === b || t === c) continue; if (cr(a, b, t) > 0 && cr(b, c, t) > 0 && cr(c, a, t) > 0) { inside = true; break; } }
+        if (inside) continue;
+        out.push([a, b, c]); rem.splice(j, 1); cut = true; break;
+      }
+      if (!cut) break;
+    }
+    if (rem.length === 3) out.push(rem.slice());
+    else for (let j = 1; j + 1 < rem.length; j++) out.push([rem[0], rem[j], rem[j + 1]]);
+    return out;
+  }
+  window.__objTriangulate = objTriangulate;
+  function parseObjText(text, mats) {
+    const V = [], VT = [];
+    const groups = [], groupIndex = new Map(), matList = [], matIndex = new Map();
+    const pos = [], uvs = [], tg = [], tm = [];
+    let g = -1, m = -1, faces = 0;
+    const useGroup = name => { const key = name || T('(ohne Gruppe)', '(no group)'); let i = groupIndex.get(key); if (i === undefined) { i = groups.length; groups.push({ name: key, faces: 0, tris: 0, mat: -1 }); groupIndex.set(key, i); } return i; };
+    const useMat = name => { let i = matIndex.get(name); if (i === undefined) { const src = mats.get(name) || { name, kd: [0.75, 0.75, 0.75], map: null, alpha: 1 }; i = matList.length; matList.push({ name, kd: src.kd, map: src.map, alpha: src.alpha }); matIndex.set(name, i); } return i; };
+    for (const raw of text.split(/\r\n|\r|\n/)) {
+      const line = raw.trim(); if (!line || line[0] === '#') continue;
+      const t = line.split(/\s+/), key = t[0];
+      if (key === 'v') V.push([+t[1] * OBJ_UNIT_MM, +t[2] * OBJ_UNIT_MM, +t[3] * OBJ_UNIT_MM]);
+      else if (key === 'vt') VT.push([+t[1] || 0, +t[2] || 0]);
+      else if (key === 'g' || key === 'o') g = useGroup(t.slice(1).join(' '));
+      else if (key === 'usemtl') m = useMat(t.slice(1).join(' '));
+      else if (key === 'f' && t.length >= 4) {
+        if (g < 0) g = useGroup('');
+        if (m < 0) m = useMat('');
+        const ids = [];
+        for (let i = 1; i < t.length; i++) {
+          const a = t[i].split('/');
+          let vi = parseInt(a[0], 10), ti = a.length > 1 && a[1] !== '' ? parseInt(a[1], 10) : 0;
+          vi = vi < 0 ? V.length + vi : vi - 1; ti = ti < 0 ? VT.length + ti : ti - 1;
+          if (!(vi >= 0 && vi < V.length)) { ids.length = 0; break; }
+          ids.push([vi, ti >= 0 && ti < VT.length ? ti : -1]);
+        }
+        if (ids.length < 3) continue;
+        faces++; groups[g].faces++; if (groups[g].mat < 0) groups[g].mat = m;
+        for (const tri of objTriangulate(ids.map(x => V[x[0]]))) {
+          for (const j of tri) { const [vi, ti] = ids[j]; pos.push(V[vi][0], V[vi][1], V[vi][2]); if (ti >= 0) uvs.push(VT[ti][0], VT[ti][1]); else uvs.push(0, 0); }
+          tg.push(g); tm.push(m); groups[g].tris++;
+        }
+      }
+    }
+    if (!tg.length) throw objError('In der OBJ-Datei wurden keine Flächen gefunden.', 'No faces were found in the OBJ file.');
+    const P = new Float32Array(pos), n = tg.length;
+    const shade = new Float32Array(n);
+    const L = (() => { const x = -0.4, y = -0.6, z = 0.7, l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; })();
+    const b = { minx: Infinity, miny: Infinity, minz: Infinity, maxx: -Infinity, maxy: -Infinity, maxz: -Infinity };
+    for (let i = 0; i < n; i++) {
+      const o = i * 9;
+      const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1;
+      shade[i] = 0.5 + 0.5 * Math.abs((nx * L[0] + ny * L[1] + nz * L[2]) / l);
+      for (let j = 0; j < 9; j += 3) { const x = P[o + j], y = P[o + j + 1], z = P[o + j + 2]; if (x < b.minx) b.minx = x; if (x > b.maxx) b.maxx = x; if (y < b.miny) b.miny = y; if (y > b.maxy) b.maxy = y; if (z < b.minz) b.minz = z; if (z > b.maxz) b.maxz = z; }
+    }
+    return { pos: P, uv: new Float32Array(uvs), tg: Uint16Array.from(tg), tm: Uint16Array.from(tm), shade, groups, mats: matList, bounds: b, faces, vertices: V.length };
+  }
+  async function objDecodeTexture(bytes, name) {
+    const type = /\.png$/i.test(name) ? 'image/png' : /\.bmp$/i.test(name) ? 'image/bmp' : 'image/jpeg';
+    const bmp = await createImageBitmap(new Blob([bytes], { type }));
+    const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
+    const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0);
+    const px = new Uint32Array(g.getImageData(0, 0, bmp.width, bmp.height).data.buffer);
+    let r = 0, gg = 0, bb = 0; const step = Math.max(1, Math.floor(px.length / 4096));
+    for (let i = 0; i < px.length; i += step) { r += px[i] & 255; gg += (px[i] >>> 8) & 255; bb += (px[i] >>> 16) & 255; }
+    const c = Math.ceil(px.length / step);
+    return { w: bmp.width, h: bmp.height, px, avg: [r / c, gg / c, bb / c], url: cv.toDataURL('image/jpeg', 0.6) };
+  }
+  async function loadObjFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length || objLoading) return;
+    objLoading = true;
+    try {
+      const entries = [];
+      let zipName = null;
+      for (const f of files) {
+        const buf = await f.arrayBuffer();
+        if (/\.zip$/i.test(f.name)) { zipName = zipName || f.name; entries.push(...await readZipEntries(buf)); }
+        else if (OBJ_WANTED_RE.test(f.name)) entries.push({ name: f.name, data: new Uint8Array(buf) });
+      }
+      const objs = entries.filter(e => /\.obj$/i.test(e.name));
+      if (!objs.length) throw objError(zipName ? 'Im ZIP-Archiv wurde keine OBJ-Datei gefunden.' : 'Es wurde keine OBJ-Datei ausgewählt.', zipName ? 'No OBJ file was found in the ZIP archive.' : 'No OBJ file was selected.');
+      const objE = objs[0];
+      const byName = new Map(entries.map(e => [e.name.toLowerCase(), e]));
+      const objText = decodeBuffer(objE.data.slice().buffer);
+      const libs = []; objText.replace(/^\s*mtllib\s+(.+)$/gm, (_, n) => { libs.push(n.trim()); return ''; });
+      const mats = new Map();
+      const mtlEntries = libs.map(n => byName.get(n.split(/[\\/]/).pop().toLowerCase())).filter(Boolean);
+      (mtlEntries.length ? mtlEntries : entries.filter(e => /\.mtl$/i.test(e.name))).forEach(e => parseMtlText(decodeBuffer(e.data.slice().buffer)).forEach((v, k) => mats.set(k, v)));
+      const model = parseObjText(objText, mats);
+      model.textures = new Map();
+      for (const m of model.mats) {
+        if (!m.map) continue;
+        const key = m.map.split(/[\\/]/).pop().toLowerCase();
+        if (!model.textures.has(key)) { const e = byName.get(key); model.textures.set(key, e ? await objDecodeTexture(e.data, e.name).catch(() => null) : null); }
+        m.tex = model.textures.get(key) || null;
+      }
+      model.name = zipName ? zipName + ' (' + objE.name + ')' : objE.name;
+      model.missingTextures = model.mats.filter(m => m.map && !m.tex).map(m => m.map);
+      objModel = model;
+      objHiddenGroups.clear();
+      objVersion++;
+      sidebarView = 'objGroups';
+      updateObjUI();
+      updateSidebarHeader();
+      homeViewCycleIndex = 0; goHomeView();
+      bakeParams = null;
+      requestRender();
+      if (model.missingTextures.length) alert(T('Folgende Texturen fehlen im Archiv und werden als Farbe angezeigt:\n', 'The following textures are missing from the archive and are shown as colour:\n') + model.missingTextures.join('\n'));
+    } catch (e) {
+      alert(T('OBJ konnte nicht geladen werden.\n\n', 'OBJ could not be loaded.\n\n') + (e && e.message ? e.message : String(e)));
+    } finally { objLoading = false; }
+  }
+  window.__loadObjFiles = loadObjFiles;
+  window.__objLoading = () => objLoading;
+  window.__getObjInfo = () => objModel ? { name: objModel.name, groups: objModel.groups.map(g => ({ name: g.name, faces: g.faces, tris: g.tris })), tris: objModel.tg.length, faces: objModel.faces,
+    vertices: objModel.vertices, bounds: objModel.bounds, textures: objModel.mats.filter(m => m.tex).length, hidden: Array.from(objHiddenGroups), last: window.__lastObjDrawInfo || null } : null;
+  function clearObj() {
+    if (!objModel) return;
+    objModel = null; objHiddenGroups.clear(); objVersion++;
+    updateObjUI(); updateSidebarHeader(); bakeParams = null; requestRender();
+  }
+  function objPointsForBounds() {
+    if (!objModel) return [];
+    const vis = objModel.groups.map((g, i) => !objHiddenGroups.has(i));
+    if (!vis.some(Boolean)) return [];
+    const b = { minx: Infinity, miny: Infinity, minz: Infinity, maxx: -Infinity, maxy: -Infinity, maxz: -Infinity }, P = objModel.pos;
+    for (let i = 0; i < objModel.tg.length; i++) {
+      if (!vis[objModel.tg[i]]) continue;
+      for (let j = i * 9; j < i * 9 + 9; j += 3) { const x = P[j], y = P[j + 1], z = P[j + 2]; if (x < b.minx) b.minx = x; if (x > b.maxx) b.maxx = x; if (y < b.miny) b.miny = y; if (y > b.maxy) b.maxy = y; if (z < b.minz) b.minz = z; if (z > b.maxz) b.maxz = z; }
+    }
+    return [{ x: b.minx, y: b.miny, z: b.minz }, { x: b.maxx, y: b.maxy, z: b.maxz }];
+  }
+  const objRasterBufs = new Map();
+  function objRasterBuf(W, H) {
+    const k = W + 'x' + H; let b = objRasterBufs.get(k);
+    if (b) return b;
+    if (objRasterBufs.size >= 2) objRasterBufs.delete(objRasterBufs.keys().next().value);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), img = g.createImageData(W, H);
+    b = { cv, g, img, out: new Uint32Array(img.data.buffer), Z: new Float32Array(W * H), C: new Uint32Array(W * H) };
+    objRasterBufs.set(k, b); return b;
+  }
+  function drawObjModel(proj) {
+    if (!objModel) return;
+    const M = objModel, n = M.tg.length;
+    const t0 = performance.now();
+    const lowQ = objLowQ(), RS = lowQ ? 0.5 : 1;
+    const cvMain = ctx.canvas, m = ctx.getTransform();
+    const W = Math.max(1, Math.ceil(cvMain.width * RS)), H = Math.max(1, Math.ceil(cvMain.height * RS));
+    const buf = objRasterBuf(W, H), Z = buf.Z, C = buf.C;
+    Z.fill(Infinity);
+    const P = M.pos, UV = M.uv;
+    const mats = M.mats.map(mt => ({ tex: lowQ ? null : (mt.tex || null), rgb: mt.tex ? mt.tex.avg : [mt.kd[0] * 255, mt.kd[1] * 255, mt.kd[2] * 255] }));
+    const hidden = objHiddenGroups;
+    const sx = new Float32Array(3), sy = new Float32Array(3), sz = new Float32Array(3);
+    let drawn = 0, bx0 = W, by0 = H, bx1 = -1, by1 = -1;
+    const pt = { x: 0, y: 0, z: 0 };
+    for (let i = 0; i < n; i++) {
+      if (hidden.size && hidden.has(M.tg[i])) continue;
+      const o = i * 9;
+      let ok = true;
+      for (let j = 0; j < 3; j++) {
+        pt.x = P[o + j * 3]; pt.y = P[o + j * 3 + 1]; pt.z = P[o + j * 3 + 2];
+        const q = proj(toRender(pt));
+        if (!q) { ok = false; break; }
+        sx[j] = (m.a * q.x + m.e) * RS; sy[j] = (m.d * q.y + m.f) * RS; sz[j] = q.depth;
+      }
+      if (!ok) continue;
+      const area = (sx[1] - sx[0]) * (sy[2] - sy[0]) - (sy[1] - sy[0]) * (sx[2] - sx[0]);
+      if (Math.abs(area) < 1e-9) continue;
+      const x0 = Math.max(0, Math.floor(Math.min(sx[0], sx[1], sx[2]))), x1 = Math.min(W - 1, Math.ceil(Math.max(sx[0], sx[1], sx[2])));
+      const y0 = Math.max(0, Math.floor(Math.min(sy[0], sy[1], sy[2]))), y1 = Math.min(H - 1, Math.ceil(Math.max(sy[0], sy[1], sy[2])));
+      if (x1 < x0 || y1 < y0) continue;
+      drawn++;
+      if (x0 < bx0) bx0 = x0; if (x1 > bx1) bx1 = x1; if (y0 < by0) by0 = y0; if (y1 > by1) by1 = y1;
+      const mt = mats[M.tm[i]], TX = mt.tex, sh = M.shade[i];
+      const cr = Math.min(255, mt.rgb[0] * sh) | 0, cg = Math.min(255, mt.rgb[1] * sh) | 0, cb = Math.min(255, mt.rgb[2] * sh) | 0;
+      const flat = (cr | (cg << 8) | (cb << 16) | 0xFF000000) >>> 0;
+      const inv = 1 / area, u = i * 6;
+      const u0 = UV[u], v0 = UV[u + 1], u1 = UV[u + 2], v1 = UV[u + 3], u2 = UV[u + 4], v2 = UV[u + 5];
+      for (let y = y0; y <= y1; y++) {
+        const py = y + 0.5, row = y * W;
+        for (let x = x0; x <= x1; x++) {
+          const px = x + 0.5;
+          const w0 = ((sx[1] - px) * (sy[2] - py) - (sy[1] - py) * (sx[2] - px)) * inv; if (w0 < -1e-7) continue;
+          const w1 = ((sx[2] - px) * (sy[0] - py) - (sy[2] - py) * (sx[0] - px)) * inv; if (w1 < -1e-7) continue;
+          const w2 = 1 - w0 - w1; if (w2 < -1e-7) continue;
+          const zz = w0 * sz[0] + w1 * sz[1] + w2 * sz[2], k = row + x;
+          if (zz >= Z[k]) continue;
+          Z[k] = zz;
+          if (TX) {
+            let tu = w0 * u0 + w1 * u1 + w2 * u2, tv = w0 * v0 + w1 * v1 + w2 * v2;
+            tu -= Math.floor(tu); tv -= Math.floor(tv);
+            const c = TX.px[Math.min(TX.h - 1, ((1 - tv) * TX.h) | 0) * TX.w + Math.min(TX.w - 1, (tu * TX.w) | 0)];
+            C[k] = ((Math.min(255, (c & 255) * sh) | 0) | ((Math.min(255, ((c >>> 8) & 255) * sh) | 0) << 8) | ((Math.min(255, ((c >>> 16) & 255) * sh) | 0) << 16) | 0xFF000000) >>> 0;
+          } else C[k] = flat;
+        }
+      }
+    }
+    const out = buf.out;
+    if (bx1 >= bx0 && by1 >= by0) {
+      const bb = M.bounds, thr = Math.max(8, 0.004 * Math.hypot(bb.maxx - bb.minx, bb.maxy - bb.miny, bb.maxz - bb.minz));
+      for (let y = by0; y <= by1; y++) {
+        const row = y * W;
+        for (let x = bx0; x <= bx1; x++) {
+          const k = row + x, z = Z[k];
+          if (z === Infinity) { out[k] = 0; continue; }
+          let c = C[k];
+          if (!lowQ && x > 0 && y > 0 && x < W - 1 && y < H - 1) {
+            const d = Math.max(Math.abs(z - Z[k + 1]), Math.abs(z - Z[k - 1]), Math.abs(z - Z[k + W]), Math.abs(z - Z[k - W]));
+            if (d > thr) c = ((((c & 255) * 0.55) | 0) | (((((c >>> 8) & 255) * 0.55) | 0) << 8) | (((((c >>> 16) & 255) * 0.55) | 0) << 16) | 0xFF000000) >>> 0;
+          }
+          out[k] = c;
+        }
+      }
+      buf.g.clearRect(0, 0, W, H);
+      buf.g.putImageData(buf.img, 0, 0, bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1);
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(buf.cv, 0, 0, W, H, 0, 0, cvMain.width, cvMain.height);
+      ctx.restore();
+    }
+    const ms = performance.now() - t0;
+    if (!lowQ) objLastMs = ms;
+    window.__lastObjDrawInfo = { tris: drawn, lowQ, ms: Math.round(ms) };
+  }
+  const objGroupListEl = el('objGroupList');
+  function renderObjGroupList() {
+    objGroupListEl.innerHTML = '';
+    if (!objModel) return;
+    el('objFileNameLabel').textContent = objModel.name;
+    objModel.groups.forEach((g, i) => {
+      const row = document.createElement('label'); row.className = 'obj-group-row';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !objHiddenGroups.has(i); cb.dataset.group = g.name;
+      cb.addEventListener('change', () => { if (cb.checked) objHiddenGroups.delete(i); else objHiddenGroups.add(i); objVersion++; updateObjShowAllBtn(); bakeParams = null; requestRender(); });
+      const sw = document.createElement('span'); sw.className = 'obj-group-swatch';
+      const mt = objModel.mats[g.mat];
+      if (mt && mt.tex) sw.style.backgroundImage = 'url(' + mt.tex.url + ')';
+      else if (mt) sw.style.background = 'rgb(' + mt.kd.map(v => Math.round(v * 255)).join(',') + ')';
+      const nm = document.createElement('span'); nm.className = 'obj-group-name'; nm.textContent = g.name;
+      const ct = document.createElement('span'); ct.className = 'obj-group-count'; ct.textContent = '(' + g.faces + ')';
+      row.append(cb, sw, nm, ct);
+      objGroupListEl.appendChild(row);
+    });
+    updateObjShowAllBtn();
+  }
+  function updateObjShowAllBtn() {
+    const b = el('btnShowAllObjGroups');
+    b.textContent = objHiddenGroups.size ? T('Alle Gruppen einblenden', 'Show all groups') : T('Alle Gruppen ausblenden', 'Hide all groups');
+  }
+  el('btnShowAllObjGroups').addEventListener('click', () => {
+    if (!objModel) return;
+    if (objHiddenGroups.size) objHiddenGroups.clear(); else objModel.groups.forEach((g, i) => objHiddenGroups.add(i));
+    objVersion++; renderObjGroupList(); bakeParams = null; requestRender();
+  });
+  function updateObjUI() {
+    el('btnObjDeleteFileMenu').disabled = !objModel;
+    if (sidebarView === 'objGroups') renderObjGroupList();
+  }
+  const openObjFileDialog = () => el('objFileInput').click();
+  el('objFileInput').addEventListener('change', (e) => { const files = e.target.files ? Array.from(e.target.files) : []; e.target.value = ''; if (files.length) loadObjFiles(files); });
+  el('btnObjImport').addEventListener('click', openObjFileDialog);
+  el('btnObjLoadIcon').addEventListener('click', openObjFileDialog);
+  el('ctxObjLoad').addEventListener('click', openObjFileDialog);
+  el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
+
+  const CHANGELOG_ENTRIES = [
+    { release: 336, date: '09.11.2026', items: [
+      { de: 'Neu: OBJ-Viewer – 3D-Modelle (z. B. Treppen aus dem Planer) als ZIP oder OBJ-Datei laden und wie eine 3D-DXF drehen, zoomen und verschieben; Texturen und Farben aus der Datei.',
+        en: 'New: OBJ viewer – load 3D models (e.g. stairs from the planner) as ZIP or OBJ file and rotate, zoom and pan them like a 3D DXF; textures and colours from the file.' },
+      { de: 'Laden über Datei → OBJ → OBJ importieren, Rechtsklick → OBJ → OBJ laden, das Symbol „📂 OBJ“ oder per Drag & Drop.',
+        en: 'Load via File → OBJ → Import OBJ, right-click → OBJ → Load OBJ, the "📂 OBJ" icon or by drag & drop.' },
+      { de: 'Neuer Reiter „OBJ-Gruppen“: einzelne Gruppen (Stufen, Wangen, Handläufe …) ein- und ausblenden.',
+        en: 'New tab "OBJ groups": show and hide single groups (treads, stringers, handrails …).' },
+      { de: 'Neu: „Changelog“ unter „?“ – zeigt die Änderungen der Releases.',
+        en: 'New: "Changelog" under "?" – shows the changes of the releases.' },
+      { de: 'Behoben: Eine per Drag & Drop abgelegte ZIP-Datei landete als CNC-Programm im Code.',
+        en: 'Fixed: a ZIP file dropped by drag & drop ended up as a CNC program in the code.' },
+    ] },
+  ];
+  function renderChangelog() {
+    const body = el('changelogBody');
+    body.innerHTML = '';
+    if (!CHANGELOG_ENTRIES.length) { const p = document.createElement('p'); p.className = 'changelog-empty'; p.textContent = T('Noch keine Einträge.', 'No entries yet.'); body.appendChild(p); return; }
+    CHANGELOG_ENTRIES.slice().sort((a, b) => b.release - a.release).forEach(en => {
+      const sec = document.createElement('section'); sec.className = 'changelog-release';
+      const h = document.createElement('h4'); h.textContent = 'Release ' + en.release + ' (' + en.date + ')';
+      const ul = document.createElement('ul');
+      en.items.forEach(it => { const li = document.createElement('li'); li.textContent = currentLang === 'en' && it.en ? it.en : it.de; ul.appendChild(li); });
+      sec.append(h, ul); body.appendChild(sec);
+    });
+  }
+  window.__getChangelog = () => CHANGELOG_ENTRIES.map(e => ({ release: e.release, items: e.items.length }));
+  el('btnChangelog').addEventListener('click', () => { renderChangelog(); el('changelogPanel').classList.add('open'); });
+  el('btnChangelogClose').addEventListener('click', () => el('changelogPanel').classList.remove('open'));
   const dxf3dPanel = el('dxf3dPanel');
   let dxf3dPresetWork = [], dxf3dPresetEditId = null;
   const dxf3dPresetEditing = () => dxf3dPresetWork.find(p => p.id === dxf3dPresetEditId) || null;
@@ -11920,6 +12374,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   sidebarTabDxf.addEventListener('click', () => {
     if (sidebarTabDxf.disabled) return;
     sidebarView = 'dxfLayers';
+    updateSidebarHeader();
+  });
+  sidebarTabObj.addEventListener('click', () => {
+    if (sidebarTabObj.disabled) return;
+    sidebarView = 'objGroups';
     updateSidebarHeader();
   });
 
@@ -13147,7 +13606,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function frameCamera() {
-    const b = boundsOf(viewPoints.concat(dxfPointsForBounds()));
+    const b = boundsOf(viewPoints.concat(dxfPointsForBounds(), objPointsForBounds()));
     lastFramedBounds = b;
     if (!b) { cam.target = { x: 0, y: 0, z: 0 }; cam.dist = 220; cam.minEyeDist = 220; cam.maxDist = 4000; return; }
     const cx = (b.minx + b.maxx) / 2, cy = (b.miny + b.maxy) / 2, cz = (b.minz + b.maxz) / 2;
@@ -13304,6 +13763,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfHiddenLayersVersion,
       dxfLayerColorVersion,
       dxf3dFillKey: dxf3dFillVersion + '|' + dxfTexVersion + '|' + dxf3dFillLowQ(),
+      objKey: objVersion + '|' + objLowQ(),
       segments,
       postQ: (postDisp = postDisplayState()) ? postDisp.q + ':' + postDisp.yM + ':' + postDisp.zM + ':' + postRotDir : '',
     };
@@ -13330,6 +13790,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxfHiddenLayersVersion === b.dxfHiddenLayersVersion &&
       a.dxfLayerColorVersion === b.dxfLayerColorVersion &&
       a.dxf3dFillKey === b.dxf3dFillKey &&
+      a.objKey === b.objKey &&
       a.postQ === b.postQ &&
       a.segments === b.segments;
   }
@@ -13360,6 +13821,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (gridVisible) drawGrid(proj);
       drawAxisGizmo(proj);
       drawDxf(proj);
+      drawObjModel(proj);
       segments.forEach(seg => {
         if (seg.opIndex != null && hiddenOpIndexes.has(seg.opIndex)) return;
         if (!abtragPathHidden()) drawPolyline(seg, proj, 0);
@@ -21854,6 +22316,8 @@ Max Mustermann (Anschrift wie oben)`,
     const dt = e.dataTransfer;
     const f = dt && dt.files && dt.files[0];
     if (!f) return;
+    const all = Array.from(dt.files);
+    if (all.some(x => /\.(zip|obj)$/i.test(x.name))) { loadObjFiles(all); return; }
     if (/\.dxf$/i.test(f.name)) {
       readFileAsText(f, (text) => loadDxfText(text, f.name), () => alert('DXF-Datei konnte nicht gelesen werden: ' + f.name));
     } else {
