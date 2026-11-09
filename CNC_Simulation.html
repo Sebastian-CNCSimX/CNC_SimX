@@ -2240,7 +2240,7 @@
           <label class="obj-preset-field" id="objPresetField"><span data-i18n-en="Preset">Vorbelegung</span>
             <select id="objPresetSelect" class="filename-input" title="Farben, Texturen und ausgeblendete Gruppen je Gruppenname (Einstellungen → OBJ → OBJ-Einstellungen)" data-i18n-en-title="Colours, textures and hidden groups per group name (Settings → OBJ → OBJ settings)"></select>
           </label>
-          <p class="obj-preset-hint" id="objPresetNoMatch" hidden data-i18n-en="No known groups – shown as in the file.">Keine bekannten Gruppen – Darstellung wie in der Datei.</p>
+          <p class="obj-preset-hint" id="objPresetNoMatch" hidden data-i18n-en="No known groups – preset not available, shown as in the file.">Keine bekannten Gruppen – Vorbelegung nicht verfügbar, Darstellung wie in der Datei.</p>
           <button class="ops-showall-btn" id="btnShowAllObjGroups" type="button" data-i18n-en="Hide all groups">Alle Gruppen ausblenden</button>
           <div class="obj-group-list" id="objGroupList"></div>
         </div>
@@ -8232,8 +8232,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 338;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 11:11 Uhr';
+  const APP_RELEASE_NUMBER = 339;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 11:36 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11849,7 +11849,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const OBJ_UNIT_MM = 10;
   const OBJ_ZIP_MAX_BYTES = 200 * 1024 * 1024;
   const OBJ_WANTED_RE = /\.(obj|mtl|jpe?g|png|bmp)$/i;
-  let objModel = null, objVersion = 0, objLastMs = 0, objLoading = false;
+  let objModel = null, objVersion = 0, objLastMs = 0, objLoading = false, objLowRS = 0.5;
   const objHiddenGroups = new Set();
   const objLowQ = () => !!objModel && performance.now() < viewInteractionUntil && objLastMs > 12;
 
@@ -11910,9 +11910,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (const raw of text.split(/\r\n|\r|\n/)) {
       const line = raw.trim(); if (!line || line[0] === '#') continue;
       const sp = line.search(/\s/), key = sp < 0 ? line : line.slice(0, sp), rest = sp < 0 ? '' : line.slice(sp + 1).trim();
-      if (key === 'newmtl') { cur = { name: rest, kd: [0.75, 0.75, 0.75], map: null, alpha: 1 }; mats.set(rest, cur); }
+      if (key === 'newmtl') { cur = { name: rest, kd: [0.75, 0.75, 0.75], map: null, alpha: 1, hasKd: false }; mats.set(rest, cur); }
       else if (!cur) continue;
-      else if (key === 'Kd') { const v = rest.split(/\s+/).map(Number); if (v.length >= 3 && v.every(isFinite)) cur.kd = v.slice(0, 3); }
+      else if (key === 'Kd') { const v = rest.split(/\s+/).map(Number); if (v.length >= 3 && v.every(isFinite)) { cur.kd = v.slice(0, 3); cur.hasKd = true; } }
       else if (key === 'map_Kd') { const t = rest.split(/\s+/); let i = 0; while (i < t.length - 1 && t[i][0] === '-') { i += t[i] === '-s' || t[i] === '-o' || t[i] === '-t' ? 4 : 2; } cur.map = t.slice(Math.min(i, t.length - 1)).join(' '); }
       else if (key === 'd') { const v = Number(rest.split(/\s+/)[0]); if (isFinite(v)) cur.alpha = Math.max(0, Math.min(1, v)); }
       else if (key === 'Tr') { const v = Number(rest.split(/\s+/)[0]); if (isFinite(v)) cur.alpha = Math.max(0, Math.min(1, 1 - v)); }
@@ -11950,10 +11950,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function parseObjText(text, mats) {
     const V = [], VT = [];
     const groups = [], groupIndex = new Map(), matList = [], matIndex = new Map();
-    const pos = [], uvs = [], tg = [], tm = [];
+    const pos = [], uvs = [], tg = [], tm = [], vix = [];
     let g = -1, m = -1, faces = 0;
     const useGroup = name => { const key = name || T('(ohne Gruppe)', '(no group)'); let i = groupIndex.get(key); if (i === undefined) { i = groups.length; groups.push({ name: key, faces: 0, tris: 0, mat: -1 }); groupIndex.set(key, i); } return i; };
-    const useMat = name => { let i = matIndex.get(name); if (i === undefined) { const src = mats.get(name) || { name, kd: [0.75, 0.75, 0.75], map: null, alpha: 1 }; i = matList.length; matList.push({ name, kd: src.kd, map: src.map, alpha: src.alpha }); matIndex.set(name, i); } return i; };
+    const useMat = name => { let i = matIndex.get(name); if (i === undefined) { const src = mats.get(name) || { name, kd: [0.75, 0.75, 0.75], map: null, alpha: 1, hasKd: false }; i = matList.length; matList.push({ name, kd: src.kd, map: src.map, alpha: src.alpha, hasKd: !!src.hasKd }); matIndex.set(name, i); } return i; };
     for (const raw of text.split(/\r\n|\r|\n/)) {
       const line = raw.trim(); if (!line || line[0] === '#') continue;
       const t = line.split(/\s+/), key = t[0];
@@ -11975,7 +11975,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (ids.length < 3) continue;
         faces++; groups[g].faces++; if (groups[g].mat < 0) groups[g].mat = m;
         for (const tri of objTriangulate(ids.map(x => V[x[0]]))) {
-          for (const j of tri) { const [vi, ti] = ids[j]; pos.push(V[vi][0], V[vi][1], V[vi][2]); if (ti >= 0) uvs.push(VT[ti][0], VT[ti][1]); else uvs.push(0, 0); }
+          for (const j of tri) { const [vi, ti] = ids[j]; pos.push(V[vi][0], V[vi][1], V[vi][2]); vix.push(vi); if (ti >= 0) uvs.push(VT[ti][0], VT[ti][1]); else uvs.push(0, 0); }
           tg.push(g); tm.push(m); groups[g].tris++;
         }
       }
@@ -11992,7 +11992,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       shade[i] = 0.5 + 0.5 * Math.abs((nx * L[0] + ny * L[1] + nz * L[2]) / l);
       for (let j = 0; j < 9; j += 3) { const x = P[o + j], y = P[o + j + 1], z = P[o + j + 2]; if (x < b.minx) b.minx = x; if (x > b.maxx) b.maxx = x; if (y < b.miny) b.miny = y; if (y > b.maxy) b.maxy = y; if (z < b.minz) b.minz = z; if (z > b.maxz) b.maxz = z; }
     }
-    return { pos: P, uv: new Float32Array(uvs), tg: Uint16Array.from(tg), tm: Uint16Array.from(tm), shade, groups, mats: matList, bounds: b, faces, vertices: V.length };
+    const verts = new Float32Array(V.length * 3); V.forEach((v, i) => { verts[i * 3] = v[0]; verts[i * 3 + 1] = v[1]; verts[i * 3 + 2] = v[2]; });
+    return { pos: P, uv: new Float32Array(uvs), tg: Uint16Array.from(tg), tm: Uint16Array.from(tm), shade, groups, mats: matList, bounds: b, faces, vertices: V.length,
+      verts, vix: Uint32Array.from(vix) };
   }
   async function objDecodeTexture(bytes, name) {
     const type = /\.png$/i.test(name) ? 'image/png' : /\.bmp$/i.test(name) ? 'image/bmp' : 'image/jpeg';
@@ -12029,6 +12031,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const model = parseObjText(objText, mats);
       model.textures = new Map();
       for (const m of model.mats) {
+        if (!m.map && !m.hasKd) { const hit = ['.jpg', '.jpeg', '.png', '.bmp'].map(x => (m.name + x).toLowerCase()).find(k => byName.has(k)); if (hit) m.map = byName.get(hit).name; }
         if (!m.map) continue;
         const key = m.map.split(/[\\/]/).pop().toLowerCase();
         if (!model.textures.has(key)) { const e = byName.get(key); model.textures.set(key, e ? await objDecodeTexture(e.data, e.name).catch(() => null) : null); }
@@ -12085,10 +12088,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!objModel) return;
     const M = objModel, n = M.tg.length;
     const t0 = performance.now();
-    const lowQ = objLowQ(), RS = lowQ ? 0.5 : 1;
+    const lowQ = objLowQ(), RS = lowQ ? objLowRS : 1;
     const cvMain = ctx.canvas, m = ctx.getTransform();
     const W = Math.max(1, Math.ceil(cvMain.width * RS)), H = Math.max(1, Math.ceil(cvMain.height * RS));
     const buf = objRasterBuf(W, H), Z = buf.Z, C = buf.C;
+    const VS = M.verts, nv = VS.length / 3;
+    if (!M.projBuf || M.projBuf.x.length !== nv) M.projBuf = { x: new Float32Array(nv), y: new Float32Array(nv), z: new Float32Array(nv) };
+    const PX = M.projBuf.x, PY = M.projBuf.y, PZ = M.projBuf.z;
+    {
+      const bb = M.bounds, c = { x: (bb.minx + bb.maxx) / 2, y: (bb.miny + bb.maxy) / 2, z: (bb.minz + bb.maxz) / 2 }, D = 1000;
+      const q0 = proj(toRender(c)), qx = proj(toRender({ x: c.x + D, y: c.y, z: c.z })), qy = proj(toRender({ x: c.x, y: c.y + D, z: c.z })), qz = proj(toRender({ x: c.x, y: c.y, z: c.z + D }));
+      const lin = q0 && qx && qy && qz && !window.__objSlowProject;
+      const sxp = q => (m.a * q.x + m.e) * RS, syp = q => (m.d * q.y + m.f) * RS;
+      if (lin) {
+        const X0 = sxp(q0), Y0 = syp(q0), Z0 = q0.depth;
+        const ax = (sxp(qx) - X0) / D, ay = (sxp(qy) - X0) / D, az = (sxp(qz) - X0) / D;
+        const bx = (syp(qx) - Y0) / D, by = (syp(qy) - Y0) / D, bz = (syp(qz) - Y0) / D;
+        const cx = (qx.depth - Z0) / D, cy = (qy.depth - Z0) / D, cz = (qz.depth - Z0) / D;
+        for (let v = 0, o = 0; v < nv; v++, o += 3) {
+          const dx = VS[o] - c.x, dy = VS[o + 1] - c.y, dz = VS[o + 2] - c.z;
+          PX[v] = X0 + ax * dx + ay * dy + az * dz; PY[v] = Y0 + bx * dx + by * dy + bz * dz; PZ[v] = Z0 + cx * dx + cy * dy + cz * dz;
+        }
+      } else {
+        const pt = { x: 0, y: 0, z: 0 };
+        for (let v = 0, o = 0; v < nv; v++, o += 3) {
+          pt.x = VS[o]; pt.y = VS[o + 1]; pt.z = VS[o + 2];
+          const q = proj(toRender(pt));
+          if (q) { PX[v] = sxp(q); PY[v] = syp(q); PZ[v] = q.depth; } else PZ[v] = -1;
+        }
+      }
+    }
+    const VIX = M.vix;
     Z.fill(Infinity);
     C.fill(0);
     const P = M.pos, UV = M.uv;
@@ -12101,12 +12131,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const TX = getDxfTextureRender(lk.textureId);
       if (!TX) return { flat: [190, 150, 100], alpha };
       const a = dxf3dTexAvg(TX);
-      return lowQ ? { flat: [a.r, a.g, a.b], alpha } : { TX, grain: objGroupGrain(gi), alpha };
+      return lowQ ? { flat: [a.r, a.g, a.b], alpha } : { TX, grain: objGroupGrain(gi), alpha, flat: [a.r, a.g, a.b] };
     });
     const hidden = objHiddenGroups;
     const sx = new Float32Array(3), sy = new Float32Array(3), sz = new Float32Array(3);
     let drawn = 0, bx0 = W, by0 = H, bx1 = -1, by1 = -1;
-    const pt = { x: 0, y: 0, z: 0 };
     const triAlpha = i => { const lk = looks[M.tg[i]]; return lk ? lk.alpha : (M.mats[M.tm[i]].alpha == null ? 1 : M.mats[M.tm[i]].alpha); };
     const glassList = [];
     for (let pass = 0; pass < 2; pass++) {
@@ -12120,10 +12149,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const o = i * 9;
       let ok = true;
       for (let j = 0; j < 3; j++) {
-        pt.x = P[o + j * 3]; pt.y = P[o + j * 3 + 1]; pt.z = P[o + j * 3 + 2];
-        const q = proj(toRender(pt));
-        if (!q) { ok = false; break; }
-        sx[j] = (m.a * q.x + m.e) * RS; sy[j] = (m.d * q.y + m.f) * RS; sz[j] = q.depth;
+        const v = VIX[i * 3 + j];
+        if (PZ[v] <= 0.01) { ok = false; break; }
+        sx[j] = PX[v]; sy[j] = PY[v]; sz[j] = PZ[v];
       }
       if (!ok) continue;
       const area = (sx[1] - sx[0]) * (sy[2] - sy[0]) - (sy[1] - sy[0]) * (sx[2] - sx[0]);
@@ -12138,6 +12166,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const LT = lk && lk.TX ? lk.TX : null;
       const base = lk ? (lk.flat || [0, 0, 0]) : mt.rgb;
       const cr = Math.min(255, base[0] * sh) | 0, cg = Math.min(255, base[1] * sh) | 0, cb = Math.min(255, base[2] * sh) | 0;
+      if (pass === 0 && x1 - x0 <= 1 && y1 - y0 <= 1) {
+        const px = Math.min(W - 1, Math.max(0, ((sx[0] + sx[1] + sx[2]) / 3) | 0)), py = Math.min(H - 1, Math.max(0, ((sy[0] + sy[1] + sy[2]) / 3) | 0));
+        const k = py * W + px, zz = (sz[0] + sz[1] + sz[2]) / 3;
+        if (zz < Z[k]) { Z[k] = zz; C[k] = (cr | (cg << 8) | (cb << 16) | 0xFF000000) >>> 0; }
+        continue;
+      }
       let lu0 = 0, lv0 = 0, lu1 = 0, lv1 = 0, lu2 = 0, lv2 = 0, llv = 0;
       if (LT) {
         const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
@@ -12208,7 +12242,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     const ms = performance.now() - t0;
     if (!lowQ) objLastMs = ms;
-    window.__lastObjDrawInfo = { tris: drawn, lowQ, ms: Math.round(ms) };
+    else objLowRS = ms > 35 ? Math.max(0.25, objLowRS * 0.8) : ms < 15 ? Math.min(0.5, objLowRS * 1.15) : objLowRS;
+    window.__lastObjDrawInfo = { tris: drawn, lowQ, ms: Math.round(ms), rs: RS };
   }
   const objGroupListEl = el('objGroupList');
   function renderObjGroupList() {
@@ -12216,7 +12251,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!objModel) return;
     el('objFileNameLabel').textContent = objModel.name;
     fillObjPresetSelect(el('objPresetSelect'), readObjActivePresetId(), true);
-    el('objPresetNoMatch').hidden = !(readObjActivePresetId() && !objModel.presetMatched);
+    el('objPresetNoMatch').hidden = !!objModel.anyKnownGroup;
+    el('objPresetSelect').disabled = !objModel.anyKnownGroup;
     objModel.groups.forEach((g, i) => {
       const row = document.createElement('label'); row.className = 'obj-group-row';
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !objHiddenGroups.has(i); cb.dataset.group = g.name;
@@ -12324,6 +12360,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (pr) pr.groups.forEach(g => { const k = objNorm(g.name); if (!byName.has(k)) byName.set(k, g); });
     const looks = objModel.groups.map(g => byName.get(objNorm(g.name)) || null);
     objModel.presetMatched = looks.some(Boolean);
+    const anyNames = new Set(); readObjPresets().forEach(pp => pp.groups.forEach(g => anyNames.add(objNorm(g.name))));
+    objModel.anyKnownGroup = objModel.groups.some(g => anyNames.has(objNorm(g.name)));
     objModel.looks = objModel.presetMatched ? looks : objModel.groups.map(() => null);
     objHiddenGroups.clear();
     objModel.looks.forEach((lk, i) => { if (lk && !lk.show) objHiddenGroups.add(i); });
@@ -12442,6 +12480,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 339, date: '09.11.2026', items: [
+      { de: 'OBJ-Viewer: große Modelle (z. B. ganze Geschosse mit vielen Geländerstäben) lassen sich deutlich flüssiger drehen und zoomen.',
+        en: 'OBJ viewer: large models (e.g. whole storeys with many balusters) can be rotated and zoomed much more smoothly.' },
+      { de: 'OBJ: Fehlt in der MTL-Datei der Verweis auf ein Texturbild, wird ein Bild mit dem Materialnamen aus dem ZIP verwendet.',
+        en: 'OBJ: if the MTL file lacks the reference to a texture image, an image with the material name from the ZIP is used.' },
+      { de: 'OBJ-Gruppen: Enthält die Datei keine bekannten Gruppen, ist die Auswahl „Vorbelegung“ ausgeschaltet.',
+        en: 'OBJ groups: if the file has no known groups, the "Preset" selection is switched off.' },
+    ] },
     { release: 338, date: '09.11.2026', items: [
       { de: 'OBJ-Vorbelegung „Eiche, Wange/Handlauf weiß“: Decke und Fußboden jetzt in Grau (#969696).',
         en: 'OBJ preset "Oak, stringer/handrail white": ceiling and floor now grey (#969696).' },
