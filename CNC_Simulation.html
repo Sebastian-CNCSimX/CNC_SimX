@@ -8232,8 +8232,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 337;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 08:33 Uhr';
+  const APP_RELEASE_NUMBER = 338;
+  const APP_RELEASE_TIMESTAMP = '09.11.2026, 11:11 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12251,6 +12251,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   const LS_KEY_OBJ_PRESETS = 'cncsim.objPresets', LS_KEY_OBJ_ACTIVE_PRESET = 'cncsim.objActivePreset';
   const OBJ_LIGHT_GREY = '#e6e6e6';
+  const OBJ_OAK_WHITE_CEIL = '#969696';
   const OBJ_WOOD_GROUPS = ['Wangen', 'Stufen', 'Setzstufen', 'Pfosten', 'Handläufe', 'Stäbe'];
   const OBJ_STD_GROUPS = OBJ_WOOD_GROUPS.concat(['Lichter', 'Decke', 'Fussboden', 'Glasfüllungen']);
   const OBJ_GLASS = { mode: 'color', color: '#00ffff', transparency: 75 };
@@ -12266,7 +12267,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       { id: 'std', name: 'Standard', nameEn: 'Standard', groups: make(grey) },
       { id: 'noWell', name: 'Ohne Decke', nameEn: 'Without ceiling', groups: make(hide) },
       { id: 'oakNoWell', name: 'Eiche, ohne Decke', nameEn: 'Oak, without ceiling', groups: make(n => oak(n) || hide(n)) },
-      { id: 'oakWhite', name: 'Eiche, Wange/Handlauf weiß', nameEn: 'Oak, stringer/handrail white', groups: make(n => white(n) || grey(n)) },
+      { id: 'oakWhite', name: 'Eiche, Wange/Handlauf weiß', nameEn: 'Oak, stringer/handrail white', groups: make(n => white(n) || (n === 'Decke' || n === 'Fussboden' ? { mode: 'color', color: OBJ_OAK_WHITE_CEIL } : null)) },
       { id: 'oakWhiteNoWell', name: 'Eiche, Wange/Handlauf weiß, ohne Decke', nameEn: 'Oak, stringer/handrail white, without ceiling', groups: make(n => white(n) || hide(n)) },
     ];
   }
@@ -12289,6 +12290,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             out.forEach(pr => { if (ids.includes(pr.id) && !pr.groups.some(g => objNorm(g.name) === objNorm('Glasfüllungen'))) pr.groups.push(Object.assign({ name: 'Glasfüllungen', show: true, textureId: '' }, OBJ_GLASS)); });
             window.localStorage.setItem(LS_KEY_OBJ_PRESETS, JSON.stringify(out));
             window.localStorage.setItem('cncsim.migration.objGlass337', '1');
+          }
+          if (!window.localStorage.getItem('cncsim.migration.objOakGrey338')) {
+            const ow = out.find(pr => pr.id === 'oakWhite');
+            if (ow) ow.groups.forEach(g => { if ((objNorm(g.name) === 'decke' || objNorm(g.name) === 'fussboden') && g.mode === 'color' && g.color === OBJ_LIGHT_GREY) g.color = OBJ_OAK_WHITE_CEIL; });
+            window.localStorage.setItem(LS_KEY_OBJ_PRESETS, JSON.stringify(out));
+            window.localStorage.setItem('cncsim.migration.objOakGrey338', '1');
           }
           return out;
         }
@@ -12435,6 +12442,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 338, date: '09.11.2026', items: [
+      { de: 'OBJ-Vorbelegung „Eiche, Wange/Handlauf weiß“: Decke und Fußboden jetzt in Grau (#969696).',
+        en: 'OBJ preset "Oak, stringer/handrail white": ceiling and floor now grey (#969696).' },
+    ] },
     { release: 337, date: '09.11.2026', items: [
       { de: 'Neu: Einstellungen → OBJ → OBJ-Einstellungen – Farben und Texturen der OBJ-Gruppen festlegen, mit eigenen Vorbelegungen.',
         en: 'New: Settings → OBJ → OBJ settings – set colours and textures of the OBJ groups, with your own presets.' },
