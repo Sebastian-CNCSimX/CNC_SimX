@@ -1321,7 +1321,7 @@
   
   #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon, #btnObjLoadIcon,
   #btnPartCreateIcon, #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
-  #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon {
+  #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon, #btnObjDeleteIcon {   
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
   }
   #btnInsertToolData, #btnEditToolProfileToolbarIcon, #btnToggleTool, #btnToggleToolHolder {
@@ -2064,6 +2064,8 @@
       <span class="toolbar-sep" id="partCreateSep"></span>
       <button class="toolbar-btn" id="btnDxfImportIcon" type="button" title="DXF importieren: DXF / 3D-DXF, CS Krümmling oder Setzstufe (dieselbe Aktion wie 'Datei' → 'DXF' → 'DXF importieren')" data-i18n-en-title="Import DXF: DXF / 3D DXF, CS wreath or riser (same action as 'File' → 'DXF' → 'Import DXF')">📂 DXF</button>
       
+      <button class="toolbar-btn" id="btnDxfDeleteIcon" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported"><span class="dxf-delete-glyph">✕</span> DXF</button>
+      
       <button class="toolbar-btn" id="btnDxfSaveAsIcon" type="button" disabled title="DXF speichern als... - erst verfügbar, sobald ein DXF importiert und KEIN CNC-Programm geladen ist" data-i18n-en-title="Save DXF as... - only available once a DXF has been imported and NO CNC program is loaded">💾 DXF</button>
       <button class="toolbar-btn" id="btnDxfExplodeIcon" type="button" disabled title="DXF Polylinien auflösen - erst verfügbar, sobald ein DXF mit Polylinien importiert und KEIN CNC-Programm geladen ist" data-i18n-en-title="Explode DXF polylines - only available once a DXF with polylines has been imported and NO CNC program is loaded">💣 DXF</button>
       <button class="toolbar-btn tool-toggle-btn" id="btnToggleDxf" type="button" disabled title="Importiertes DXF in der 3D-Ansicht ein-/ausblenden" data-i18n-en-title="Show/hide the imported DXF in the 3D view"><span class="eye-glyph">👁</span> DXF</button>
@@ -2074,10 +2076,11 @@
       <button class="toolbar-btn" id="btnDxfThickness" type="button" disabled title="DXF-Bauteil definieren: Bauteilart (Stufe, Setzstufe, Wange, Handlauf), Stärke, Schmiegen sowie vertikale und horizontale Bearbeitungen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Define the DXF part: part type (tread, riser, stringer, handrail), thickness, bevels and vertical/horizontal machining - only available once a DXF has been imported">🧱 DXF</button>
       
       <button class="toolbar-btn" id="btnDxfScale" type="button" disabled title="Importiertes DXF mit einem frei wählbaren Faktor skalieren (z. B. 10 bei versehentlich in cm statt mm exportierten Dateien) - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Scale the imported DXF by a freely selectable factor (e.g. 10 for files accidentally exported in cm instead of mm) - only available once a DXF has been imported">🔍 DXF</button>
-      <button class="toolbar-btn" id="btnDxfDeleteIcon" type="button" disabled title="Importiertes DXF wieder entfernen - erst verfügbar, sobald ein DXF importiert wurde" data-i18n-en-title="Removes the imported DXF again - only available once a DXF has been imported"><span class="dxf-delete-glyph">✕</span> DXF</button>
       
       <span class="toolbar-sep" id="objLoadSep"></span>
       <button class="toolbar-btn" id="btnObjLoadIcon" type="button" title="OBJ laden: 3D-Modell als ZIP (OBJ + MTL + Texturen) oder OBJ-Datei anzeigen (dasselbe wie 'Datei' → 'OBJ' → 'OBJ importieren')" data-i18n-en-title="Load OBJ: show a 3D model as ZIP (OBJ + MTL + textures) or OBJ file (same as 'File' → 'OBJ' → 'Import OBJ')">📂 OBJ</button>
+      
+      <button class="toolbar-btn" id="btnObjDeleteIcon" type="button" disabled title="Angezeigtes OBJ-Modell wieder entfernen - erst verfügbar, sobald ein OBJ geladen wurde" data-i18n-en-title="Removes the displayed OBJ model again - only available once an OBJ has been loaded"><span class="dxf-delete-glyph">✕</span> OBJ</button>
     </div>
     
     <div class="toolbar-row" id="toolbarRow3">
@@ -8285,8 +8288,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 345;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 11:40 Uhr';
+  const APP_RELEASE_NUMBER = 346;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 12:45 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12352,6 +12355,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   function updateObjUI() {
     el('btnObjDeleteFileMenu').disabled = !objModel;
+    el('btnObjDeleteIcon').disabled = !objModel;
     if (sidebarView === 'objGroups') renderObjGroupList();
   }
 
@@ -12578,8 +12582,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjLoadIcon').addEventListener('click', openObjFileDialog);
   el('ctxObjLoad').addEventListener('click', openObjFileDialog);
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
+  el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 346, date: '10.11.2026', items: [
+      { de: 'Symbolleiste: neues Symbol „✕ OBJ“ rechts von „📂 OBJ“ entfernt das geladene OBJ-Modell; „✕ DXF“ steht jetzt direkt rechts von „📂 DXF“.',
+        en: 'Toolbar: new "✕ OBJ" icon to the right of "📂 OBJ" removes the loaded OBJ model; "✕ DXF" now sits directly to the right of "📂 DXF".' },
+    ] },
     { release: 345, date: '10.11.2026', items: [
       { de: 'Einstellungsfenster: neue Reiter „Texturen“, „DXF-Bauteildefinition“ und „Bauteilprofil“; die Texturliste ist höher. Beim Schließen erscheint ein Hinweis, wenn eine Textur oder ein Bauteilprofil noch nicht gespeichert ist.',
         en: 'Settings window: new tabs "Textures", "DXF part definition" and "Part profile"; the texture list is taller. When closing, a note appears if a texture or part profile has not been saved yet.' },
