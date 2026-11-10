@@ -2042,6 +2042,8 @@
       
       <button class="toolbar-btn" id="btnClearProgramIcon" type="button" disabled title="Geladenes CNC-Programm wieder entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm löschen')" data-i18n-en-title="Remove the loaded CNC program again (same action as 'Edit' → 'CNC' → 'Delete CNC-Program')"><span class="dxf-delete-glyph">✕</span> CNC</button>
       
+      <span class="toolbar-sep" id="clearProgramSep"></span>
+      
       <button class="toolbar-btn" id="btnNewProgramListIcon" type="button" title="Neue CNC-Programmliste erstellen (Datei-Dialog mit Mehrfachauswahl, bis zu 10 Programme - dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Neue CNC-Programmliste')" data-i18n-en-title="Create a new CNC program list (file dialog with multi-selection, up to 10 programs - same action as 'File' → 'CNC-Program' → 'New CNC-Program list')"><span data-i18n-en="☰+ List">☰+ Liste</span></button>
       
       <button class="toolbar-btn" id="btnClearProgramListIcon" type="button" disabled title="Alle im Hintergrund geladenen CNC-Programme aus der Programmliste entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programmliste löschen')" data-i18n-en-title="Remove all CNC programs loaded in the background from the program list (same action as 'Edit' → 'CNC' → 'Delete CNC-Program list')"><span class="dxf-delete-glyph">☰✕</span> <span data-i18n-en="List">Liste</span></button>
@@ -8317,8 +8319,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 347;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 14:22 Uhr';
+  const APP_RELEASE_NUMBER = 348;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 15:23 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12614,6 +12616,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 348, date: '10.11.2026', items: [
+      { de: 'Symbolleiste: Trennstrich hinter „✕ CNC“ – die Listen-Symbole „☰+ Liste“ und „☰✕ Liste“ sind jetzt abgesetzt.',
+        en: 'Toolbar: separator after "✕ CNC" – the list icons "☰+ List" and "☰✕ List" are now set apart.' },
+    ] },
     { release: 347, date: '10.11.2026', items: [
       { de: 'Neues Fenster „Einstellungen → Werkzeuge“ mit den Reitern Werkzeugprofil, Spannfutter und Werkzeugdarstellung (Säge, Fräser, Spannfutter); Ok, Abbrechen und Übernehmen wie im Einstellungsfenster, mit Hinweis bei nicht gespeichertem Werkzeugprofil oder Spannfutter.',
         en: 'New window "Settings → Tools" with the tabs Tool profile, Chuck and Tool display (saw, cutter, chuck); Ok, Cancel and Apply as in the settings window, with a note for an unsaved tool profile or chuck.' },
