@@ -328,6 +328,12 @@
   #settingsPaneView3d .settings-sec[data-key="dxf3d"] .dxf3d-preset-table-wrap { max-height: 186px; }
   #settingsPaneView3d .settings-sec[data-key="obj"] .dxf3d-preset-table-wrap { max-height: 370px; }
   .settings-sec[data-key="dxf3d"] .tool-data-field[hidden] { display: none; }
+  
+  .settings-sec-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .settings-sec-actions .dxf-preview-toggle { margin-right: auto; }
+  .settings-sec[data-key="textures"] #dxfTextureListSelect { height: 330px; }
+  
+  .settings-sec[data-key="dxfParts"] .dpd-main { flex: 0 0 608px; max-width: 608px; }
   .settings-sec[data-key="dxf3d"] .dpd-main .tool-data-field { flex: 0 0 300px; min-width: 0; }
 
   #objSettingsPanel .paste-card { width: min(900px, 96vw); max-height: calc(100vh - 48px); overflow-y: auto; }
@@ -1901,10 +1907,10 @@
         <button class="menu-trigger" id="menuViewTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Settings">Einstellungen</button>
         <div class="menu-dropdown" id="menuViewDropdown" hidden>
           
-          <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten" data-i18n-en="Settings" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns">Einstellungen</button>
+          <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten, 3D Darstellung, Texturen, DXF-Bauteildefinition, Bauteilprofil" data-i18n-en="Settings" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns, 3D display, Textures, DXF part definition, Part profile">Einstellungen</button>
           <div class="context-menu-divider"></div>
-          <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types" data-i18n-en-title="Edit machine types (Settings → General)">Maschinentypen</button>
-          <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgang-Namen</button>
+          
+          <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen und Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types &amp; processing step names" data-i18n-en-title="Edit machine types and processing step names (Settings → General)">Maschinentypen &amp; Arbeitsgang-Namen</button>
           <div class="context-menu-divider"></div>
           <div class="menu-submenu" id="submenuToolsTop">
             <button class="menu-item submenu-trigger" id="submenuToolsTopTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
@@ -1920,27 +1926,6 @@
                   <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div class="menu-submenu" id="submenuDxfSettings">
-            <button class="menu-item submenu-trigger" id="submenuDxfSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="DXF &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">DXF <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuDxfSettingsDropdown" hidden>
-              <button class="menu-item" id="btnDxfPartDefaults" type="button" title="Standardwerte für &quot;DXF-Bauteil definieren&quot;: Bauteil aus dem Dateinamen, Stärke je Bauteil, Tiefen und Vorauswahl der Bearbeitungen, automatisches Anwenden beim Import" data-i18n-en="Part definition" data-i18n-en-title="Defaults for &quot;DXF drawing settings&quot;: part type from the file name, thickness per part type, depths and preselection of the machining, automatic application on import">Bauteildefinition</button>
-              
-              <button class="menu-item" id="btnPartProfiles" type="button" title="Querschnittsprofile (z. B. Omegaprofil) aus DXF-Dateien verwalten: einlesen, benennen, kopieren, löschen - auswählbar beim Krümmling" data-i18n-en="Part profile" data-i18n-en-title="Manage cross-section profiles (e.g. omega profile) from DXF files: read in, name, copy, delete - selectable for the wreath">Bauteilprofil</button>
-              
-              <button class="menu-item" id="btnDxfTextures" type="button" title="Texturen (Bilddateien BMP/JPG/PNG) für die DXF-Bauteile verwalten: importieren, benennen, löschen" data-i18n-en="Texture" data-i18n-en-title="Manage textures (image files BMP/JPG/PNG) for the DXF parts: import, name, delete">Textur</button>
-              
-              <button class="menu-item" id="btnDxf3dSettings" type="button" title="3D-DXF: Flächen aller Layer ausgefüllt darstellen, Transparenz und Textur für alle Layer" data-i18n-en="3D DXF" data-i18n-en-title="3D DXF: show the faces of all layers filled, transparency and texture for all layers">3D DXF</button>
-            </div>
-          </div>
-          
-          <div id="settingsObjSep"></div>
-          <div class="menu-submenu" id="submenuObjSettings">
-            <button class="menu-item submenu-trigger" id="submenuObjSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="OBJ &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">OBJ <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuObjSettingsDropdown" hidden>
-              <button class="menu-item" id="btnObjSettings" type="button" title="Farben und Texturen der OBJ-Gruppen, Vorbelegungen bearbeiten" data-i18n-en="OBJ settings" data-i18n-en-title="Colours and textures of the OBJ groups, edit presets">OBJ-Einstellungen</button>
             </div>
           </div>
           
@@ -2223,7 +2208,7 @@
           </div>
           
           <label class="tool-data-field dxf3d-preset-field" id="dxf3dPresetField" hidden><span data-i18n-en="Layer preset">Layer-Vorbelegung</span>
-            <select id="dxf3dPresetSelect" class="filename-input" title="Farben, Füllung, Texturen und ausgeblendete Layer je Layertyp (Einstellungen → DXF → 3D DXF)" data-i18n-en-title="Colours, fill, textures and hidden layers per layer type (Settings → DXF → 3D DXF)"></select>
+            <select id="dxf3dPresetSelect" class="filename-input" title="Farben, Füllung, Texturen und ausgeblendete Layer je Layertyp (Einstellungen → Einstellungen → 3D Darstellung)" data-i18n-en-title="Colours, fill, textures and hidden layers per layer type (Settings → Settings → 3D display)"></select>
           </label>
           <button class="ops-showall-btn dxf-layer-showall-btn" id="btnShowAllDxfLayers" type="button" title="Alle Layer in der 3D-Ansicht ausblenden" data-i18n-en-title="Hide all layers in the 3D view" hidden><span class="eye-glyph">👁</span> <span class="dxf-showall-label">Alle Layer ausblenden</span></button>
           <div class="dxf-layer-list" id="dxfLayerList"></div>
@@ -2233,7 +2218,7 @@
           <div class="obj-file-name" id="objFileNameLabel"></div>
           
           <label class="obj-preset-field" id="objPresetField"><span data-i18n-en="Preset">Vorbelegung</span>
-            <select id="objPresetSelect" class="filename-input" title="Farben, Texturen und ausgeblendete Gruppen je Gruppenname (Einstellungen → OBJ → OBJ-Einstellungen)" data-i18n-en-title="Colours, textures and hidden groups per group name (Settings → OBJ → OBJ settings)"></select>
+            <select id="objPresetSelect" class="filename-input" title="Farben, Texturen und ausgeblendete Gruppen je Gruppenname (Einstellungen → Einstellungen → 3D Darstellung)" data-i18n-en-title="Colours, textures and hidden groups per group name (Settings → Settings → 3D display)"></select>
           </label>
           <p class="obj-preset-hint" id="objPresetNoMatch" hidden data-i18n-en="No known groups – preset not available, shown as in the file.">Keine bekannten Gruppen – Vorbelegung nicht verfügbar, Darstellung wie in der Datei.</p>
           <button class="ops-showall-btn" id="btnShowAllObjGroups" type="button" data-i18n-en="Hide all groups">Alle Gruppen ausblenden</button>
@@ -2323,6 +2308,10 @@
       <button class="settings-tab" type="button" role="tab" data-tab="columns" id="settingsTabColumns" data-i18n-en="Columns">Spalten</button>
       
       <button class="settings-tab" type="button" role="tab" data-tab="view3d" id="settingsTabView3d" data-i18n-en="3D display">3D Darstellung</button>
+      
+      <button class="settings-tab" type="button" role="tab" data-tab="textures" id="settingsTabTextures" data-i18n-en="Textures">Texturen</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="dxfParts" id="settingsTabDxfParts" data-i18n-en="DXF part definition">DXF-Bauteildefinition</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="partProfile" id="settingsTabPartProfile" data-i18n-en="Part profile">Bauteilprofil</button>
     </div>
     <div class="settings-body" id="settingsBody">
       <div class="settings-pane" data-pane="general" id="settingsPaneGeneral">
@@ -2341,6 +2330,9 @@
           </label>
         </div>
       </div>
+      <div class="settings-pane" data-pane="textures" id="settingsPaneTextures" hidden></div>
+      <div class="settings-pane" data-pane="dxfParts" id="settingsPaneDxfParts" hidden></div>
+      <div class="settings-pane" data-pane="partProfile" id="settingsPanePartProfile" hidden></div>
     </div>
     <div class="paste-actions">
       <button class="btn ghost" style="margin-right:auto" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button>
@@ -2361,6 +2353,13 @@
     <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
     <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
     <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+    
+    <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgang-Namen</button>
+    <button class="menu-item" id="btnDxfPartDefaults" type="button" title="Standardwerte für &quot;DXF-Bauteil definieren&quot;: Bauteil aus dem Dateinamen, Stärke je Bauteil, Tiefen und Vorauswahl der Bearbeitungen, automatisches Anwenden beim Import" data-i18n-en="Part definition" data-i18n-en-title="Defaults for &quot;DXF drawing settings&quot;: part type from the file name, thickness per part type, depths and preselection of the machining, automatic application on import">Bauteildefinition</button>
+    <button class="menu-item" id="btnPartProfiles" type="button" title="Querschnittsprofile (z. B. Omegaprofil) aus DXF-Dateien verwalten: einlesen, benennen, kopieren, löschen - auswählbar beim Krümmling" data-i18n-en="Part profile" data-i18n-en-title="Manage cross-section profiles (e.g. omega profile) from DXF files: read in, name, copy, delete - selectable for the wreath">Bauteilprofil</button>
+    <button class="menu-item" id="btnDxfTextures" type="button" title="Texturen (Bilddateien BMP/JPG/PNG) für die DXF-Bauteile verwalten: importieren, benennen, löschen" data-i18n-en="Texture" data-i18n-en-title="Manage textures (image files BMP/JPG/PNG) for the DXF parts: import, name, delete">Textur</button>
+    <button class="menu-item" id="btnDxf3dSettings" type="button" title="3D-DXF: Flächen aller Layer ausgefüllt darstellen, Transparenz und Textur für alle Layer" data-i18n-en="3D DXF" data-i18n-en-title="3D DXF: show the faces of all layers filled, transparency and texture for all layers">3D DXF</button>
+    <button class="menu-item" id="btnObjSettings" type="button" title="Farben und Texturen der OBJ-Gruppen, Vorbelegungen bearbeiten" data-i18n-en="OBJ settings" data-i18n-en-title="Colours and textures of the OBJ groups, edit presets">OBJ-Einstellungen</button>
   </div>
   <div id="settingsHiddenActions" hidden></div>
 </div>
@@ -2893,7 +2892,7 @@
       <span data-i18n-en="Texture">Textur</span>
       <select id="dxfTextureSelect" class="filename-input"></select>
     </div>
-    <p class="panel-hint dxf-dia-warn" id="dxfTextureMissingHint" hidden data-i18n-en="No texture saved yet - import one under Settings → DXF → Texture.">Noch keine Textur vorhanden – unter Einstellungen → DXF → Textur importieren.</p>
+    <p class="panel-hint dxf-dia-warn" id="dxfTextureMissingHint" hidden data-i18n-en="No texture saved yet - import one under Settings → Settings → Textures.">Noch keine Textur vorhanden – unter Einstellungen → Einstellungen → Texturen importieren.</p>
     
     <div class="color-field-row" id="dxfOutlineColorRow" hidden>
       <span data-i18n-en="Outline color">Outline-Farbe</span>
@@ -3040,7 +3039,7 @@
 <div class="paste-panel" id="dxfTexturePanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Texture">Textur</h3>
-    <p class="panel-hint" data-i18n-en="Image file (BMP, JPG, PNG) as a texture for DXF parts. It is tiled in its real size (not stretched); select it per part under Settings → DXF → Part definition or in &quot;DXF drawing settings&quot;.">Bilddatei (BMP, JPG, PNG) als Textur für DXF-Bauteile. Sie wird in Originalgröße aneinandergereiht (nicht gestreckt); Auswahl je Bauteil unter Einstellungen → DXF → Bauteildefinition bzw. in „DXF-Bauteil definieren“.</p>
+    <p class="panel-hint" data-i18n-en="Image file (BMP, JPG, PNG) as a texture for DXF parts. It is tiled in its real size (not stretched); select it per part under Settings → Settings → DXF part definition or in &quot;DXF drawing settings&quot;.">Bilddatei (BMP, JPG, PNG) als Textur für DXF-Bauteile. Sie wird in Originalgröße aneinandergereiht (nicht gestreckt); Auswahl je Bauteil unter Einstellungen → Einstellungen → DXF-Bauteildefinition bzw. in „DXF-Bauteil definieren“.</p>
     <div class="tool-dxf-import-body">
       <div class="tool-dxf-import-controls">
         <div class="scale-group">
@@ -8286,8 +8285,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 344;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 10:07 Uhr';
+  const APP_RELEASE_NUMBER = 345;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 11:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11834,7 +11833,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const hasPreset = !inGroup && !!dxf3dPresetEntry(target.kind === 'group' ? dxfGroupType(target.name) : target.name, target.kind === 'group');
     f.reset.textContent = inGroup ? T('Wie Gruppe', 'Like group') : hasPreset ? T('Wie Vorbelegung', 'Like preset') : T('Wie global', 'Like global');
     f.reset.title = inGroup ? T('Eigene Einstellungen dieses Layers entfernen - es gilt wieder die Gruppe', 'Remove this layer\'s own settings - the group applies again')
-      : T('Eigene Einstellungen entfernen - es gilt wieder Einstellungen → DXF → 3D DXF', 'Remove own settings - Settings → DXF → 3D DXF applies again');
+      : T('Eigene Einstellungen entfernen - es gilt wieder Einstellungen → 3D Darstellung (3D DXF)', 'Remove own settings - Settings → 3D display (3D DXF) applies again');
     f.hint.textContent = target.kind === 'group' ? T('Gilt für alle Layer der Gruppe, außer für Felder, die ein Layer selbst eingestellt hat.', 'Applies to all layers of the group, except fields a layer has set itself.')
       : (inGroup ? T('Nur dieser Layer - abweichend von der Gruppe.', 'This layer only - different from the group.') : T('Nur dieser Layer.', 'This layer only.'));
     const colorHex = () => { const rgb = dxfLayerRgb(layers[0]); if (rgb) return rgbToHex(rgb); ctx.fillStyle = cssVar('--dxf-color') || '#888888'; return String(ctx.fillStyle); };
@@ -12581,6 +12580,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 345, date: '10.11.2026', items: [
+      { de: 'Einstellungsfenster: neue Reiter „Texturen“, „DXF-Bauteildefinition“ und „Bauteilprofil“; die Texturliste ist höher. Beim Schließen erscheint ein Hinweis, wenn eine Textur oder ein Bauteilprofil noch nicht gespeichert ist.',
+        en: 'Settings window: new tabs "Textures", "DXF part definition" and "Part profile"; the texture list is taller. When closing, a note appears if a texture or part profile has not been saved yet.' },
+      { de: 'Menü „Einstellungen“ aufgeräumt: „Maschinentypen & Arbeitsgang-Namen“ als ein Eintrag; die Untermenüs „DXF“ und „OBJ“ entfallen (alles im Einstellungsfenster).',
+        en: 'Settings menu tidied up: "Machine types & processing step names" as one item; the "DXF" and "OBJ" submenus are gone (everything is in the settings window).' },
+    ] },
     { release: 344, date: '10.11.2026', items: [
       { de: 'Einstellungsfenster: neuer Reiter „3D Darstellung“ mit den Einstellungen für 3D DXF und OBJ (Auswahl oben). Die Menüpunkte „3D DXF“ und „OBJ-Einstellungen“ öffnen ihn direkt; die Layer- bzw. Gruppenliste scrollt in sich.',
         en: 'Settings window: new "3D display" tab with the settings for 3D DXF and OBJ (selection at the top). The menu items "3D DXF" and "OBJ settings" open it directly; the layer or group list scrolls on its own.' },
@@ -19454,6 +19459,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { key: 'columns', tab: 'columns', panel: 'columnScalePanel', open: 'btnColumnScale', apply: 'btnColumnScaleApply', cancel: 'btnColumnScaleCancel', reset: 'btnColumnScaleResetDefaults', de: 'Spalten', en: 'Columns', host: 'settingsPaneColumns' },
     { key: 'dxf3d', tab: 'view3d', panel: 'dxf3dPanel', open: 'btnDxf3dSettings', apply: 'btnDxf3dOk', cancel: 'btnDxf3dCancel', reset: null, de: '3D DXF', en: '3D DXF', host: 'settingsPaneView3d', noHead: true },
     { key: 'obj', tab: 'view3d', panel: 'objSettingsPanel', open: 'btnObjSettings', apply: 'btnObjSettingsOk', cancel: 'btnObjSettingsCancel', reset: null, de: 'OBJ', en: 'OBJ', host: 'settingsPaneView3d', noHead: true },
+    { key: 'textures', tab: 'textures', panel: 'dxfTexturePanel', open: 'btnDxfTextures', apply: null, cancel: 'btnDxfTextureClose', reset: null, de: 'Texturen', en: 'Textures', host: 'settingsPaneTextures', noHead: true,
+      save: 'btnDxfTextureSave', saveDe: 'Textur speichern', saveEn: 'Save texture' },
+    { key: 'dxfParts', tab: 'dxfParts', panel: 'dxfPartDefaultsPanel', open: 'btnDxfPartDefaults', apply: 'btnDxfPartDefaultsConfirm', cancel: 'btnDxfPartDefaultsCancel', reset: null, de: 'DXF-Bauteildefinition', en: 'DXF part definition', host: 'settingsPaneDxfParts', noHead: true,
+      keep: ['.dxf-preview-toggle', '#btnDxfPartDefaultsReset'] },
+    { key: 'partProfile', tab: 'partProfile', panel: 'partProfilePanel', open: 'btnPartProfiles', apply: null, cancel: 'btnPartProfileCancel', reset: null, de: 'Bauteilprofil', en: 'Part profile', host: 'settingsPanePartProfile', noHead: true,
+      save: 'btnPartProfileSave', saveDe: 'Bauteilprofil speichern', saveEn: 'Save part profile' },
   ];
   const SETTINGS_RESET_TABS = ['colors', 'area3d', 'columns'];
   let settingsInternal = false, settingsTab = 'general';
@@ -19471,6 +19482,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
       const body = document.createElement('div'); body.className = 'settings-sec-body';
       Array.from(card.children).forEach(c => { if (c.tagName !== 'H3' && c !== actions) body.appendChild(c); });
+      if (actions && (s.save || s.keep)) {
+        const row = document.createElement('div'); row.className = 'settings-sec-actions';
+        (s.keep || []).forEach(sel => { const x = actions.querySelector(sel); if (x) row.appendChild(x); });
+        if (s.save) {
+          const sv = actions.querySelector('#' + s.save);
+          sv.classList.remove('primary'); sv.classList.add('ghost');
+          sv.textContent = s.saveDe; sv.dataset.i18nDe = s.saveDe; sv.setAttribute('data-i18n-en', s.saveEn);
+          row.appendChild(sv);
+        }
+        body.appendChild(row);
+      }
       if (actions) el('settingsHiddenActions').appendChild(actions);
       if (s.key === 'machineTypes') {
         const hint = body.querySelector('p.panel-hint:not([id])');
@@ -19537,9 +19559,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (ta) setTimeout(() => { if (settingsPanel.classList.contains('open')) ta.focus(); }, 0);
     }
   }
+  function confirmLeaveSettings() {
+    const open = SETTINGS_SECTIONS.filter(s => { const f = el(s.panel).__unsaved; return typeof f === 'function' && f(); });
+    if (!open.length) return true;
+    const what = open.map(s => s.key === 'textures' ? T('die Textur', 'the texture') : T('das Bauteilprofil', 'the part profile'));
+    const msg = T('Noch nicht gespeichert: ' + what.join(' und ') + '.\n\nFenster trotzdem schließen? Die Änderungen gehen verloren.',
+      'Not saved yet: ' + what.join(' and ') + '.\n\nClose the window anyway? The changes will be lost.');
+    if (confirm(msg)) return true;
+    showSettingsTab(open[0].tab);
+    return false;
+  }
   function applySettings(keepOpen) {
+    if (!keepOpen && !confirmLeaveSettings()) return false;
     for (const s of SETTINGS_SECTIONS) {
-      if (!settingsDirty.has(s.key)) continue;
+      if (!s.apply || !settingsDirty.has(s.key)) continue;
       const p = el(s.panel);
       let failed;
       settingsInternal = true;
@@ -19556,6 +19589,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return true;
   }
   function cancelSettings() {
+    if (!confirmLeaveSettings()) return;
     settingsInternal = true;
     try { SETTINGS_SECTIONS.forEach(s => { el(s.cancel).click(); el(s.panel).classList.remove('open'); }); } finally { settingsInternal = false; }
     settingsDirty.clear();
@@ -20217,7 +20251,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (Array.isArray(data.partProfiles)) { partProfiles = normalizePartProfileList(data.partProfiles); persistPartProfiles(partProfiles); onPartProfilesChanged(); }
       if (Array.isArray(data.dxfTextures)) {
         const list = normalizeDxfTextureList(data.dxfTextures);
-        if (persistDxfTextures(list)) { dxfTextures = list; dxfTexRenderCache.clear(); dxfTexVersion++; if (dxfTexturePanel.classList.contains('open')) openDxfTexturePanel(); }
+        if (persistDxfTextures(list)) { dxfTextures = list; dxfTexRenderCache.clear(); dxfTexVersion++; if ((dxfTexturePanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) openDxfTexturePanel(); }
         else alert(T('Die Texturen konnten nicht gespeichert werden - der Speicher des Browsers ist voll.', 'The textures could not be saved - the browser storage is full.'));
       }
       if (data.dxfPartDefaults && typeof data.dxfPartDefaults === 'object') applyDxfPartDefaults(data.dxfPartDefaults);
@@ -22088,6 +22122,7 @@ Max Mustermann (Anschrift wie oben)`,
       showError('');
       profileSelect.selectedIndex = -1;
       setParsed(null);
+      formBase = formState();
     }
     function loadProfileIntoForm(p) {
       currentId = p.id; dxfText = p.dxfText;
@@ -22097,7 +22132,11 @@ Max Mustermann (Anschrift wie oben)`,
       showError('');
       const xs = p.pts.map(q => q[0]), ys = p.pts.map(q => q[1]);
       setParsed({ pts: p.pts.map(q => q.slice()), width: p.width, height: p.height, xmin: Math.min(...xs), xmax: Math.max(...xs), ymin: Math.min(...ys), ymax: Math.max(...ys) });
+      formBase = formState();
     }
+    let formBase = '';
+    function formState() { return JSON.stringify([currentId, dxfText, nameInput.value.trim(), scaleInput.value.trim(), rotatedSelect.value]); }
+    panel.__unsaved = () => formState() !== formBase;
     function changed() { if (typeof onPartProfilesChanged === 'function') onPartProfilesChanged(); }
     profileSelect.addEventListener('change', () => { const p = getPartProfileById(profileSelect.value); if (p) loadProfileIntoForm(p); });
     el('btnPartProfileNew').addEventListener('click', resetForm);
@@ -22143,6 +22182,7 @@ Max Mustermann (Anschrift wie oben)`,
       currentId = saved.id;
       populateProfileSelect(saved.id);
       changed();
+      formBase = formState();
       panel.classList.remove('open');
     });
     draw();
@@ -24493,7 +24533,7 @@ Max Mustermann (Anschrift wie oben)`,
   dxfThicknessPanel.addEventListener('input', scheduleDxfDefPreview);
   el('dxfDefPreviewToggle').addEventListener('change', () => {
     applyDxfPartDefaults(Object.assign(JSON.parse(JSON.stringify(dxfPartDefaults)), { showPreview: el('dxfDefPreviewToggle').checked }));
-    if (dxfPartDefaultsPanel.classList.contains('open')) el('dpdShowPreview').checked = el('dxfDefPreviewToggle').checked;
+    if ((dxfPartDefaultsPanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) el('dpdShowPreview').checked = el('dxfDefPreviewToggle').checked;
     drawDxfDefPreview();
   });
 
@@ -24543,7 +24583,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (pd.fillMode === 'texture') {
       const tid = el('dpdTextureSelect').value;
       if (tid) pd.textureId = tid;
-      else texErr = T('Noch keine Textur vorhanden - bitte zuerst unter Einstellungen → DXF → Textur importieren.', 'No texture saved yet - please import one first under Settings → DXF → Texture.');
+      else texErr = T('Noch keine Textur vorhanden - bitte zuerst unter Einstellungen → Einstellungen → Texturen importieren.', 'No texture saved yet - please import one first under Settings → Settings → Textures.');
     }
     if (pd.mortise) {
       pd.mortise.on = el('dpdMortiseOn').checked;
@@ -24619,7 +24659,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (dxfKrm && dxfKrmProfileId) { rebuildKruemmling(false); updateKrmPanel(); requestRender(); }
     if (!dxfKrm && dxfRailProfileId && dxfPartType === 'handrail') { recomputeMortise(); bakeParams = null; requestRender(); }
     if (dxfThicknessPanel.classList.contains('open')) fillPartProfileSelect(el('dxfProfileSelect'), el('dxfProfileSelect').value || null);
-    if (dxfPartDefaultsPanel.classList.contains('open')) fillPartProfileSelect(el('dpdProfileSelect'), el('dpdProfileSelect').value || null);
+    if ((dxfPartDefaultsPanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) fillPartProfileSelect(el('dpdProfileSelect'), el('dpdProfileSelect').value || null);
   }
   [['dpdFillColorPicker', 'dpdFillColorHex'], ['dpdOutlineColorPicker', 'dpdOutlineColorHex']].forEach(([pk, hx]) => {
     el(pk).addEventListener('input', () => { el(hx).value = el(pk).value; });
@@ -24715,9 +24755,10 @@ Max Mustermann (Anschrift wie oben)`,
     const tex = el('dpdFillMode').value === 'texture' && tid ? getDxfTextureById(tid) : null;
     box.hidden = !tex;
     dxfPartDefaultsPanel.querySelector('.paste-card').classList.toggle('dpd-with-tex', !!tex);
+    { const sec = el('dpdByName').closest('.settings-sec'); if (sec) sec.classList.toggle('dpd-with-tex', !!tex); }
     if (!tex) return;
     el('dpdTextureInfo').textContent = tex.name + '\n' + dxfTextureThumbInfo(tex);
-    drawDxfTextureThumb(el('dpdTextureCanvas'), tid, 170, 170, () => { if (dxfPartDefaultsPanel.classList.contains('open')) updateDpdTexturePreview(); });
+    drawDxfTextureThumb(el('dpdTextureCanvas'), tid, 170, 170, () => { if ((dxfPartDefaultsPanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) updateDpdTexturePreview(); });
   }
   el('dpdTextureSelect').addEventListener('change', updateDpdTexturePreview);
   const texTileValue = () => parseFloat(normalizeToolValue(el('dxfTextureTileInput').value, 0));
@@ -24751,13 +24792,24 @@ Max Mustermann (Anschrift wie oben)`,
     drawDxfTexturePreview(texEdit.dataUrl);
     updateDxfTextureInfo();
     if (ro) el('dxfTextureInfo').textContent += ' · ' + T('Standardtextur (nicht änderbar)', 'standard texture (cannot be changed)');
+    dxfTexFormBase = dxfTexFormState();
   }
+  let dxfTexFormBase = '';
+  function dxfTexFormState() {
+    return JSON.stringify([texEdit && texEdit.id, texEdit && texEdit.dataUrl, el('dxfTextureNameInput').value.trim(), el('dxfTextureTileInput').value.trim()]);
+  }
+  dxfTexturePanel.__unsaved = () => !!texEdit && !texEdit.std && dxfTexFormState() !== dxfTexFormBase;
   function refreshDxfTextureList() {
     dxfTextureListSelect.innerHTML = '';
     appendDxfTextureGroups(dxfTextureListSelect);
   }
   function onDxfTexturesChanged() {
-    if (dxfPartDefaultsPanel.classList.contains('open')) { const v = el('dpdTextureSelect').value; fillDxfTextureSelect(el('dpdTextureSelect'), v || (dpdWork && dpdWork.parts[dpdCurrent].textureId)); updateDpdTexturePreview(); }
+    if (el('settingsPanel').classList.contains('open')) {
+      if (typeof fillDxf3dTextureOptions === 'function') fillDxf3dTextureOptions(el('dxf3dTextureSelect'), el('dxf3dTextureSelect').value);
+      if (typeof renderDxf3dPresetEditor === 'function') renderDxf3dPresetEditor();
+      if (typeof renderObjPresetEditor === 'function' && typeof objPresetWork !== 'undefined' && objPresetWork) renderObjPresetEditor();
+    }
+    if ((dxfPartDefaultsPanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) { const v = el('dpdTextureSelect').value; fillDxfTextureSelect(el('dpdTextureSelect'), v || (dpdWork && dpdWork.parts[dpdCurrent].textureId)); updateDpdTexturePreview(); }
     if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value || dxfTextureId); updateDxfThicknessColorRowVisibility(); scheduleDxfDefPreview(); }
     dxfTexVersion++;
     if (dxfGeometry) { recomputeMortise(); updateDxfUI(); }
@@ -24843,8 +24895,8 @@ Max Mustermann (Anschrift wie oben)`,
   });
   el('btnDxfTextureClose').addEventListener('click', () => dxfTexturePanel.classList.remove('open'));
   ['langBtnDe', 'langBtnEn'].forEach(id => { const b = el(id); if (b) b.addEventListener('click', () => setTimeout(() => {
-    if (dxfTexturePanel.classList.contains('open')) { const cur = texEdit && texEdit.id; refreshDxfTextureList(); if (cur && texEdit.std) loadDxfTextureIntoForm(cur); else if (cur) dxfTextureListSelect.value = cur; }
-    if (dxfPartDefaultsPanel.classList.contains('open')) { fillDxfTextureSelect(el('dpdTextureSelect'), el('dpdTextureSelect').value); updateDpdTexturePreview(); }
+    if ((dxfTexturePanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) { const cur = texEdit && texEdit.id; refreshDxfTextureList(); if (cur && texEdit.std) loadDxfTextureIntoForm(cur); else if (cur) dxfTextureListSelect.value = cur; }
+    if ((dxfPartDefaultsPanel.classList.contains('open') || el('settingsPanel').classList.contains('open'))) { fillDxfTextureSelect(el('dpdTextureSelect'), el('dpdTextureSelect').value); updateDpdTexturePreview(); }
     if (dxfThicknessPanel.classList.contains('open')) { fillDxfTextureSelect(el('dxfTextureSelect'), el('dxfTextureSelect').value); drawDxfDefPreview(); }
   }, 0)); });
 
