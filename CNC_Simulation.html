@@ -298,7 +298,7 @@
   .obj-group-count { color: var(--ink-muted); font-size: 11px; }
   .changelog-body { max-height: min(60vh, 520px); overflow: auto; padding-right: 4px; }
   
-  #settingsPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
+  #settingsPanel .settings-card, #toolsPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
   .settings-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 6px 0 0; flex: none; }
   .settings-tab { padding: 8px 16px; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-muted); cursor: pointer; margin-bottom: -1px; }
   .settings-tab:hover { color: var(--ink); }
@@ -329,6 +329,9 @@
   #settingsPaneView3d .settings-sec[data-key="obj"] .dxf3d-preset-table-wrap { max-height: 370px; }
   .settings-sec[data-key="dxf3d"] .tool-data-field[hidden] { display: none; }
   
+  #toolsPaneLook .settings-sec[hidden] { display: none; }
+  #toolsPaneLook .settings-sec-body { max-width: 640px; }   
+  #toolsPaneLook .settings-sec + .settings-sec { border-top: none; margin-top: 0; padding-top: 0; }
   .settings-sec-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
   .settings-sec-actions .dxf-preview-toggle { margin-right: auto; }
   .settings-sec[data-key="textures"] #dxfTextureListSelect { height: 330px; }
@@ -1679,7 +1682,8 @@
   .tool-dxf-profile-list-actions { display: flex; flex-wrap: wrap; gap: 8px; }
   .tool-dxf-import-filename { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
   #partProfileCanvas { width: 100%; height: auto; aspect-ratio: 260 / 420; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; }   
-  #toolDxfImportCanvas {
+  
+  #toolDxfImportCanvas, #chuckDxfImportCanvas {
     width: 100%; height: auto; aspect-ratio: 260 / 420;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
     cursor: default;
@@ -1912,22 +1916,8 @@
           
           <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen und Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types &amp; processing step names" data-i18n-en-title="Edit machine types and processing step names (Settings → General)">Maschinentypen &amp; Arbeitsgang-Namen</button>
           <div class="context-menu-divider"></div>
-          <div class="menu-submenu" id="submenuToolsTop">
-            <button class="menu-item submenu-trigger" id="submenuToolsTopTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuToolsTopDropdown" hidden>
-              <button class="menu-item" id="btnToolDxfImport" type="button" title="Gespeicherte Werkzeugprofile verwalten: DXF-Datei eines echten Schneidwerkzeugs einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-/Radius-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur einfachen Zylinderdarstellung zurückzukehren)" data-i18n-en="Edit tool profile" data-i18n-en-title="Manage saved tool profiles: read in a DXF file of a real cutting tool, automatically convert it into a revolve profile and use it for the 3D display (with length/radius reference point, scale factor, and the option to revert to the plain cylinder display at any time)">Werkzeugprofil bearbeiten</button>
-              
-              <button class="menu-item" id="btnChuckDxfImport" type="button" title="Gespeicherte Spannfutterprofile verwalten: DXF-Datei eines echten Spannfutters (Werkzeughalters) einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur HSK63-Standardaufnahme zurückzukehren)" data-i18n-en="Edit chuck profile" data-i18n-en-title="Manage saved chuck profiles: read in a DXF file of a real chuck (tool holder), automatically convert it into a revolve profile and use it for the 3D display (with length reference point, scale factor, and the option to revert to the standard HSK63 holder at any time)">Spannfutter bearbeiten</button>
-              <div class="menu-submenu" id="submenuToolAppearance">
-                <button class="menu-item submenu-trigger" id="submenuToolAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tool display &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeugdarstellung <span class="submenu-arrow">▸</span></button>
-                <div class="submenu-dropdown" id="submenuToolAppearanceDropdown" hidden>
-                  <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
-                  <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
-                  <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          
+          <button class="menu-item" id="btnOpenTools" type="button" title="Werkzeugprofil, Spannfutter und Werkzeugdarstellung in einem Fenster mit Reitern" data-i18n-en="Tools" data-i18n-en-title="Tool profile, chuck and tool display in one window with tabs">Werkzeuge</button>
           
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings" data-i18n-en-title="Loads a settings file previously downloaded via 'Export Settings' and replaces all settings contained in it">Einstellungen importieren</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
@@ -2366,6 +2356,45 @@
   </div>
   <div id="settingsHiddenActions" hidden></div>
 </div>
+
+<div class="paste-panel" id="toolsPanel">
+  <div class="paste-card settings-card">
+    <h3 data-i18n-en="Tools">Werkzeuge</h3>
+    <div class="settings-tabs" role="tablist">
+      <button class="settings-tab" type="button" role="tab" data-tab="toolProfile" id="toolsTabProfile" data-i18n-en="Tool profile">Werkzeugprofil</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="chuck" id="toolsTabChuck" data-i18n-en="Chuck">Spannfutter</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="look" id="toolsTabLook" data-i18n-en="Tool display">Werkzeugdarstellung</button>
+    </div>
+    <div class="settings-body" id="toolsBody">
+      <div class="settings-pane" data-pane="toolProfile" id="toolsPaneProfile"></div>
+      <div class="settings-pane" data-pane="chuck" id="toolsPaneChuck" hidden></div>
+      <div class="settings-pane" data-pane="look" id="toolsPaneLook" hidden>
+        <div class="settings-view3d-head">
+          <label class="settings-view3d-kind"><span data-i18n-en="Display for">Darstellung für</span>
+            <select id="toolsLookKind" class="filename-input">
+              <option value="saw" data-i18n-en="Saw">Säge</option>
+              <option value="cutter" data-i18n-en="Cutter">Fräser</option>
+              <option value="collet" data-i18n-en="Chuck">Spannfutter</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnToolsOk" type="button">Ok</button>
+      <button class="btn ghost" id="btnToolsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn ghost" id="btnToolsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+  <div id="toolsHiddenTriggers" hidden>
+    <button class="menu-item" id="btnToolDxfImport" type="button" title="Gespeicherte Werkzeugprofile verwalten: DXF-Datei eines echten Schneidwerkzeugs einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-/Radius-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur einfachen Zylinderdarstellung zurückzukehren)" data-i18n-en="Edit tool profile" data-i18n-en-title="Manage saved tool profiles: read in a DXF file of a real cutting tool, automatically convert it into a revolve profile and use it for the 3D display (with length/radius reference point, scale factor, and the option to revert to the plain cylinder display at any time)">Werkzeugprofil bearbeiten</button>
+    <button class="menu-item" id="btnChuckDxfImport" type="button" title="Gespeicherte Spannfutterprofile verwalten: DXF-Datei eines echten Spannfutters (Werkzeughalters) einlesen, automatisch in ein Rotationsprofil umwandeln und für die 3D-Darstellung verwenden (mit Längen-Referenzpunkt, Skalierungsfaktor und jederzeitiger Möglichkeit, zur HSK63-Standardaufnahme zurückzukehren)" data-i18n-en="Edit chuck profile" data-i18n-en-title="Manage saved chuck profiles: read in a DXF file of a real chuck (tool holder), automatically convert it into a revolve profile and use it for the 3D display (with length reference point, scale factor, and the option to revert to the standard HSK63 holder at any time)">Spannfutter bearbeiten</button>
+    <button class="menu-item" id="btnToolAppearanceSaw" type="button" title="Darstellung der Säge in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Saw" data-i18n-en-title="Set the display of the saw in the 3D simulation (wireframe or filled with a selectable color/transparency)">Säge</button>
+    <button class="menu-item" id="btnToolAppearanceCollet" type="button" title="Darstellung des Spannfutters (HSK63-Werkzeughalter) in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Collet" data-i18n-en-title="Set the display of the collet (HSK63 tool holder) in the 3D simulation (wireframe or filled with a selectable color/transparency)">Spannfutter</button>
+    <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
+  </div>
+  <div id="toolsHiddenActions" hidden></div>
+</div>
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
@@ -2577,7 +2606,7 @@
     
     <div class="tool-data-row">
       <label class="tool-data-field"><span data-i18n-en="Tool profile (3D shape):">Werkzeugprofil (3D-Form):</span>
-        <select id="toolProfileSelect" class="filename-input" title="Ordnet diesem Arbeitsgang ein per 'Werkzeug-DXF einlesen' gespeichertes Rotationsprofil für die 3D-Darstellung zu - 'Kein Profil' zeigt wie bisher den einfachen Zylinder." data-i18n-en-title="Assigns this processing step a revolve profile (saved via 'Read tool DXF') for the 3D display - 'No profile' shows the plain cylinder as before.">
+        <select id="toolProfileSelect" class="filename-input" title="Ordnet diesem Arbeitsgang ein unter Einstellungen → Werkzeuge → Werkzeugprofil gespeichertes Rotationsprofil für die 3D-Darstellung zu - 'Kein Profil' zeigt wie bisher den einfachen Zylinder." data-i18n-en-title="Assigns this processing step a revolve profile (saved under Settings → Tools → Tool profile) for the 3D display - 'No profile' shows the plain cylinder as before.">
           <option value="" data-i18n-en="No profile (cylinder)">Kein Profil (Zylinder)</option>
         </select>
       </label>
@@ -2602,7 +2631,7 @@
           <span class="slider-pct-label">100%</span>
         </div>
       </div>
-      <p class="panel-hint" data-i18n-en="Same setting as Settings → Tools → Tool appearance (cutter or saw, depending on the tool type).">Dieselbe Einstellung wie unter Einstellungen → Werkzeuge → Werkzeugdarstellung (Fräser bzw. Säge, je nach Werkzeugtyp).</p>
+      <p class="panel-hint" data-i18n-en="Same setting as Settings → Tools → Tool display (cutter or saw, depending on the tool type).">Dieselbe Einstellung wie unter Einstellungen → Werkzeuge → Werkzeugdarstellung (Fräser bzw. Säge, je nach Werkzeugtyp).</p>
     </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnToolDataCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -3716,7 +3745,7 @@
         <label class="scale-option"><input type="radio" name="toolAppearanceCutterProfile" value="1"> <span data-i18n-en="Use when assigned to a processing step">Verwenden, wenn einem Arbeitsgang zugewiesen</span></label>
         <label class="scale-option"><input type="radio" name="toolAppearanceCutterProfile" value="0"> <span data-i18n-en="Always ignore (cylinder only)">Immer ignorieren (nur Zylinder)</span></label>
       </div>
-      <p class="panel-hint" data-i18n-en="Global emergency switch: if a tool profile assigned to a processing step (via &quot;Read tool DXF&quot;) does not look right, this immediately falls back to the plain cylinder for ALL processing steps at once, regardless of individual assignments.">Globaler Notschalter: Sollte ein per Arbeitsgang zugewiesenes Werkzeugprofil (über "Werkzeug-DXF einlesen") nicht wie erhofft aussehen, fällt hiermit sofort für ALLE Arbeitsgänge gleichzeitig auf den einfachen Zylinder zurück, unabhängig von den einzelnen Zuweisungen.</p>
+      <p class="panel-hint" data-i18n-en="Global emergency switch: if a tool profile assigned to a processing step (under Settings → Tools → Tool profile) does not look right, this immediately falls back to the plain cylinder for ALL processing steps at once, regardless of individual assignments.">Globaler Notschalter: Sollte ein per Arbeitsgang zugewiesenes Werkzeugprofil (unter Einstellungen → Werkzeuge → Werkzeugprofil) nicht wie erhofft aussehen, fällt hiermit sofort für ALLE Arbeitsgänge gleichzeitig auf den einfachen Zylinder zurück, unabhängig von den einzelnen Zuweisungen.</p>
     </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnToolAppearanceCutterCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -8288,8 +8317,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 346;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 12:45 Uhr';
+  const APP_RELEASE_NUMBER = 347;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 14:22 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12585,6 +12614,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 347, date: '10.11.2026', items: [
+      { de: 'Neues Fenster „Einstellungen → Werkzeuge“ mit den Reitern Werkzeugprofil, Spannfutter und Werkzeugdarstellung (Säge, Fräser, Spannfutter); Ok, Abbrechen und Übernehmen wie im Einstellungsfenster, mit Hinweis bei nicht gespeichertem Werkzeugprofil oder Spannfutter.',
+        en: 'New window "Settings → Tools" with the tabs Tool profile, Chuck and Tool display (saw, cutter, chuck); Ok, Cancel and Apply as in the settings window, with a note for an unsaved tool profile or chuck.' },
+    ] },
     { release: 346, date: '10.11.2026', items: [
       { de: 'Symbolleiste: neues Symbol „✕ OBJ“ rechts von „📂 OBJ“ entfernt das geladene OBJ-Modell; „✕ DXF“ steht jetzt direkt rechts von „📂 DXF“.',
         en: 'Toolbar: new "✕ OBJ" icon to the right of "📂 OBJ" removes the loaded OBJ model; "✕ DXF" now sits directly to the right of "📂 DXF".' },
@@ -19499,6 +19532,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           sv.classList.remove('primary'); sv.classList.add('ghost');
           sv.textContent = s.saveDe; sv.dataset.i18nDe = s.saveDe; sv.setAttribute('data-i18n-en', s.saveEn);
           row.appendChild(sv);
+          body.addEventListener('keydown', e => {
+            if (e.key !== 'Enter' || e.defaultPrevented || (e.target && e.target.tagName === 'TEXTAREA')) return;
+            e.preventDefault(); if (!sv.disabled) sv.click();
+          });
         }
         body.appendChild(row);
       }
@@ -19622,6 +19659,121 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('ctxSettingsColumns').addEventListener('click', () => { closeContextMenu(); openSettings('columns'); });
   window.__openSettings = (tab, key) => openSettings(tab, key);
   window.__settingsState = () => ({ open: settingsPanel.classList.contains('open'), tab: settingsTab, dirty: Array.from(settingsDirty) });
+
+  const toolsPanel = el('toolsPanel');
+  const TOOLS_LOOK_KINDS = ['saw', 'cutter', 'collet'];
+  const TOOLS_SECTIONS = [
+    { key: 'toolProfile', tab: 'toolProfile', panel: 'toolDxfImportPanel', open: 'btnToolDxfImport', apply: null, cancel: 'btnToolDxfImportCancel', host: 'toolsPaneProfile',
+      save: 'btnToolDxfImportSave', saveDe: 'Werkzeugprofil speichern', saveEn: 'Save tool profile', whatDe: 'das Werkzeugprofil', whatEn: 'the tool profile' },
+    { key: 'chuck', tab: 'chuck', panel: 'chuckDxfImportPanel', open: 'btnChuckDxfImport', apply: null, cancel: 'btnChuckDxfImportCancel', host: 'toolsPaneChuck',
+      save: 'btnChuckDxfImportSave', saveDe: 'Spannfutter speichern', saveEn: 'Save chuck', whatDe: 'das Spannfutter', whatEn: 'the chuck' },
+    { key: 'saw', tab: 'look', panel: 'toolAppearanceSawPanel', open: 'btnToolAppearanceSaw', apply: 'btnToolAppearanceSawApply', cancel: 'btnToolAppearanceSawCancel', host: 'toolsPaneLook' },
+    { key: 'cutter', tab: 'look', panel: 'toolAppearanceCutterPanel', open: 'btnToolAppearanceCutter', apply: 'btnToolAppearanceCutterApply', cancel: 'btnToolAppearanceCutterCancel', host: 'toolsPaneLook' },
+    { key: 'collet', tab: 'look', panel: 'toolAppearanceColletPanel', open: 'btnToolAppearanceCollet', apply: 'btnToolAppearanceColletApply', cancel: 'btnToolAppearanceColletCancel', host: 'toolsPaneLook' },
+  ];
+  let toolsInternal = false, toolsTab = 'toolProfile';
+  const toolsDirty = new Set();
+  (function initToolsPanel() {
+    TOOLS_SECTIONS.forEach(s => {
+      const card = el(s.panel).querySelector('.paste-card');
+      const sec = document.createElement('section'); sec.className = 'settings-sec'; sec.dataset.key = s.key;
+      const actions = card.querySelector(':scope > .paste-actions');
+      const body = document.createElement('div'); body.className = 'settings-sec-body';
+      Array.from(card.children).forEach(c => { if (c.tagName !== 'H3' && c !== actions) body.appendChild(c); });
+      if (actions && s.save) {
+        const row = document.createElement('div'); row.className = 'settings-sec-actions';
+        const sv = actions.querySelector('#' + s.save);
+        sv.classList.remove('primary'); sv.classList.add('ghost');
+        sv.textContent = s.saveDe; sv.dataset.i18nDe = s.saveDe; sv.setAttribute('data-i18n-en', s.saveEn);
+        row.appendChild(sv); body.appendChild(row);
+        body.addEventListener('keydown', e => {
+          if (e.key !== 'Enter' || e.defaultPrevented || (e.target && e.target.tagName === 'TEXTAREA')) return;
+          e.preventDefault(); if (!sv.disabled) sv.click();
+        });
+      }
+      if (actions) el('toolsHiddenActions').appendChild(actions);
+      sec.appendChild(body);
+      el(s.host).appendChild(sec);
+    });
+    const markDirty = e => { const sec = e.target.closest && e.target.closest('#toolsPanel .settings-sec'); if (sec && !toolsInternal) toolsDirty.add(sec.dataset.key); };
+    toolsPanel.addEventListener('input', markDirty, true);
+    toolsPanel.addEventListener('change', markDirty, true);
+    toolsPanel.addEventListener('click', e => { if (e.target.closest && e.target.closest('#toolsPanel .settings-sec button, #toolsPanel .settings-sec input[type="radio"], #toolsPanel .settings-sec input[type="checkbox"]')) markDirty(e); }, true);
+    el('toolsLookKind').addEventListener('change', () => showToolsLookKind(el('toolsLookKind').value));
+    toolsPanel.querySelectorAll('.settings-tab').forEach(b => b.addEventListener('click', () => showToolsTab(b.dataset.tab)));
+    const byPanel = new Map(TOOLS_SECTIONS.map(s => [s.panel, s]));
+    const mo = new MutationObserver(list => {
+      if (toolsInternal) return;
+      for (const m of list) {
+        const p = m.target;
+        if (!p.classList.contains('open')) continue;
+        const sec = byPanel.get(p.id);
+        p.classList.remove('open');
+        openTools(sec.tab, sec.key);
+        break;
+      }
+    });
+    TOOLS_SECTIONS.forEach(s => mo.observe(el(s.panel), { attributes: true, attributeFilter: ['class'] }));
+  })();
+  function showToolsTab(tab) {
+    toolsTab = tab;
+    toolsPanel.querySelectorAll('.settings-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    toolsPanel.querySelectorAll('.settings-pane').forEach(p => { p.hidden = p.dataset.pane !== tab; });
+    el('toolsBody').scrollTop = 0;
+  }
+  function showToolsLookKind(kind) {
+    kind = TOOLS_LOOK_KINDS.includes(kind) ? kind : 'cutter';
+    el('toolsLookKind').value = kind;
+    toolsPanel.querySelectorAll('#toolsPaneLook .settings-sec').forEach(sec => { sec.hidden = sec.dataset.key !== kind; });
+  }
+  function fillTools() {
+    toolsInternal = true;
+    try { TOOLS_SECTIONS.forEach(s => { el(s.open).click(); el(s.panel).classList.remove('open'); }); } finally { toolsInternal = false; }
+  }
+  function openTools(tab, focusKey) {
+    if (!toolsPanel.classList.contains('open')) { fillTools(); toolsDirty.clear(); showToolsLookKind('cutter'); }
+    if (TOOLS_LOOK_KINDS.includes(focusKey)) showToolsLookKind(focusKey);
+    closeAllMenus(); closeContextMenu();
+    showToolsTab(tab || toolsTab || 'toolProfile');
+    toolsPanel.classList.add('open');
+  }
+  function confirmLeaveTools() {
+    const open = TOOLS_SECTIONS.filter(s => { const f = el(s.panel).__unsaved; return typeof f === 'function' && f(); });
+    if (!open.length) return true;
+    const de = open.map(s => s.whatDe).join(' und '), en = open.map(s => s.whatEn).join(' and ');
+    if (confirm(T('Noch nicht gespeichert: ' + de + '.\n\nFenster trotzdem schließen? Die Änderungen gehen verloren.',
+      'Not saved yet: ' + en + '.\n\nClose the window anyway? The changes will be lost.'))) return true;
+    showToolsTab(open[0].tab);
+    return false;
+  }
+  function applyTools(keepOpen) {
+    if (!keepOpen && !confirmLeaveTools()) return false;
+    for (const s of TOOLS_SECTIONS) {
+      if (!s.apply || !toolsDirty.has(s.key)) continue;
+      const p = el(s.panel);
+      let failed;
+      toolsInternal = true;
+      try { p.classList.add('open'); el(s.apply).click(); failed = p.classList.contains('open'); p.classList.remove('open'); } finally { toolsInternal = false; }
+      if (failed) { showToolsTab(s.tab); showToolsLookKind(s.key); return false; }
+      toolsDirty.delete(s.key);
+    }
+    if (!keepOpen) toolsPanel.classList.remove('open');
+    return true;
+  }
+  function cancelTools() {
+    if (!confirmLeaveTools()) return;
+    toolsInternal = true;
+    try { TOOLS_SECTIONS.forEach(s => { el(s.cancel).click(); el(s.panel).classList.remove('open'); }); } finally { toolsInternal = false; }
+    toolsDirty.clear();
+    toolsPanel.classList.remove('open');
+  }
+  el('btnToolsOk').addEventListener('click', () => applyTools(false));
+  el('btnToolsApply').addEventListener('click', () => applyTools(true));
+  el('btnToolsCancel').addEventListener('click', cancelTools);
+  el('btnOpenTools').addEventListener('click', () => openTools('toolProfile'));
+  window.__openTools = (tab, key) => openTools(tab, key);
+  window.__toolsState = () => ({ open: toolsPanel.classList.contains('open'), tab: toolsTab, kind: el('toolsLookKind').value, dirty: Array.from(toolsDirty),
+    unsaved: TOOLS_SECTIONS.filter(s => { const f = el(s.panel).__unsaved; return typeof f === 'function' && f(); }).map(s => s.key) });
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -20801,14 +20953,14 @@ Max Mustermann (Anschrift wie oben)`,
     const transparencyValue = el(prefix + 'TransparencyValue');
 
     function updateFilledRowsVisibility() {
-      const checked = panel.querySelector('input[name="' + prefix + 'Filled"]:checked');
+      const checked = document.querySelector('input[name="' + prefix + 'Filled"]:checked');
       const isFilled = !!checked && checked.value === '1';
       colorRow.hidden = !isFilled;
       transparencyRow.hidden = !isFilled;
     }
     function syncFromActive() {
       const active = cfg.get();
-      const radio = panel.querySelector('input[name="' + prefix + 'Filled"][value="' + (active.filled ? '1' : '0') + '"]');
+      const radio = document.querySelector('input[name="' + prefix + 'Filled"][value="' + (active.filled ? '1' : '0') + '"]');
       if (radio) radio.checked = true;
       colorPicker.value = active.color;
       colorHex.value = active.color;
@@ -20819,7 +20971,7 @@ Max Mustermann (Anschrift wie oben)`,
     }
     toolAppearanceSyncFns[cfg.kind] = syncFromActive;
 
-    panel.querySelectorAll('input[name="' + prefix + 'Filled"]').forEach(r => r.addEventListener('change', updateFilledRowsVisibility));
+    document.querySelectorAll('input[name="' + prefix + 'Filled"]').forEach(r => r.addEventListener('change', updateFilledRowsVisibility));
     colorHex.addEventListener('input', () => {
       const norm = normalizeHex(colorHex.value);
       if (norm) colorPicker.value = norm;
@@ -20833,7 +20985,7 @@ Max Mustermann (Anschrift wie oben)`,
     });
     el('btn' + capPrefix + 'Cancel').addEventListener('click', () => panel.classList.remove('open'));
     el('btn' + capPrefix + 'Apply').addEventListener('click', () => {
-      const checked = panel.querySelector('input[name="' + prefix + 'Filled"]:checked');
+      const checked = document.querySelector('input[name="' + prefix + 'Filled"]:checked');
       const isFilled = !!checked && checked.value === '1';
       if (!isFilled) {
         applyToolAppearance(cfg.kind, { filled: false, color: cfg.get().color, transparency: cfg.get().transparency });
@@ -21384,7 +21536,7 @@ Max Mustermann (Anschrift wie oben)`,
       draw();
     });
     window.addEventListener('mousemove', (e) => {
-      if (!dragTarget || !panel.classList.contains('open')) return;
+      if (!dragTarget || !(panel.classList.contains('open') || el('toolsPanel').classList.contains('open'))) return;
       const rect = canvas.getBoundingClientRect();
       const helpers = yToDistHelpers();
       const dist = helpers.distOf(helpers.canvasY(e.clientY - rect.top));
@@ -21500,6 +21652,7 @@ Max Mustermann (Anschrift wie oben)`,
       measureTool.reset();
       view.reset();
       draw();
+      formBase = formState();
     }
 
     function loadProfileIntoForm(p) {
@@ -21523,8 +21676,12 @@ Max Mustermann (Anschrift wie oben)`,
       measureTool.reset();
       view.reset();
       draw();
+      formBase = formState();
     }
 
+    let formBase = '';
+    function formState() { return JSON.stringify([currentId, dxfText, nameInput.value.trim(), scaleInput.value.trim(), alternateCheckbox.checked, lengthRefInput.value.trim(), (typeof radiusRefInput !== 'undefined' && radiusRefInput) ? radiusRefInput.value.trim() : '']); }
+    panel.__unsaved = () => formState() !== formBase;
     profileSelect.addEventListener('change', () => {
       const p = getToolDxfProfileById(profileSelect.value);
       if (p) loadProfileIntoForm(p);
@@ -21597,6 +21754,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (typeof refreshToolProfileDropdownOptions === 'function') refreshToolProfileDropdownOptions();
       bakeParams = null;
       requestRender();
+      formBase = formState();
       panel.classList.remove('open');
     });
 
@@ -21796,7 +21954,7 @@ Max Mustermann (Anschrift wie oben)`,
       draw();
     });
     window.addEventListener('mousemove', (e) => {
-      if (!dragTarget || !panel.classList.contains('open')) return;
+      if (!dragTarget || !(panel.classList.contains('open') || el('toolsPanel').classList.contains('open'))) return;
       const rect = canvas.getBoundingClientRect();
       const helpers = yToDistHelpers();
       const dist = helpers.distOf(helpers.canvasY(e.clientY - rect.top));
@@ -21903,6 +22061,7 @@ Max Mustermann (Anschrift wie oben)`,
       measureTool.reset();
       view.reset();
       draw();
+      formBase = formState();
     }
 
     function loadProfileIntoForm(p) {
@@ -21925,8 +22084,12 @@ Max Mustermann (Anschrift wie oben)`,
       measureTool.reset();
       view.reset();
       draw();
+      formBase = formState();
     }
 
+    let formBase = '';
+    function formState() { return JSON.stringify([currentId, dxfText, nameInput.value.trim(), scaleInput.value.trim(), alternateCheckbox.checked, lengthRefInput.value.trim(), (typeof radiusRefInput !== 'undefined' && radiusRefInput) ? radiusRefInput.value.trim() : '']); }
+    panel.__unsaved = () => formState() !== formBase;
     profileSelect.addEventListener('change', () => {
       const p = getChuckDxfProfileById(profileSelect.value);
       if (p) loadProfileIntoForm(p);
@@ -21996,6 +22159,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (typeof refreshChuckProfileDropdownOptions === 'function') refreshChuckProfileDropdownOptions();
       bakeParams = null;
       requestRender();
+      formBase = formState();
       panel.classList.remove('open');
     });
 
