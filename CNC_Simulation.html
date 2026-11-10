@@ -8329,8 +8329,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 349;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 15:39 Uhr';
+  const APP_RELEASE_NUMBER = 350;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 16:27 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12626,6 +12626,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 350, date: '10.11.2026', items: [
+      { de: 'Symbolleiste: Rechtsklick auf einen Ankerpunkt bietet zusätzlich „Leerzeilen entfernen“ – leere Zeilen verschwinden, die Gruppen rücken nach oben.',
+        en: 'Toolbar: right-clicking a handle now also offers "Remove empty rows" – empty rows disappear and the groups move up.' },
+    ] },
     { release: 349, date: '10.11.2026', items: [
       { de: 'Symbolleiste in Gruppen (CNC, CNC-Liste, Bauteil, DXF, OBJ, Werkzeuge, Gesamtes Programm, Messfunktion): am Ankerpunkt links (Doppelstrich) mit der Maus in eine andere Position oder Zeile ziehen; unter der letzten Zeile entsteht eine neue Zeile. Die Anordnung bleibt gespeichert und ist im Einstellungsexport enthalten; Rechtsklick auf einen Ankerpunkt setzt die Symbolleisten zurück.',
         en: 'Toolbar in groups (CNC, CNC list, Part, DXF, OBJ, Tools, Complete program, Measuring): drag a group by its handle on the left (double line) to another position or row; dropping below the last row creates a new row. The arrangement is saved and included in the settings export; right-clicking a handle resets the toolbars.' },
@@ -19828,8 +19832,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function normalizeToolbarLayout(layout) {
     const known = new Set(TOOLBAR_GROUPS.map(g => g.key)), seen = new Set();
     const rows = (Array.isArray(layout) ? layout : []).slice(0, 20).map(r => (Array.isArray(r) ? r : []).filter(k => typeof k === 'string' && known.has(k) && !seen.has(k) && seen.add(k)));
-    while (rows.length < TOOLBAR_DEFAULT_LAYOUT.length) rows.push([]);
-    TOOLBAR_DEFAULT_LAYOUT.forEach((r, i) => r.forEach(k => { if (!seen.has(k)) { rows[i].push(k); seen.add(k); } }));
+    if (!rows.length) TOOLBAR_DEFAULT_LAYOUT.forEach(() => rows.push([]));
+    TOOLBAR_DEFAULT_LAYOUT.forEach((r, i) => r.forEach(k => { if (!seen.has(k)) { rows[Math.min(i, rows.length - 1)].push(k); seen.add(k); } }));
     return rows;
   }
   function setToolbarLayout(layout) {
@@ -19839,14 +19843,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const r = document.createElement('div'); r.className = 'toolbar-row'; r.id = 'toolbarRow' + (have.length + 1);
       viewerToolbar.appendChild(r); have = toolbarRows();
     }
-    have.forEach((r, i) => { if (i >= rows.length && i >= TOOLBAR_DEFAULT_LAYOUT.length) r.remove(); });
     rows.forEach((keys, i) => keys.forEach(k => have[i].appendChild(toolbarGroupEls[k])));
+    have.forEach((r, i) => { if (i >= rows.length) r.remove(); });
+    renumberToolbarRows();
     return rows;
+  }
+  function renumberToolbarRows() { toolbarRows().forEach((r, i) => { r.id = 'toolbarRow' + (i + 1); }); }
+  function removeEmptyToolbarRows() {
+    const layout = getToolbarLayout().filter(r => r.length);
+    setToolbarLayout(layout);
+    saveToolbarLayout();
   }
   function saveToolbarLayout() { try { localStorage.setItem(TOOLBAR_LAYOUT_KEY, JSON.stringify(getToolbarLayout())); } catch (e) {  } }
   function resetToolbarLayout() {
     try { localStorage.removeItem(TOOLBAR_LAYOUT_KEY); } catch (e) {  }
-    toolbarRows().forEach((r, i) => { if (i >= TOOLBAR_DEFAULT_LAYOUT.length) r.remove(); });
     setToolbarLayout(TOOLBAR_DEFAULT_LAYOUT);
   }
   (function loadToolbarLayout() {
@@ -19881,7 +19891,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     group.classList.remove('tb-dragging'); viewerToolbar.classList.remove('tb-is-dragging');
     if (drop && marker.parentNode) marker.parentNode.insertBefore(group, marker);
     marker.remove();
-    if (newRow.querySelector('.tb-group')) { newRow.classList.remove('tb-newrow'); newRow.id = 'toolbarRow' + toolbarRows().length; } else newRow.remove();
+    if (newRow.querySelector('.tb-group')) { newRow.classList.remove('tb-newrow'); renumberToolbarRows(); } else newRow.remove();
     if (drop) saveToolbarLayout();
   }
   function tbUp(e) { e.preventDefault(); tbEnd(true); }
@@ -19903,7 +19913,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   const tbGripMenu = document.createElement('div');
   tbGripMenu.className = 'context-menu'; tbGripMenu.id = 'tbGripMenu'; tbGripMenu.hidden = true;
-  tbGripMenu.innerHTML = '<button class="menu-item" id="btnToolbarReset" type="button" data-i18n-en="Reset toolbars">Symbolleisten zurücksetzen</button>';
+  tbGripMenu.innerHTML = '<button class="menu-item" id="btnToolbarReset" type="button" data-i18n-en="Reset toolbars">Symbolleisten zurücksetzen</button>'
+    + '<button class="menu-item" id="btnToolbarRemoveEmptyRows" type="button" data-i18n-en="Remove empty rows">Leerzeilen entfernen</button>';
   document.body.appendChild(tbGripMenu);
   const closeTbGripMenu = () => { tbGripMenu.hidden = true; };
   viewerToolbar.addEventListener('contextmenu', e => {
@@ -19911,12 +19922,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!grip) return;
     e.preventDefault(); e.stopPropagation();
     closeContextMenu();
+    el('btnToolbarRemoveEmptyRows').disabled = !getToolbarLayout().some(r => !r.length);
     tbGripMenu.hidden = false;
     const w = tbGripMenu.offsetWidth, h = tbGripMenu.offsetHeight;
     tbGripMenu.style.left = Math.min(e.clientX, window.innerWidth - w - 4) + 'px';
     tbGripMenu.style.top = Math.min(e.clientY, window.innerHeight - h - 4) + 'px';
   });
   el('btnToolbarReset').addEventListener('click', () => { closeTbGripMenu(); resetToolbarLayout(); });
+  el('btnToolbarRemoveEmptyRows').addEventListener('click', () => { closeTbGripMenu(); removeEmptyToolbarRows(); });
   document.addEventListener('pointerdown', e => { if (!tbGripMenu.hidden && !tbGripMenu.contains(e.target)) closeTbGripMenu(); }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !tbGripMenu.hidden) closeTbGripMenu(); }, true);
   window.__toolbarLayout = () => getToolbarLayout();
