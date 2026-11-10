@@ -298,6 +298,25 @@
   .obj-group-count { color: var(--ink-muted); font-size: 11px; }
   .changelog-body { max-height: min(60vh, 520px); overflow: auto; padding-right: 4px; }
   
+  #settingsPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
+  .settings-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 6px 0 0; flex: none; }
+  .settings-tab { padding: 8px 16px; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-muted); cursor: pointer; margin-bottom: -1px; }
+  .settings-tab:hover { color: var(--ink); }
+  .settings-tab.active { background: var(--panel); border-color: var(--border); color: var(--ink); font-weight: 600; }
+  .settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 4px 4px; }
+  .settings-pane[hidden] { display: none; }
+  .settings-sec + .settings-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+  .settings-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 2px 0 6px; min-height: 30px; }
+  .settings-sec-head h4 { margin: 0; font-size: 14px; }
+  .settings-sec-body .paste-actions { display: none; }
+  .settings-cols { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); gap: 0 20px; }
+  .settings-vsep { background: var(--border); }
+  .settings-col .settings-sec + .settings-sec { border-top: none; margin-top: 0; padding-top: 0; }
+  #settingsPanel #machineTypeEditArea, #settingsPanel #opNamesEditArea { height: 395px; }
+  #settingsPanel #opNamesEditArea { width: 100%; box-sizing: border-box; }
+  #settingsPanel .kb-az-bar { margin-top: 8px; }
+  #settingsPanel .settings-col .panel-hint { margin-top: 8px; }
+
   #objSettingsPanel .paste-card { width: min(900px, 96vw); max-height: calc(100vh - 48px); overflow-y: auto; }
   .obj-preset-field { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--ink-muted); }
   .obj-preset-hint { font-size: 11.5px; color: var(--ink-muted); margin: 0; }
@@ -357,7 +376,7 @@
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
   
-  #btnResetDisplayDefaults, #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase, #btnDxf3dSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase, #btnDxf3dSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   
   #millTimeG0FeedRow, #millTimeToolChangeCountRow { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
@@ -1869,48 +1888,11 @@
         <button class="menu-trigger" id="menuViewTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Settings">Einstellungen</button>
         <div class="menu-dropdown" id="menuViewDropdown" hidden>
           
-          <div class="menu-submenu" id="submenuAppearance">
-            <button class="menu-item submenu-trigger" id="submenuAppearanceTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Appearance &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Erscheinungsbild <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuAppearanceDropdown" hidden>
-              <div class="menu-submenu" id="submenuColors">
-                <button class="menu-item submenu-trigger" id="submenuColorsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Colors &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Farben <span class="submenu-arrow">▸</span></button>
-                <div class="submenu-dropdown" id="submenuColorsDropdown" hidden>
-                  
-                  <button class="menu-item" id="btnMenuColor" type="button" title="Hervorhebungsfarbe der Menüpunkte 'Datei'/'Bearbeiten'/'Einstellungen' bei geöffnetem Menü festlegen (Hintergrund + Schrift, Standard Rot)" data-i18n-en="Button color" data-i18n-en-title="Set the highlight color of the 'File'/'Edit'/'Settings' menu items when the menu is open (background + text, default red)">Buttonfarbe</button>
-                  <button class="menu-item" id="btnEditColors" type="button" title="Farbprofil wählen (Standard/Dark Mode/Benutzerfarben) und bei Benutzerfarben die Hintergründe von Programmcode, Arbeitsgängen und 3D-Simulation per Hexcode festlegen" data-i18n-en="Background color" data-i18n-en-title="Choose a color profile (Default/Dark Mode/Custom colors) and, for custom colors, set the backgrounds of the program code, processing steps, and 3D simulation by hex code">Hintergrundfarbe</button>
-                  
-                  <button class="menu-item" id="btnFontColor" type="button" title="Schriftfarbe einzeln festlegen für: CNC-Programmcode Zeilennummerierung, CNC-Programmcode Code, Arbeitsgänge, Geschwindigkeit, Sprung in Zeile" data-i18n-en="Font color" data-i18n-en-title="Set the font color individually for: CNC program code line numbering, CNC program code, processing steps, speed, jump to line">Schriftfarbe</button>
-                  
-                  <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)" data-i18n-en="Processing step color" data-i18n-en-title="Set the color of the six cyclically used processing step/path colors individually (1st processing step, 2nd processing step, etc.)">Arbeitsgangfarbe</button>
-                  
-                  <button class="menu-item" id="btnGridColor" type="button" title="Farbe des Bodenrasters im 3D-Bereich festlegen (ansonsten automatisch passend zum Hintergrund)" data-i18n-en="3D grid color" data-i18n-en-title="Set the color of the floor grid in the 3D area (otherwise automatic, matching the background)">3D Rasterfarbe</button>
-                  
-                  <button class="menu-item" id="btnAxisColor" type="button" title="Farbe der X-, Y- und Z-Achsenlinien im 3D-Bereich sowie die Schriftgröße ihrer Beschriftung festlegen" data-i18n-en="Axes color" data-i18n-en-title="Set the color of the X, Y and Z axis lines in the 3D area, and the font size of their labels">Achsenfarbe</button>
-                </div>
-              </div>
-              
-              <button class="menu-item" id="btnArea3dSettings" type="button" title="Bodenraster und Dreh-/Kipprichtung der 3D-Ansicht einstellen" data-i18n-en="3D area settings" data-i18n-en-title="Set the floor grid and the rotation/tilt direction of the 3D view">3D Bereichseinstellungen</button>
-              
-              <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
-              
-              <button class="menu-item" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Reset to default values" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Standardwerte wiederherstellen</button>
-            </div>
-          </div>
-          
-          <div class="menu-submenu" id="submenuMachineTypes">
-            <button class="menu-item submenu-trigger" id="submenuMachineTypesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Machine types &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Maschinentypen <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuMachineTypesDropdown" hidden>
-              <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
-            </div>
-          </div>
-          
-          <div class="menu-submenu" id="submenuOpNames">
-            <button class="menu-item submenu-trigger" id="submenuOpNamesTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Processing step names &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Arbeitsgang-Namen <span class="submenu-arrow">▸</span></button>
-            <div class="submenu-dropdown" id="submenuOpNamesDropdown" hidden>
-              <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
-            </div>
-          </div>
-          
+          <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten" data-i18n-en="Settings …" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns">Einstellungen …</button>
+          <div class="context-menu-divider"></div>
+          <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types" data-i18n-en-title="Edit machine types (Settings → General)">Maschinentypen</button>
+          <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgang-Namen</button>
+          <div class="context-menu-divider"></div>
           <div class="menu-submenu" id="submenuToolsTop">
             <button class="menu-item submenu-trigger" id="submenuToolsTopTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
             <div class="submenu-dropdown" id="submenuToolsTopDropdown" hidden>
@@ -2318,6 +2300,43 @@
   </div>
 </div>
 
+<div class="paste-panel" id="settingsPanel">
+  <div class="paste-card settings-card">
+    <h3 data-i18n-en="Settings">Einstellungen</h3>
+    <div class="settings-tabs" role="tablist">
+      <button class="settings-tab" type="button" role="tab" data-tab="general" id="settingsTabGeneral" data-i18n-en="General">Allgemein</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="colors" id="settingsTabColors" data-i18n-en="Colours">Farben</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="area3d" id="settingsTabArea3d" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="columns" id="settingsTabColumns" data-i18n-en="Columns">Spalten</button>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="settings-pane" data-pane="general" id="settingsPaneGeneral">
+        <div class="settings-cols"><div class="settings-col" id="settingsColMachineTypes"></div><div class="settings-vsep"></div><div class="settings-col" id="settingsColOpNames"></div></div>
+      </div>
+      <div class="settings-pane" data-pane="colors" id="settingsPaneColors" hidden></div>
+      <div class="settings-pane" data-pane="area3d" id="settingsPaneArea3d" hidden></div>
+      <div class="settings-pane" data-pane="columns" id="settingsPaneColumns" hidden></div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn ghost" style="margin-right:auto" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button>
+      <button class="btn ghost" id="btnSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+  <div id="settingsHiddenTriggers" hidden>
+    <button class="menu-item" id="btnMenuColor" type="button" title="Hervorhebungsfarbe der Menüpunkte 'Datei'/'Bearbeiten'/'Einstellungen' bei geöffnetem Menü festlegen (Hintergrund + Schrift, Standard Rot)" data-i18n-en="Button color" data-i18n-en-title="Set the highlight color of the 'File'/'Edit'/'Settings' menu items when the menu is open (background + text, default red)">Buttonfarbe</button>
+    <button class="menu-item" id="btnEditColors" type="button" title="Farbprofil wählen (Standard/Dark Mode/Benutzerfarben) und bei Benutzerfarben die Hintergründe von Programmcode, Arbeitsgängen und 3D-Simulation per Hexcode festlegen" data-i18n-en="Background color" data-i18n-en-title="Choose a color profile (Default/Dark Mode/Custom colors) and, for custom colors, set the backgrounds of the program code, processing steps, and 3D simulation by hex code">Hintergrundfarbe</button>
+    <button class="menu-item" id="btnFontColor" type="button" title="Schriftfarbe einzeln festlegen für: CNC-Programmcode Zeilennummerierung, CNC-Programmcode Code, Arbeitsgänge, Geschwindigkeit, Sprung in Zeile" data-i18n-en="Font color" data-i18n-en-title="Set the font color individually for: CNC program code line numbering, CNC program code, processing steps, speed, jump to line">Schriftfarbe</button>
+    <button class="menu-item" id="btnOpColor" type="button" title="Farbe der sechs zyklisch verwendeten Arbeitsgang-/Bahnfarben einzeln festlegen (1. Arbeitsgang, 2. Arbeitsgang, usw.)" data-i18n-en="Processing step color" data-i18n-en-title="Set the color of the six cyclically used processing step/path colors individually (1st processing step, 2nd processing step, etc.)">Arbeitsgangfarbe</button>
+    <button class="menu-item" id="btnGridColor" type="button" title="Farbe des Bodenrasters im 3D-Bereich festlegen (ansonsten automatisch passend zum Hintergrund)" data-i18n-en="3D grid color" data-i18n-en-title="Set the color of the floor grid in the 3D area (otherwise automatic, matching the background)">3D Rasterfarbe</button>
+    <button class="menu-item" id="btnAxisColor" type="button" title="Farbe der X-, Y- und Z-Achsenlinien im 3D-Bereich sowie die Schriftgröße ihrer Beschriftung festlegen" data-i18n-en="Axes color" data-i18n-en-title="Set the color of the X, Y and Z axis lines in the 3D area, and the font size of their labels">Achsenfarbe</button>
+    <button class="menu-item" id="btnArea3dSettings" type="button" title="Bodenraster und Dreh-/Kipprichtung der 3D-Ansicht einstellen" data-i18n-en="3D area settings" data-i18n-en-title="Set the floor grid and the rotation/tilt direction of the 3D view">3D Bereichseinstellungen</button>
+    <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
+    <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
+    <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+  </div>
+  <div id="settingsHiddenActions" hidden></div>
+</div>
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
@@ -4032,6 +4051,8 @@
   <div class="menu-submenu" id="ctxSubmenuSettings">
     <button class="menu-item submenu-trigger" id="ctxSettingsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Settings &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Einstellungen <span class="submenu-arrow">▸</span></button>
     <div class="submenu-dropdown" id="ctxSettingsDropdown" hidden>
+      
+      <div id="ctxSettingsLegacy" hidden>
       <button class="menu-item" id="ctxBtnOpColor" type="button" data-i18n-en="Processing step color">Arbeitsgangfarbe</button>
       <button class="menu-item" id="ctxBtnMenuColor" type="button" data-i18n-en="Button color">Buttonfarbe</button>
       <button class="menu-item" id="ctxBtnEditColors" type="button" data-i18n-en="Background color">Hintergrundfarbe</button>
@@ -4044,6 +4065,12 @@
       <button class="menu-item" id="ctxBtnArea3dSettings" type="button" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
       <div class="context-menu-divider"></div>
       
+      </div>
+      <button class="menu-item" id="ctxSettingsGeneral" type="button" data-i18n-en="General">Allgemein</button>
+      <button class="menu-item" id="ctxSettingsColors" type="button" data-i18n-en="Colours">Farben</button>
+      <button class="menu-item" id="ctxSettingsArea3d" type="button" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
+      <button class="menu-item" id="ctxSettingsColumns" type="button" data-i18n-en="Columns">Spalten</button>
+      <div class="context-menu-divider"></div>
       <div class="menu-submenu" id="ctxSubmenuTools">
         <button class="menu-item submenu-trigger" id="ctxToolsTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en-html="Tools &lt;span class=&quot;submenu-arrow&quot;&gt;▸&lt;/span&gt;">Werkzeuge <span class="submenu-arrow">▸</span></button>
         <div class="submenu-dropdown" id="ctxToolsDropdown" hidden>
@@ -8232,8 +8259,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 341;
-  const APP_RELEASE_TIMESTAMP = '09.11.2026, 13:58 Uhr';
+  const APP_RELEASE_NUMBER = 342;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 08:27 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12527,6 +12554,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 342, date: '10.11.2026', items: [
+      { de: 'Neu: Alle Einstellungen in einem Fenster mit Reitern – Einstellungen → Einstellungen …: Allgemein (Maschinentypen und Arbeitsgang-Namen nebeneinander), Farben, 3D Bereichseinstellungen, Spalten; ein gemeinsames Übernehmen.',
+        en: 'New: all settings in one window with tabs – Settings → Settings …: General (machine types and processing step names side by side), Colours, 3D area settings, Columns; one common Apply.' },
+      { de: '„Erscheinungsbild“ entfällt; „Alle Standardwerte wiederherstellen“ (Farben, 3D-Bereich, Spalten) steht unten links im Fenster.',
+        en: '"Appearance" is gone; "Restore all defaults" (colours, 3D area, columns) is at the bottom left of the window.' },
+      { de: 'Rechtsklick → Einstellungen: Allgemein, Farben, 3D Bereichseinstellungen, Spalten öffnen den passenden Reiter; die Zahnräder bei Maschinentyp und Arbeitsgänge führen direkt zu Maschinentypen bzw. Spalten.',
+        en: 'Right-click → Settings: General, Colours, 3D area settings, Columns open the matching tab; the gear icons at machine type and processing steps lead directly to machine types and columns.' },
+    ] },
     { release: 341, date: '09.11.2026', items: [
       { de: 'OBJ-Viewer: Kantenlinien sind jetzt fein (1 Pixel) und dezent; auf schräg gesehenen Flächen erscheinen keine dunklen Streifen mehr.',
         en: 'OBJ viewer: edge lines are now thin (1 pixel) and subtle; surfaces seen at an angle no longer show dark stripes.' },
@@ -19364,6 +19399,129 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   ctxItems.toolSaw.addEventListener('click', () => el('btnToolAppearanceSaw').click());
   ctxItems.toolCollet.addEventListener('click', () => el('btnToolAppearanceCollet').click());
   ctxItems.toolCutter.addEventListener('click', () => el('btnToolAppearanceCutter').click());
+
+  const settingsPanel = el('settingsPanel');
+  const SETTINGS_SECTIONS = [
+    { key: 'machineTypes', tab: 'general', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
+    { key: 'opNames', tab: 'general', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgang-Namen', en: 'Processing step names', host: 'settingsColOpNames' },
+    { key: 'menuColor', tab: 'colors', panel: 'menuColorPanel', open: 'btnMenuColor', apply: 'btnMenuColorApply', cancel: 'btnMenuColorCancel', reset: 'btnMenuColorResetDefaults', de: 'Buttonfarbe', en: 'Button colour', host: 'settingsPaneColors' },
+    { key: 'colorProfile', tab: 'colors', panel: 'colorProfilePanel', open: 'btnEditColors', apply: 'btnColorProfileApply', cancel: 'btnColorProfileCancel', reset: 'btnColorProfileResetDefaults', de: 'Hintergrundfarbe', en: 'Background colour', host: 'settingsPaneColors' },
+    { key: 'fontColor', tab: 'colors', panel: 'fontColorPanel', open: 'btnFontColor', apply: 'btnFontColorApply', cancel: 'btnFontColorCancel', reset: 'btnFontColorResetDefaults', de: 'Schriftfarbe', en: 'Font colour', host: 'settingsPaneColors' },
+    { key: 'opColor', tab: 'colors', panel: 'opColorPanel', open: 'btnOpColor', apply: 'btnOpColorApply', cancel: 'btnOpColorCancel', reset: 'btnOpColorResetDefaults', de: 'Arbeitsgangfarbe', en: 'Processing step colour', host: 'settingsPaneColors' },
+    { key: 'gridColor', tab: 'colors', panel: 'gridColorPanel', open: 'btnGridColor', apply: 'btnGridColorApply', cancel: 'btnGridColorCancel', reset: 'btnGridColorResetDefaults', de: '3D Rasterfarbe', en: '3D grid colour', host: 'settingsPaneColors' },
+    { key: 'axisColor', tab: 'colors', panel: 'axisColorPanel', open: 'btnAxisColor', apply: 'btnAxisColorApply', cancel: 'btnAxisColorCancel', reset: 'btnAxisColorResetDefaults', de: 'Achsenfarbe', en: 'Axes colour', host: 'settingsPaneColors' },
+    { key: 'area3d', tab: 'area3d', panel: 'area3dSettingsPanel', open: 'btnArea3dSettings', apply: 'btnArea3dSettingsApply', cancel: 'btnArea3dSettingsCancel', reset: 'btnArea3dSettingsResetDefaults', de: '3D Bereichseinstellungen', en: '3D area settings', host: 'settingsPaneArea3d' },
+    { key: 'columns', tab: 'columns', panel: 'columnScalePanel', open: 'btnColumnScale', apply: 'btnColumnScaleApply', cancel: 'btnColumnScaleCancel', reset: 'btnColumnScaleResetDefaults', de: 'Spalten', en: 'Columns', host: 'settingsPaneColumns' },
+  ];
+  let settingsInternal = false, settingsTab = 'general';
+  const settingsDirty = new Set();
+  (function initSettingsPanel() {
+    SETTINGS_SECTIONS.forEach(s => {
+      const card = el(s.panel).querySelector('.paste-card');
+      const sec = document.createElement('section'); sec.className = 'settings-sec'; sec.dataset.key = s.key;
+      const head = document.createElement('div'); head.className = 'settings-sec-head';
+      const h = document.createElement('h4'); h.setAttribute('data-i18n-en', s.en); h.textContent = s.de; head.appendChild(h);
+      const actions = card.querySelector(':scope > .paste-actions');
+      if (s.reset) {
+        const r = el(s.reset); r.classList.add('small'); r.style.marginRight = ''; head.appendChild(r); r.addEventListener('click', () => settingsDirty.add(s.key));
+        if (s.tab !== 'general') { r.textContent = 'Standardwerte'; r.dataset.i18nDe = 'Standardwerte'; r.setAttribute('data-i18n-en', 'Defaults'); }
+      }
+      const body = document.createElement('div'); body.className = 'settings-sec-body';
+      Array.from(card.children).forEach(c => { if (c.tagName !== 'H3' && c !== actions) body.appendChild(c); });
+      if (actions) el('settingsHiddenActions').appendChild(actions);
+      if (s.key === 'machineTypes') {
+        const hint = body.querySelector('p.panel-hint:not([id])');
+        body.insertBefore(body.querySelector('.mt-hl-wrap'), body.firstChild);
+        body.insertBefore(body.querySelector('#machineTypeDupWarning'), body.children[1] || null);
+        body.appendChild(body.querySelector('#machineTypeAzBar'));
+        if (hint) body.appendChild(hint);
+      } else if (s.key === 'opNames') {
+        body.insertBefore(body.querySelector('#opNamesEditArea'), body.firstChild);
+      }
+      sec.appendChild(head); sec.appendChild(body);
+      el(s.host).appendChild(sec);
+    });
+    const markDirty = e => { const sec = e.target.closest && e.target.closest('.settings-sec'); if (sec && !settingsInternal) settingsDirty.add(sec.dataset.key); };
+    settingsPanel.addEventListener('input', markDirty, true);
+    settingsPanel.addEventListener('change', markDirty, true);
+    const byPanel = new Map(SETTINGS_SECTIONS.map(s => [s.panel, s]));
+    const mo = new MutationObserver(list => {
+      if (settingsInternal) return;
+      for (const m of list) {
+        const p = m.target;
+        if (!p.classList.contains('open')) continue;
+        const sec = byPanel.get(p.id);
+        p.classList.remove('open');
+        openSettings(sec.tab, sec.key);
+        break;
+      }
+    });
+    SETTINGS_SECTIONS.forEach(s => mo.observe(el(s.panel), { attributes: true, attributeFilter: ['class'] }));
+  })();
+  function showSettingsTab(tab) {
+    settingsTab = tab;
+    settingsPanel.querySelectorAll('.settings-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    settingsPanel.querySelectorAll('.settings-pane').forEach(p => { p.hidden = p.dataset.pane !== tab; });
+    el('settingsBody').scrollTop = 0;
+  }
+  function fillSettings(keys) {
+    settingsInternal = true;
+    try {
+      SETTINGS_SECTIONS.forEach(s => { if (keys && !keys.includes(s.key)) return; el(s.open).click(); el(s.panel).classList.remove('open'); });
+    } finally { settingsInternal = false; }
+  }
+  function openSettings(tab, focusKey) {
+    if (!settingsPanel.classList.contains('open')) { fillSettings(); settingsDirty.clear(); }
+    closeAllMenus(); closeContextMenu();
+    showSettingsTab(tab || settingsTab || 'general');
+    settingsPanel.classList.add('open');
+    if (focusKey) {
+      const sec = settingsPanel.querySelector('.settings-sec[data-key="' + focusKey + '"]');
+      if (sec && sec.closest('.settings-pane').dataset.pane === 'colors') sec.scrollIntoView({ block: 'start' });
+      const ta = focusKey === 'machineTypes' ? el('machineTypeEditArea') : focusKey === 'opNames' ? el('opNamesEditArea') : null;
+      if (ta) setTimeout(() => { if (settingsPanel.classList.contains('open')) ta.focus(); }, 0);
+    }
+  }
+  function applySettings() {
+    for (const s of SETTINGS_SECTIONS) {
+      if (s.tab === 'general' && !settingsDirty.has(s.key)) continue;
+      const p = el(s.panel);
+      let failed;
+      settingsInternal = true;
+      try { p.classList.add('open'); el(s.apply).click(); failed = p.classList.contains('open'); p.classList.remove('open'); } finally { settingsInternal = false; }
+      if (failed) {
+        showSettingsTab(s.tab);
+        const sec = settingsPanel.querySelector('.settings-sec[data-key="' + s.key + '"]'); if (sec) sec.scrollIntoView({ block: 'start' });
+        return false;
+      }
+      settingsDirty.delete(s.key);
+    }
+    settingsPanel.classList.remove('open');
+    return true;
+  }
+  function cancelSettings() {
+    settingsInternal = true;
+    try { SETTINGS_SECTIONS.forEach(s => { el(s.cancel).click(); el(s.panel).classList.remove('open'); }); } finally { settingsInternal = false; }
+    settingsDirty.clear();
+    settingsPanel.classList.remove('open');
+  }
+  settingsPanel.querySelectorAll('.settings-tab').forEach(b => b.addEventListener('click', () => showSettingsTab(b.dataset.tab)));
+  el('btnSettingsApply').addEventListener('click', applySettings);
+  el('btnSettingsCancel').addEventListener('click', cancelSettings);
+  el('btnResetDisplayDefaults').addEventListener('click', () => {
+    if (!settingsPanel.classList.contains('open')) return;
+    const keys = SETTINGS_SECTIONS.filter(s => s.tab !== 'general').map(s => s.key);
+    fillSettings(keys); keys.forEach(k => settingsDirty.delete(k));
+  });
+  el('btnOpenSettings').addEventListener('click', () => openSettings('general'));
+  el('btnMenuMachineTypes').addEventListener('click', () => openSettings('general', 'machineTypes'));
+  el('btnMenuOpNames').addEventListener('click', () => openSettings('general', 'opNames'));
+  el('ctxSettingsGeneral').addEventListener('click', () => { closeContextMenu(); openSettings('general'); });
+  el('ctxSettingsColors').addEventListener('click', () => { closeContextMenu(); openSettings('colors'); });
+  el('ctxSettingsArea3d').addEventListener('click', () => { closeContextMenu(); openSettings('area3d'); });
+  el('ctxSettingsColumns').addEventListener('click', () => { closeContextMenu(); openSettings('columns'); });
+  window.__openSettings = (tab, key) => openSettings(tab, key);
+  window.__settingsState = () => ({ open: settingsPanel.classList.contains('open'), tab: settingsTab, dirty: Array.from(settingsDirty) });
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
