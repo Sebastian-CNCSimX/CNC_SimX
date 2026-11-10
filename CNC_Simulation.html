@@ -1888,7 +1888,7 @@
         <button class="menu-trigger" id="menuViewTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Settings">Einstellungen</button>
         <div class="menu-dropdown" id="menuViewDropdown" hidden>
           
-          <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten" data-i18n-en="Settings …" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns">Einstellungen …</button>
+          <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten" data-i18n-en="Settings" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns">Einstellungen</button>
           <div class="context-menu-divider"></div>
           <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types" data-i18n-en-title="Edit machine types (Settings → General)">Maschinentypen</button>
           <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgang-Namen</button>
@@ -2319,8 +2319,10 @@
     </div>
     <div class="paste-actions">
       <button class="btn ghost" style="margin-right:auto" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button>
+      
+      <button class="btn primary" id="btnSettingsOk" type="button">Ok</button>
       <button class="btn ghost" id="btnSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
-      <button class="btn primary" id="btnSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+      <button class="btn ghost" id="btnSettingsApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
   </div>
   <div id="settingsHiddenTriggers" hidden>
@@ -8259,8 +8261,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 342;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 08:27 Uhr';
+  const APP_RELEASE_NUMBER = 343;
+  const APP_RELEASE_TIMESTAMP = '10.11.2026, 09:08 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12554,9 +12556,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteFileMenu').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 343, date: '10.11.2026', items: [
+      { de: 'Einstellungsfenster: neuer Knopf „Ok“ (übernimmt und schließt); „Übernehmen“ übernimmt jetzt, ohne das Fenster zu schließen; „Abbrechen“ verwirft alles noch nicht Übernommene.',
+        en: 'Settings window: new "Ok" button (applies and closes); "Apply" now applies without closing the window; "Cancel" discards everything not yet applied.' },
+      { de: 'Der Menüpunkt heißt jetzt einfach „Einstellungen → Einstellungen“ (ohne „…“).',
+        en: 'The menu item is now simply "Settings → Settings" (without "…").' },
+    ] },
     { release: 342, date: '10.11.2026', items: [
-      { de: 'Neu: Alle Einstellungen in einem Fenster mit Reitern – Einstellungen → Einstellungen …: Allgemein (Maschinentypen und Arbeitsgang-Namen nebeneinander), Farben, 3D Bereichseinstellungen, Spalten; ein gemeinsames Übernehmen.',
-        en: 'New: all settings in one window with tabs – Settings → Settings …: General (machine types and processing step names side by side), Colours, 3D area settings, Columns; one common Apply.' },
+      { de: 'Neu: Alle Einstellungen in einem Fenster mit Reitern – Einstellungen → Einstellungen: Allgemein (Maschinentypen und Arbeitsgang-Namen nebeneinander), Farben, 3D Bereichseinstellungen, Spalten; ein gemeinsames Übernehmen.',
+        en: 'New: all settings in one window with tabs – Settings → Settings: General (machine types and processing step names side by side), Colours, 3D area settings, Columns; one common Apply.' },
       { de: '„Erscheinungsbild“ entfällt; „Alle Standardwerte wiederherstellen“ (Farben, 3D-Bereich, Spalten) steht unten links im Fenster.',
         en: '"Appearance" is gone; "Restore all defaults" (colours, 3D area, columns) is at the bottom left of the window.' },
       { de: 'Rechtsklick → Einstellungen: Allgemein, Farben, 3D Bereichseinstellungen, Spalten öffnen den passenden Reiter; die Zahnräder bei Maschinentyp und Arbeitsgänge führen direkt zu Maschinentypen bzw. Spalten.',
@@ -19482,7 +19490,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (ta) setTimeout(() => { if (settingsPanel.classList.contains('open')) ta.focus(); }, 0);
     }
   }
-  function applySettings() {
+  function applySettings(keepOpen) {
     for (const s of SETTINGS_SECTIONS) {
       if (s.tab === 'general' && !settingsDirty.has(s.key)) continue;
       const p = el(s.panel);
@@ -19496,7 +19504,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
       settingsDirty.delete(s.key);
     }
-    settingsPanel.classList.remove('open');
+    if (!keepOpen) settingsPanel.classList.remove('open');
     return true;
   }
   function cancelSettings() {
@@ -19506,7 +19514,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     settingsPanel.classList.remove('open');
   }
   settingsPanel.querySelectorAll('.settings-tab').forEach(b => b.addEventListener('click', () => showSettingsTab(b.dataset.tab)));
-  el('btnSettingsApply').addEventListener('click', applySettings);
+  el('btnSettingsOk').addEventListener('click', () => applySettings(false));
+  el('btnSettingsApply').addEventListener('click', () => applySettings(true));
   el('btnSettingsCancel').addEventListener('click', cancelSettings);
   el('btnResetDisplayDefaults').addEventListener('click', () => {
     if (!settingsPanel.classList.contains('open')) return;
