@@ -296,7 +296,11 @@
   .obj-group-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); flex: none; background-size: cover; }
   .obj-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .obj-group-count { color: var(--ink-muted); font-size: 11px; }
+  
+  .mill-time-warn { color: var(--accent); }
   .changelog-body { max-height: min(60vh, 520px); overflow: auto; padding-right: 4px; }
+  #featuresPanel .paste-card { width: min(760px, 96vw); }   
+  .features-body ul ul { margin-top: 3px; }
   
   #settingsPanel .settings-card, #toolsPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
   .settings-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 6px 0 0; flex: none; }
@@ -1931,13 +1935,13 @@
           <button class="menu-item" id="btnOpenSettings" type="button" title="Alle Einstellungen in einem Fenster mit Reitern: Allgemein, Farben, 3D Bereichseinstellungen, Spalten, 3D Darstellung, Texturen, DXF-Bauteildefinition, Bauteilprofil" data-i18n-en="Settings" data-i18n-en-title="All settings in one window with tabs: General, Colours, 3D area settings, Columns, 3D display, Textures, DXF part definition, Part profile">Einstellungen</button>
           <div class="context-menu-divider"></div>
           
-          <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen und Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types &amp; processing step names" data-i18n-en-title="Edit machine types and processing step names (Settings → General)">Maschinentypen &amp; Arbeitsgang-Namen</button>
+          <button class="menu-item" id="btnMenuMachineTypes" type="button" title="Maschinentypen und Arbeitsgangnamen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Machine types &amp; processing step names" data-i18n-en-title="Edit machine types and processing step names (Settings → General)">Maschinentypen &amp; Arbeitsgangnamen</button>
           <div class="context-menu-divider"></div>
           
           <button class="menu-item" id="btnOpenTools" type="button" title="Werkzeugprofil, Spannfutter und Werkzeugdarstellung in einem Fenster mit Reitern" data-i18n-en="Tools" data-i18n-en-title="Tool profile, chuck and tool display in one window with tabs">Werkzeuge</button>
           
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings" data-i18n-en-title="Loads a settings file previously downloaded via 'Export Settings' and replaces all settings contained in it">Einstellungen importieren</button>
-          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgang-Namen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
+          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
         </div>
       </div>
       
@@ -1983,6 +1987,9 @@
           
           <button class="menu-item" id="btnChangelog" type="button" title="Änderungen der Releases nachlesen" data-i18n-en-title="Read the changes of the releases">Changelog</button>
           <div class="context-menu-divider" id="changelogSep"></div>
+          
+          <button class="menu-item" id="btnFeatures" type="button" title="Kernfunktionen von CNC SimX nachlesen" data-i18n-en="Features" data-i18n-en-title="Read the core features of CNC SimX">Features</button>
+          <div class="context-menu-divider" id="featuresSep"></div>
           <div class="menu-info-row">
             <span class="menu-info-label">Version</span>
             <span class="menu-info-value" id="infoVersionValue"></span>
@@ -2314,16 +2321,15 @@
   <div class="paste-card settings-card">
     <h3 data-i18n-en="Settings">Einstellungen</h3>
     <div class="settings-tabs" role="tablist">
+      
       <button class="settings-tab" type="button" role="tab" data-tab="general" id="settingsTabGeneral" data-i18n-en="General">Allgemein</button>
       <button class="settings-tab" type="button" role="tab" data-tab="colors" id="settingsTabColors" data-i18n-en="Colours">Farben</button>
-      <button class="settings-tab" type="button" role="tab" data-tab="area3d" id="settingsTabArea3d" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
       <button class="settings-tab" type="button" role="tab" data-tab="columns" id="settingsTabColumns" data-i18n-en="Columns">Spalten</button>
-      
-      <button class="settings-tab" type="button" role="tab" data-tab="view3d" id="settingsTabView3d" data-i18n-en="3D display">3D Darstellung</button>
-      
+      <button class="settings-tab" type="button" role="tab" data-tab="area3d" id="settingsTabArea3d" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
       <button class="settings-tab" type="button" role="tab" data-tab="textures" id="settingsTabTextures" data-i18n-en="Textures">Texturen</button>
-      <button class="settings-tab" type="button" role="tab" data-tab="dxfParts" id="settingsTabDxfParts" data-i18n-en="DXF part definition">DXF-Bauteildefinition</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="view3d" id="settingsTabView3d" data-i18n-en="3D display">3D Darstellung</button>
       <button class="settings-tab" type="button" role="tab" data-tab="partProfile" id="settingsTabPartProfile" data-i18n-en="Part profile">Bauteilprofil</button>
+      <button class="settings-tab" type="button" role="tab" data-tab="dxfParts" id="settingsTabDxfParts" data-i18n-en="DXF part definition">DXF-Bauteildefinition</button>
     </div>
     <div class="settings-body" id="settingsBody">
       <div class="settings-pane" data-pane="general" id="settingsPaneGeneral">
@@ -2364,9 +2370,9 @@
     <button class="menu-item" id="btnArea3dSettings" type="button" title="Bodenraster und Dreh-/Kipprichtung der 3D-Ansicht einstellen" data-i18n-en="3D area settings" data-i18n-en-title="Set the floor grid and the rotation/tilt direction of the 3D view">3D Bereichseinstellungen</button>
     <button class="menu-item" id="btnColumnScale" type="button" title="Bevorzugte Breite (als Prozentsatz der automatisch ermittelten vollen Breite) für die CNC-Programmcode- und die Arbeitsgänge-Spalte festlegen - wird bei jedem (Neu-)Laden eines Programms angewendet" data-i18n-en="Columns" data-i18n-en-title="Set the preferred width (as a percentage of the automatically determined full width) for the CNC program code and processing steps columns - applied every time a program is (re-)loaded">Spalten</button>
     <button class="menu-item" id="btnEditMachineTypes" type="button" title="Maschinentyp-Konfiguration bearbeiten (je Maschinentyp ein [MACHINETYPE]-Block mit SWITCHCASEMACHINE- und CALCMACHINE-Abschnitt)" data-i18n-en="Edit machine types" data-i18n-en-title="Edit the machine type configuration (one [MACHINETYPE] block per machine type, with a SWITCHCASEMACHINE and CALCMACHINE section)">Maschinentypen bearbeiten</button>
-    <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgang-Namen bearbeiten</button>
+    <button class="menu-item" id="btnEditOpNames" type="button" title="Editierbare Liste der Arbeitsgangnamen für die listenbasierte Erkennung ohne Trennzeilen bearbeiten" data-i18n-en="Edit processing step names" data-i18n-en-title="Edit the list of processing step names used for list-based recognition without separator lines">Arbeitsgangnamen bearbeiten</button>
     
-    <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgang-Namen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgang-Namen</button>
+    <button class="menu-item" id="btnMenuOpNames" type="button" title="Arbeitsgangnamen bearbeiten (Einstellungen → Allgemein)" data-i18n-en="Processing step names" data-i18n-en-title="Edit processing step names (Settings → General)">Arbeitsgangnamen</button>
     <button class="menu-item" id="btnDxfPartDefaults" type="button" title="Standardwerte für &quot;DXF-Bauteil definieren&quot;: Bauteil aus dem Dateinamen, Stärke je Bauteil, Tiefen und Vorauswahl der Bearbeitungen, automatisches Anwenden beim Import" data-i18n-en="Part definition" data-i18n-en-title="Defaults for &quot;DXF drawing settings&quot;: part type from the file name, thickness per part type, depths and preselection of the machining, automatic application on import">Bauteildefinition</button>
     <button class="menu-item" id="btnPartProfiles" type="button" title="Querschnittsprofile (z. B. Omegaprofil) aus DXF-Dateien verwalten: einlesen, benennen, kopieren, löschen - auswählbar beim Krümmling" data-i18n-en="Part profile" data-i18n-en-title="Manage cross-section profiles (e.g. omega profile) from DXF files: read in, name, copy, delete - selectable for the wreath">Bauteilprofil</button>
     <button class="menu-item" id="btnDxfTextures" type="button" title="Texturen (Bilddateien BMP/JPG/PNG) für die DXF-Bauteile verwalten: importieren, benennen, löschen" data-i18n-en="Texture" data-i18n-en-title="Manage textures (image files BMP/JPG/PNG) for the DXF parts: import, name, delete">Textur</button>
@@ -2380,14 +2386,13 @@
   <div class="paste-card settings-card">
     <h3 data-i18n-en="Tools">Werkzeuge</h3>
     <div class="settings-tabs" role="tablist">
+      
+      <button class="settings-tab" type="button" role="tab" data-tab="look" id="toolsTabLook" data-i18n-en="Tool display">Werkzeugdarstellung</button>
       <button class="settings-tab" type="button" role="tab" data-tab="toolProfile" id="toolsTabProfile" data-i18n-en="Tool profile">Werkzeugprofil</button>
       <button class="settings-tab" type="button" role="tab" data-tab="chuck" id="toolsTabChuck" data-i18n-en="Chuck">Spannfutter</button>
-      <button class="settings-tab" type="button" role="tab" data-tab="look" id="toolsTabLook" data-i18n-en="Tool display">Werkzeugdarstellung</button>
     </div>
     <div class="settings-body" id="toolsBody">
-      <div class="settings-pane" data-pane="toolProfile" id="toolsPaneProfile"></div>
-      <div class="settings-pane" data-pane="chuck" id="toolsPaneChuck" hidden></div>
-      <div class="settings-pane" data-pane="look" id="toolsPaneLook" hidden>
+      <div class="settings-pane" data-pane="look" id="toolsPaneLook">
         <div class="settings-view3d-head">
           <label class="settings-view3d-kind"><span data-i18n-en="Display for">Darstellung für</span>
             <select id="toolsLookKind" class="filename-input">
@@ -2398,6 +2403,8 @@
           </label>
         </div>
       </div>
+      <div class="settings-pane" data-pane="toolProfile" id="toolsPaneProfile" hidden></div>
+      <div class="settings-pane" data-pane="chuck" id="toolsPaneChuck" hidden></div>
     </div>
     <div class="paste-actions">
       <button class="btn primary" id="btnToolsOk" type="button">Ok</button>
@@ -2425,7 +2432,7 @@
     <p class="panel-hint" id="machineTypeDupWarning" hidden></p>
     
     <div class="paste-actions">
-      <button class="btn ghost" id="btnMachineTypeResetDefaults" type="button" style="margin-right:auto" title="Setzt ALLE Maschinentypen sowie den aktiven Maschinentyp auf die eingebauten Standardwerte zurück (löscht die gespeicherte Maschinentyp-Konfiguration). Betrifft NICHT die Arbeitsgang-Namensliste, die Knowledge Base oder Anzeigeeinstellungen." data-i18n-en="Reset to defaults" data-i18n-en-title="Resets ALL machine types and the active machine type to the built-in defaults (deletes the saved machine type configuration). Does NOT affect the operation name list, the knowledge base, or display settings.">Maschinentypen zurücksetzen</button>
+      <button class="btn ghost" id="btnMachineTypeResetDefaults" type="button" style="margin-right:auto" title="Setzt ALLE Maschinentypen sowie den aktiven Maschinentyp auf die eingebauten Standardwerte zurück (löscht die gespeicherte Maschinentyp-Konfiguration). Betrifft NICHT die Arbeitsgangnamensliste, die Knowledge Base oder Anzeigeeinstellungen." data-i18n-en="Reset to defaults" data-i18n-en-title="Resets ALL machine types and the active machine type to the built-in defaults (deletes the saved machine type configuration). Does NOT affect the operation name list, the knowledge base, or display settings.">Maschinentypen zurücksetzen</button>
       <button class="btn ghost" id="btnMachineTypeEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnMachineTypeEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
     </div>
@@ -2449,9 +2456,9 @@
 
 <div class="paste-panel" id="opNamesEditPanel">
   <div class="paste-card">
-    <h3 data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</h3>
+    <h3 data-i18n-en="Edit processing step names">Arbeitsgangnamen bearbeiten</h3>
     <p class="panel-hint" data-i18n-en-html="One label per line. Recognized without any separating lines before or after it (case is ignored; optional comment characters &lt;span class=&quot;k&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;//&lt;/span&gt; at the beginning are ignored).">Eine Bezeichnung je Zeile. Wird ohne Trennzeilen davor/dahinter erkannt (Groß-/Kleinschreibung wird ignoriert, optionale Kommentarzeichen <span class="k">;</span> <span class="k">#</span> <span class="k">//</span> davor werden ignoriert).</p>
-    <textarea id="opNamesEditArea" placeholder="Arbeitsgang-Name, eine Bezeichnung je Zeile…" spellcheck="false"></textarea>
+    <textarea id="opNamesEditArea" placeholder="Arbeitsgangname, eine Bezeichnung je Zeile…" spellcheck="false"></textarea>
     <div class="paste-actions">
       <button class="btn ghost" id="btnOpNamesEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnOpNamesEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
@@ -2478,7 +2485,7 @@
       <div class="shortcut-row"><span class="shortcut-key">F7</span><span class="shortcut-desc" data-i18n-en="Change background">Hintergrundmodus umschalten</span></div>
       <div class="shortcut-row"><span class="shortcut-key">F8</span><span class="shortcut-desc" data-i18n-en="3D area settings">3D Bereichseinstellungen</span></div>
       <div class="shortcut-row"><span class="shortcut-key">F9</span><span class="shortcut-desc" data-i18n-en="Knowledge Base">Knowledge Base</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgang-Namen bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgangnamen bearbeiten</span></div>
       <div class="shortcut-row"><span class="shortcut-key">F11</span><span class="shortcut-desc" data-i18n-en="Empty everything">Simulation leeren</span></div>
       <div class="shortcut-sep"></div>
       <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + F5">Strg + F5</span><span class="shortcut-desc" data-i18n-en="Reload page">Seite neu laden</span></div>
@@ -3025,6 +3032,16 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnUpdateInfoClose" type="button" data-i18n-en="Close">Schließen</button>
       <button class="btn primary" id="btnUpdateInfoChangelog" type="button" data-i18n-en="Open changelog">Changelog öffnen</button>
+    </div>
+  </div>
+</div>
+
+<div class="paste-panel" id="featuresPanel">
+  <div class="paste-card">
+    <h3>Features</h3>
+    <div class="changelog-body features-body" id="featuresBody"></div>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnFeaturesClose" type="button" data-i18n-en="Close">Schließen</button>
     </div>
   </div>
 </div>
@@ -3582,7 +3599,7 @@
   <div class="paste-card">
     <h3 data-i18n-en="Approximated milling time">Fräszeitberechnung</h3>
     
-    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Net milling time&lt;/strong&gt;&lt;br&gt;This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. &lt;strong&gt;The machine&#x27;s actual cycle time will be longer!&lt;/strong&gt;"><strong>Nettofräszeit</strong><br>Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. <strong>Die reale Zykluszeit der Maschine wird länger ausfallen!</strong></p>
+    <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Net milling time&lt;/strong&gt;&lt;br&gt;This is the pure programmed path length divided by the respective programmed feed rate — excluding tool change times, G0 movements, and acceleration/deceleration ramps at the corners. &lt;strong class=&quot;mill-time-warn&quot;&gt;The machine&#x27;s actual cycle time will be longer!&lt;/strong&gt;"><strong>Nettofräszeit</strong><br>Das ist die reine programmierte Bahnlänge geteilt durch den jeweils programmierten Vorschub – ohne Werkzeugwechselzeiten, G0 Eilgang-Verfahrwege und Beschleunigungs-/Bremsrampen an den Ecken. <strong class="mill-time-warn">Die reale Zykluszeit der Maschine wird länger ausfallen!</strong></p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with G0&lt;/strong&gt;&lt;br&gt;“Milling time with G0” additionally estimates the time for the G0 rapid moves, using the feed rate entered above instead of a programmed value — tool change times and acceleration/deceleration ramps are still excluded, and the actual rapid feed rate of the real machine may differ."><strong>Fräszeit mit G0</strong><br>„Fräszeit mit G0" schätzt zusätzlich die Zeit für die G0-Eilgang-Verfahrwege, anhand des oben eingegebenen Vorschubs statt eines programmierten Werts – Werkzeugwechselzeiten und Beschleunigungs-/Bremsrampen bleiben weiterhin ausgeschlossen, und der tatsächliche Eilgang-Vorschub der realen Maschine kann abweichen.</p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;Milling time with tool changes&lt;/strong&gt;&lt;br&gt;“Milling time with tool changes” additionally adds the time for tool changes (number of tool changes × time per tool change, both entered below) on top of “Milling time with G0”."><strong>Fräszeit mit Werkzeugwechsel</strong><br>„Fräszeit mit Werkzeugwechsel" addiert zusätzlich die Zeit für die Werkzeugwechsel (Anzahl Werkzeugwechsel × Dauer Werkzeugwechsel, beide unten eingegeben) auf die „Fräszeit mit G0" drauf.</p>
     <p class="panel-hint" data-i18n-en-html="&lt;strong&gt;G0 feed rate&lt;/strong&gt;&lt;br&gt;Feed rate of G0 movements."><strong>G0 Vorschub</strong><br>Vorschub im G0.</p>
@@ -8347,7 +8364,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 352;
+  const APP_RELEASE_NUMBER = 353;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8356,7 +8373,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '11.11.2026, 08:10 Uhr';
+  const APP_RELEASE_TIMESTAMP = '11.11.2026, 12:48 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12652,6 +12669,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 353, date: '11.11.2026', items: [
+      { de: 'Neuer Menüpunkt „?“ → „Features“: Übersicht der Kernfunktionen von CNC SimX (Deutsch und Englisch).',
+        en: 'New menu item "?" → "Features": overview of the core features of CNC SimX (German and English).' },
+      { de: 'Fräszeitberechnung: der Hinweis „Die reale Zykluszeit der Maschine wird länger ausfallen!“ steht jetzt auch in Rot.',
+        en: 'Milling time calculation: the note "The machine\'s actual cycle time will be longer!" is now also shown in red.' },
+      { de: 'Neue Reihenfolge der Reiter: Einstellungen – Allgemein, Farben, Spalten, 3D Bereichseinstellungen, Texturen, 3D Darstellung, Bauteilprofil, DXF-Bauteildefinition; Werkzeuge – Werkzeugdarstellung, Werkzeugprofil, Spannfutter.',
+        en: 'New tab order: Settings – General, Colours, Columns, 3D area settings, Textures, 3D display, Part profile, DXF part definition; Tools – Tool display, Tool profile, Chuck.' },
+      { de: 'Einheitliche Schreibweise „Arbeitsgangnamen“.', en: 'Consistent spelling of the processing step names (German).' },
+    ] },
     { release: 352, date: '11.11.2026', items: [
       { de: 'Nach einem Update erscheint beim ersten Start einmalig der Hinweis „CNC SimX wurde auf Release … aktualisiert“ mit dem Knopf „Changelog öffnen“.',
         en: 'After an update, the first start shows a one-time note "CNC SimX has been updated to Release …" with an "Open changelog" button.' },
@@ -12768,6 +12794,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   window.__getChangelog = () => CHANGELOG_ENTRIES.map(e => ({ release: e.release, items: e.items.length }));
   el('btnChangelog').addEventListener('click', () => { renderChangelog(); el('changelogPanel').classList.add('open'); });
   el('btnChangelogClose').addEventListener('click', () => el('changelogPanel').classList.remove('open'));
+  const FEATURE_LIST = [{"de": "CNC-Programme", "en": "CNC programs", "items": [{"de": "Laden von CNC-/ISO-Programmen (WinPPZ/SCM, HOMAG, FORMAT4/Felder, Moroff, Biesse/CIX, HolzHer u. a.), Zeichenkodierung automatisch erkannt", "en": "Loading of CNC/ISO programs (WinPPZ/SCM, HOMAG, FORMAT4/Felder, Moroff, Biesse/CIX, HolzHer and others), character encoding detected automatically"}, {"de": "CNC-Programm mit Bauteil laden", "en": "Load CNC program with part"}, {"de": "Programmliste mit bis zu 10 Programmen als Bearbeitungskette (gemeinsamer Maschinentyp und Bauteil, Reihenfolge per Drag & Drop, Drehung des Rohblocks je Programm, Abtrag läuft über alle Programme weiter)", "en": "Program list with up to 10 programs as a machining chain (shared machine type and part, order by drag & drop, rotation of the raw block per program, material removal continues across all programs)"}, {"de": "Erkennung von Arbeitsgängen, Zwischenstopps und Programmende, auch per Arbeitsgangnamensliste", "en": "Detection of processing steps, intermediate stops and program end, also via a list of processing step names"}, {"de": "Maschinentypen: Such-/Ersetzregeln, Achsberechnung, Kardankopf (SWIVELANGLE/SWIVELZERO), IJMODE, CORNERRADIUS", "en": "Machine types: search/replace rules, axis calculation, cardan head (SWIVELANGLE/SWIVELZERO), IJMODE, CORNERRADIUS"}, {"de": "Programm-Editor, \"Speichern als ...\"", "en": "Program editor, \"Save as ...\""}]}, {"de": "Simulation & 3D", "en": "Simulation & 3D", "items": [{"de": "Fräsbahnsimulation mit Wiedergabe: Scrubber, Geschwindigkeiten bis 20x plus eigene Eingabe, Arbeitsgang-Navigation, Sprung in Zeile, Codesprung", "en": "Milling path simulation with playback: scrubber, speeds up to 20x plus custom input, processing step navigation, jump to line, code jump"}, {"de": "Interaktive 3D-Ansicht mit Würfel/Kompass, Home- und Draufsicht", "en": "Interactive 3D view with cube/compass, home and top view"}, {"de": "Abtragsimulation:", "en": "Material removal simulation:", "sub": [{"de": "2,5D-Modell: Taschen, Profil- und 5-Achs-Werkzeuge, waagrechte Bohrungen, Glasnuten, Restholzerkennung", "en": "2.5D model: pockets, profile and 5-axis tools, horizontal drillings, glass grooves, residual wood detection"}, {"de": "Tri-Dexel-Volumenmodell für echte 5-Achs-Bahnen (Krümmling) und die Bearbeitungskette", "en": "Tri-dexel volume model for true 5-axis paths (wreath) and the machining chain"}]}, {"de": "Werkzeugdarstellung: Fräser, Säge und Spannfutter, eigene Werkzeug- und Spannfutterprofile aus DXF", "en": "Tool display: cutter, saw and chuck, own tool and chuck profiles from DXF"}, {"de": "Messwerkzeuge: Länge, Winkel, paralleler Abstand, verschiedene Fangarten", "en": "Measuring tools: length, angle, parallel distance, various snap modes"}, {"de": "Fräszeitberechnung und Programminformationen", "en": "Milling time calculation and program information"}]}, {"de": "DXF", "en": "DXF", "items": [{"de": "DXF-Import als Bauteil-Unterlage mit Layern", "en": "DXF import as part underlay with layers"}, {"de": "Bauteil definieren: Stufe, Setzstufe, Wange, Handlauf, Krümmling ..., mit Stärke, Taschen/Einstemmungen, Bohrungen, Schmiegen und Bauteilprofil (z. B. Omega-Handlauf)", "en": "Define part: tread, riser, stringer, handrail, wreath ..., with thickness, pockets/mortises, drillings, bevels and part profile (e.g. omega handrail)"}, {"de": "Bauteildefinition mit Standardwerten, auch automatisch beim Import", "en": "Part definition with default values, also applied automatically on import"}, {"de": "Darstellung von 3D-DXF: gefüllte Flächen, Transparenz, Layer-Vorbelegungen", "en": "Display of 3D DXF: filled faces, transparency, layer presets"}, {"de": "Texturen (Standard- und eigene Holztexturen) für DXF-Bauteile", "en": "Textures (standard and own wood textures) for DXF parts"}, {"de": "DXF bearbeiten: verschieben, spiegeln, drehen, skalieren, Polylinien auflösen, speichern als", "en": "Edit DXF: move, mirror, rotate, scale, explode polylines, save as"}, {"de": "Bauteil erstellen: rechteckiges Rohteil, Maße auch aus dem Programmkopf", "en": "Create part: rectangular raw part, dimensions also taken from the program header"}]}, {"de": "OBJ", "en": "OBJ", "items": [{"de": "Darstellung von OBJ-Modellen, auch als ZIP mit MTL und Texturen", "en": "Display of OBJ models, also as ZIP with MTL and textures"}, {"de": "Gruppen-Vorbelegungen: Farbe, Textur, Transparenz, Sichtbarkeit (z. B. Glasfüllungen)", "en": "Group presets: colour, texture, transparency, visibility (e.g. glass fillings)"}, {"de": "OBJ und 3D-DXF verdecken sich gegenseitig korrekt", "en": "OBJ and 3D DXF hide each other correctly"}]}, {"de": "Allgemein", "en": "General", "items": [{"de": "Zweisprachig: Deutsch und Englisch", "en": "Bilingual: German and English"}, {"de": "Alle Einstellungen bleiben gespeichert und lassen sich exportieren und importieren", "en": "All settings are kept and can be exported and imported"}, {"de": "Farbschema: Standard, Dark Mode, eigene Farben", "en": "Colour scheme: standard, dark mode, custom colours"}, {"de": "Versionsprüfung und Update über GitHub mit Prüfsumme, Changelog, Hinweis nach einem Update", "en": "Version check and update via GitHub with checksum, changelog, note after an update"}, {"de": "Läuft als einzelne HTML-Datei im Browser oder in der Windows-EXE", "en": "Runs as a single HTML file in the browser or in the Windows EXE"}]}];
+  function renderFeatures() {
+    const body = el('featuresBody'), L = o => (currentLang === 'en' ? o.en : o.de);
+    body.innerHTML = '';
+    FEATURE_LIST.forEach(sec => {
+      const s = document.createElement('section'); s.className = 'changelog-release';
+      const h = document.createElement('h4'); h.textContent = L(sec);
+      const ul = document.createElement('ul');
+      sec.items.forEach(it => {
+        const li = document.createElement('li'); li.textContent = L(it);
+        if (it.sub) { const sub = document.createElement('ul'); it.sub.forEach(x => { const l2 = document.createElement('li'); l2.textContent = L(x); sub.appendChild(l2); }); li.appendChild(sub); }
+        ul.appendChild(li);
+      });
+      s.append(h, ul); body.appendChild(s);
+    });
+  }
+  el('btnFeatures').addEventListener('click', () => { renderFeatures(); el('featuresPanel').classList.add('open'); });
+  el('btnFeaturesClose').addEventListener('click', () => el('featuresPanel').classList.remove('open'));
+  ['langBtnDe', 'langBtnEn'].forEach(id => { const b = el(id); if (b) b.addEventListener('click', () => setTimeout(() => { if (el('featuresPanel').classList.contains('open')) renderFeatures(); }, 0)); });
   const dxf3dPanel = el('dxf3dPanel');
   let dxf3dPresetWork = [], dxf3dPresetEditId = null;
   const dxf3dPresetEditing = () => dxf3dPresetWork.find(p => p.id === dxf3dPresetEditId) || null;
@@ -19550,7 +19595,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const settingsPanel = el('settingsPanel');
   const SETTINGS_SECTIONS = [
     { key: 'machineTypes', tab: 'general', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
-    { key: 'opNames', tab: 'general', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgang-Namen', en: 'Processing step names', host: 'settingsColOpNames' },
+    { key: 'opNames', tab: 'general', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgangnamen', en: 'Processing step names', host: 'settingsColOpNames' },
     { key: 'menuColor', tab: 'colors', panel: 'menuColorPanel', open: 'btnMenuColor', apply: 'btnMenuColorApply', cancel: 'btnMenuColorCancel', reset: 'btnMenuColorResetDefaults', de: 'Buttonfarbe', en: 'Button colour', host: 'settingsPaneColors' },
     { key: 'colorProfile', tab: 'colors', panel: 'colorProfilePanel', open: 'btnEditColors', apply: 'btnColorProfileApply', cancel: 'btnColorProfileCancel', reset: 'btnColorProfileResetDefaults', de: 'Hintergrundfarbe', en: 'Background colour', host: 'settingsPaneColors' },
     { key: 'fontColor', tab: 'colors', panel: 'fontColorPanel', open: 'btnFontColor', apply: 'btnFontColorApply', cancel: 'btnFontColorCancel', reset: 'btnFontColorResetDefaults', de: 'Schriftfarbe', en: 'Font colour', host: 'settingsPaneColors' },
@@ -19731,7 +19776,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { key: 'cutter', tab: 'look', panel: 'toolAppearanceCutterPanel', open: 'btnToolAppearanceCutter', apply: 'btnToolAppearanceCutterApply', cancel: 'btnToolAppearanceCutterCancel', host: 'toolsPaneLook' },
     { key: 'collet', tab: 'look', panel: 'toolAppearanceColletPanel', open: 'btnToolAppearanceCollet', apply: 'btnToolAppearanceColletApply', cancel: 'btnToolAppearanceColletCancel', host: 'toolsPaneLook' },
   ];
-  let toolsInternal = false, toolsTab = 'toolProfile';
+  let toolsInternal = false, toolsTab = 'look';
   const toolsDirty = new Set();
   (function initToolsPanel() {
     TOOLS_SECTIONS.forEach(s => {
@@ -19830,7 +19875,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnToolsOk').addEventListener('click', () => applyTools(false));
   el('btnToolsApply').addEventListener('click', () => applyTools(true));
   el('btnToolsCancel').addEventListener('click', cancelTools);
-  el('btnOpenTools').addEventListener('click', () => openTools('toolProfile'));
+  el('btnOpenTools').addEventListener('click', () => openTools('look'));
   window.__openTools = (tab, key) => openTools(tab, key);
   window.__toolsState = () => ({ open: toolsPanel.classList.contains('open'), tab: toolsTab, kind: el('toolsLookKind').value, dirty: Array.from(toolsDirty),
     unsaved: TOOLS_SECTIONS.filter(s => { const f = el(s.panel).__unsaved; return typeof f === 'function' && f(); }).map(s => s.key) });
@@ -20301,7 +20346,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     alert(T(
-      'Release ' + latestRelease + ' wurde heruntergeladen.\n\nBitte die heruntergeladene Datei „CNC_Simulation.html" jetzt manuell an derselben Stelle wie bisher ablegen (vorhandene Datei ersetzen) - Ihre Einstellungen (Maschinentypen, Farben, Arbeitsgang-Namen usw.) bleiben dabei automatisch erhalten.',
+      'Release ' + latestRelease + ' wurde heruntergeladen.\n\nBitte die heruntergeladene Datei „CNC_Simulation.html" jetzt manuell an derselben Stelle wie bisher ablegen (vorhandene Datei ersetzen) - Ihre Einstellungen (Maschinentypen, Farben, Arbeitsgangnamen usw.) bleiben dabei automatisch erhalten.',
       'Release ' + latestRelease + ' has been downloaded.\n\nPlease place the downloaded file "CNC_Simulation.html" manually in the same location as before (replacing the existing file) - your settings (machine types, colors, processing step names, etc.) will be kept automatically.'
     ));
   }
@@ -22822,7 +22867,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (rawProgramText != null) displayCurrentProgram();
   }
   function updateOpNamesButtonTitle() {
-    btnEditOpNames.title = T(`Editierbare Liste der Arbeitsgang-Namen für die listenbasierte Erkennung ohne Trennzeilen (${opNameList.length} Namen) bearbeiten`, `Edit the editable list of processing step names used for list-based recognition without separator lines (${opNameList.length} names)`);
+    btnEditOpNames.title = T(`Editierbare Liste der Arbeitsgangnamen für die listenbasierte Erkennung ohne Trennzeilen (${opNameList.length} Namen) bearbeiten`, `Edit the editable list of processing step names used for list-based recognition without separator lines (${opNameList.length} names)`);
   }
   updateOpNamesButtonTitle();
   btnEditOpNames.addEventListener('click', () => {
