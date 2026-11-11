@@ -1302,9 +1302,15 @@
   .tb-grip { width: 9px; height: 22px; cursor: grab; display: flex; gap: 3px; justify-content: center; flex: none; touch-action: none; }
   .tb-grip::before, .tb-grip::after { content: ''; width: 3px; height: 100%; border-radius: 2px; background: var(--ink-muted); opacity: .75; }
   .tb-grip:hover::before, .tb-grip:hover::after { opacity: 1; }
-  #viewerToolbar .toolbar-row { min-height: 26px; }
+  
+  #viewerToolbar .toolbar-row { position: relative; display: block; min-height: 26px; }
+  #viewerToolbar .toolbar-row > .tb-group { position: absolute; left: 0; top: 0; }
+  .tb-grip { margin-right: -2px; }
+  .tb-group.tb-dragging { z-index: 5; }
+  .tb-ghost { position: absolute; top: 0; height: 26px; border: 2px dashed #1f7ae0; border-radius: 6px; box-sizing: border-box; background: rgba(31, 122, 224, .07); pointer-events: none; }
+  .tb-snapline { position: absolute; top: -3px; width: 2px; height: 32px; background: #1f7ae0; border-radius: 1px; pointer-events: none; }
   #viewerToolbar.tb-is-dragging, #viewerToolbar.tb-is-dragging * { cursor: grabbing !important; user-select: none; }
-  .tb-group.tb-dragging { opacity: .45; outline: 2px dashed var(--accent, #b51f2e); outline-offset: 2px; }
+  .tb-group.tb-dragging { opacity: .6; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); background: var(--panel); }   
   .tb-drop-marker { width: 3px; height: 26px; background: var(--accent, #b51f2e); border-radius: 2px; flex: none; }
   #viewerToolbar .toolbar-row.tb-newrow { border: 1px dashed var(--border); border-radius: 6px; }
   .toolbar-sep {
@@ -8329,8 +8335,8 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 350;
-  const APP_RELEASE_TIMESTAMP = '10.11.2026, 16:27 Uhr';
+  const APP_RELEASE_NUMBER = 351;
+  const APP_RELEASE_TIMESTAMP = '11.11.2026, 07:22 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12626,6 +12632,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 351, date: '11.11.2026', items: [
+      { de: 'Symbolleiste: Gruppen lassen sich in ihrer Zeile frei positionieren und docken in der Nähe (20 px) an Nachbargruppen oder den linken Rand an; überlappen geht nicht. Passt eine Gruppe nicht mehr in die Zeile, rutscht sie in die nächste. Leere Zeilen verschwinden automatisch, Positionen bleiben gespeichert und sind im Einstellungsexport enthalten.',
+        en: 'Toolbar: groups can be positioned freely within their row and snap (20 px) to neighbouring groups or the left edge; they cannot overlap. If a group no longer fits in the row, it moves to the next one. Empty rows disappear automatically; positions are saved and included in the settings export.' },
+    ] },
     { release: 350, date: '10.11.2026', items: [
       { de: 'Symbolleiste: Rechtsklick auf einen Ankerpunkt bietet zusätzlich „Leerzeilen entfernen“ – leere Zeilen verschwinden, die Gruppen rücken nach oben.',
         en: 'Toolbar: right-clicking a handle now also offers "Remove empty rows" – empty rows disappear and the groups move up.' },
@@ -19827,33 +19837,56 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     viewerToolbar.querySelectorAll('.toolbar-row > .toolbar-sep').forEach(s => s.remove());
   })();
+  const TB_GAP = 6, TB_SNAP = 20, TB_LINE_GAP = 6, TB_LINE_H = 26;
+  let tbModel = [];
   function toolbarRows() { return Array.from(viewerToolbar.querySelectorAll(':scope > .toolbar-row:not(.tb-newrow)')); }
-  function getToolbarLayout() { return toolbarRows().map(r => Array.from(r.querySelectorAll(':scope > .tb-group')).map(g => g.dataset.group)); }
+  const tbW = k => toolbarGroupEls[k].offsetWidth;
   function normalizeToolbarLayout(layout) {
     const known = new Set(TOOLBAR_GROUPS.map(g => g.key)), seen = new Set();
-    const rows = (Array.isArray(layout) ? layout : []).slice(0, 20).map(r => (Array.isArray(r) ? r : []).filter(k => typeof k === 'string' && known.has(k) && !seen.has(k) && seen.add(k)));
-    if (!rows.length) TOOLBAR_DEFAULT_LAYOUT.forEach(() => rows.push([]));
-    TOOLBAR_DEFAULT_LAYOUT.forEach((r, i) => r.forEach(k => { if (!seen.has(k)) { rows[Math.min(i, rows.length - 1)].push(k); seen.add(k); } }));
-    return rows;
+    let rows = (Array.isArray(layout) ? layout : []).slice(0, 20).map(r => (Array.isArray(r) ? r : []).map(e => {
+      const g = typeof e === 'string' ? e : (e && typeof e.g === 'string' ? e.g : null);
+      if (!g || !known.has(g) || seen.has(g)) return null;
+      seen.add(g);
+      const x = (e && typeof e === 'object' && Number.isFinite(e.x)) ? Math.max(0, Math.round(e.x)) : null;
+      return { g, x };
+    }).filter(Boolean));
+    if (!rows.some(r => r.length)) rows = TOOLBAR_DEFAULT_LAYOUT.map(() => []);
+    TOOLBAR_DEFAULT_LAYOUT.forEach((r, i) => r.forEach(g => { if (!seen.has(g)) { rows[Math.min(i, rows.length - 1)].push({ g, x: null }); seen.add(g); } }));
+    return rows.filter(r => r.length);
   }
-  function setToolbarLayout(layout) {
-    const rows = normalizeToolbarLayout(layout);
-    let have = toolbarRows();
-    while (have.length < rows.length) {
-      const r = document.createElement('div'); r.className = 'toolbar-row'; r.id = 'toolbarRow' + (have.length + 1);
-      viewerToolbar.appendChild(r); have = toolbarRows();
-    }
-    rows.forEach((keys, i) => keys.forEach(k => have[i].appendChild(toolbarGroupEls[k])));
-    have.forEach((r, i) => { if (i >= rows.length) r.remove(); });
-    renumberToolbarRows();
-    return rows;
+  function syncToolbarRows() {
+    let rows = toolbarRows();
+    while (rows.length < tbModel.length) { const r = document.createElement('div'); r.className = 'toolbar-row'; viewerToolbar.insertBefore(r, viewerToolbar.querySelector(':scope > .tb-newrow')); rows = toolbarRows(); }
+    tbModel.forEach((row, i) => row.forEach(e => { if (toolbarGroupEls[e.g].parentNode !== rows[i]) rows[i].appendChild(toolbarGroupEls[e.g]); }));
+    rows.forEach((r, i) => { if (i >= tbModel.length) r.remove(); });
+    toolbarRows().forEach((r, i) => { r.id = 'toolbarRow' + (i + 1); });
+    tbModel.forEach(row => {
+      let cursor = 0;
+      row.forEach(e => { if (e.x === null) e.x = cursor; cursor = Math.max(cursor, e.x + tbW(e.g) + TB_GAP); });
+      row.sort((a, b) => a.x - b.x);
+      let right = -Infinity;
+      row.forEach(e => { if (e.x < right) e.x = Math.round(right); right = e.x + tbW(e.g) + TB_GAP; });
+    });
   }
-  function renumberToolbarRows() { toolbarRows().forEach((r, i) => { r.id = 'toolbarRow' + (i + 1); }); }
-  function removeEmptyToolbarRows() {
-    const layout = getToolbarLayout().filter(r => r.length);
-    setToolbarLayout(layout);
-    saveToolbarLayout();
+  function renderToolbar() {
+    syncToolbarRows();
+    toolbarRows().forEach((r, i) => {
+      const W = r.clientWidth;
+      let top = 0, lineH = 0, cursor = 0, wrapped = false;
+      (tbModel[i] || []).forEach(e => {
+        const d = toolbarGroupEls[e.g];
+        d.style.maxWidth = W + 'px';
+        const w = d.offsetWidth, h = d.offsetHeight;
+        let x = wrapped ? cursor : Math.max(e.x, cursor);
+        if (x + w > W && x > 0) { top += Math.max(lineH, TB_LINE_H) + TB_LINE_GAP; lineH = 0; x = 0; wrapped = true; }
+        d.style.left = x + 'px'; d.style.top = top + 'px';
+        cursor = x + w + TB_GAP; lineH = Math.max(lineH, h);
+      });
+      r.style.height = (top + Math.max(lineH, TB_LINE_H)) + 'px';
+    });
   }
+  function getToolbarLayout() { return tbModel.map(r => r.map(e => ({ g: e.g, x: e.x }))); }
+  function setToolbarLayout(layout) { tbModel = normalizeToolbarLayout(layout); renderToolbar(); return getToolbarLayout(); }
   function saveToolbarLayout() { try { localStorage.setItem(TOOLBAR_LAYOUT_KEY, JSON.stringify(getToolbarLayout())); } catch (e) {  } }
   function resetToolbarLayout() {
     try { localStorage.removeItem(TOOLBAR_LAYOUT_KEY); } catch (e) {  }
@@ -19864,35 +19897,81 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     try { saved = JSON.parse(localStorage.getItem(TOOLBAR_LAYOUT_KEY) || 'null'); } catch (e) { saved = null; }
     setToolbarLayout(saved || TOOLBAR_DEFAULT_LAYOUT);
   })();
+  let tbRenderQueued = false;
+  const queueToolbarRender = () => { if (tbRenderQueued || tbDrag) return; tbRenderQueued = true; requestAnimationFrame(() => { tbRenderQueued = false; renderToolbar(); }); };
+  window.addEventListener('resize', queueToolbarRender);
+  if (typeof ResizeObserver === 'function') { const ro = new ResizeObserver(queueToolbarRender); Object.values(toolbarGroupEls).forEach(d => ro.observe(d)); }
 
   let tbDrag = null;
-  function tbDropTarget(x, y) {
-    const rows = Array.from(viewerToolbar.querySelectorAll(':scope > .toolbar-row'));
-    let row = null, best = Infinity;
-    rows.forEach(r => { const b = r.getBoundingClientRect(); const d = y < b.top ? b.top - y : y > b.bottom ? y - b.bottom : 0; if (d < best) { best = d; row = r; } });
-    if (!row) return null;
-    const groups = Array.from(row.querySelectorAll(':scope > .tb-group')).filter(g => g !== tbDrag.group);
-    const before = groups.find(g => { const b = g.getBoundingClientRect(); return y < b.top || (y <= b.bottom && x < b.left + b.width / 2); }) || null;
-    return { row, before };
+  const tbOverlap = (x, w, o) => x < o.x + o.w + TB_GAP && o.x < x + w + TB_GAP;
+  function tbFirstFree(list, w, W) {
+    let cursor = 0;
+    for (const o of list.slice().sort((a, b) => a.x - b.x)) { if (cursor + w + TB_GAP <= o.x) break; cursor = Math.max(cursor, o.x + o.w + TB_GAP); }
+    return cursor + w <= W ? cursor : null;
+  }
+  function tbTarget(px, py) {
+    const d = tbDrag, rowsEls = Array.from(viewerToolbar.querySelectorAll(':scope > .toolbar-row'));
+    let rowEl = null, best = Infinity;
+    rowsEls.forEach(r => { const b = r.getBoundingClientRect(); const dist = py < b.top ? b.top - py : py > b.bottom ? py - b.bottom : 0; if (dist < best) { best = dist; rowEl = r; } });
+    const W = toolbarRows()[0] ? toolbarRows()[0].clientWidth : viewerToolbar.clientWidth;
+    const rowsList = i => (tbModel[i] || []).filter(e => e.g !== d.key).map(e => ({ x: e.x, w: tbW(e.g) }));
+    let rowIdx = rowEl.classList.contains('tb-newrow') ? tbModel.length : toolbarRows().indexOf(rowEl);
+    const others = rowsList(rowIdx);
+    let x = Math.round(px - rowEl.getBoundingClientRect().left - d.grabDX), snap = null;
+    const cands = [{ x: 0, line: 0 }];
+    others.forEach(o => { cands.push({ x: o.x + o.w + TB_GAP, line: o.x + o.w + TB_GAP / 2 }); cands.push({ x: o.x - TB_GAP - d.w, line: o.x - TB_GAP / 2 }); });
+    let bestC = null;
+    cands.forEach(c => { if (c.x >= 0 && Math.abs(c.x - x) <= TB_SNAP && (!bestC || Math.abs(c.x - x) < Math.abs(bestC.x - x))) bestC = c; });
+    if (bestC) { x = bestC.x; snap = bestC.line; }
+    x = Math.max(0, x);
+    for (let n = 0; n <= others.length; n++) {
+      const o = others.find(o2 => tbOverlap(x, d.w, o2));
+      if (!o) break;
+      const leftX = o.x - TB_GAP - d.w, rightX = o.x + o.w + TB_GAP;
+      const leftFree = leftX >= 0 && !others.some(o2 => o2 !== o && tbOverlap(leftX, d.w, o2));
+      if (x + d.w / 2 < o.x + o.w / 2 && leftFree) { x = leftX; snap = o.x - TB_GAP / 2; } else { x = rightX; snap = o.x + o.w + TB_GAP / 2; }
+    }
+    let wrapped = false;
+    if (x + d.w > W) {
+      wrapped = true; snap = null;
+      let i = rowIdx + 1, fx = null;
+      while (i < tbModel.length && (fx = tbFirstFree(rowsList(i), d.w, W)) === null) i++;
+      if (i >= tbModel.length) { rowIdx = tbModel.length; x = 0; } else { rowIdx = i; x = fx; }
+      if (x > 0) snap = x - TB_GAP / 2;
+    }
+    return { rowIdx, x, snap, wrapped };
+  }
+  function tbShowTarget(t) {
+    const d = tbDrag;
+    const host = t.rowIdx >= tbModel.length ? d.newRow : toolbarRows()[t.rowIdx];
+    if (d.ghost.parentNode !== host) host.appendChild(d.ghost);
+    d.ghost.style.left = t.x + 'px'; d.ghost.style.width = d.w + 'px';
+    if (t.snap === null) d.snapLine.remove();
+    else { if (d.snapLine.parentNode !== host) host.appendChild(d.snapLine); d.snapLine.style.left = (t.snap - 1) + 'px'; }
   }
   function tbMove(e) {
     if (!tbDrag) return;
-    const t = tbDropTarget(e.clientX, e.clientY);
-    if (!t) return;
-    if (tbDrag.marker.parentNode !== t.row || tbDrag.marker.nextSibling !== t.before) t.row.insertBefore(tbDrag.marker, t.before);
+    tbDrag.group.style.transform = 'translate(' + (e.clientX - tbDrag.px) + 'px,' + (e.clientY - tbDrag.py) + 'px)';
+    tbDrag.target = tbTarget(e.clientX, e.clientY);
+    tbShowTarget(tbDrag.target);
   }
   function tbEnd(drop) {
     if (!tbDrag) return;
-    const { group, marker, newRow } = tbDrag;
+    const d = tbDrag;
     tbDrag = null;
     document.removeEventListener('pointermove', tbMove, true);
     document.removeEventListener('pointerup', tbUp, true);
     document.removeEventListener('keydown', tbKey, true);
-    group.classList.remove('tb-dragging'); viewerToolbar.classList.remove('tb-is-dragging');
-    if (drop && marker.parentNode) marker.parentNode.insertBefore(group, marker);
-    marker.remove();
-    if (newRow.querySelector('.tb-group')) { newRow.classList.remove('tb-newrow'); renumberToolbarRows(); } else newRow.remove();
-    if (drop) saveToolbarLayout();
+    d.group.classList.remove('tb-dragging'); d.group.style.transform = ''; viewerToolbar.classList.remove('tb-is-dragging');
+    d.ghost.remove(); d.snapLine.remove(); d.newRow.remove();
+    if (drop && d.target) {
+      tbModel.forEach(r => { const i = r.findIndex(e => e.g === d.key); if (i >= 0) r.splice(i, 1); });
+      if (d.target.rowIdx >= tbModel.length) tbModel.push([]);
+      tbModel[Math.min(d.target.rowIdx, tbModel.length - 1)].push({ g: d.key, x: d.target.x });
+      tbModel = tbModel.filter(r => r.length);
+      saveToolbarLayout();
+    }
+    renderToolbar();
   }
   function tbUp(e) { e.preventDefault(); tbEnd(true); }
   function tbKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tbEnd(false); } }
@@ -19900,12 +19979,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const grip = e.target.closest && e.target.closest('.tb-grip');
     if (!grip || e.button !== 0) return;
     e.preventDefault();
-    const group = grip.parentElement;
-    const marker = document.createElement('span'); marker.className = 'tb-drop-marker';
+    const group = grip.parentElement, gb = group.getBoundingClientRect();
     const newRow = document.createElement('div'); newRow.className = 'toolbar-row tb-newrow';
     viewerToolbar.appendChild(newRow);
-    group.parentNode.insertBefore(marker, group.nextSibling);
-    tbDrag = { group, marker, newRow };
+    const ghost = document.createElement('div'); ghost.className = 'tb-ghost';
+    const snapLine = document.createElement('div'); snapLine.className = 'tb-snapline';
+    tbDrag = { group, key: group.dataset.group, w: group.offsetWidth, grabDX: e.clientX - gb.left,
+      px: e.clientX, py: e.clientY, ghost, snapLine, newRow, target: null };
     group.classList.add('tb-dragging'); viewerToolbar.classList.add('tb-is-dragging');
     document.addEventListener('pointermove', tbMove, true);
     document.addEventListener('pointerup', tbUp, true);
@@ -19913,8 +19993,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   const tbGripMenu = document.createElement('div');
   tbGripMenu.className = 'context-menu'; tbGripMenu.id = 'tbGripMenu'; tbGripMenu.hidden = true;
-  tbGripMenu.innerHTML = '<button class="menu-item" id="btnToolbarReset" type="button" data-i18n-en="Reset toolbars">Symbolleisten zurücksetzen</button>'
-    + '<button class="menu-item" id="btnToolbarRemoveEmptyRows" type="button" data-i18n-en="Remove empty rows">Leerzeilen entfernen</button>';
+  tbGripMenu.innerHTML = '<button class="menu-item" id="btnToolbarReset" type="button" data-i18n-en="Reset toolbars">Symbolleisten zurücksetzen</button>';
   document.body.appendChild(tbGripMenu);
   const closeTbGripMenu = () => { tbGripMenu.hidden = true; };
   viewerToolbar.addEventListener('contextmenu', e => {
@@ -19922,18 +20001,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!grip) return;
     e.preventDefault(); e.stopPropagation();
     closeContextMenu();
-    el('btnToolbarRemoveEmptyRows').disabled = !getToolbarLayout().some(r => !r.length);
     tbGripMenu.hidden = false;
     const w = tbGripMenu.offsetWidth, h = tbGripMenu.offsetHeight;
     tbGripMenu.style.left = Math.min(e.clientX, window.innerWidth - w - 4) + 'px';
     tbGripMenu.style.top = Math.min(e.clientY, window.innerHeight - h - 4) + 'px';
   });
   el('btnToolbarReset').addEventListener('click', () => { closeTbGripMenu(); resetToolbarLayout(); });
-  el('btnToolbarRemoveEmptyRows').addEventListener('click', () => { closeTbGripMenu(); removeEmptyToolbarRows(); });
   document.addEventListener('pointerdown', e => { if (!tbGripMenu.hidden && !tbGripMenu.contains(e.target)) closeTbGripMenu(); }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !tbGripMenu.hidden) closeTbGripMenu(); }, true);
-  window.__toolbarLayout = () => getToolbarLayout();
-  window.__setToolbarLayout = l => { setToolbarLayout(l); saveToolbarLayout(); return getToolbarLayout(); };
+  window.__toolbarLayout = () => tbModel.map(r => r.map(e => e.g));
+  window.__toolbarPositions = () => getToolbarLayout();
+  window.__setToolbarLayout = l => { setToolbarLayout(l); saveToolbarLayout(); return window.__toolbarLayout(); };
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
