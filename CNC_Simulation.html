@@ -332,6 +332,7 @@
   #toolsPaneLook .settings-sec[hidden] { display: none; }
   #toolsPaneLook .settings-sec-body { max-width: 640px; }   
   #toolsPaneLook .settings-sec + .settings-sec { border-top: none; margin-top: 0; padding-top: 0; }
+  .update-info-text { white-space: pre-line; font-size: 13px; }   
   .settings-sec-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
   .settings-sec-actions .dxf-preview-toggle { margin-right: auto; }
   .settings-sec[data-key="textures"] #dxfTextureListSelect { height: 330px; }
@@ -3013,6 +3014,17 @@
     <div class="paste-actions">
       <button class="btn ghost" id="btnObjSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
       <button class="btn primary" id="btnObjSettingsOk" type="button">Ok</button>
+    </div>
+  </div>
+</div>
+
+<div class="paste-panel" id="updateInfoPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Update installed">Update installiert</h3>
+    <p class="panel-hint update-info-text" id="updateInfoText"></p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnUpdateInfoClose" type="button" data-i18n-en="Close">Schließen</button>
+      <button class="btn primary" id="btnUpdateInfoChangelog" type="button" data-i18n-en="Open changelog">Changelog öffnen</button>
     </div>
   </div>
 </div>
@@ -8335,8 +8347,16 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 351;
-  const APP_RELEASE_TIMESTAMP = '11.11.2026, 07:22 Uhr';
+  const APP_RELEASE_NUMBER = 352;
+  const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
+  const updateInfoStart = (() => {
+    try {
+      const keys = Object.keys(localStorage);
+      return { last: Number(localStorage.getItem(UPDATE_INFO_LS_KEY)) || 0,
+        used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
+    } catch (e) { return { last: 0, used: false }; }
+  })();
+  const APP_RELEASE_TIMESTAMP = '11.11.2026, 08:10 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12632,6 +12652,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 352, date: '11.11.2026', items: [
+      { de: 'Nach einem Update erscheint beim ersten Start einmalig der Hinweis „CNC SimX wurde auf Release … aktualisiert“ mit dem Knopf „Changelog öffnen“.',
+        en: 'After an update, the first start shows a one-time note "CNC SimX has been updated to Release …" with an "Open changelog" button.' },
+      { de: 'Der Menüpunkt „Leerzeilen entfernen“ aus Release 350 ist wieder entfernt – er wird nicht mehr benötigt, weil leere Symbolleisten-Zeilen seit Release 351 automatisch verschwinden.',
+        en: 'The "Remove empty rows" menu item from Release 350 has been removed again – it is no longer needed, since empty toolbar rows disappear automatically since Release 351.' },
+    ] },
     { release: 351, date: '11.11.2026', items: [
       { de: 'Symbolleiste: Gruppen lassen sich in ihrer Zeile frei positionieren und docken in der Nähe (20 px) an Nachbargruppen oder den linken Rand an; überlappen geht nicht. Passt eine Gruppe nicht mehr in die Zeile, rutscht sie in die nächste. Leere Zeilen verschwinden automatisch, Positionen bleiben gespeichert und sind im Einstellungsexport enthalten.',
         en: 'Toolbar: groups can be positioned freely within their row and snap (20 px) to neighbouring groups or the left edge; they cannot overlap. If a group no longer fits in the row, it moves to the next one. Empty rows disappear automatically; positions are saved and included in the settings export.' },
@@ -20012,6 +20038,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   window.__toolbarLayout = () => tbModel.map(r => r.map(e => e.g));
   window.__toolbarPositions = () => getToolbarLayout();
   window.__setToolbarLayout = l => { setToolbarLayout(l); saveToolbarLayout(); return window.__toolbarLayout(); };
+
+  (function showUpdateInfoOnce() {
+    const updated = updateInfoStart.last ? updateInfoStart.last < APP_RELEASE_NUMBER : updateInfoStart.used;
+    try { localStorage.setItem(UPDATE_INFO_LS_KEY, String(APP_RELEASE_NUMBER)); } catch (e) {  }
+    if (!updated) return;
+    const p = el('updateInfoPanel');
+    const fill = () => {
+      el('updateInfoText').textContent = T('CNC SimX wurde auf Release ' + APP_RELEASE_NUMBER + ' aktualisiert.\n\nWas sich geändert hat, steht unter „?“ → „Changelog“.',
+        'CNC SimX has been updated to Release ' + APP_RELEASE_NUMBER + '.\n\nTo see what has changed, open "?" → "Changelog".');
+    };
+    ['langBtnDe', 'langBtnEn'].forEach(id => { const b = el(id); if (b) b.addEventListener('click', () => setTimeout(fill, 0)); });
+    el('btnUpdateInfoClose').addEventListener('click', () => p.classList.remove('open'));
+    el('btnUpdateInfoChangelog').addEventListener('click', () => { p.classList.remove('open'); el('btnChangelog').click(); });
+    setTimeout(() => { fill(); p.classList.add('open'); }, 0);
+  })();
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
