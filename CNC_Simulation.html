@@ -8379,7 +8379,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 355;
+  const APP_RELEASE_NUMBER = 356;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8388,7 +8388,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '12.11.2026, 11:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '12.11.2026, 11:53 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10356,6 +10356,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     document.querySelectorAll('.paste-panel.open').forEach(p => { const q = Number(p.dataset.openSeq || 0); if (q > bestSeq) { bestSeq = q; best = p; } });
     return best;
   }
+  const PANEL_FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])';
+  function panelFocusables(p) {
+    return Array.from(p.querySelectorAll(PANEL_FOCUSABLE)).filter(x => !x.disabled && x.tabIndex >= 0 && !x.closest('[hidden]')
+      && x.getClientRects().length > 0 && getComputedStyle(x).visibility !== 'hidden');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+    const p = topOpenPastePanel();
+    if (!p) return;
+    const list = panelFocusables(p);
+    if (!list.length) { e.preventDefault(); return; }
+    const i = list.indexOf(document.activeElement);
+    let next = null;
+    if (!p.contains(document.activeElement) || i < 0) next = e.shiftKey ? list[list.length - 1] : list[0];
+    else if (!e.shiftKey && i === list.length - 1) next = list[0];
+    else if (e.shiftKey && i === 0) next = list[list.length - 1];
+    if (next) { e.preventDefault(); next.focus(); }
+  }, true);
   const dxfThicknessInput = el('dxfThicknessInput');
   const dxfPartTypeSelect = el('dxfPartTypeSelect');
   const dxfThicknessTransparencyRow = el('dxfThicknessTransparencyRow');
@@ -12728,6 +12746,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 356, date: '12.11.2026', items: [
+      { de: 'In geöffneten Fenstern (z. B. Einstellungen) bleiben Tab und Shift+Tab im Fenster und springen nicht mehr in die Menüleiste dahinter.',
+        en: 'In open windows (e.g. Settings), Tab and Shift+Tab stay inside the window and no longer jump to the menu bar behind it.' },
+    ] },
     { release: 355, date: '12.11.2026', items: [
       { de: 'Spalten „DXF-Layer“ und „OBJ-Gruppen“ haben jetzt dieselben Abstände – beim Umschalten springt nichts mehr.',
         en: 'The "DXF layers" and "OBJ groups" columns now use the same spacing – nothing jumps when switching.' },
