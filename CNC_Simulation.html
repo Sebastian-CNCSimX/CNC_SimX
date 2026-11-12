@@ -290,6 +290,9 @@
   .obj-group-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; min-height: 0; overflow: auto; }
   .obj-group-panel[hidden] { display: none; }
   .obj-file-name { font-size: 11.5px; color: var(--ink-muted); word-break: break-all; }
+  
+  .sidebar-file-sep { height: 1px; background: var(--border); margin: 6px 0 8px; flex: none; }
+  #dxfLayerFileNameLabel:empty, #dxfLayerFileNameLabel:empty + .sidebar-file-sep { display: none; }
   .obj-group-row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 6px; font-size: 12.5px; cursor: pointer; }
   .obj-group-row:hover { background: var(--panel-2); }
   .obj-group-row input { margin: 0; }
@@ -2033,6 +2036,11 @@
       <div class="dxf-status-group" id="dxfStatusGroup" hidden>
         <span class="dxf-filename" id="dxfFilenameLabel"></span>
       </div>
+      
+      <span class="topbar-sep" id="objFilenameSep" hidden></span>
+      <div class="dxf-status-group" id="objStatusGroup" hidden>
+        <span class="dxf-filename" id="objFilenameLabel"></span>
+      </div>
     </div>
     
     <input type="file" id="fileInput" hidden>
@@ -2221,6 +2229,9 @@
         </div>
         
         <div class="dxf-layer-panel" id="dxfLayerPanel" hidden>
+          
+          <div class="obj-file-name" id="dxfLayerFileNameLabel"></div>
+          <div class="sidebar-file-sep"></div>
           <div class="empty-state" id="dxfLayerEmptyState" hidden>
             <div class="glyph">🗂</div>
             Keine Layer gefunden.
@@ -2235,8 +2246,9 @@
         
         <div class="obj-group-panel" id="objGroupPanel" hidden>
           <div class="obj-file-name" id="objFileNameLabel"></div>
+          <div class="sidebar-file-sep"></div>   
           
-          <label class="obj-preset-field" id="objPresetField"><span data-i18n-en="Preset">Vorbelegung</span>
+          <label class="obj-preset-field" id="objPresetField"><span data-i18n-en="Layer preset">Layer-Vorbelegung</span>
             <select id="objPresetSelect" class="filename-input" title="Farben, Texturen und ausgeblendete Gruppen je Gruppenname (Einstellungen → Einstellungen → 3D Darstellung)" data-i18n-en-title="Colours, textures and hidden groups per group name (Settings → Settings → 3D display)"></select>
           </label>
           <p class="obj-preset-hint" id="objPresetNoMatch" hidden data-i18n-en="No known groups – preset not available, shown as in the file.">Keine bekannten Gruppen – Vorbelegung nicht verfügbar, Darstellung wie in der Datei.</p>
@@ -8364,7 +8376,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 353;
+  const APP_RELEASE_NUMBER = 354;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8373,7 +8385,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '11.11.2026, 12:48 Uhr';
+  const APP_RELEASE_TIMESTAMP = '12.11.2026, 10:48 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11073,6 +11085,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let rawProgramFileDate = null;
 
   function loadText(text, filename, fileMeta) {
+    if (typeof objModel !== 'undefined' && objModel) {
+      if (!confirm(T('Es ist eine OBJ geladen. OBJ entfernen und das CNC-Programm laden?', 'An OBJ is loaded. Remove the OBJ and load the CNC program?'))) return false;
+      clearObj();
+    }
     rawProgramText = text;
     postRotDir = 'up';
     rawProgramFilename = filename;
@@ -11148,6 +11164,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function startNewProgramList(files) {
+    if (typeof objModel !== 'undefined' && objModel) {
+      if (!confirm(T('Es ist eine OBJ geladen. OBJ entfernen und das CNC-Programm laden?', 'An OBJ is loaded. Remove the OBJ and load the CNC program?'))) return;
+      clearObj();
+    }
     if (rawProgramText != null) clearProgram();
     programList = [];
     activeProgramId = null;
@@ -11546,6 +11566,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   function updateDxfFilenameSep() {
     dxfFilenameSep.hidden = !(dxfGeometry && filenameLabel.textContent);
+    if (typeof updateObjFilenameTopbar === 'function') updateObjFilenameTopbar();
+  }
+  function updateObjFilenameTopbar() {
+    const has = !!(typeof objModel !== 'undefined' && objModel);
+    el('objStatusGroup').hidden = !has;
+    el('objFilenameLabel').textContent = has ? objModel.name : '';
+    el('objFilenameLabel').title = has ? objModel.name : '';
+    el('objFilenameSep').hidden = !(has && (dxfGeometry || filenameLabel.textContent));
   }
 
   function updateDxfUI() {
@@ -11663,6 +11691,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function renderDxfLayerList() {
+    el('dxfLayerFileNameLabel').textContent = dxfGeometry ? (dxfFilename || 'DXF') : '';
     dxfLayerListEl.innerHTML = '';
     const layers = (dxfGeometry && dxfGeometry.layers) || [];
     dxfLayerEmptyStateEl.hidden = layers.length > 0;
@@ -12153,6 +12182,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   async function loadObjFiles(fileList) {
     const files = Array.from(fileList || []);
     if (!files.length || objLoading) return;
+    if (rawProgramText != null || (typeof programList !== 'undefined' && programList.length)) {
+      if (!confirm(T('Es ist ein CNC-Programm geladen. CNC-Programm entfernen und die OBJ laden?', 'A CNC program is loaded. Remove the CNC program and load the OBJ?'))) return;
+      if (programList.length) clearProgramList(); else clearProgram();
+    }
     objLoading = true;
     try {
       const entries = [];
@@ -12437,7 +12470,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (objHiddenGroups.size) objHiddenGroups.clear(); else objModel.groups.forEach((g, i) => objHiddenGroups.add(i));
     objVersion++; renderObjGroupList(); bakeParams = null; requestRender();
   });
+  const sideTabMenu = document.createElement('div');
+  sideTabMenu.className = 'context-menu'; sideTabMenu.id = 'sideTabMenu'; sideTabMenu.hidden = true;
+  sideTabMenu.innerHTML = '<button class="menu-item" id="btnSideTabRemoveDxf" type="button" data-i18n-en="Remove DXF">DXF entfernen</button>'
+    + '<button class="menu-item" id="btnSideTabRemoveObj" type="button" data-i18n-en="Remove OBJ">OBJ entfernen</button>';
+  document.body.appendChild(sideTabMenu);
+  const closeSideTabMenu = () => { sideTabMenu.hidden = true; };
+  function openSideTabMenu(e, kind) {
+    e.preventDefault(); e.stopPropagation();
+    closeContextMenu();
+    el('btnSideTabRemoveDxf').hidden = kind !== 'dxf';
+    el('btnSideTabRemoveObj').hidden = kind !== 'obj';
+    sideTabMenu.hidden = false;
+    const w = sideTabMenu.offsetWidth, h = sideTabMenu.offsetHeight;
+    sideTabMenu.style.left = Math.min(e.clientX, window.innerWidth - w - 4) + 'px';
+    sideTabMenu.style.top = Math.min(e.clientY, window.innerHeight - h - 4) + 'px';
+  }
+  sidebarTabDxf.addEventListener('contextmenu', e => openSideTabMenu(e, 'dxf'));
+  sidebarTabObj.addEventListener('contextmenu', e => openSideTabMenu(e, 'obj'));
+  el('btnSideTabRemoveDxf').addEventListener('click', () => { closeSideTabMenu(); clearDxf(); });
+  el('btnSideTabRemoveObj').addEventListener('click', () => { closeSideTabMenu(); clearObj(); });
+  document.addEventListener('pointerdown', e => { if (!sideTabMenu.hidden && !sideTabMenu.contains(e.target)) closeSideTabMenu(); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideTabMenu.hidden) closeSideTabMenu(); }, true);
   function updateObjUI() {
+    updateObjFilenameTopbar();
     el('btnObjDeleteFileMenu').disabled = !objModel;
     el('btnObjDeleteIcon').disabled = !objModel;
     if (sidebarView === 'objGroups') renderObjGroupList();
@@ -12669,6 +12725,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 354, date: '12.11.2026', items: [
+      { de: 'Rechtsklick auf die Überschrift „DXF-Layer“ bzw. „OBJ-Gruppen“: „DXF entfernen“ bzw. „OBJ entfernen“.',
+        en: 'Right-click on the heading "DXF layers" or "OBJ groups": "Remove DXF" or "Remove OBJ".' },
+      { de: 'Spalte „DXF-Layer“ zeigt oben den Dateinamen (wie „OBJ-Gruppen“), darunter ein Trennstrich; bei OBJ heißt es jetzt „Layer-Vorbelegung“. Oben in der Leiste steht neben dem DXF-Namen auch der OBJ-Name.',
+        en: 'The "DXF layers" column shows the file name at the top (like "OBJ groups"), followed by a separator; for OBJ it is now called "Layer preset". The top bar shows the OBJ name next to the DXF name.' },
+      { de: 'OBJ und CNC-Programm schließen sich aus: Beim Laden des einen fragt die Simulation, ob das andere entfernt werden soll.',
+        en: 'OBJ and CNC program are mutually exclusive: when loading one, the simulation asks whether to remove the other.' },
+    ] },
     { release: 353, date: '11.11.2026', items: [
       { de: 'Neuer Menüpunkt „?“ → „Features“: Übersicht der Kernfunktionen von CNC SimX (Deutsch und Englisch).',
         en: 'New menu item "?" → "Features": overview of the core features of CNC SimX (German and English).' },
