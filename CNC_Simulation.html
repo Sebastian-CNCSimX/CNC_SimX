@@ -287,7 +287,8 @@
   .context-menu[hidden] { display: none; }
   .context-menu-divider { height: 1px; background: var(--border); margin: 4px 2px; }
   
-  .obj-group-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; min-height: 0; overflow: auto; }
+  .obj-group-panel { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0; padding: 4px 4px 14px 10px; min-height: 0; overflow: auto; }   
+  #btnShowAllObjGroups { margin: 2px 0 8px; }   
   .obj-group-panel[hidden] { display: none; }
   .obj-file-name { font-size: 11.5px; color: var(--ink-muted); word-break: break-all; }
   
@@ -348,8 +349,10 @@
   .settings-sec[data-key="dxf3d"] .dpd-main .tool-data-field { flex: 0 0 300px; min-width: 0; }
 
   #objSettingsPanel .paste-card { width: min(900px, 96vw); max-height: calc(100vh - 48px); overflow-y: auto; }
-  .obj-preset-field { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--ink-muted); }
+  .obj-preset-field { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-muted); }
+  #objGroupPanel .obj-preset-field { margin: 2px 0 8px; flex: none; }   
   .obj-preset-hint { font-size: 11.5px; color: var(--ink-muted); margin: 0; }
+  #objGroupPanel .obj-preset-hint { margin: -2px 0 8px; }   
   .obj-preset-hint[hidden] { display: none; }
   .obj-pt-mode { min-width: 130px; }
   .obj-pt-tex { min-width: 150px; }
@@ -8376,7 +8379,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 354;
+  const APP_RELEASE_NUMBER = 355;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8385,7 +8388,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '12.11.2026, 10:48 Uhr';
+  const APP_RELEASE_TIMESTAMP = '12.11.2026, 11:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12725,6 +12728,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 355, date: '12.11.2026', items: [
+      { de: 'Spalten „DXF-Layer“ und „OBJ-Gruppen“ haben jetzt dieselben Abstände – beim Umschalten springt nichts mehr.',
+        en: 'The "DXF layers" and "OBJ groups" columns now use the same spacing – nothing jumps when switching.' },
+    ] },
     { release: 354, date: '12.11.2026', items: [
       { de: 'Rechtsklick auf die Überschrift „DXF-Layer“ bzw. „OBJ-Gruppen“: „DXF entfernen“ bzw. „OBJ entfernen“.',
         en: 'Right-click on the heading "DXF layers" or "OBJ groups": "Remove DXF" or "Remove OBJ".' },
