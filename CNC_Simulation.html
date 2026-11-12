@@ -1221,6 +1221,16 @@
   }
   
   .info-panel.dragged { bottom: auto; }
+  
+  .info-panel.info-right:not(.dragged) { left: auto; right: 12px; }
+  #viewer.gizmo-left .gizmo-home-btn, #viewer.gizmo-left .toolbar-btn.gizmo-top-btn { right: auto; left: 151px; }
+  #viewer.gizmo-left .toolbar-btn.gizmo-settings-btn { right: auto; left: 113px; }
+  
+  .main.dock-right { grid-template-columns: 1fr 6px var(--sidebar-w, 340px); }
+  .main.dock-right > #sidebarCol { order: 3; }
+  .main.dock-right > #resizer { order: 2; }
+  .main.dock-right > .viewer-col { order: 1; }
+  .main.dock-right .sidebar-head, .main.dock-right .program-body, .main.dock-right .sidebar-head-right { flex-direction: row-reverse; }
   .info-panel-head {
     display: flex; align-items: center; gap: 6px;
     padding: 6px 8px;
@@ -4019,6 +4029,14 @@
   <div class="paste-card">
     <h3 data-i18n-en="Columns">Spalteneinstellungen</h3>
     <p class="panel-hint" data-i18n-en-html="Preferred width of &lt;span class=&quot;k&quot;&gt;CNC program code&lt;/span&gt; as a proportion of its automatically determined full width, plus the collapse/expand default for &lt;span class=&quot;k&quot;&gt;processing steps&lt;/span&gt; (always either collapsed or exactly fitted to the longest processing step, no in-between width selectable anymore) - applied every time a program is (re-)loaded. The arrow buttons above the program code column and the collapse/expand button above the processing steps column also always allow a finer adjustment that applies only to the current session.">Bevorzugte Breite von <span class="k">CNC-Programmcode</span> als Anteil ihrer automatisch ermittelten vollen Breite, sowie Ein-/Ausklapp-Vorgabe für <span class="k">Arbeitsgänge</span> (immer entweder eingeklappt oder exakt an den längsten Arbeitsgang angepasst, keine Zwischenbreite mehr wählbar) - wird bei jedem (Neu-)Laden eines Programms angewendet. Die Pfeil-Knöpfe über der Programmcode-Spalte bzw. der Ein-/Ausklappen-Knopf über der Arbeitsgänge-Spalte erlauben zusätzlich jederzeit eine feinere, nur für die aktuelle Sitzung geltende Anpassung.</p>
+    
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Column arrangement">Spaltenanordnung</div>
+      <div class="scale-choice" id="columnDockChoice" title="Seite, an der CNC-Programmcode, Arbeitsgänge, DXF-Layer und OBJ-Gruppen angedockt sind - die 3D-Simulation liegt auf der anderen Seite" data-i18n-en-title="Side on which CNC program code, processing steps, DXF layers and OBJ groups are docked - the 3D simulation is on the other side">
+        <label class="scale-option"><input type="radio" name="columnDock" value="left"> <span data-i18n-en="left">links</span></label>
+        <label class="scale-option"><input type="radio" name="columnDock" value="right"> <span data-i18n-en="right">rechts</span></label>
+      </div>
+    </div>
     <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="CNC-Programcode">CNC-Programmcode</div>
       <div class="scale-choice" id="columnScaleCodeChoice">
@@ -4083,6 +4101,21 @@
       </span>
     </label>
     <p class="panel-hint" id="gridStepSizeWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 10 or 20)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 10 oder 20).</p>
+    
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Cube position">Würfelposition</div>
+      <div class="scale-choice" id="gizmoPosChoice">
+        <label class="scale-option"><input type="radio" name="gizmoPos" value="left"> <span data-i18n-en="top left">links oben</span></label>
+        <label class="scale-option"><input type="radio" name="gizmoPos" value="right"> <span data-i18n-en="top right">rechts oben</span></label>
+      </div>
+    </div>
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Information window position">Informationsfensterposition</div>
+      <div class="scale-choice" id="infoPanelPosChoice">
+        <label class="scale-option"><input type="radio" name="infoPanelPos" value="left"> <span data-i18n-en="bottom left">links unten</span></label>
+        <label class="scale-option"><input type="radio" name="infoPanelPos" value="right"> <span data-i18n-en="bottom right">rechts unten</span></label>
+      </div>
+    </div>
     <div class="paste-actions">
       <button class="btn ghost" id="btnArea3dSettingsResetDefaults" type="button" style="margin-right:auto" title="Setzt Kipprichtung, Drehrichtung, Raster-Sichtbarkeit und Rastergröße auf ihre Standardwerte zurück (Kipprichtung nicht invertiert, Drehrichtung nicht invertiert, Raster an, Rastergröße automatisch)." data-i18n-en="Reset to default values" data-i18n-en-title="Resets tilt direction, rotation direction, grid visibility and grid cell size to their default values (tilt direction not inverted, rotation direction not inverted, grid on, cell size automatic).">Standardwerte wiederherstellen</button>
       <button class="btn ghost" id="btnArea3dSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -8379,7 +8412,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 356;
+  const APP_RELEASE_NUMBER = 357;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8388,7 +8421,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '12.11.2026, 11:53 Uhr';
+  const APP_RELEASE_TIMESTAMP = '12.11.2026, 12:52 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12746,6 +12779,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 357, date: '12.11.2026', items: [
+      { de: 'Einstellungen → Spalten → „Spaltenanordnung“: CNC-Programmcode, Arbeitsgänge, DXF-Layer und OBJ-Gruppen links oder rechts andocken; rechts ist die Reihenfolge Code, Arbeitsgänge, Simulation (von rechts), die Klapp-Pfeile zeigen entsprechend.',
+        en: 'Settings → Columns → "Column arrangement": dock CNC program code, processing steps, DXF layers and OBJ groups on the left or right; on the right the order is code, processing steps, simulation (from the right), with the collapse arrows mirrored.' },
+      { de: 'Einstellungen → 3D Bereichseinstellungen: „Würfelposition“ (links oben / rechts oben) und „Informationsfensterposition“ (links unten / rechts unten).',
+        en: 'Settings → 3D area settings: "Cube position" (top left / top right) and "Information window position" (bottom left / bottom right).' },
+    ] },
     { release: 356, date: '12.11.2026', items: [
       { de: 'In geöffneten Fenstern (z. B. Einstellungen) bleiben Tab und Shift+Tab im Fenster und springen nicht mehr in die Menüleiste dahinter.',
         en: 'In open windows (e.g. Settings), Tab and Shift+Tab stay inside the window and no longer jump to the menu bar behind it.' },
@@ -13720,7 +13759,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     opsCollapsed = columnScalePreference.ops === 0;
     opsColEl.classList.toggle('collapsed', opsCollapsed);
     opsResizerEl.classList.toggle('inert', opsCollapsed);
-    btnOpsToggle.textContent = opsCollapsed ? '«' : '»';
+    btnOpsToggle.textContent = (opsCollapsed !== (columnDockPref === 'right')) ? '«' : '»';
     const opsW = computeOpsContentWidth(current.sections);
     if (opsW > 0) setOpsWidth(opsW);
   }
@@ -13963,7 +14002,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     opsCollapsed = !opsCollapsed;
     opsColEl.classList.toggle('collapsed', opsCollapsed);
     opsResizerEl.classList.toggle('inert', opsCollapsed);
-    btnOpsToggle.textContent = opsCollapsed ? '«' : '»';
+    btnOpsToggle.textContent = (opsCollapsed !== (columnDockPref === 'right')) ? '«' : '»';
     const opsSpaceAfter = opsColSpacePx();
     setSidebarWidth(sidebarWidth - (opsSpaceBefore - opsSpaceAfter), undefined, sidebarWidth > SIDEBAR_AUTO_MAX);
   });
@@ -15257,7 +15296,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     gizmoCompassHits = [];
     gizmoCenterPos = null;
     if (!points.length && !(dxfGeometry && dxfVisible)) return;
-    const gcx = w - GIZMO_MARGIN - GIZMO_TOTAL_RADIUS;
+    const gcx = gizmoPosPref === 'left' ? GIZMO_MARGIN + GIZMO_TOTAL_RADIUS : w - GIZMO_MARGIN - GIZMO_TOTAL_RADIUS;
     const gcy = GIZMO_MARGIN + GIZMO_TOTAL_RADIUS;
     gizmoCenterPos = { x: gcx, y: gcy };
     const proj2D = v => {
@@ -20684,6 +20723,7 @@ Max Mustermann (Anschrift wie oben)`,
       columnScaleOps: columnScalePreference.ops,
       invertTilt: invertTiltPreference,
       invertRotation: invertRotationPreference,
+      columnDock: columnDockPref, gizmoPos: gizmoPosPref, infoPanelPos: infoPanelPosPref,
       menuHighlightBg: activeMenuColor.bg,
       menuHighlightInk: activeMenuColor.ink,
       fontColors: Object.assign({}, activeFontColors),
@@ -20798,6 +20838,9 @@ Max Mustermann (Anschrift wie oben)`,
         persistInvertTilt(invertTiltPreference);
         syncRotationSettingsPanelFromActive();
       }
+      if (data.columnDock === 'left' || data.columnDock === 'right') applyColumnDock(data.columnDock, true);
+      if (data.gizmoPos === 'left' || data.gizmoPos === 'right') applyGizmoPos(data.gizmoPos, true);
+      if (data.infoPanelPos === 'left' || data.infoPanelPos === 'right') applyInfoPanelPos(data.infoPanelPos, true);
       if (data.invertRotation !== undefined) {
         invertRotationPreference = data.invertRotation === true || data.invertRotation === '1' || data.invertRotation === 1;
         persistInvertRotation(invertRotationPreference);
@@ -22781,6 +22824,7 @@ Max Mustermann (Anschrift wie oben)`,
   })();
 
   function resetAllDisplaySettingsToDefaults() {
+    applyColumnDock('left', true); applyGizmoPos('right', true); applyInfoPanelPos('left', true);
     try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) {  }
     activeColorProfile = applyColorProfile(null);
     syncColorProfilePanelFromActive();
@@ -22798,6 +22842,7 @@ Max Mustermann (Anschrift wie oben)`,
     syncAxisColorPanelFromActive();
     columnScalePreference = Object.assign({}, DEFAULT_COLUMN_SCALE);
     persistColumnScale(columnScalePreference);
+    applyColumnDock('left', true);
     if (current) {
       applyOpsScaleToCurrent();
       const prefStage = PROG_STAGE_PCT.indexOf(columnScalePreference.code);
@@ -22810,12 +22855,44 @@ Max Mustermann (Anschrift wie oben)`,
     resetAllDisplaySettingsToDefaults();
   });
 
+  const LS_KEY_COLUMN_DOCK = 'cncsim.columnDock', LS_KEY_GIZMO_POS = 'cncsim.gizmoPos', LS_KEY_INFO_PANEL_POS = 'cncsim.infoPanelPos';
+  const lrPref = (v, d) => (v === 'left' || v === 'right') ? v : d;
+  const readLr = (k, d) => { try { return lrPref(localStorage.getItem(k), d); } catch (e) { return d; } };
+  const writeLr = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {  } };
+  var columnDockPref = readLr(LS_KEY_COLUMN_DOCK, 'left'), gizmoPosPref = readLr(LS_KEY_GIZMO_POS, 'right'), infoPanelPosPref = readLr(LS_KEY_INFO_PANEL_POS, 'left');
+  function applyColumnDock(v, persist) {
+    columnDockPref = lrPref(v, 'left');
+    if (persist) writeLr(LS_KEY_COLUMN_DOCK, columnDockPref);
+    const right = columnDockPref === 'right';
+    document.querySelector('.main').classList.toggle('dock-right', right);
+    el('btnProgCollapse').textContent = right ? '»' : '«';
+    el('btnProgExpand').textContent = right ? '«' : '»';
+    const ot = el('btnOpsToggle'); if (ot) ot.textContent = (ot.closest('.ops-col') && ot.closest('.ops-col').classList.contains('collapsed')) !== right ? '«' : '»';
+    window.dispatchEvent(new Event('resize'));
+  }
+  function applyGizmoPos(v, persist) {
+    gizmoPosPref = lrPref(v, 'right');
+    if (persist) writeLr(LS_KEY_GIZMO_POS, gizmoPosPref);
+    el('viewer').classList.toggle('gizmo-left', gizmoPosPref === 'left');
+    if (typeof requestRender === 'function') requestRender();
+  }
+  function applyInfoPanelPos(v, persist) {
+    infoPanelPosPref = lrPref(v, 'left');
+    if (persist) writeLr(LS_KEY_INFO_PANEL_POS, infoPanelPosPref);
+    const ip = el('infoPanel');
+    ip.classList.toggle('info-right', infoPanelPosPref === 'right');
+    ip.classList.remove('dragged'); ip.style.left = ''; ip.style.top = '';
+  }
+  const checkLr = (name, v) => { const r = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (r) r.checked = true; };
+  const readRadioLr = (name, d) => { const r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : d; };
+
   const columnScalePanel = el('columnScalePanel');
   function syncColumnScalePanelFromActive() {
     const codeRadio = document.querySelector('input[name="columnScaleCode"][value="' + columnScalePreference.code + '"]');
     if (codeRadio) codeRadio.checked = true;
     const opsRadio = document.querySelector('input[name="columnScaleOps"][value="' + columnScalePreference.ops + '"]');
     if (opsRadio) opsRadio.checked = true;
+    checkLr('columnDock', columnDockPref);
   }
   el('btnColumnScale').addEventListener('click', () => {
     syncColumnScalePanelFromActive();
@@ -22837,12 +22914,14 @@ Max Mustermann (Anschrift wie oben)`,
       progCollapseStage = prefStage >= 0 ? prefStage : 0;
       applyProgCollapseStage();
     }
+    applyColumnDock(readRadioLr('columnDock', columnDockPref), true);
     columnScalePanel.classList.remove('open');
   });
   el('btnColumnScaleResetDefaults').addEventListener('click', () => {
     if (!window.confirm('Die Spalteneinstellungen werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
     columnScalePreference = Object.assign({}, DEFAULT_COLUMN_SCALE);
     persistColumnScale(columnScalePreference);
+    applyColumnDock('left', true);
     if (current) {
       applyOpsScaleToCurrent();
       const prefStage = PROG_STAGE_PCT.indexOf(columnScalePreference.code);
@@ -22867,6 +22946,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (radio) radio.checked = true;
     gridStepSizeInput.value = String(gridStepOverride || computeAutoGridStep());
     gridStepSizeWarning.hidden = true;
+    checkLr('gizmoPos', gizmoPosPref); checkLr('infoPanelPos', infoPanelPosPref);
   }
   el('btnArea3dSettings').addEventListener('click', () => {
     syncRotationSettingsPanelFromActive();
@@ -22892,6 +22972,8 @@ Max Mustermann (Anschrift wie oben)`,
     }
     gridStepSizeWarning.hidden = true;
     gridStepOverride = applyGridStep(enteredStep);
+    applyGizmoPos(readRadioLr('gizmoPos', gizmoPosPref), true);
+    if (readRadioLr('infoPanelPos', infoPanelPosPref) !== infoPanelPosPref || el('infoPanel').classList.contains('dragged')) applyInfoPanelPos(readRadioLr('infoPanelPos', infoPanelPosPref), true);
     area3dSettingsPanel.classList.remove('open');
   });
   el('btnArea3dSettingsResetDefaults').addEventListener('click', () => {
@@ -22902,6 +22984,7 @@ Max Mustermann (Anschrift wie oben)`,
     persistInvertRotation(false);
     setGridVisible(true);
     gridStepOverride = applyGridStep(null);
+    applyGizmoPos('right', true); applyInfoPanelPos('left', true);
     syncRotationSettingsPanelFromActive();
     syncGridSettingsPanelFromActive();
     area3dSettingsPanel.classList.remove('open');
@@ -23973,7 +24056,7 @@ Max Mustermann (Anschrift wie oben)`,
     resizerEl.addEventListener('pointermove', (e) => {
       if (!resizing) return;
       const rect = mainEl.getBoundingClientRect();
-      setSidebarWidth(e.clientX - rect.left, undefined, true);
+      setSidebarWidth(columnDockPref === 'right' ? rect.right - e.clientX : e.clientX - rect.left, undefined, true);
     });
     ['pointerup', 'pointercancel'].forEach(evt => resizerEl.addEventListener(evt, () => {
       resizing = false;
@@ -24000,7 +24083,7 @@ Max Mustermann (Anschrift wie oben)`,
     opsResizerEl.addEventListener('pointermove', (e) => {
       if (!resizing) return;
       const rect = sidebarCol.getBoundingClientRect();
-      setSidebarWidth((e.clientX - rect.left) + opsColSpacePx(), undefined, true);
+      setSidebarWidth((columnDockPref === 'right' ? rect.right - e.clientX : e.clientX - rect.left) + opsColSpacePx(), undefined, true);
     });
     ['pointerup', 'pointercancel'].forEach(evt => opsResizerEl.addEventListener(evt, () => {
       resizing = false;
@@ -24008,6 +24091,8 @@ Max Mustermann (Anschrift wie oben)`,
     }));
   })();
 
+  applyColumnDock(columnDockPref, false); applyGizmoPos(gizmoPosPref, false); applyInfoPanelPos(infoPanelPosPref, false);
+  window.__layoutPrefs = () => ({ columnDock: columnDockPref, gizmoPos: gizmoPosPref, infoPanelPos: infoPanelPosPref });
   (function initInfoPanelDrag() {
     let dragging = false, startPX = 0, startPY = 0, startLeft = 0, startTop = 0;
     infoPanelHeadEl.addEventListener('pointerdown', (e) => {
