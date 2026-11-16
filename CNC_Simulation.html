@@ -311,7 +311,8 @@
   .settings-tab { padding: 8px 16px; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-muted); cursor: pointer; margin-bottom: -1px; }
   .settings-tab:hover { color: var(--ink); }
   .settings-tab.active { background: var(--panel); border-color: var(--border); color: var(--ink); font-weight: 600; }
-  .settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 4px 4px; }
+  .settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 4px 4px; scrollbar-gutter: stable; }   
+  .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
   .settings-sec + .settings-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
   .settings-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 2px 0 6px; min-height: 30px; }
@@ -4092,14 +4093,11 @@
       </div>
     </div>
     <p class="panel-hint" data-i18n-en="Edge length of a single grid cell, in mm. Pre-filled with the size the simulation is currently using automatically.">Kantenlänge eines einzelnen Rasterkästchens, in mm. Vorbelegt mit der Größe, die die Simulation aktuell automatisch verwendet.</p>
-    <label class="color-field-row font-color-row">
-      <span class="font-color-row-label">
-        <span data-i18n-en="Grid cell size">Rastergröße</span>
-      </span>
-      <span class="color-field-inputs">
-        <input type="text" id="gridStepSizeInput" class="filename-input" inputmode="decimal" spellcheck="false">
-      </span>
-    </label>
+    
+    <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Grid cell size">Rastergröße</div>
+      <input type="text" id="gridStepSizeInput" class="filename-input grid-step-input" inputmode="decimal" spellcheck="false">
+    </div>
     <p class="panel-hint" id="gridStepSizeWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 10 or 20)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 10 oder 20).</p>
     
     <div class="scale-group">
@@ -8412,7 +8410,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 357;
+  const APP_RELEASE_NUMBER = 358;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8421,7 +8419,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '12.11.2026, 12:52 Uhr';
+  const APP_RELEASE_TIMESTAMP = '16.11.2026, 07:50 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12779,6 +12777,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 358, date: '16.11.2026', items: [
+      { de: 'Einstellungsfenster: „Rastergröße“ mit Eingabefeld direkt darunter; „Standardwerte“ der DXF-Bauteildefinition oben rechts wie in den anderen Reitern und mit Rückfrage; „Standardwerte“ springt beim Scrollen nicht mehr.',
+        en: 'Settings window: "Grid cell size" with its input directly below; "Defaults" of the DXF part definition at the top right like in the other tabs and with a confirmation; "Defaults" no longer jumps when scrolling.' },
+    ] },
     { release: 357, date: '12.11.2026', items: [
       { de: 'Einstellungen → Spalten → „Spaltenanordnung“: CNC-Programmcode, Arbeitsgänge, DXF-Layer und OBJ-Gruppen links oder rechts andocken; rechts ist die Reihenfolge Code, Arbeitsgänge, Simulation (von rechts), die Klapp-Pfeile zeigen entsprechend.',
         en: 'Settings → Columns → "Column arrangement": dock CNC program code, processing steps, DXF layers and OBJ groups on the left or right; on the right the order is code, processing steps, simulation (from the right), with the collapse arrows mirrored.' },
@@ -19740,8 +19742,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { key: 'obj', tab: 'view3d', panel: 'objSettingsPanel', open: 'btnObjSettings', apply: 'btnObjSettingsOk', cancel: 'btnObjSettingsCancel', reset: null, de: 'OBJ', en: 'OBJ', host: 'settingsPaneView3d', noHead: true },
     { key: 'textures', tab: 'textures', panel: 'dxfTexturePanel', open: 'btnDxfTextures', apply: null, cancel: 'btnDxfTextureClose', reset: null, de: 'Texturen', en: 'Textures', host: 'settingsPaneTextures', noHead: true,
       save: 'btnDxfTextureSave', saveDe: 'Textur speichern', saveEn: 'Save texture' },
-    { key: 'dxfParts', tab: 'dxfParts', panel: 'dxfPartDefaultsPanel', open: 'btnDxfPartDefaults', apply: 'btnDxfPartDefaultsConfirm', cancel: 'btnDxfPartDefaultsCancel', reset: null, de: 'DXF-Bauteildefinition', en: 'DXF part definition', host: 'settingsPaneDxfParts', noHead: true,
-      keep: ['.dxf-preview-toggle', '#btnDxfPartDefaultsReset'] },
+    { key: 'dxfParts', tab: 'dxfParts', panel: 'dxfPartDefaultsPanel', open: 'btnDxfPartDefaults', apply: 'btnDxfPartDefaultsConfirm', cancel: 'btnDxfPartDefaultsCancel', reset: 'btnDxfPartDefaultsReset', de: 'DXF-Bauteildefinition', en: 'DXF part definition', host: 'settingsPaneDxfParts', 
+      keep: ['.dxf-preview-toggle'] },
     { key: 'partProfile', tab: 'partProfile', panel: 'partProfilePanel', open: 'btnPartProfiles', apply: null, cancel: 'btnPartProfileCancel', reset: null, de: 'Bauteilprofil', en: 'Part profile', host: 'settingsPanePartProfile', noHead: true,
       save: 'btnPartProfileSave', saveDe: 'Bauteilprofil speichern', saveEn: 'Save part profile' },
   ];
@@ -25328,6 +25330,7 @@ Max Mustermann (Anschrift wie oben)`,
   el('btnDxfPartDefaultsConfirm').addEventListener('click', confirmDxfPartDefaults);
   el('btnDxfPartDefaultsCancel').addEventListener('click', () => dxfPartDefaultsPanel.classList.remove('open'));
   el('btnDxfPartDefaultsReset').addEventListener('click', () => {
+    if (!window.confirm(T('Die DXF-Bauteildefinition wird auf ihre Standardwerte zurückgesetzt. Fortführen?', 'The DXF part definition will be reset to its default values. Continue?'))) return;
     dpdWork = normalizeDxfPartDefaults(null);
     el('dpdByName').checked = dpdWork.byName; el('dpdAutoApply').checked = dpdWork.autoApply; el('dpdShowPreview').checked = dpdWork.showPreview !== false;
     dpdLoadPart(dpdCurrent); el('dpdWarning').hidden = true;
