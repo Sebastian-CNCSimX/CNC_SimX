@@ -399,7 +399,7 @@
   }
   .menu-info-row + .menu-info-row { margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--border); }
   
-  #btnCheckForUpdate { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--accent); font-weight: 600; }
+  #btnCheckForUpdate { color: var(--accent); font-weight: 700; }
   
   #menuInfoCopyright { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--ink-faint); text-align: center; user-select: none; }
   
@@ -410,7 +410,7 @@
   .menu-info-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .02em; }
   .menu-info-value { font-size: 13px; font-weight: 600; color: var(--ink); }
   
-  #btnLoadSettings, #btnGridColor, #btnOpenKnowledgeBase, #btnDxf3dSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  #btnLoadSettings, #btnGridColor, #btnDxf3dSettings { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
   
   #millTimeG0FeedRow, #millTimeToolChangeCountRow { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 
@@ -1987,23 +1987,19 @@
         </div>
       </div>
       
-      <div class="menu" id="menuInfos">
-        <button class="menu-trigger" id="menuInfosTrigger" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-en="Help">Hilfe</button>
-        <div class="menu-dropdown" id="menuInfosDropdown" hidden>
-          
-          <button class="menu-item" id="btnOpenShortcuts" type="button" title="Liste aller Tastenkürzel dieser Anwendung anzeigen" data-i18n-en-title="Show the list of all keyboard shortcuts in this application" data-i18n-en="Shortcuts">Shortcuts</button>
-          
-          <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert" data-i18n-en-title="Open the editable knowledge base (e.g. cutter lengths/radii, error causes and solutions) - entries are automatically sorted alphabetically when applied">Knowledge Base</button>
-        </div>
-      </div>
-      
       <div class="menu" id="menuInfo">
         
         <button class="menu-trigger" id="menuInfoTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Info">?</button>
         <div class="menu-dropdown" id="menuInfoDropdown" hidden>
           
+          <button class="menu-item" id="btnCheckForUpdate" type="button" data-i18n-en="Check for updates">Versionsupdate prüfen</button>
           <button class="menu-item" id="btnChangelog" type="button" title="Änderungen der Releases nachlesen" data-i18n-en-title="Read the changes of the releases">Changelog</button>
           <div class="context-menu-divider" id="changelogSep"></div>
+          
+          <button class="menu-item" id="btnOpenShortcuts" type="button" title="Liste aller Tastenkürzel dieser Anwendung anzeigen" data-i18n-en-title="Show the list of all keyboard shortcuts in this application" data-i18n-en="Shortcuts">Shortcuts</button>
+          
+          <button class="menu-item" id="btnOpenKnowledgeBase" type="button" title="Editierbare Wissensdatenbank öffnen (z.B. Fräserlängen/-radien, Fehlerursachen und Lösungen) - Einträge werden beim Übernehmen automatisch alphabetisch sortiert" data-i18n-en-title="Open the editable knowledge base (e.g. cutter lengths/radii, error causes and solutions) - entries are automatically sorted alphabetically when applied">Knowledge Base</button>
+          <div class="context-menu-divider" id="helpSep"></div>
           
           <button class="menu-item" id="btnFeatures" type="button" title="Kernfunktionen von CNC SimX nachlesen" data-i18n-en="Features" data-i18n-en-title="Read the core features of CNC SimX">Features</button>
           <div class="context-menu-divider" id="featuresSep"></div>
@@ -2015,8 +2011,6 @@
             <span class="menu-info-label" data-i18n-en="Last release:">Letzte Releasezeit:</span>
             <span class="menu-info-value" id="infoReleaseTimeValue"></span>
           </div>
-          
-          <button class="menu-item" id="btnCheckForUpdate" type="button" data-i18n-en="Check for updates">Versionsupdate prüfen</button>
           
           <a class="menu-item" id="btnContact" href="mailto:cncsimx@gmail.com" data-i18n-en="Contact">Kontakt</a>
           
@@ -8410,7 +8404,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 359;
+  const APP_RELEASE_NUMBER = 360;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8419,7 +8413,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '16.11.2026, 08:00 Uhr';
+  const APP_RELEASE_TIMESTAMP = '16.11.2026, 09:45 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10521,9 +10515,6 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const menuMillTime = el('menuMillTime');
   const menuMillTimeTrigger = el('menuMillTimeTrigger');
   const menuMillTimeDropdown = el('menuMillTimeDropdown');
-  const menuInfos = el('menuInfos');
-  const menuInfosTrigger = el('menuInfosTrigger');
-  const menuInfosDropdown = el('menuInfosDropdown');
   const menuInfo = el('menuInfo');
   const menuInfoTrigger = el('menuInfoTrigger');
   const menuInfoDropdown = el('menuInfoDropdown');
@@ -12798,6 +12789,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 360, date: '16.11.2026', items: [
+      { de: 'Menü „Hilfe“ ist in das Menü „?“ gewandert: „Versionsupdate prüfen“ (fett) ganz oben, darunter „Changelog“, dann „Shortcuts“ und „Knowledge Base“, dann „Features“. F1 und F9 funktionieren wie bisher.',
+        en: 'The "Help" menu moved into the "?" menu: "Check for updates" (bold) at the top, then "Changelog", then "Shortcuts" and "Knowledge Base", then "Features". F1 and F9 work as before.' },
+    ] },
     { release: 359, date: '16.11.2026', items: [
       { de: 'Neuer Ansichtswürfel (Viewcube): Neben den Seiten lassen sich jetzt auch Kanten und Ecken anklicken (26 Ansichten), die Simulation dreht sich jeweils genau dorthin; das Feld unter der Maus wird hervorgehoben. Würfel etwas größer, Home- und Einstellungsknopf darunter etwas tiefer.',
         en: 'New view cube: besides the faces, edges and corners can now be clicked as well (26 views), the simulation turns exactly to that view; the field under the mouse is highlighted. Cube slightly larger, home and settings buttons below it moved down a little.' },
@@ -19578,7 +19573,6 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { wrapper: menuEdit, trigger: menuEditTrigger, dropdown: menuEditDropdown },
     { wrapper: menuView, trigger: menuViewTrigger, dropdown: menuViewDropdown },
     { wrapper: menuMillTime, trigger: menuMillTimeTrigger, dropdown: menuMillTimeDropdown },
-    { wrapper: menuInfos, trigger: menuInfosTrigger, dropdown: menuInfosDropdown },
     { wrapper: menuInfo, trigger: menuInfoTrigger, dropdown: menuInfoDropdown }
   ];
   const allSubmenus = Array.from(document.querySelectorAll('.menu-submenu')).map(sm => ({
