@@ -1277,7 +1277,7 @@
   }
   
   .toolbar-btn.gizmo-top-btn {
-    position: absolute; top: 125px; right: 151px;
+    position: absolute; top: 155px; right: 151px;   
     width: 30px; height: 30px;
     padding: 0;
     font-size: 25px;
@@ -1286,7 +1286,7 @@
   }
   
   .toolbar-btn.gizmo-settings-btn {
-    position: absolute; top: 125px; right: 113px;
+    position: absolute; top: 155px; right: 113px;   
     width: 30px; height: 30px;
     padding: 0;
     font-size: 16px;
@@ -8410,7 +8410,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 358;
+  const APP_RELEASE_NUMBER = 359;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8419,7 +8419,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '16.11.2026, 07:50 Uhr';
+  const APP_RELEASE_TIMESTAMP = '16.11.2026, 08:00 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10955,17 +10955,37 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       Object.assign(p, overrides);
       return p;
     }
-    return GIZMO_MAIN_FACES.map(mf => {
-      const others = AXES.filter(a => a !== mf.axis);
-      const verts = [
-        coord({ [mf.axis]: mf.sign, [others[0]]: 1, [others[1]]: 1 }),
-        coord({ [mf.axis]: mf.sign, [others[0]]: 1, [others[1]]: -1 }),
-        coord({ [mf.axis]: mf.sign, [others[0]]: -1, [others[1]]: -1 }),
-        coord({ [mf.axis]: mf.sign, [others[0]]: -1, [others[1]]: 1 })
-      ];
+    const GIZMO_CELL_K = 0.6;
+    const NAME = { x: ['left', '', 'right'], y: ['bottom', '', 'top'], z: ['front', '', 'back'] };
+    const B = [[-1, -GIZMO_CELL_K], [-GIZMO_CELL_K, GIZMO_CELL_K], [GIZMO_CELL_K, 1]];
+    const cells = [];
+    GIZMO_MAIN_FACES.forEach(mf => {
+      const others = AXES.filter(a => a !== mf.axis), u = others[0], v = others[1];
       const normal = coord({ [mf.axis]: mf.sign });
-      return { verts, label: mf.label, view: mf.view, normal };
+      const faceVerts = [
+        coord({ [mf.axis]: mf.sign, [u]: 1, [v]: 1 }), coord({ [mf.axis]: mf.sign, [u]: 1, [v]: -1 }),
+        coord({ [mf.axis]: mf.sign, [u]: -1, [v]: -1 }), coord({ [mf.axis]: mf.sign, [u]: -1, [v]: 1 })
+      ];
+      for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+        const [a0, a1] = B[i + 1], [b0, b1] = B[j + 1];
+        const verts = [
+          coord({ [mf.axis]: mf.sign, [u]: a1, [v]: b1 }), coord({ [mf.axis]: mf.sign, [u]: a1, [v]: b0 }),
+          coord({ [mf.axis]: mf.sign, [u]: a0, [v]: b0 }), coord({ [mf.axis]: mf.sign, [u]: a0, [v]: b1 })
+        ];
+        const d = coord({ [mf.axis]: mf.sign, [u]: i, [v]: j });
+        const kind = (i === 0 && j === 0) ? 'face' : (i === 0 || j === 0) ? 'edge' : 'corner';
+        let view = mf.view;
+        if (kind !== 'face') {
+          view = ['y', 'z', 'x'].map(a => NAME[a][d[a] + 1]).filter(Boolean).join('-');
+          if (!VIEW_PRESETS[view]) {
+            const n = Math.hypot(d.x, d.y, d.z);
+            VIEW_PRESETS[view] = { theta: Math.atan2(d.x, d.z), phi: Math.asin(d.y / n) };
+          }
+        }
+        cells.push({ verts, faceVerts, normal, kind, view, label: kind === 'face' ? mf.label : '' });
+      }
     });
+    return cells;
   })();
   const COMPASS_DIRS = [
     { label: 'E', dir: { x: 1, y: 0, z: 0 }, view: 'right' },
@@ -10974,11 +10994,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { label: 'S', dir: { x: 0, y: 0, z: -1 }, view: 'front' }
   ];
   const GIZMO_MARGIN = 18;
-  const GIZMO_SCALE = 20;
+  const GIZMO_SCALE = 25;
   const GIZMO_RING_LOCAL_RADIUS = 2.3;
   const GIZMO_RING_WIDTH = 15;
   const GIZMO_TOTAL_RADIUS = GIZMO_RING_LOCAL_RADIUS * GIZMO_SCALE + GIZMO_RING_WIDTH / 2 + 7;
   let gizmoHitFaces = [];
+  let gizmoHoverView = null;
   let gizmoCenterPos = null;
   const GIZMO_COMPASS_FONT_SIZE = 8.5 * 1.5;
   let gizmoCompassHits = [];
@@ -12777,6 +12798,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 359, date: '16.11.2026', items: [
+      { de: 'Neuer Ansichtswürfel (Viewcube): Neben den Seiten lassen sich jetzt auch Kanten und Ecken anklicken (26 Ansichten), die Simulation dreht sich jeweils genau dorthin; das Feld unter der Maus wird hervorgehoben. Würfel etwas größer, Home- und Einstellungsknopf darunter etwas tiefer.',
+        en: 'New view cube: besides the faces, edges and corners can now be clicked as well (26 views), the simulation turns exactly to that view; the field under the mouse is highlighted. Cube slightly larger, home and settings buttons below it moved down a little.' },
+    ] },
     { release: 358, date: '16.11.2026', items: [
       { de: 'Einstellungsfenster: „Rastergröße“ mit Eingabefeld direkt darunter; „Standardwerte“ der DXF-Bauteildefinition oben rechts wie in den anderen Reitern und mit Rückfrage; „Standardwerte“ springt beim Scrollen nicht mehr.',
         en: 'Settings window: "Grid cell size" with its input directly below; "Defaults" of the DXF part definition at the top right like in the other tabs and with a confirmation; "Defaults" no longer jumps when scrolling.' },
@@ -15346,7 +15371,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.beginPath();
       pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
       ctx.closePath();
-      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${(0.28 + shade * 0.42).toFixed(3)})`;
+      if (gizmoHoverView && f.view === gizmoHoverView) ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.95)`;
+      else if (f.kind === 'face') ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${(0.28 + shade * 0.42).toFixed(3)})`;
+      else ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${(0.14 + shade * 0.22).toFixed(3)})`;
       ctx.fill();
       ctx.strokeStyle = cssVar('--panel') || '#fff';
       ctx.lineWidth = 1;
@@ -15355,14 +15382,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       pts.forEach(p => { lx += p.x; ly += p.y; });
       lx /= pts.length; ly /= pts.length;
       ctx.fillStyle = cssVar('--ink') || '#1a1a1a';
-      ctx.save();
-      ctx.beginPath();
-      pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
-      ctx.closePath();
-      ctx.clip();
-      ctx.fillText(f.label, lx, ly);
-      ctx.restore();
-      gizmoHitFaces.push({ points: pts, view: f.view });
+      if (f.label) {
+        const fp = f.faceVerts.map(proj2D);
+        ctx.save();
+        ctx.beginPath();
+        fp.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillText(f.label, lx, ly);
+        ctx.restore();
+      }
+      gizmoHitFaces.push({ points: pts, view: f.view, kind: f.kind });
     });
     ctx.restore();
   }
@@ -23916,6 +23946,9 @@ Max Mustermann (Anschrift wie oben)`,
     if (!dragging) {
       if (measureActive) updateMeasureHover(e.clientX, e.clientY);
       else if (angleMeasureActive) updateAngleMeasureHover(e.clientX, e.clientY);
+      { const hh = (measureActive || angleMeasureActive) ? null : hitTestGizmo(e.clientX, e.clientY);
+        const hv = hh && hh.points ? hh.view : null;
+        if (hv !== gizmoHoverView) { gizmoHoverView = hv; requestRender(); } }
       if (gizmoPointerId == null) canvas.style.cursor = (measureActive || angleMeasureActive) ? 'crosshair' : (hitTestGizmo(e.clientX, e.clientY) ? 'pointer' : (hitTestGizmoRing(e.clientX, e.clientY) ? 'grab' : ''));
       return;
     }
@@ -23971,6 +24004,7 @@ Max Mustermann (Anschrift wie oben)`,
       pendingContextMenuAt = null;
       if (measureHoverPoint) { measureHoverPoint = null; requestRender(); }
       if (angleHoverPoint) { angleHoverPoint = null; requestRender(); }
+      if (gizmoHoverView) { gizmoHoverView = null; requestRender(); }
       if (measureLiveCursor) { measureLiveCursor = null; refreshMeasureLive(); }
     })
   );
@@ -24017,6 +24051,7 @@ Max Mustermann (Anschrift wie oben)`,
     applyViewAngles(v.theta, v.phi);
   }
   window.__debug_viewPreset = k => applyViewPreset(k);
+  window.__viewCube = () => ({ hover: gizmoHoverView, presets: Object.keys(VIEW_PRESETS), cells: gizmoHitFaces.filter(f => f.points).map(f => ({ view: f.view, kind: f.kind, x: f.points.reduce((a, p) => a + p.x, 0) / f.points.length, y: f.points.reduce((a, p) => a + p.y, 0) / f.points.length })), dir: { x: -cam.orient.fwd.x, y: -cam.orient.fwd.y, z: -cam.orient.fwd.z } });
 
   btnWholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
 
