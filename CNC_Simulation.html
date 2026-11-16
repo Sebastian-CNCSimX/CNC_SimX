@@ -312,6 +312,7 @@
   .settings-tab:hover { color: var(--ink); }
   .settings-tab.active { background: var(--panel); border-color: var(--border); color: var(--ink); font-weight: 600; }
   .settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 4px 4px; scrollbar-gutter: stable; }   
+  .panel-hint.auto-update-hint { margin-top: 4px; color: var(--accent); font-weight: 600; }   
   .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
   .settings-sec + .settings-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
@@ -2343,6 +2344,8 @@
     <div class="settings-tabs" role="tablist">
       
       <button class="settings-tab" type="button" role="tab" data-tab="general" id="settingsTabGeneral" data-i18n-en="General">Allgemein</button>
+      
+      <button class="settings-tab" type="button" role="tab" data-tab="machine" id="settingsTabMachine" data-i18n-en="Machine types/Processing step names">Maschinentypen/Arbeitsgangnamen</button>
       <button class="settings-tab" type="button" role="tab" data-tab="colors" id="settingsTabColors" data-i18n-en="Colours">Farben</button>
       <button class="settings-tab" type="button" role="tab" data-tab="columns" id="settingsTabColumns" data-i18n-en="Columns">Spalten</button>
       <button class="settings-tab" type="button" role="tab" data-tab="area3d" id="settingsTabArea3d" data-i18n-en="3D area settings">3D Bereichseinstellungen</button>
@@ -2352,7 +2355,9 @@
       <button class="settings-tab" type="button" role="tab" data-tab="dxfParts" id="settingsTabDxfParts" data-i18n-en="DXF part definition">DXF-Bauteildefinition</button>
     </div>
     <div class="settings-body" id="settingsBody">
-      <div class="settings-pane" data-pane="general" id="settingsPaneGeneral">
+      
+      <div class="settings-pane" data-pane="general" id="settingsPaneGeneral"></div>
+      <div class="settings-pane" data-pane="machine" id="settingsPaneMachine" hidden>
         <div class="settings-cols"><div class="settings-col" id="settingsColMachineTypes"></div><div class="settings-vsep"></div><div class="settings-col" id="settingsColOpNames"></div></div>
       </div>
       <div class="settings-pane" data-pane="colors" id="settingsPaneColors" hidden></div>
@@ -3178,6 +3183,18 @@
   </div>
 </div>
 
+<div class="paste-panel" id="autoUpdatePanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Version update">Versionsupdate</h3>
+    <label class="scale-option"><input type="checkbox" id="autoUpdateCheck"> <span data-i18n-en="Automatically check for version updates">Automatisch nach Versionsupdate prüfen</span></label>
+    <p class="panel-hint auto-update-hint" data-i18n-en="When enabled, GitHub is contacted on every program start - your IP address is then automatically transmitted each time. If a newer version is available, you are asked whether to download it; if you already have the latest version, no message appears.">Wenn aktiviert, wird bei jedem Programmstart GitHub kontaktiert – dabei wird Ihre IP-Adresse jedes Mal automatisch übertragen. Gibt es eine neuere Version, kommt die Frage, ob sie heruntergeladen werden soll; ist die Version aktuell, erscheint keine Meldung.</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnAutoUpdateOpen" type="button" hidden></button>
+      <button class="btn ghost" id="btnAutoUpdateCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnAutoUpdateApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="dxfPartDefaultsPanel">
   <div class="paste-card">
     <h3 data-i18n-en="Part definition (defaults)">Bauteildefinition (Standardwerte)</h3>
@@ -8404,7 +8421,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 360;
+  const APP_RELEASE_NUMBER = 361;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8413,7 +8430,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '16.11.2026, 09:45 Uhr';
+  const APP_RELEASE_TIMESTAMP = '16.11.2026, 13:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12789,6 +12806,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 361, date: '16.11.2026', items: [
+      { de: 'Einstellungen: Maschinentypen und Arbeitsgangnamen haben einen eigenen Reiter „Maschinentypen/Arbeitsgangnamen“; alle Menüpunkte dazu öffnen ihn direkt.',
+        en: 'Settings: machine types and processing step names have their own tab "Machine types/Processing step names"; all related menu items open it directly.' },
+      { de: 'Neu: automatische Versionsprüfung beim Programmstart. WICHTIG: Sie läuft nur, wenn unter Einstellungen → Allgemein der Haken „Automatisch nach Versionsupdate prüfen“ gesetzt ist (ab Werk aus). Dann wird still geprüft; nur wenn es eine neuere Version gibt, kommt die Frage, ob sie heruntergeladen werden soll.',
+        en: 'New: automatic version check at program start. IMPORTANT: it only runs if the box "Automatically check for version updates" under Settings → General is ticked (off by default). The check then runs silently; only if a newer version exists are you asked whether to download it.' },
+    ] },
     { release: 360, date: '16.11.2026', items: [
       { de: 'Menü „Hilfe“ ist in das Menü „?“ gewandert: „Versionsupdate prüfen“ (fett) ganz oben, darunter „Changelog“, dann „Shortcuts“ und „Knowledge Base“, dann „Features“. F1 und F9 funktionieren wie bisher.',
         en: 'The "Help" menu moved into the "?" menu: "Check for updates" (bold) at the top, then "Changelog", then "Shortcuts" and "Knowledge Base", then "Features". F1 and F9 work as before.' },
@@ -19752,8 +19775,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   const settingsPanel = el('settingsPanel');
   const SETTINGS_SECTIONS = [
-    { key: 'machineTypes', tab: 'general', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
-    { key: 'opNames', tab: 'general', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgangnamen', en: 'Processing step names', host: 'settingsColOpNames' },
+    { key: 'autoUpdate', tab: 'general', panel: 'autoUpdatePanel', open: 'btnAutoUpdateOpen', apply: 'btnAutoUpdateApply', cancel: 'btnAutoUpdateCancel', reset: null, de: 'Versionsupdate', en: 'Version update', host: 'settingsPaneGeneral' },
+    { key: 'machineTypes', tab: 'machine', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
+    { key: 'opNames', tab: 'machine', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgangnamen', en: 'Processing step names', host: 'settingsColOpNames' },
     { key: 'menuColor', tab: 'colors', panel: 'menuColorPanel', open: 'btnMenuColor', apply: 'btnMenuColorApply', cancel: 'btnMenuColorCancel', reset: 'btnMenuColorResetDefaults', de: 'Buttonfarbe', en: 'Button colour', host: 'settingsPaneColors' },
     { key: 'colorProfile', tab: 'colors', panel: 'colorProfilePanel', open: 'btnEditColors', apply: 'btnColorProfileApply', cancel: 'btnColorProfileCancel', reset: 'btnColorProfileResetDefaults', de: 'Hintergrundfarbe', en: 'Background colour', host: 'settingsPaneColors' },
     { key: 'fontColor', tab: 'colors', panel: 'fontColorPanel', open: 'btnFontColor', apply: 'btnFontColorApply', cancel: 'btnFontColorCancel', reset: 'btnFontColorResetDefaults', de: 'Schriftfarbe', en: 'Font colour', host: 'settingsPaneColors' },
@@ -19771,7 +19795,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { key: 'partProfile', tab: 'partProfile', panel: 'partProfilePanel', open: 'btnPartProfiles', apply: null, cancel: 'btnPartProfileCancel', reset: null, de: 'Bauteilprofil', en: 'Part profile', host: 'settingsPanePartProfile', noHead: true,
       save: 'btnPartProfileSave', saveDe: 'Bauteilprofil speichern', saveEn: 'Save part profile' },
   ];
-  const SETTINGS_RESET_TABS = ['colors', 'area3d', 'columns'];
+  const SETTINGS_RESET_TABS = ['colors', 'area3d', 'columns', 'general'];
   let settingsInternal = false, settingsTab = 'general';
   const settingsDirty = new Set();
   (function initSettingsPanel() {
@@ -19783,7 +19807,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const actions = card.querySelector(':scope > .paste-actions');
       if (s.reset) {
         const r = el(s.reset); r.classList.add('small'); r.style.marginRight = ''; head.appendChild(r); r.addEventListener('click', () => settingsDirty.add(s.key));
-        if (s.tab !== 'general') { r.textContent = 'Standardwerte'; r.dataset.i18nDe = 'Standardwerte'; r.setAttribute('data-i18n-en', 'Defaults'); }
+        if (s.tab !== 'machine') { r.textContent = 'Standardwerte'; r.dataset.i18nDe = 'Standardwerte'; r.setAttribute('data-i18n-en', 'Defaults'); }
       }
       const body = document.createElement('div'); body.className = 'settings-sec-body';
       Array.from(card.children).forEach(c => { if (c.tagName !== 'H3' && c !== actions) body.appendChild(c); });
@@ -19911,11 +19935,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnResetDisplayDefaults').addEventListener('click', () => {
     if (!settingsPanel.classList.contains('open')) return;
     const keys = SETTINGS_SECTIONS.filter(s => SETTINGS_RESET_TABS.includes(s.tab)).map(s => s.key);
-    fillSettings(keys); keys.forEach(k => settingsDirty.delete(k));
+    setTimeout(() => { if (!settingsPanel.classList.contains('open')) return; fillSettings(keys); keys.forEach(k => settingsDirty.delete(k)); }, 0);
   });
   el('btnOpenSettings').addEventListener('click', () => openSettings('general'));
-  el('btnMenuMachineTypes').addEventListener('click', () => openSettings('general', 'machineTypes'));
-  el('btnMenuOpNames').addEventListener('click', () => openSettings('general', 'opNames'));
+  el('btnMenuMachineTypes').addEventListener('click', () => openSettings('machine', 'machineTypes'));
+  el('btnMenuOpNames').addEventListener('click', () => openSettings('machine', 'opNames'));
   el('ctxSettingsGeneral').addEventListener('click', () => { closeContextMenu(); openSettings('general'); });
   el('ctxSettingsColors').addEventListener('click', () => { closeContextMenu(); openSettings('colors'); });
   el('ctxSettingsArea3d').addEventListener('click', () => { closeContextMenu(); openSettings('area3d'); });
@@ -20509,9 +20533,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ));
   }
 
-  function checkForUpdate() {
+  function checkForUpdate(auto) {
     if (btnCheckForUpdate.disabled) return;
-    if (!confirm(T('Für die Prüfung wird GitHub kontaktiert, dabei wird deine IP-Adresse übertragen.\n\nFortfahren?',
+    if (!auto && !confirm(T('Für die Prüfung wird GitHub kontaktiert, dabei wird deine IP-Adresse übertragen.\n\nFortfahren?',
       'GitHub is contacted for the check; your IP address is transmitted in the process.\n\nContinue?'))) return;
     const originalLabel = btnCheckForUpdate.textContent;
     btnCheckForUpdate.disabled = true;
@@ -20525,6 +20549,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const latestRelease = Number(manifest && manifest.release);
         if (!Number.isFinite(latestRelease)) throw new Error(T('Ungültige Versionsangabe im Update-Manifest.', 'Invalid version number in the update manifest.'));
         if (latestRelease <= APP_RELEASE_NUMBER) {
+          if (auto) return;
           alert(T('Sie verwenden bereits die aktuellste Version (Release ' + APP_RELEASE_NUMBER + ').',
             'You are already using the latest version (Release ' + APP_RELEASE_NUMBER + ').'));
           return;
@@ -20534,7 +20559,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const expectedSha = String(manifest.sha256 || '').trim().toLowerCase();
         if (!/^[0-9a-f]{64}$/.test(expectedSha)) throw updateSecurityError('Im Update-Manifest fehlt die Prüfsumme (sha256).', 'The update manifest has no checksum (sha256).');
         const timestampInfo = manifest.timestamp ? (' (' + formatAppTimestampForLang(manifest.timestamp, currentLang) + ')') : '';
-        const wantsUpdate = confirm(T(
+        const wantsUpdate = confirm(auto ? T(
+          'Eine neuere Version ist verfügbar: Release ' + latestRelease + timestampInfo + '.\n\nMöchten Sie diese herunterladen?',
+          'A newer version is available: Release ' + latestRelease + timestampInfo + '.\n\nDo you want to download it?'
+        ) : T(
           'Eine neuere Version ist verfügbar: Release ' + latestRelease + timestampInfo + '.\n\nJetzt aktualisieren?',
           'A newer version is available: Release ' + latestRelease + timestampInfo + '.\n\nUpdate now?'
         ));
@@ -20555,6 +20583,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
             T('\n\nDie installierte Version bleibt unverändert.', '\n\nThe installed version stays unchanged.'));
           return;
         }
+        if (auto) return;
         alert(T('Versionsprüfung nicht möglich (keine Internetverbindung oder das Update-Verzeichnis ist gerade nicht erreichbar).\n\n',
           'Version check not possible (no internet connection, or the update directory is currently unreachable).\n\n') + err.message);
       })
@@ -20563,8 +20592,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         btnCheckForUpdate.textContent = originalLabel;
       });
   }
-  btnCheckForUpdate.addEventListener('click', checkForUpdate);
-  brandCheckUpdateTrigger.addEventListener('click', checkForUpdate);
+  btnCheckForUpdate.addEventListener('click', () => checkForUpdate());
+  brandCheckUpdateTrigger.addEventListener('click', () => checkForUpdate());
+
+  const LS_KEY_AUTO_UPDATE = 'cncsim.autoUpdateCheck';
+  var autoUpdatePref = (() => { try { return localStorage.getItem(LS_KEY_AUTO_UPDATE) === '1'; } catch (e) { return false; } })();
+  function setAutoUpdatePref(on) {
+    autoUpdatePref = !!on;
+    try { localStorage.setItem(LS_KEY_AUTO_UPDATE, autoUpdatePref ? '1' : '0'); } catch (e) {  }
+  }
+  el('btnAutoUpdateOpen').addEventListener('click', () => { el('autoUpdateCheck').checked = autoUpdatePref; el('autoUpdatePanel').classList.add('open'); });
+  el('btnAutoUpdateApply').addEventListener('click', () => { setAutoUpdatePref(el('autoUpdateCheck').checked); el('autoUpdatePanel').classList.remove('open'); });
+  el('btnAutoUpdateCancel').addEventListener('click', () => { el('autoUpdateCheck').checked = autoUpdatePref; el('autoUpdatePanel').classList.remove('open'); });
+  window.__autoUpdate = { pref: () => autoUpdatePref, run: () => checkForUpdate(true) };
+  if (autoUpdatePref) setTimeout(() => checkForUpdate(true), 1500);
 
 
   const LEGAL_TEXTS = {
@@ -20750,6 +20791,7 @@ Max Mustermann (Anschrift wie oben)`,
       invertTilt: invertTiltPreference,
       invertRotation: invertRotationPreference,
       columnDock: columnDockPref, gizmoPos: gizmoPosPref, infoPanelPos: infoPanelPosPref,
+      autoUpdateCheck: autoUpdatePref,
       menuHighlightBg: activeMenuColor.bg,
       menuHighlightInk: activeMenuColor.ink,
       fontColors: Object.assign({}, activeFontColors),
@@ -20867,6 +20909,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (data.columnDock === 'left' || data.columnDock === 'right') applyColumnDock(data.columnDock, true);
       if (data.gizmoPos === 'left' || data.gizmoPos === 'right') applyGizmoPos(data.gizmoPos, true);
       if (data.infoPanelPos === 'left' || data.infoPanelPos === 'right') applyInfoPanelPos(data.infoPanelPos, true);
+      if (typeof data.autoUpdateCheck === 'boolean') setAutoUpdatePref(data.autoUpdateCheck);
       if (data.invertRotation !== undefined) {
         invertRotationPreference = data.invertRotation === true || data.invertRotation === '1' || data.invertRotation === 1;
         persistInvertRotation(invertRotationPreference);
@@ -22851,6 +22894,7 @@ Max Mustermann (Anschrift wie oben)`,
 
   function resetAllDisplaySettingsToDefaults() {
     applyColumnDock('left', true); applyGizmoPos('right', true); applyInfoPanelPos('left', true);
+    setAutoUpdatePref(false);
     try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) {  }
     activeColorProfile = applyColorProfile(null);
     syncColorProfilePanelFromActive();
