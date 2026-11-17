@@ -8435,7 +8435,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 362;
+  const APP_RELEASE_NUMBER = 363;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8444,7 +8444,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '17.11.2026, 07:45 Uhr';
+  const APP_RELEASE_TIMESTAMP = '17.11.2026, 08:20 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12820,6 +12820,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 363, date: '17.11.2026', items: [
+      { de: '„Alle Standardwerte wiederherstellen“: Die Rückfrage nennt jetzt genau, was zurückgesetzt wird und was nicht.',
+        en: '"Restore all defaults": the confirmation now states exactly what is reset and what is not.' },
+    ] },
     { release: 362, date: '17.11.2026', items: [
       { de: 'Einstellungen → Allgemein: „Alle Einstellungen sichern“, „Alle Einstellungen laden“ und „Alle Standardwerte wiederherstellen“ (mit Hinweis, was zurückgesetzt wird) sind jetzt direkt im Einstellungsfenster; „Alle Standardwerte wiederherstellen“ steht nicht mehr unten in jedem Reiter.',
         en: 'Settings → General: "Save all settings", "Load all settings" and "Restore all defaults" (with a note on what is reset) are now directly in the settings window; "Restore all defaults" is no longer at the bottom of every tab.' },
@@ -22956,7 +22960,8 @@ Max Mustermann (Anschrift wie oben)`,
     }
   }
   el('btnResetDisplayDefaults').addEventListener('click', () => {
-    if (!window.confirm('Standardwerte werden wiederhergestellt, alle vorherigen Einstellungen zurückgesetzt. Fortführen?')) return;
+    if (!window.confirm(T('Farben, Spaltenbreiten und Spaltenanordnung, Würfel- und Informationsfensterposition sowie „Automatisch nach Versionsupdate prüfen“ werden auf die Standardwerte zurückgesetzt.\n\nNicht zurückgesetzt werden: 3D Bereich, Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.\n\nFortführen?',
+      'Colours, column widths and column arrangement, cube and information window position and "Automatically check for version updates" are reset to their defaults.\n\nNot reset: 3D area, machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.\n\nContinue?'))) return;
     resetAllDisplaySettingsToDefaults();
   });
 
