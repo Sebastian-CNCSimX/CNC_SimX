@@ -312,6 +312,11 @@
   .settings-tab:hover { color: var(--ink); }
   .settings-tab.active { background: var(--panel); border-color: var(--border); color: var(--ink); font-weight: 600; }
   .settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 4px 4px; scrollbar-gutter: stable; }   
+  
+  .settings-general-sep { border-top: 1px solid var(--border); margin: 14px 0 12px; }
+  .settings-general-row { margin: 0 0 8px; }
+  .settings-general-row .btn { width: 260px; text-align: left; }
+  .panel-hint.settings-reset-hint { margin-top: 2px; color: var(--accent); font-weight: 600; }
   .panel-hint.auto-update-hint { margin-top: 4px; color: var(--accent); font-weight: 600; }   
   .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
@@ -1958,8 +1963,8 @@
           
           <button class="menu-item" id="btnOpenTools" type="button" title="Werkzeugprofil, Spannfutter und Werkzeugdarstellung in einem Fenster mit Reitern" data-i18n-en="Tools" data-i18n-en-title="Tool profile, chuck and tool display in one window with tabs">Werkzeuge</button>
           
-          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Einstellungen exportieren' heruntergeladene Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Import Settings" data-i18n-en-title="Loads a settings file previously downloaded via 'Export Settings' and replaces all settings contained in it">Einstellungen importieren</button>
-          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Export Settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Einstellungen exportieren</button>
+          <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Alle Einstellungen sichern' gespeicherte Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Load all settings" data-i18n-en-title="Loads a settings file previously saved via 'Save all settings' and replaces all settings contained in it">Alle Einstellungen laden</button>
+          <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Save all settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Alle Einstellungen sichern</button>
         </div>
       </div>
       
@@ -2356,7 +2361,17 @@
     </div>
     <div class="settings-body" id="settingsBody">
       
-      <div class="settings-pane" data-pane="general" id="settingsPaneGeneral"></div>
+      <div class="settings-pane" data-pane="general" id="settingsPaneGeneral">
+        
+        <div class="settings-general-extras" id="settingsGeneralExtras">
+          <div class="settings-general-sep"></div>
+          <div class="settings-general-row"><button class="btn ghost" id="btnSettingsSaveAll" type="button" data-i18n-en="Save all settings">Alle Einstellungen sichern</button></div>
+          <div class="settings-general-row"><button class="btn ghost" id="btnSettingsLoadAll" type="button" data-i18n-en="Load all settings">Alle Einstellungen laden</button></div>
+          <div class="settings-general-sep"></div>
+          <div class="settings-general-row"><button class="btn ghost" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button></div>
+          <p class="panel-hint settings-reset-hint" data-i18n-en="Resets all colours, the column widths and column arrangement, the cube and information window position and &quot;Automatically check for version updates&quot; to their defaults. Not reset: 3D area (tilt/rotation direction, grid), machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.">Setzt alle Farben, die Spaltenbreiten und Spaltenanordnung, die Würfel- und Informationsfensterposition sowie „Automatisch nach Versionsupdate prüfen“ auf die Standardwerte zurück. Nicht zurückgesetzt werden: 3D Bereich (Kipp-/Drehrichtung, Raster), Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.</p>
+        </div>
+      </div>
       <div class="settings-pane" data-pane="machine" id="settingsPaneMachine" hidden>
         <div class="settings-cols"><div class="settings-col" id="settingsColMachineTypes"></div><div class="settings-vsep"></div><div class="settings-col" id="settingsColOpNames"></div></div>
       </div>
@@ -2378,7 +2393,6 @@
       <div class="settings-pane" data-pane="partProfile" id="settingsPanePartProfile" hidden></div>
     </div>
     <div class="paste-actions">
-      <button class="btn ghost" style="margin-right:auto" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button>
       
       <button class="btn primary" id="btnSettingsOk" type="button">Ok</button>
       <button class="btn ghost" id="btnSettingsCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -8421,7 +8435,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 361;
+  const APP_RELEASE_NUMBER = 362;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8430,7 +8444,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '16.11.2026, 13:40 Uhr';
+  const APP_RELEASE_TIMESTAMP = '17.11.2026, 07:45 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12806,6 +12820,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 362, date: '17.11.2026', items: [
+      { de: 'Einstellungen → Allgemein: „Alle Einstellungen sichern“, „Alle Einstellungen laden“ und „Alle Standardwerte wiederherstellen“ (mit Hinweis, was zurückgesetzt wird) sind jetzt direkt im Einstellungsfenster; „Alle Standardwerte wiederherstellen“ steht nicht mehr unten in jedem Reiter.',
+        en: 'Settings → General: "Save all settings", "Load all settings" and "Restore all defaults" (with a note on what is reset) are now directly in the settings window; "Restore all defaults" is no longer at the bottom of every tab.' },
+      { de: 'Menü Einstellungen: „Einstellungen exportieren“ heißt jetzt „Alle Einstellungen sichern“, „Einstellungen importieren“ heißt „Alle Einstellungen laden“.',
+        en: 'Settings menu: "Export settings" is now called "Save all settings", "Import settings" is called "Load all settings".' },
+    ] },
     { release: 361, date: '16.11.2026', items: [
       { de: 'Einstellungen: Maschinentypen und Arbeitsgangnamen haben einen eigenen Reiter „Maschinentypen/Arbeitsgangnamen“; alle Menüpunkte dazu öffnen ihn direkt.',
         en: 'Settings: machine types and processing step names have their own tab "Machine types/Processing step names"; all related menu items open it directly.' },
@@ -19840,6 +19860,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       sec.appendChild(body);
       el(s.host).appendChild(sec);
     });
+    el('settingsPaneGeneral').appendChild(el('settingsGeneralExtras'));
     settingsPanel.addEventListener('click', e => {
       const b = e.target.closest && e.target.closest('.settings-sec button, .settings-sec input[type="radio"], .settings-sec input[type="checkbox"]');
       if (b && !settingsInternal) settingsDirty.add(b.closest('.settings-sec').dataset.key);
@@ -19932,6 +19953,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnSettingsOk').addEventListener('click', () => applySettings(false));
   el('btnSettingsApply').addEventListener('click', () => applySettings(true));
   el('btnSettingsCancel').addEventListener('click', cancelSettings);
+  el('btnSettingsSaveAll').addEventListener('click', () => {
+    const pending = SETTINGS_SECTIONS.some(s => s.apply && settingsDirty.has(s.key));
+    if (pending && confirm(T('Im Einstellungsfenster gibt es noch nicht übernommene Änderungen.\n\nVorher übernehmen und mitsichern?\n(Abbrechen = nur den bereits gespeicherten Stand sichern)',
+      'The settings window contains changes that have not been applied yet.\n\nApply them first and include them?\n(Cancel = save only the already stored state)'))) {
+      if (!applySettings(true)) return;
+    }
+    el('btnSaveSettings').click();
+  });
+  el('btnSettingsLoadAll').addEventListener('click', () => el('btnLoadSettings').click());
+  document.addEventListener('cncsim:settings-imported', () => {
+    if (!settingsPanel.classList.contains('open')) return;
+    fillSettings(); settingsDirty.clear();
+  });
   el('btnResetDisplayDefaults').addEventListener('click', () => {
     if (!settingsPanel.classList.contains('open')) return;
     const keys = SETTINGS_SECTIONS.filter(s => SETTINGS_RESET_TABS.includes(s.tab)).map(s => s.key);
@@ -21021,6 +21055,7 @@ Max Mustermann (Anschrift wie oben)`,
           otherSettingsRestored + ' additional setting(s) from the file were applied and will take full effect after reloading the page.'
         ));
       }
+      document.dispatchEvent(new CustomEvent('cncsim:settings-imported'));
     });
     e.target.value = '';
   });
