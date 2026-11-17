@@ -8435,7 +8435,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 364;
+  const APP_RELEASE_NUMBER = 365;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8444,7 +8444,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '17.11.2026, 09:10 Uhr';
+  const APP_RELEASE_TIMESTAMP = '17.11.2026, 10:10 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12820,6 +12820,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 365, date: '17.11.2026', items: [
+      { de: 'Wartungsversion zum Prüfen des Versionsupdates – keine sichtbaren Änderungen.',
+        en: 'Maintenance version for checking the version update – no visible changes.' },
+    ] },
     { release: 364, date: '17.11.2026', items: [
       { de: 'Nach einem Versionsupdate ließen sich Aufklapplisten (z. B. „Darstellung für:“ in den Einstellungen) erst nach einem Neustart wieder öffnen – behoben: Die Simulation lädt sich jetzt erst nach „OK“ in der Update-Meldung neu.',
         en: 'After a version update, drop-down lists (e.g. "Display for:" in the settings) only opened again after a restart – fixed: the simulation now only reloads after "OK" in the update message.' },
