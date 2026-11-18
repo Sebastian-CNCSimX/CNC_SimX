@@ -318,6 +318,7 @@
   .settings-general-row .btn { width: 260px; text-align: left; }
   .panel-hint.settings-reset-hint { margin-top: 2px; color: var(--accent); font-weight: 600; }
   .panel-hint.auto-update-hint { margin-top: 4px; color: var(--accent); font-weight: 600; }   
+  .panel-hint.abtrag-mode-hint { margin-top: 6px; }   
   .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
   .settings-sec + .settings-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
@@ -2369,7 +2370,7 @@
           <div class="settings-general-row"><button class="btn ghost" id="btnSettingsLoadAll" type="button" data-i18n-en="Load all settings">Alle Einstellungen laden</button></div>
           <div class="settings-general-sep"></div>
           <div class="settings-general-row"><button class="btn ghost" id="btnResetDisplayDefaults" type="button" title="Setzt Buttonfarbe, Hintergrundfarbe, Schriftfarbe, Arbeitsgangfarbe, 3D Rasterfarbe, Achsenfarbe und Spaltenbreiten auf ihre Standardwerte zurück" data-i18n-en="Restore all defaults" data-i18n-en-title="Resets button color, background color, font color, processing step color, 3D grid color, axes color, and column widths to their default values">Alle Standardwerte wiederherstellen</button></div>
-          <p class="panel-hint settings-reset-hint" data-i18n-en="Resets all colours, the column widths and column arrangement, the cube and information window position and &quot;Automatically check for version updates&quot; to their defaults. Not reset: 3D area (tilt/rotation direction, grid), machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.">Setzt alle Farben, die Spaltenbreiten und Spaltenanordnung, die Würfel- und Informationsfensterposition sowie „Automatisch nach Versionsupdate prüfen“ auf die Standardwerte zurück. Nicht zurückgesetzt werden: 3D Bereich (Kipp-/Drehrichtung, Raster), Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.</p>
+          <p class="panel-hint settings-reset-hint" data-i18n-en="Resets all colours, the column widths and column arrangement, the cube and information window position, the removal simulation and &quot;Automatically check for version updates&quot; to their defaults. Not reset: 3D area (tilt/rotation direction, grid), machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.">Setzt alle Farben, die Spaltenbreiten und Spaltenanordnung, die Würfel- und Informationsfensterposition, die Abtragsimulation sowie „Automatisch nach Versionsupdate prüfen“ auf die Standardwerte zurück. Nicht zurückgesetzt werden: 3D Bereich (Kipp-/Drehrichtung, Raster), Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.</p>
         </div>
       </div>
       <div class="settings-pane" data-pane="machine" id="settingsPaneMachine" hidden>
@@ -3197,6 +3198,22 @@
   </div>
 </div>
 
+<div class="paste-panel" id="abtragModePanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Removal simulation">Abtragsimulation</h3>
+    <div class="scale-choice abtrag-mode-choice" id="abtragModeChoice">
+      <label class="scale-option"><input type="radio" name="abtragMode" value="simple"> <span data-i18n-en="Simple removal">Abtrag einfach</span></label>
+      <label class="scale-option"><input type="radio" name="abtragMode" value="horiz"> <span data-i18n-en="Horizontal as solid">Waagerecht als Volumenkörper</span></label>
+      <label class="scale-option"><input type="radio" name="abtragMode" value="always"> <span data-i18n-en="Always as solid">Immer als Volumenkörper</span></label>
+    </div>
+    <p class="panel-hint abtrag-mode-hint" data-i18n-en="Simple removal: as before – a solid only for simultaneous 5-axis machining, tilted cutters, angled saws and posts. Horizontal as solid: additionally whenever a horizontal cutter machines (e.g. tenon, horizontal notch). Always as solid: every program – the calculation can take considerably longer, especially for large parts.">Abtrag einfach: wie bisher – Volumenkörper nur bei 5-Achs-Simultanbearbeitung, schräg gestelltem Fräser, Säge mit Winkel und Pfosten. Waagerecht als Volumenkörper: zusätzlich, sobald ein waagerechter Fräser bearbeitet (z. B. Zapfen, Ausklinkung horizontal). Immer als Volumenkörper: jedes Programm – das Berechnen kann deutlich länger dauern, vor allem bei großen Teilen.</p>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnAbtragModeOpen" type="button" hidden></button>
+      <button class="btn ghost" id="btnAbtragModeCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnAbtragModeApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="autoUpdatePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Version update">Versionsupdate</h3>
@@ -8435,7 +8452,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 365;
+  const APP_RELEASE_NUMBER = 366;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8444,7 +8461,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '17.11.2026, 10:10 Uhr';
+  const APP_RELEASE_TIMESTAMP = '18.11.2026, 08:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12820,6 +12837,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 366, date: '18.11.2026', items: [
+      { de: 'Abtragsimulation: Bei einer Stufe mit Ausklinkung blieb am Ende das herausgefräste Reststück stehen und die Stufe verschwand – jetzt bleibt die Stufe, kleine herausgetrennte Reststücke fallen als Abfall weg.',
+        en: 'Removal simulation: for a step with a notch, the cut-out offcut remained at the end and the step disappeared – now the step remains and small cut-out offcuts are removed as waste.' },
+      { de: 'Einstellungen → Allgemein → „Abtragsimulation“: „Abtrag einfach“ (wie bisher), „Waagerecht als Volumenkörper“ (zusätzlich bei waagerechtem Fräser, z. B. Zapfen) oder „Immer als Volumenkörper“ (rechnet länger).',
+        en: 'Settings → General → "Removal simulation": "Simple removal" (as before), "Horizontal as solid" (additionally for horizontal cutters, e.g. tenons) or "Always as solid" (takes longer).' },
+    ] },
     { release: 365, date: '17.11.2026', items: [
       { de: 'Wartungsversion zum Prüfen des Versionsupdates – keine sichtbaren Änderungen.',
         en: 'Maintenance version for checking the version update – no visible changes.' },
@@ -15973,11 +15996,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     segments.filter(s => s.context).forEach(seg => seg.points.forEach(p => ctx.push(Object.assign({ opIndex: seg.opIndex, toolRadius: seg.toolRadius, toolLength: seg.toolLength, toolIsBlade: seg.toolIsBlade, toolProfileId: seg.toolProfileId }, p))));
     return { list: ctx.length ? ctx.concat(points) : points, offset: ctx.length };
   }
+  var abtragModePref = (() => { try { const v = localStorage.getItem('cncsim.abtragMode'); return v === 'horiz' || v === 'always' ? v : 'simple'; } catch (e) { return 'simple'; } })();
+  var abtragForce25D = false;
   function abtragKey() {
     return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
       useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(','),
       (() => { const c = listChainInfo(); return c ? c.sig : ''; })(),
-      postRotationActive() ? 'post' + postCurrentQuarter() + postRotDir : ''].join('|');
+      postRotationActive() ? 'post' + postCurrentQuarter() + postRotDir : '',
+      abtragModePref].join('|');
   }
   function ABDEX_CORE() {
     function create(box, h) {
@@ -16460,6 +16486,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     let runK0 = null, runK1 = null, runCol = null, runStart = null, uf = null, ufSize = null;
     let dropMark = null, lastChanged = false;
+    let keepFn = null, colKeep = null;
+    function setKeep(fn) { keepFn = fn; colKeep = null; }
     function applyDrop(out) {
       const old = dropList || [];
       if (!dropMark || dropMark.length < st.length) dropMark = new Uint8Array(st.length);
@@ -16516,17 +16544,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (i + 1 < NX) link(col, col + 1);
         if (j + 1 < NY) link(col, col + NX);
       }
+      if (keepFn && !colKeep) { colKeep = new Uint8Array(NX * NY); for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) colKeep[i + NX * j] = keepFn(gx0 + i * h, gy0 + j * h) ? 1 : 0; }
       const comps = [], compOf = new Map();
       for (let m = 0; m < nR; m++) {
         const root = find(m);
         let c = compOf.get(root);
-        if (!c) { c = [m, 0, false, root]; compOf.set(root, c); comps.push(c); }
+        if (!c) { c = [m, 0, false, root, 0, 0]; compOf.set(root, c); comps.push(c); }
         c[1] += runK1[m] - runK0[m] + 1;
+        c[4]++; if (colKeep && colKeep[runCol[m]]) c[5]++;
         if (!c[2]) { const col = runCol[m], i = col % NX, j = (col - i) / NX; if (i <= 1 || i >= NX - 2 || j <= 1 || j >= NY - 2) c[2] = true; }
       }
       if (comps.length <= 1) { lastComps = comps.map(c => c[2] ? -c[1] : c[1]); applyDrop([]); return 0; }
       let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
-      const keepC = c => c[1] >= big * 0.7;
+      let keepC = c => c[1] >= big * 0.7;
+      if (colKeep && comps.some(c => c[5] > 0.5 * c[4])) keepC = c => c[5] > 0.5 * c[4];
       const dropRoot = new Set();
       comps.forEach(c => { if (!keepC(c)) dropRoot.add(c[3]); });
       lastComps = comps.slice().sort((x, y) => y[1] - x[1]).slice(0, 8).map(c => c[2] ? -c[1] : c[1]);
@@ -16552,7 +16583,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       return n;
     }
     return {
-      setRay, clearDrop, settleDrop, reDrop, comps: () => lastComps, changed: () => lastChanged,
+      setRay, clearDrop, settleDrop, reDrop, setKeep, comps: () => lastComps, changed: () => lastChanged, keeps: () => !!colKeep,
       update(budget) {
         const t0 = Date.now();
         let left = 0;
@@ -16875,7 +16906,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     abdexKick(dex);
     abdexProgressUI(dex);
     const nT = dex.mesh ? dex.mesh.dexel.nT : 0;
-    window.__lastAbtragInfo = { target, dexel: true, steps: dex.nSteps, want: dex.want, shown: dex.shown, pending: dex.shown !== dex.want || !!dex.inflight || dex.meshing || dex.ccN !== dex.shown, dropped: dex.dropped, comps: dex.mesher.comps(), vol: dex.vol,
+    window.__lastAbtragInfo = { target, dexel: true, byMode: !!(abtragState && abtragState.onlyMode), byFinal: dex.mesher.keeps(), steps: dex.nSteps, want: dex.want, shown: dex.shown, pending: dex.shown !== dex.want || !!dex.inflight || dex.meshing || dex.ccN !== dex.shown, dropped: dex.dropped, comps: dex.mesher.comps(), vol: dex.vol,
       chainSnap: dex.snapUsed, chainSnapSaved: !!(dex.snapKey && abdexChainSnaps.has(dex.snapKey)),
       workers: dex.workers.length, h: dex.h, tris: nT, meshes: dex.nMesh || 0, roundMs: Math.round(dex.lastRoundMs), error: dex.err || undefined };
     return dex.mesh;
@@ -16955,10 +16986,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if ((q.a || 0) !== 0 || (q.b || 0) !== 0 || (q.c || 0) !== 0) nBlade5++;
       }
       const tiltDex = nTilt >= 2 || nBlade5 > 0;
-      if (n5 >= 10 || chain || post || tiltDex) {
+      let nHoriz = 0;
+      if (abtragModePref === 'horiz') for (let i = 1; i < list.length && !nHoriz; i++) {
+        const q = list[i];
+        if (q.rapid || hidden(q) || !(q.toolRadius > 0) || q.toolIsBlade || Math.hypot(q.x - list[i - 1].x, q.y - list[i - 1].y, q.z - list[i - 1].z) < 0.01) continue;
+        if (kinds[i] === 'h') nHoriz++;
+      }
+      const modeDex = !abtragForce25D && (abtragModePref === 'always' || (abtragModePref === 'horiz' && nHoriz > 0));
+      const onlyMode = modeDex && !(n5 >= 10 || chain || post || tiltDex);
+      if (n5 >= 10 || chain || post || tiltDex || modeDex) {
         const poly = dxfKonturLoop.map(p => { const t = dxfTransformPoint({ x: p.x, y: p.y, z: 0 }); return [t.x, t.y]; });
-        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, rays: tiltDex && n5 < 10 ? (nTilt >= 2 ? 600000 : (post || chain ? 150000 : 400000)) : 150000 };
+        const st = { key: abtragKey(), dexel: true, list, offset, toRaw, rScale, zBase, zTop, T, tilted: 0, chain: chain ? chain.prev.length : 0, tiltDex, onlyMode, rays: onlyMode ? 400000 : tiltDex && n5 < 10 ? (nTilt >= 2 ? 600000 : (post || chain ? 150000 : 400000)) : 150000 };
         st.dexSteps = abdexBuildSteps(list, hidden, profileOf);
+        if (onlyMode) {
+          try {
+            abtragForce25D = true;
+            const st25 = abtragPrepare();
+            abtragForce25D = false;
+            const stockRing = dxfKonturLoop.map(p => [p.x, p.y]); stockRing.push(stockRing[0].slice());
+            const fin = st25 && !st25.dexel ? abtragFinalKept(st25, stockRing) : null;
+            if (fin && fin.length) {
+              const inRing = (ring, x, y) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+              st.keepFn = (x, y) => { const r = toRaw(x, y); return fin.some(pc => inRing(pc[0], r[0], r[1]) && !pc.slice(1).some(hole => inRing(hole, r[0], r[1]))); };
+            }
+          } catch (e) {  } finally { abtragForce25D = false; }
+        }
         const listK = programList.length >= 2 && listMachineType ? programList.findIndex(e => e.id === activeProgramId) : -1;
         let snapPrev = null;
         if (listK >= 0 && !post) {
@@ -16971,6 +17023,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (snapPrev) st.startRays = programList[listK].rotate ? abdexFlipRays(snapPrev) : snapPrev.rays;
         else if (chain) st.dexSteps = abtragChainSteps(chain, st.dexSteps, poly, zTop, T, profileOf);
         st.dex = abdexStart(st, poly);
+        if (st.keepFn) st.dex.mesher.setKeep(st.keepFn);
         if (snapPrev && (st.dex.h !== snapPrev.h || st.dex.D.nx !== snapPrev.nx || st.dex.D.ny !== snapPrev.ny || st.dex.D.nz !== snapPrev.nz)) {
           st.dex.dispose(); st.startRays = null; st.dexSteps = abtragChainSteps(chain, abdexBuildSteps(list, hidden, profileOf), poly, zTop, T, profileOf); st.dex = abdexStart(st, poly);
         }
@@ -17660,6 +17713,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (b.bores) a.bores = (a.bores || []).concat(b.bores);
     return a;
   }
+  function abtragIslandWaste(inner, border, area) {
+    if (!inner.length || !border.length) return false;
+    const maxB = Math.max(...border.map(pc => area(pc[0])));
+    const sumI = inner.reduce((a, pc) => a + area(pc[0]), 0);
+    if (sumI >= 0.25 * maxB) return false;
+    const inRing = (ring, x, y) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+    return inner.every(pc => !border.some(bp => pc[0].some(([x, y]) => inRing(bp[0], x, y))));
+  }
   function abtragFinalKept(st, stockRing) {
     if (st.finalKept !== undefined) return st.finalKept;
     st.finalKept = null;
@@ -17681,6 +17742,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         return false;
       };
       let kept = big.filter(pc => !pc[0].some(onStock));
+      { const bord = big.filter(pc => pc[0].some(onStock)); if (abtragIslandWaste(kept, bord, area)) kept = bord.length === 1 ? bord.slice() : []; }
       if (!kept.length && big.length === 1) kept = big.slice();
       if (!kept.length && big.length > 1) {
         const polys = (st.loops || []).filter(lp => lp.length >= 3).filter(lp => {
@@ -17730,6 +17792,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         };
         const atBorder = pc => pc[0].some(onStock);
         let waste = big.filter(atBorder), kept = big.filter(pc => !atBorder(pc));
+        if (abtragIslandWaste(kept, waste, area)) { const isl = kept; info.islandWaste = isl.length; if (waste.length === 1) { kept = waste; waste = isl; } else { kept = []; waste = waste.concat(isl); } }
         if (!kept.length && big.length === 1) { kept = big.slice(); waste = []; info.keptSingle = true; }
         if (!kept.length && waste.length > 1) {
           const fin = abtragFinalKept(st, stockRing);
@@ -19807,6 +19870,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   const settingsPanel = el('settingsPanel');
   const SETTINGS_SECTIONS = [
+    { key: 'abtragMode', tab: 'general', panel: 'abtragModePanel', open: 'btnAbtragModeOpen', apply: 'btnAbtragModeApply', cancel: 'btnAbtragModeCancel', reset: null, de: 'Abtragsimulation', en: 'Removal simulation', host: 'settingsPaneGeneral' },
     { key: 'autoUpdate', tab: 'general', panel: 'autoUpdatePanel', open: 'btnAutoUpdateOpen', apply: 'btnAutoUpdateApply', cancel: 'btnAutoUpdateCancel', reset: null, de: 'Versionsupdate', en: 'Version update', host: 'settingsPaneGeneral' },
     { key: 'machineTypes', tab: 'machine', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
     { key: 'opNames', tab: 'machine', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgangnamen', en: 'Processing step names', host: 'settingsColOpNames' },
@@ -20641,6 +20705,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   btnCheckForUpdate.addEventListener('click', () => checkForUpdate());
   brandCheckUpdateTrigger.addEventListener('click', () => checkForUpdate());
 
+  const LS_KEY_ABTRAG_MODE = 'cncsim.abtragMode';
+  function setAbtragMode(v, persist) {
+    v = (v === 'horiz' || v === 'always') ? v : 'simple';
+    const changed = v !== abtragModePref;
+    abtragModePref = v;
+    if (persist) { try { localStorage.setItem(LS_KEY_ABTRAG_MODE, v); } catch (e) {  } }
+    if (changed) { abtragDropState(); abtragMesh = null; abtragMeshTarget = -1; stopPlayback(); requestRender(); }
+  }
+  el('btnAbtragModeOpen').addEventListener('click', () => { const r = document.querySelector('input[name="abtragMode"][value="' + abtragModePref + '"]'); if (r) r.checked = true; el('abtragModePanel').classList.add('open'); });
+  el('btnAbtragModeApply').addEventListener('click', () => { const r = document.querySelector('input[name="abtragMode"]:checked'); setAbtragMode(r ? r.value : 'simple', true); el('abtragModePanel').classList.remove('open'); });
+  el('btnAbtragModeCancel').addEventListener('click', () => { el('abtragModePanel').classList.remove('open'); });
+  window.__abtragMode = () => abtragModePref;
   const LS_KEY_AUTO_UPDATE = 'cncsim.autoUpdateCheck';
   var autoUpdatePref = (() => { try { return localStorage.getItem(LS_KEY_AUTO_UPDATE) === '1'; } catch (e) { return false; } })();
   function setAutoUpdatePref(on) {
@@ -20838,6 +20914,7 @@ Max Mustermann (Anschrift wie oben)`,
       invertRotation: invertRotationPreference,
       columnDock: columnDockPref, gizmoPos: gizmoPosPref, infoPanelPos: infoPanelPosPref,
       autoUpdateCheck: autoUpdatePref,
+      abtragMode: abtragModePref,
       menuHighlightBg: activeMenuColor.bg,
       menuHighlightInk: activeMenuColor.ink,
       fontColors: Object.assign({}, activeFontColors),
@@ -20956,6 +21033,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (data.gizmoPos === 'left' || data.gizmoPos === 'right') applyGizmoPos(data.gizmoPos, true);
       if (data.infoPanelPos === 'left' || data.infoPanelPos === 'right') applyInfoPanelPos(data.infoPanelPos, true);
       if (typeof data.autoUpdateCheck === 'boolean') setAutoUpdatePref(data.autoUpdateCheck);
+      if (data.abtragMode === 'simple' || data.abtragMode === 'horiz' || data.abtragMode === 'always') setAbtragMode(data.abtragMode, true);
       if (data.invertRotation !== undefined) {
         invertRotationPreference = data.invertRotation === true || data.invertRotation === '1' || data.invertRotation === 1;
         persistInvertRotation(invertRotationPreference);
@@ -22942,6 +23020,7 @@ Max Mustermann (Anschrift wie oben)`,
   function resetAllDisplaySettingsToDefaults() {
     applyColumnDock('left', true); applyGizmoPos('right', true); applyInfoPanelPos('left', true);
     setAutoUpdatePref(false);
+    setAbtragMode('simple', true);
     try { window.localStorage.removeItem(LS_KEY_COLOR_PROFILE); } catch (e) {  }
     activeColorProfile = applyColorProfile(null);
     syncColorProfilePanelFromActive();
@@ -22968,8 +23047,8 @@ Max Mustermann (Anschrift wie oben)`,
     }
   }
   el('btnResetDisplayDefaults').addEventListener('click', () => {
-    if (!window.confirm(T('Farben, Spaltenbreiten und Spaltenanordnung, Würfel- und Informationsfensterposition sowie „Automatisch nach Versionsupdate prüfen“ werden auf die Standardwerte zurückgesetzt.\n\nNicht zurückgesetzt werden: 3D Bereich, Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.\n\nFortführen?',
-      'Colours, column widths and column arrangement, cube and information window position and "Automatically check for version updates" are reset to their defaults.\n\nNot reset: 3D area, machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.\n\nContinue?'))) return;
+    if (!window.confirm(T('Farben, Spaltenbreiten und Spaltenanordnung, Würfel- und Informationsfensterposition, Abtragsimulation sowie „Automatisch nach Versionsupdate prüfen“ werden auf die Standardwerte zurückgesetzt.\n\nNicht zurückgesetzt werden: 3D Bereich, Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.\n\nFortführen?',
+      'Colours, column widths and column arrangement, cube and information window position, removal simulation and "Automatically check for version updates" are reset to their defaults.\n\nNot reset: 3D area, machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.\n\nContinue?'))) return;
     resetAllDisplaySettingsToDefaults();
   });
 
