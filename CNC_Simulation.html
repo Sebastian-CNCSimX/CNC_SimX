@@ -315,6 +315,8 @@
   
   .settings-general-sep { border-top: 1px solid var(--border); margin: 14px 0 12px; }
   .settings-general-row { margin: 0 0 8px; }
+  .settings-general-head { margin: 0 0 10px; }   
+  .panel-hint.dpd-byname-hint { margin: 2px 0 6px 24px; }   
   .settings-general-row .btn { width: 260px; text-align: left; }
   .panel-hint.settings-reset-hint { margin-top: 2px; color: var(--accent); font-weight: 600; }
   .panel-hint.auto-update-hint { margin-top: 4px; color: var(--accent); font-weight: 600; }   
@@ -2366,6 +2368,8 @@
         
         <div class="settings-general-extras" id="settingsGeneralExtras">
           <div class="settings-general-sep"></div>
+          
+          <div class="settings-sec-head settings-general-head"><h4 data-i18n-en="Settings">Einstellungen</h4></div>
           <div class="settings-general-row"><button class="btn ghost" id="btnSettingsSaveAll" type="button" data-i18n-en="Save all settings">Alle Einstellungen sichern</button></div>
           <div class="settings-general-row"><button class="btn ghost" id="btnSettingsLoadAll" type="button" data-i18n-en="Load all settings">Alle Einstellungen laden</button></div>
           <div class="settings-general-sep"></div>
@@ -3234,6 +3238,8 @@
     <div class="dpd-layout"><div class="dpd-main">
     <p class="panel-hint" data-i18n-en="Defaults for &quot;DXF drawing settings&quot; on import.">Standardwerte für „DXF-Bauteil definieren“ beim Import.</p>
     <label class="scale-option"><input type="checkbox" id="dpdByName"> <span data-i18n-en="Preselect part type from file name">Bauteil aus dem Dateinamen vorwählen</span></label>
+    
+    <p class="panel-hint dpd-byname-hint" data-i18n-en="If the file name contains a part name, the part is recognised automatically – e.g. &quot;…Handrail….DXF&quot; or &quot;…Handlauf….DXF&quot; becomes a handrail. Recognised (upper/lower case does not matter): Riser/Setzstufe, Handrail/Handlauf, Post/Pfosten, Stringer/Wange, Tread/Stufe.">Enthält der Dateiname einen Bauteilnamen, wird das Bauteil automatisch erkannt – z. B. „…Handlauf….DXF“ oder „…Handrail….DXF“ wird zum Handlauf. Erkannt werden (Groß-/Kleinschreibung egal): Setzstufe/Riser, Handlauf/Handrail, Pfosten/Post, Wange/Stringer, Stufe/Tread.</p>
     <label class="scale-option"><input type="checkbox" id="dpdAutoApply"> <span data-i18n-en="Apply automatically on import">Beim Import automatisch anwenden</span></label>
     <hr class="dxf-part-sep">
     <div class="tool-data-row">
@@ -8453,7 +8459,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 367;
+  const APP_RELEASE_NUMBER = 368;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8462,7 +8468,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '18.11.2026, 09:30 Uhr';
+  const APP_RELEASE_TIMESTAMP = '18.11.2026, 16:05 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12838,6 +12844,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 368, date: '18.11.2026', items: [
+      { de: 'Einstellungen → Allgemein: Überschrift „Einstellungen“ über „Alle Einstellungen sichern/laden“.',
+        en: 'Settings → General: heading "Settings" above "Save/Load all settings".' },
+      { de: 'Einstellungen → DXF-Bauteildefinition: Hinweis, welche Bauteilnamen im Dateinamen automatisch erkannt werden (z. B. „Handlauf“ oder „Handrail“).',
+        en: 'Settings → DXF part definition: note on which part names in the file name are recognised automatically (e.g. "Handrail" or "Handlauf").' },
+    ] },
     { release: 367, date: '18.11.2026', items: [
       { de: 'Einstellungen → Allgemein → „Abtragsimulation“: Erklärtext zu den drei Auswahlmöglichkeiten verständlicher formuliert (DE/EN).',
         en: 'Settings → General → "Removal simulation": explanation of the three options worded more clearly (DE/EN).' },
