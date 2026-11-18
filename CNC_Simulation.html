@@ -3206,7 +3206,8 @@
       <label class="scale-option"><input type="radio" name="abtragMode" value="horiz"> <span data-i18n-en="Horizontal as solid">Waagerecht als Volumenkörper</span></label>
       <label class="scale-option"><input type="radio" name="abtragMode" value="always"> <span data-i18n-en="Always as solid">Immer als Volumenkörper</span></label>
     </div>
-    <p class="panel-hint abtrag-mode-hint" data-i18n-en="Simple removal: as before – a solid only for simultaneous 5-axis machining, tilted cutters, angled saws and posts. Horizontal as solid: additionally whenever a horizontal cutter machines (e.g. tenon, horizontal notch). Always as solid: every program – the calculation can take considerably longer, especially for large parts.">Abtrag einfach: wie bisher – Volumenkörper nur bei 5-Achs-Simultanbearbeitung, schräg gestelltem Fräser, Säge mit Winkel und Pfosten. Waagerecht als Volumenkörper: zusätzlich, sobald ein waagerechter Fräser bearbeitet (z. B. Zapfen, Ausklinkung horizontal). Immer als Volumenkörper: jedes Programm – das Berechnen kann deutlich länger dauern, vor allem bei großen Teilen.</p>
+    
+    <p class="panel-hint abtrag-mode-hint"><span data-i18n-en="Simple removal: solid only for simultaneous 5-axis machining, tilted cutters, angled saws and posts.">Abtrag einfach: Volumenkörper nur bei 5-Achs-Simultanbearbeitung, schrägem Fräser, gewinkelter Säge und Pfosten.</span><br><span data-i18n-en="Horizontal as solid: like &quot;Simple removal&quot;, with a higher level of detail for horizontal milling (e.g. tenons or horizontal notches).">Waagerecht als Volumenkörper: Wie „Abtrag einfach“, bei waagerechter Fräsbearbeitung (z. B. Zapfen oder horizontale Ausklinkungen) höherer Detailgrad.</span><br><span data-i18n-en="Always as solid: highest level of detail, considerably longer calculation time, especially for large workpieces.">Immer als Volumenkörper: höchster Detailgrad, deutlich längere Berechnungszeit, besonders bei großen Werkstücken.</span></p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnAbtragModeOpen" type="button" hidden></button>
       <button class="btn ghost" id="btnAbtragModeCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -8452,7 +8453,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 366;
+  const APP_RELEASE_NUMBER = 367;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8461,7 +8462,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '18.11.2026, 08:40 Uhr';
+  const APP_RELEASE_TIMESTAMP = '18.11.2026, 09:30 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12837,6 +12838,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 367, date: '18.11.2026', items: [
+      { de: 'Einstellungen → Allgemein → „Abtragsimulation“: Erklärtext zu den drei Auswahlmöglichkeiten verständlicher formuliert (DE/EN).',
+        en: 'Settings → General → "Removal simulation": explanation of the three options worded more clearly (DE/EN).' },
+    ] },
     { release: 366, date: '18.11.2026', items: [
       { de: 'Abtragsimulation: Bei einer Stufe mit Ausklinkung blieb am Ende das herausgefräste Reststück stehen und die Stufe verschwand – jetzt bleibt die Stufe, kleine herausgetrennte Reststücke fallen als Abfall weg.',
         en: 'Removal simulation: for a step with a notch, the cut-out offcut remained at the end and the step disappeared – now the step remains and small cut-out offcuts are removed as waste.' },
