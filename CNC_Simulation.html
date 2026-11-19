@@ -334,6 +334,15 @@
   .finished-progress[hidden] { display: none; }
   .fp-box { width: 420px; max-width: 80%; text-align: center; color: var(--ink); }
   .fp-text { font-weight: 600; font-size: 15px; }
+  
+  #btnFinishedLoadIcon { gap: 4px; }
+  .finished-warn { margin: -4px 0 8px; padding: 6px 10px; border: 1px solid #f0c27b; border-radius: 6px; background: #fff6e8; color: #7a4b00; font-size: 13px; }
+  .finished-warn[hidden] { display: none; }
+  .fp-error { width: 560px; text-align: left; }
+  .fp-error[hidden] { display: none; }
+  .fp-error-title { font-weight: 600; font-size: 17px; color: #c62828; margin-bottom: 8px; }
+  .fp-error-why { font-size: 15px; margin-bottom: 6px; }
+  .fp-error-detail { font-size: 13px; color: var(--ink-muted); line-height: 1.45; }
   .fp-bar { height: 12px; border-radius: 6px; background: var(--border); overflow: hidden; margin: 12px 0 6px; }
   .fp-bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
   .fp-pct { font-size: 13px; }
@@ -1393,7 +1402,7 @@
   .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .toolbar-btn:disabled:hover { color: var(--ink-muted); border-color: var(--border); }
   
-  #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon, #btnObjLoadIcon,
+  #btnLoadFileIcon, #btnLoadFileWithPartIcon, #btnFinishedLoadIcon, #btnEditProgramToolbarIcon, #btnClearProgramIcon, #btnObjLoadIcon,
   #btnPartCreateIcon, #btnDxfImportIcon, #btnDxfSaveAsIcon, #btnDxfExplodeIcon, #btnToggleDxf, #btnDxfMoveIcon, #btnDxfMirrorX, #btnDxfMirrorY, #btnDxfRotate,
   #btnDxfThickness, #btnDxfScale, #btnDxfDeleteIcon, #btnObjDeleteIcon {   
     width: 68px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -2110,6 +2119,8 @@
       <button class="toolbar-btn" id="btnLoadFileIcon" type="button" title="CNC-Programm laden (dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Programm laden')" data-i18n-en-title="Load CNC program (same action as 'File' → 'CNC-Program' → 'Load program')">📂 CNC</button>
       
       <button class="toolbar-btn" id="btnLoadFileWithPartIcon" type="button" title="CNC-Programm mit Bauteil laden (dieselbe Aktion wie 'Datei' → 'CNC' → 'CNC-Programm mit Bauteil laden')" data-i18n-en-title="Load CNC program with part (same action as 'File' → 'CNC' → 'Load CNC-Program with part')">▭ CNC</button>
+      
+      <button class="toolbar-btn" id="btnFinishedLoadIcon" type="button" disabled title="CNC-Programm laden und fertiges Teil anzeigen: Bauteil aus dem Programmkopf, Abtrag im Fenster „Fertiges Teil“ berechnen (nur ohne geladenes Programm; die Simulation bleibt leer)" data-i18n-en-title="Load CNC program and show the finished part: part from the program header, removal calculated in the &quot;Finished part&quot; window (only without a loaded program; the simulation stays empty)"><svg width="15" height="13" viewBox="0 0 18 16" aria-hidden="true"><line x1="3" y1="1.5" x2="3" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="2" width="12" height="9" fill="none" stroke="currentColor" stroke-width="0.8"/><rect x="4" y="2" width="3" height="3" fill="currentColor"/><rect x="10" y="2" width="3" height="3" fill="currentColor"/><rect x="7" y="5" width="3" height="3" fill="currentColor"/><rect x="13" y="5" width="3" height="3" fill="currentColor"/><rect x="4" y="8" width="3" height="3" fill="currentColor"/><rect x="10" y="8" width="3" height="3" fill="currentColor"/></svg><span>CNC</span></button>
       
       <button class="toolbar-btn" id="btnEditProgramToolbarIcon" type="button" disabled title="Geladenes CNC-Programm bearbeiten (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programm bearbeiten')" data-i18n-en-title="Edit the loaded CNC program (same action as 'Edit' → 'CNC' → 'Edit CNC-Program')">✎ CNC</button>
       
@@ -3232,10 +3243,14 @@
 <div class="paste-panel finished-panel" id="finishedPartPanel">
   <div class="paste-card finished-card">
     <div class="finished-head"><h3 data-i18n-en="Finished part">Fertiges Teil</h3><span class="finished-file" id="finishedPartFile"></span></div>
+    
+    <div class="finished-warn" id="finishedPartWarn" hidden></div>
     <div class="finished-body">
       <iframe id="finishedPartFrame" title="Fertiges Teil" src="about:blank"></iframe>
       <div class="finished-progress" id="finishedPartProgress">
         <div class="fp-box"><div class="fp-text" data-i18n-en="Calculating removal …">Abtrag wird berechnet …</div><div class="fp-bar"><div id="finishedPartBar"></div></div><div class="fp-pct" id="finishedPartPct">0 %</div></div>
+        
+        <div class="fp-box fp-error" id="finishedPartError" hidden></div>
       </div>
     </div>
     <div class="paste-actions"><button class="btn ghost" id="btnFinishedPartClose" type="button" data-i18n-en="Close">Schließen</button></div>
@@ -8498,7 +8513,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 372;
+  const APP_RELEASE_NUMBER = 373;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8507,7 +8522,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 12:04 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 13:05 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11192,6 +11207,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     el('machineTypeQuickGroup').classList.toggle('mt-pending', !!on);
   }
   function openMachineTypePrompt(suggestion, filename) {
+    finishedMtPending = null;
     machineTypePromptSelect.innerHTML = machineTypeSelect.innerHTML;
     machineTypePromptSelect.value = machineTypeSelect.value;
     const detected = suggestion && suggestion.toLowerCase() !== 'iso';
@@ -11204,6 +11220,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   el('btnMachineTypePromptConfirm').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
+    if (finishedMtPending) { const sc = finishedMtPending; finishedMtPending = null; sc.machineType = machineTypePromptSelect.value; sc.mtDetected = false; finishedShow(sc, sc.programFilename); return; }
     if (rawProgramText == null) return;
     machineTypeSelect.value = machineTypePromptSelect.value;
     applyActiveMachineType();
@@ -11211,6 +11228,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   el('btnMachineTypePromptCancel').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
+    if (finishedMtPending) { finishedMtPending = null; return; }
     if (rawProgramText != null) setMachineTypePending(true);
     loadWithPartPending = false;
   });
@@ -12887,6 +12905,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 373, date: '19.11.2026', items: [
+      { de: 'Neuer Knopf „Zielflagge CNC“ in der CNC-Leiste (nur ohne geladenes Programm): CNC-Programm wählen – Bauteil aus dem Programmkopf, Abtrag direkt im Fenster „Fertiges Teil“, ohne „Ok“. Fehlen Bauteil- oder Werkzeuginformationen, erscheint ein Hinweis.',
+        en: 'New "finish flag CNC" button in the CNC toolbar (only without a loaded program): choose a CNC program - part from the program header, removal shown directly in the "Finished part" window, no "Ok" needed. If part or tool information is missing, a notice is shown.' },
+    ] },
     { release: 372, date: '19.11.2026', items: [
       { de: 'Abtragsimulation (Volumenmodell): An Innenecken nach Bögen oder kleinen Verrundungen mit Radiuskorrektur wird nicht mehr zu viel Material weggenommen.',
         en: 'Removal simulation (volume model): inside corners after arcs or small fillets with radius compensation no longer remove too much material.' },
@@ -20323,7 +20345,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   const TOOLBAR_LAYOUT_KEY = 'cncsim.toolbarLayout';
   const TOOLBAR_GROUPS = [
-    { key: 'cnc', de: 'CNC', en: 'CNC', ids: ['btnLoadFileIcon', 'btnLoadFileWithPartIcon', 'btnEditProgramToolbarIcon', 'btnClearProgramIcon'] },
+    { key: 'cnc', de: 'CNC', en: 'CNC', ids: ['btnLoadFileIcon', 'btnLoadFileWithPartIcon', 'btnFinishedLoadIcon', 'btnEditProgramToolbarIcon', 'btnClearProgramIcon'] },
     { key: 'cncList', de: 'CNC-Liste', en: 'CNC list', ids: ['btnNewProgramListIcon', 'btnClearProgramListIcon'] },
     { key: 'part', de: 'Bauteil', en: 'Part', ids: ['btnPartCreateIcon'] },
     { key: 'dxf', de: 'DXF', en: 'DXF', ids: ['btnDxfImportIcon', 'btnDxfDeleteIcon', 'btnDxfSaveAsIcon', 'btnDxfExplodeIcon', 'btnToggleDxf', 'btnDxfMoveIcon', 'btnDxfMirrorX', 'btnDxfMirrorY', 'btnDxfRotate', 'btnDxfThickness', 'btnDxfScale'] },
@@ -20581,6 +20603,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const intent = fileInputIntent;
     fileInputIntent = 'load';
     if (!files.length) return;
+    if (intent === 'finished') { const f = files[0]; readFileAsText(f, (text) => finishedLoadFile(text, f.name, f.size)); return; }
     if (intent === 'add') {
       addFilesToProgramList(files);
     } else {
@@ -24057,6 +24080,8 @@ Max Mustermann (Anschrift wie oben)`,
   function updateFinishedPartBtn() {
     const b = el('btnFinishedPart');
     if (b) b.disabled = finishedView || rawProgramText == null || !abtragAvailable();
+    const lb = el('btnFinishedLoadIcon');
+    if (lb) lb.disabled = finishedView || rawProgramText != null;
   }
   function finishedScene() {
     return JSON.parse(JSON.stringify({
@@ -24077,8 +24102,12 @@ Max Mustermann (Anschrift wie oben)`,
   }
   function openFinishedPart() {
     if (finishedView || rawProgramText == null || !abtragAvailable() || !dxfRawText) return;
-    finishedSceneData = finishedScene();
-    el('finishedPartFile').textContent = rawProgramFilename || '';
+    finishedShow(finishedScene(), rawProgramFilename || '');
+  }
+  function finishedShow(scene, fileLabel) {
+    finishedSceneData = scene;
+    finishedInfo(null);
+    el('finishedPartFile').textContent = fileLabel || '';
     finishedProgress(0, false);
     const u = new URL(window.location.href); u.hash = ''; u.searchParams.set('finishedView', '1');
     finishedFrame.src = u.toString();
@@ -24091,21 +24120,83 @@ Max Mustermann (Anschrift wie oben)`,
     finishedSceneData = null;
   }
   el('btnFinishedPart').addEventListener('click', openFinishedPart);
+  var finishedMtPending = null;
+  el('btnFinishedLoadIcon').addEventListener('click', () => { if (finishedView || rawProgramText != null) return; fileInputIntent = 'finished'; el('fileInput').click(); });
+  function finishedLoadFile(text, name, size) {
+    if (finishedView || rawProgramText != null) return;
+    const sc = { programText: text, programFilename: name, programSize: size, autoPart: true };
+    const sug = suggestMachineType(text, machineTypes.map(mt => mt.name));
+    if (sug && sug.toLowerCase() !== 'iso') { sc.machineType = sug; sc.mtDetected = true; finishedShow(sc, name); return; }
+    openMachineTypePrompt(sug, name);
+    finishedMtPending = sc;
+  }
+  function finishedInfo(info) {
+    const warn = el('finishedPartWarn'), err = el('finishedPartError'), box = err.parentElement.querySelector('.fp-box:not(.fp-error)');
+    warn.hidden = true; warn.textContent = ''; err.hidden = true; err.textContent = ''; box.hidden = false;
+    if (!info) return;
+    const parts = [info.file || ''];
+    if (info.mt) parts.push(T('Maschinentyp ', 'Machine type ') + info.mt + (info.mtDetected ? T(' (erkannt)', ' (detected)') : T(' (ausgewählt)', ' (selected)')));
+    const f3 = v => String(Math.round(v * 1000) / 1000).replace('.', currentLang === 'en' ? '.' : ',');
+    if (info.part) parts.push(T('Bauteil ', 'Part ') + f3(info.part.x) + ' × ' + f3(info.part.y) + ' × ' + f3(Math.abs(info.part.z)) + ' mm');
+    el('finishedPartFile').textContent = parts.join('  ·  ');
+    if (info.missing && info.missing.length) {
+      warn.textContent = T('Ohne Werkzeugdaten, daher nicht abgetragen: ', 'No tool data, therefore not removed: ') + info.missing.join(', ');
+      warn.hidden = false;
+    }
+    if (info.error) {
+      const add = (cls, txt, boldTxt, after) => { const d = document.createElement('div'); d.className = cls; d.append(txt); if (boldTxt) { const b = document.createElement('b'); b.textContent = boldTxt; d.append(b, after || ''); } err.append(d); return d; };
+      add('fp-error-title', '⚠ ' + T('Abtragsberechnung nicht möglich', 'Removal calculation not possible'));
+      if (info.error === 'part') {
+        add('fp-error-why', T('Es fehlen ', 'Missing: '), T('Bauteilinformationen', 'part information'), '.');
+        add('fp-error-detail', T('Im Programmkopf wurden keine eindeutigen Bauteilmaße (Länge, Breite, Stärke) gefunden.', 'No unambiguous part dimensions (length, width, thickness) were found in the program header.'));
+      } else if (info.error === 'tools') {
+        add('fp-error-why', T('Es fehlen ', 'Missing: '), T('Werkzeuginformationen', 'tool information'), '.');
+        add('fp-error-detail', T('Im Programm ist für keinen Arbeitsgang ein Werkzeugradius angegeben.', 'The program does not specify a tool radius for any machining step.') + (info.ops && info.ops.length ? ' ' + T('Betroffen: ', 'Affected: ') + info.ops.join(', ') : ''));
+      } else {
+        add('fp-error-why', T('Das Programm enthält keine Bearbeitungen.', 'The program contains no machining.'));
+      }
+      box.hidden = true; err.hidden = false; el('finishedPartProgress').hidden = false;
+    }
+  }
   el('btnFinishedPartClose').addEventListener('click', closeFinishedPart);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && finishedPanel.classList.contains('open')) { e.preventDefault(); closeFinishedPart(); } });
   window.addEventListener('message', e => {
     if (finishedView || !e.data || e.source !== finishedFrame.contentWindow) return;
     if (e.data.type === 'cncsim-finished-ready' && finishedSceneData) finishedFrame.contentWindow.postMessage({ type: 'cncsim-finished-scene', scene: finishedSceneData }, '*');
-    else if (e.data.type === 'cncsim-finished-progress') finishedProgress(e.data.pct, e.data.done);
+    else if (e.data.type === 'cncsim-finished-progress') { if (el('finishedPartError').hidden) finishedProgress(e.data.pct, e.data.done); }
+    else if (e.data.type === 'cncsim-finished-info') finishedInfo(e.data.info);
     else if (e.data.type === 'cncsim-finished-close') closeFinishedPart();
   });
   window.__finishedPart = () => ({ open: finishedPanel.classList.contains('open'), src: finishedFrame.getAttribute('src'), pct: el('finishedPartPct').textContent, done: el('finishedPartProgress').hidden, frame: finishedFrame.contentWindow });
   updateFinishedPartBtn();
 
+  let finishedAutoInfo = null;
+  function finishedAutoPart(sc) {
+    const info = finishedAutoInfo = { file: sc.programFilename, mt: activeMachineTypeName, mtDetected: !!sc.mtDetected };
+    const fail = kind => { info.error = kind; window.parent.postMessage({ type: 'cncsim-finished-info', info }, '*'); return false; };
+    const cut = points.filter((q, i) => i > 0 && !q.rapid);
+    if (!cut.length) return fail('program');
+    const pf = programPartPrefill();
+    if (!pf || !pf.read || !pf.z) return fail('part');
+    const ops = getOpSections(), names = [], seen = new Set();
+    let withTool = 0;
+    cut.forEach(q => {
+      if (q.toolRadius > 0) { withTool++; return; }
+      const k = q.opIndex == null ? 'none' : q.opIndex;
+      if (seen.has(k)) return; seen.add(k);
+      const n = ops.findIndex(o => o.index === q.opIndex);
+      names.push(n >= 0 ? (n + 1) + '. ' + ops[n].title : T('Programmteil ohne Arbeitsgang', 'program part without machining step'));
+    });
+    if (!withTool) { info.ops = names; return fail('tools'); }
+    info.missing = names;
+    return true;
+  }
   function finishedLoadScene(sc) {
     loadTextClassic(sc.programText, sc.programFilename, { size: sc.programSize || sc.programText.length, lastModified: null });
     if (sc.machineType) { machineTypeSelect.value = sc.machineType; if (machineTypeSelect.value === sc.machineType) applyActiveMachineType(); }
     document.querySelectorAll('.paste-panel.open').forEach(p => p.classList.remove('open'));
+    if (sc.autoPart) { if (!finishedAutoPart(sc)) return; }
+    else {
     loadDxfText(sc.dxfText, sc.dxfFilename);
     const d = sc.dxf || {};
     dxfOffset = d.offset || { x: 0, y: 0, z: 0 }; dxfMirrorX = !!d.mirrorX; dxfMirrorY = !!d.mirrorY; dxfRotateDeg = d.rotateDeg || 0; dxfScale = d.scale || 1;
@@ -24114,9 +24205,11 @@ Max Mustermann (Anschrift wie oben)`,
     dxfCreatedPart = d.createdPart || null; dxfTopView = d.topView || null; dxfTopFrontDown = !!d.topFrontDown; dxfPartType = d.partType || dxfPartType;
     dxfThicknessEverConfirmed = true;
     recomputeMortise(); bakeParams = null; updateDxfUI();
+    }
     hiddenOpIndexes = new Set();
     showTool = false; showToolHolder = false;
     setAbtragOn(true); abtragHidePath = true;
+    if (sc.autoPart) { finishedAutoInfo.part = dxfCreatedPart ? { x: dxfCreatedPart.x, y: dxfCreatedPart.y, z: dxfCreatedPart.z } : null; window.parent.postMessage({ type: 'cncsim-finished-info', info: finishedAutoInfo }, '*'); }
     window.dispatchEvent(new Event('resize'));
     goHomeView();
     scrubIdx = Math.max(0, points.length - 1); hasStarted = true; scrubEl.value = String(scrubIdx);
