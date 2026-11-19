@@ -340,10 +340,10 @@
   
   body.finished-view { overflow: hidden; }
   body.finished-view * { visibility: hidden !important; }
-  body.finished-view #viewer, body.finished-view #viewer #canvas3d, body.finished-view #viewer #btnTopView, body.finished-view #viewer #btnTopView * { visibility: visible !important; }
+  
+  body.finished-view #viewer, body.finished-view #viewer #canvas3d, body.finished-view #viewer #btnTopView, body.finished-view #viewer #btnTopView *, body.finished-view #viewer #btnHomeView, body.finished-view #viewer #btnHomeView * { visibility: visible !important; }
   body.finished-view #viewer { position: fixed !important; inset: 0; z-index: 2147483000; margin: 0; border: 0; border-radius: 0; }
-  body.finished-view #viewer > :not(#canvas3d):not(#btnTopView) { display: none !important; }
-  body.finished-view #viewer #btnTopView { top: 14px !important; right: 14px !important; left: auto !important; }
+  body.finished-view #viewer > :not(#canvas3d):not(#btnTopView):not(#btnHomeView) { display: none !important; }   
   body.finished-view #infoPanel { display: none !important; }   
   .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
@@ -8498,7 +8498,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 369;
+  const APP_RELEASE_NUMBER = 370;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8507,7 +8507,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 09:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 10:55 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12887,6 +12887,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 370, date: '19.11.2026', items: [
+      { de: 'Fenster „Fertiges Teil“: Würfel mit Kompass und Iso-Würfel-Knopf (wechselt die Iso-Ansichten) wie in der Simulation.',
+        en: '"Finished part" window: cube with compass and iso cube button (cycles the iso views) as in the simulation.' },
+    ] },
     { release: 369, date: '19.11.2026', items: [
       { de: 'Neu: Zielflagge rechts von „Rohteil wiederherstellen“ – zeigt das fertig gefräste Teil in einem eigenen Fenster (mit %-Anzeige, drehbar, Home-Knopf). Die Simulation selbst bleibt dabei unverändert.',
         en: 'New: chequered flag to the right of "Restore stock" – shows the finished part in a separate window (with % progress, rotatable, home button). The simulation itself stays unchanged.' },
@@ -15460,7 +15464,6 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     gizmoHitFaces = [];
     gizmoCompassHits = [];
     gizmoCenterPos = null;
-    if (finishedView) return;
     if (!points.length && !(dxfGeometry && dxfVisible)) return;
     const gcx = gizmoPosPref === 'left' ? GIZMO_MARGIN + GIZMO_TOTAL_RADIUS : w - GIZMO_MARGIN - GIZMO_TOTAL_RADIUS;
     const gcy = GIZMO_MARGIN + GIZMO_TOTAL_RADIUS;
