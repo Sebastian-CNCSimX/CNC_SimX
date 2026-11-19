@@ -8498,7 +8498,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 371;
+  const APP_RELEASE_NUMBER = 372;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8507,7 +8507,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 11:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 12:04 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12887,6 +12887,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 372, date: '19.11.2026', items: [
+      { de: 'Abtragsimulation (Volumenmodell): An Innenecken nach Bögen oder kleinen Verrundungen mit Radiuskorrektur wird nicht mehr zu viel Material weggenommen.',
+        en: 'Removal simulation (volume model): inside corners after arcs or small fillets with radius compensation no longer remove too much material.' },
+    ] },
     { release: 371, date: '19.11.2026', items: [
       { de: 'Abtragsimulation: Drehen, Kippen und Zoomen des fertig gerechneten Volumenkörpers laufen deutlich flüssiger (in der Simulation und im Fenster „Fertiges Teil“).',
         en: 'Removal simulation: rotating, tilting and zooming the fully calculated solid are much smoother (in the simulation and in the "Finished part" window).' },
@@ -16717,6 +16721,38 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const nx = L > 1e-9 ? -dy / L * s * r : 0, ny = L > 1e-9 ? dx / L * s * r : 0;
         return { a: [p.x + nx, p.y + ny, p.z], b: [q.x + nx, q.y + ny, q.z], u: L > 1e-9 ? [dx / L, dy / L] : null, s, r, v: [q.x, q.y, q.z], t, idx };
       });
+      {
+        const X2 = (g, h) => {
+          const den = (g.b[0] - g.a[0]) * (h.b[1] - h.a[1]) - (g.b[1] - g.a[1]) * (h.b[0] - h.a[0]);
+          if (Math.abs(den) < 1e-12) return null;
+          const tt = ((h.a[0] - g.a[0]) * (h.b[1] - h.a[1]) - (h.a[1] - g.a[1]) * (h.b[0] - h.a[0])) / den;
+          const uu = ((h.a[0] - g.a[0]) * (g.b[1] - g.a[1]) - (h.a[1] - g.a[1]) * (g.b[0] - g.a[0])) / den;
+          return tt > 1e-9 && tt < 1 - 1e-9 && uu > 1e-9 && uu < 1 - 1e-9 ? [g.a[0] + (g.b[0] - g.a[0]) * tt, g.a[1] + (g.b[1] - g.a[1]) * tt] : null;
+        };
+        const flat = g => g.u && Math.abs(g.a[2] - g.b[2]) < 1e-6;
+        const keep = segs.map(() => true);
+        for (let i = 0; i < segs.length; i++) {
+          const g = segs[i];
+          if (!keep[i] || !flat(g)) continue;
+          let len = 0, best = -1, bx = null;
+          for (let j = i + 2; j < Math.min(segs.length, i + 42); j++) {
+            const m = segs[j - 1];
+            if (!flat(m) || m.s !== g.s || m.t !== g.t || Math.abs(m.a[2] - g.a[2]) > 1e-6) break;
+            len += Math.hypot(m.b[0] - m.a[0], m.b[1] - m.a[1]);
+            if (len > 6 * g.r) break;
+            const h = segs[j];
+            if (!flat(h) || h.s !== g.s || h.t !== g.t || Math.abs(h.a[2] - g.a[2]) > 1e-6) break;
+            const X = X2(g, h);
+            if (X) { best = j; bx = X; }
+          }
+          if (best > 0) {
+            g.b = [bx[0], bx[1], g.b[2]]; segs[best].a = [bx[0], bx[1], segs[best].a[2]];
+            for (let m = i + 1; m < best; m++) keep[m] = false;
+            i = best - 1;
+          }
+        }
+        if (keep.some(k => !k)) { const s2 = segs.filter((_, k) => keep[k]); segs.length = 0; s2.forEach(x => segs.push(x)); }
+      }
       const extra = [];
       for (let k = 0; k + 1 < segs.length; k++) {
         const g = segs[k], hh = segs[k + 1];
