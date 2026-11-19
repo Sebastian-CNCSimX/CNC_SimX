@@ -4,6 +4,7 @@
   var expected = "h4Kt9mQ2vXpL7wZaR3fN0yC6sJdEgB1u";
   var actual;
   try { actual = new URLSearchParams(window.location.search).get("cncsimxHost"); } catch (e) { actual = null; }
+  try { if (new URLSearchParams(window.location.search).get('finishedView') === '1') { window.__cncsimFinishedView = true; Storage.prototype.setItem = function () {}; Storage.prototype.removeItem = function () {}; Storage.prototype.clear = function () {}; } } catch (e) {  }
   if (actual === expected) return;
 
   var overlay = document.createElement("div");
@@ -320,7 +321,30 @@
   .settings-general-row .btn { width: 260px; text-align: left; }
   .panel-hint.settings-reset-hint { margin-top: 2px; color: var(--accent); font-weight: 600; }
   .panel-hint.auto-update-hint { margin-top: 4px; color: var(--accent); font-weight: 600; }   
-  .panel-hint.abtrag-mode-hint { margin-top: 6px; }   
+  .panel-hint.abtrag-mode-hint { margin-top: 6px; }
+  
+  .finish-sep { display: inline-block; width: 1px; height: 18px; background: var(--border); margin: 0 6px; vertical-align: middle; }
+  .paste-card.finished-card { width: min(1240px, 94vw); max-width: none; height: min(860px, 90vh); display: flex; flex-direction: column; }
+  .finished-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .finished-head h3 { margin: 0; }
+  .finished-file { color: var(--ink-muted); font-size: 13px; }
+  .finished-body { flex: 1; min-height: 0; position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--viewer-bg, var(--panel-2)); }
+  .finished-body iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .finished-progress { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--viewer-bg, var(--panel-2)); }
+  .finished-progress[hidden] { display: none; }
+  .fp-box { width: 420px; max-width: 80%; text-align: center; color: var(--ink); }
+  .fp-text { font-weight: 600; font-size: 15px; }
+  .fp-bar { height: 12px; border-radius: 6px; background: var(--border); overflow: hidden; margin: 12px 0 6px; }
+  .fp-bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  .fp-pct { font-size: 13px; }
+  
+  body.finished-view { overflow: hidden; }
+  body.finished-view * { visibility: hidden !important; }
+  body.finished-view #viewer, body.finished-view #viewer #canvas3d, body.finished-view #viewer #btnTopView, body.finished-view #viewer #btnTopView * { visibility: visible !important; }
+  body.finished-view #viewer { position: fixed !important; inset: 0; z-index: 2147483000; margin: 0; border: 0; border-radius: 0; }
+  body.finished-view #viewer > :not(#canvas3d):not(#btnTopView) { display: none !important; }
+  body.finished-view #viewer #btnTopView { top: 14px !important; right: 14px !important; left: auto !important; }
+  body.finished-view #infoPanel { display: none !important; }   
   .filename-input.grid-step-input { width: 160px; max-width: 100%; margin-top: 4px; }   
   .settings-pane[hidden] { display: none; }
   .settings-sec + .settings-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
@@ -2189,6 +2213,9 @@
         <button class="toolbar-btn abtrag-path-btn" id="btnAbtragHidePath" type="button" disabled aria-pressed="false" title="CNC-Fräsbahn anzeigen/verstecken" data-i18n-en-title="Hide/Show CNC path"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><polyline points="1,11 5,4 9,10 13,3 19,8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><line x1="3" y1="1" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
         
         <button class="toolbar-btn abtrag-path-btn" id="btnAbtragReset" type="button" disabled title="Rohteil wiederherstellen: alle Bearbeitungen zurücksetzen (Sprung zum Programmanfang)" data-i18n-en-title="Restore stock: reset all machining (jump to program start)"><svg width="18" height="16" viewBox="0 0 18 16" aria-hidden="true"><path d="M4.2 4.2 A6 6 0 1 1 3 9.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><polyline points="1.4,1.8 4.4,4.4 7.4,2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><rect x="6.6" y="6.6" width="4.8" height="4.8" fill="currentColor" opacity="0.55"/></svg></button>
+          
+          <span class="finish-sep" aria-hidden="true"></span>
+          <button class="toolbar-btn abtrag-path-btn" id="btnFinishedPart" type="button" disabled title="Fertiges Teil: Abtragsergebnis des ganzen Programms in einem eigenen Fenster berechnen und ansehen" data-i18n-en-title="Finished part: calculate and view the removal result of the whole program in a separate window"><svg width="18" height="16" viewBox="0 0 18 16" aria-hidden="true"><line x1="3" y1="1.5" x2="3" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="2" width="12" height="9" fill="none" stroke="currentColor" stroke-width="0.8"/><rect x="4" y="2" width="3" height="3" fill="currentColor"/><rect x="10" y="2" width="3" height="3" fill="currentColor"/><rect x="7" y="5" width="3" height="3" fill="currentColor"/><rect x="13" y="5" width="3" height="3" fill="currentColor"/><rect x="4" y="8" width="3" height="3" fill="currentColor"/><rect x="10" y="8" width="3" height="3" fill="currentColor"/></svg></button>
         <span class="abtrag-progress" id="abtragProgress" hidden></span>
       </div>
     </div>
@@ -3202,6 +3229,18 @@
   </div>
 </div>
 
+<div class="paste-panel finished-panel" id="finishedPartPanel">
+  <div class="paste-card finished-card">
+    <div class="finished-head"><h3 data-i18n-en="Finished part">Fertiges Teil</h3><span class="finished-file" id="finishedPartFile"></span></div>
+    <div class="finished-body">
+      <iframe id="finishedPartFrame" title="Fertiges Teil" src="about:blank"></iframe>
+      <div class="finished-progress" id="finishedPartProgress">
+        <div class="fp-box"><div class="fp-text" data-i18n-en="Calculating removal …">Abtrag wird berechnet …</div><div class="fp-bar"><div id="finishedPartBar"></div></div><div class="fp-pct" id="finishedPartPct">0 %</div></div>
+      </div>
+    </div>
+    <div class="paste-actions"><button class="btn ghost" id="btnFinishedPartClose" type="button" data-i18n-en="Close">Schließen</button></div>
+  </div>
+</div>
 <div class="paste-panel" id="abtragModePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Removal simulation">Abtragsimulation</h3>
@@ -8459,7 +8498,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 368;
+  const APP_RELEASE_NUMBER = 369;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8468,7 +8507,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '18.11.2026, 16:05 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 09:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -10472,6 +10511,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const dxfScaleInput = el('dxfScaleInput');
   const dxfScaleCurrentHint = el('dxfScaleCurrentHint');
   const btnDxfScaleReset = el('btnDxfScaleReset');
+  const finishedView = !!window.__cncsimFinishedView;
+  if (finishedView) document.body.classList.add('finished-view');
   const canvas = el('canvas3d');
   let bodyOccluder = null;
   let toolOccParts = null;
@@ -10605,6 +10646,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let dxfGeometry = null;
   let dxfEntities = null;
   let dxfFilename = null;
+  let dxfRawText = null;
   let dxfOffset = { x: 0, y: 0, z: 0 };
   let dxfVisible = true;
   let dxfMirrorX = false;
@@ -11696,6 +11738,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   function updateDxfUI() {
+    if (typeof updateFinishedPartBtn === 'function') updateFinishedPartBtn();
     updateAbtragUI();
     recomputeDxfAnchorCorrection();
     dxfStatusGroup.hidden = !dxfGeometry;
@@ -12844,6 +12887,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 369, date: '19.11.2026', items: [
+      { de: 'Neu: Zielflagge rechts von „Rohteil wiederherstellen“ – zeigt das fertig gefräste Teil in einem eigenen Fenster (mit %-Anzeige, drehbar, Home-Knopf). Die Simulation selbst bleibt dabei unverändert.',
+        en: 'New: chequered flag to the right of "Restore stock" – shows the finished part in a separate window (with % progress, rotatable, home button). The simulation itself stays unchanged.' },
+    ] },
     { release: 368, date: '18.11.2026', items: [
       { de: 'Einstellungen → Allgemein: Überschrift „Einstellungen“ über „Alle Einstellungen sichern/laden“.',
         en: 'Settings → General: heading "Settings" above "Save/Load all settings".' },
@@ -13518,6 +13565,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dxfAnchorLayerName = dxfAnchorInfo ? dxfAnchorInfo.layer : null;
     dxfEntities = CNCParser.parseDxfEntitiesRaw(text).entities;
     dxfFilename = filename;
+    dxfRawText = text;
     dxfOffset = { x: 0, y: 0, z: 0 };
     dxfVisible = true;
     dxfMirrorX = false;
@@ -14734,7 +14782,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.drawImage(bakeCanvas, 0, 0);
     ctx.restore();
 
-    if (points.length) { drawMarker(proj); drawToolOccluded(proj, camPos, basis, w, h); }
+    if (points.length && !finishedView) { drawMarker(proj); drawToolOccluded(proj, camPos, basis, w, h); }
     drawMeasure(proj);
     drawAngleMeasure(proj);
     drawLineSelection(proj);
@@ -15412,6 +15460,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     gizmoHitFaces = [];
     gizmoCompassHits = [];
     gizmoCenterPos = null;
+    if (finishedView) return;
     if (!points.length && !(dxfGeometry && dxfVisible)) return;
     const gcx = gizmoPosPref === 'left' ? GIZMO_MARGIN + GIZMO_TOTAL_RADIUS : w - GIZMO_MARGIN - GIZMO_TOTAL_RADIUS;
     const gcy = GIZMO_MARGIN + GIZMO_TOTAL_RADIUS;
@@ -18015,6 +18064,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const hb = el('btnAbtragHidePath');
     hb.disabled = !abtragOn;
     const rb = el('btnAbtragReset'); if (rb) rb.disabled = !abtragOn;
+    updateFinishedPartBtn();
     if (!abtragOn) abdexProgressUI(null);
     hb.classList.toggle('active', abtragPathHidden());
     hb.setAttribute('aria-pressed', abtragPathHidden() ? 'true' : 'false');
@@ -20394,6 +20444,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   window.__setToolbarLayout = l => { setToolbarLayout(l); saveToolbarLayout(); return window.__toolbarLayout(); };
 
   (function showUpdateInfoOnce() {
+    if (finishedView) return;
     const updated = updateInfoStart.last ? updateInfoStart.last < APP_RELEASE_NUMBER : updateInfoStart.used;
     try { localStorage.setItem(UPDATE_INFO_LS_KEY, String(APP_RELEASE_NUMBER)); } catch (e) {  }
     if (!updated) return;
@@ -20744,7 +20795,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnAutoUpdateApply').addEventListener('click', () => { setAutoUpdatePref(el('autoUpdateCheck').checked); el('autoUpdatePanel').classList.remove('open'); });
   el('btnAutoUpdateCancel').addEventListener('click', () => { el('autoUpdateCheck').checked = autoUpdatePref; el('autoUpdatePanel').classList.remove('open'); });
   window.__autoUpdate = { pref: () => autoUpdatePref, run: () => checkForUpdate(true) };
-  if (autoUpdatePref) setTimeout(() => checkForUpdate(true), 1500);
+  if (autoUpdatePref && !finishedView) setTimeout(() => checkForUpdate(true), 1500);
 
 
   const LEGAL_TEXTS = {
@@ -23921,6 +23972,96 @@ Max Mustermann (Anschrift wie oben)`,
   el('chkAbtrag').addEventListener('change', (e) => setAbtragOn(e.target.checked));
   el('btnAbtragHidePath').addEventListener('click', toggleAbtragHidePath);
   el('btnAbtragReset').addEventListener('click', resetAbtragStock);
+  function updateFinishedPartBtn() {
+    const b = el('btnFinishedPart');
+    if (b) b.disabled = finishedView || rawProgramText == null || !abtragAvailable();
+  }
+  function finishedScene() {
+    return JSON.parse(JSON.stringify({
+      programText: rawProgramText, programFilename: rawProgramFilename, programSize: rawProgramFileSize, machineType: activeMachineTypeName,
+      dxfText: dxfRawText, dxfFilename,
+      dxf: { offset: dxfOffset, mirrorX: dxfMirrorX, mirrorY: dxfMirrorY, rotateDeg: dxfRotateDeg, scale: dxfScale, thickness: dxfThickness,
+        transparency: dxfThicknessTransparency, color: dxfThicknessColor, outline: dxfOutlineColor, fillMode: dxfFillMode, textureId: dxfTextureId,
+        createdPart: dxfCreatedPart, topView: dxfTopView, topFrontDown: dxfTopFrontDown, partType: dxfPartType }
+    }));
+  }
+  let finishedSceneData = null;
+  const finishedPanel = el('finishedPartPanel'), finishedFrame = el('finishedPartFrame');
+  function finishedProgress(pct, done) {
+    const p = Math.max(0, Math.min(100, Math.round(pct)));
+    el('finishedPartBar').style.width = p + '%';
+    el('finishedPartPct').textContent = p + ' %';
+    el('finishedPartProgress').hidden = !!done;
+  }
+  function openFinishedPart() {
+    if (finishedView || rawProgramText == null || !abtragAvailable() || !dxfRawText) return;
+    finishedSceneData = finishedScene();
+    el('finishedPartFile').textContent = rawProgramFilename || '';
+    finishedProgress(0, false);
+    const u = new URL(window.location.href); u.hash = ''; u.searchParams.set('finishedView', '1');
+    finishedFrame.src = u.toString();
+    closeAllMenus(); closeContextMenu();
+    finishedPanel.classList.add('open');
+  }
+  function closeFinishedPart() {
+    finishedPanel.classList.remove('open');
+    finishedFrame.src = 'about:blank';
+    finishedSceneData = null;
+  }
+  el('btnFinishedPart').addEventListener('click', openFinishedPart);
+  el('btnFinishedPartClose').addEventListener('click', closeFinishedPart);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && finishedPanel.classList.contains('open')) { e.preventDefault(); closeFinishedPart(); } });
+  window.addEventListener('message', e => {
+    if (finishedView || !e.data || e.source !== finishedFrame.contentWindow) return;
+    if (e.data.type === 'cncsim-finished-ready' && finishedSceneData) finishedFrame.contentWindow.postMessage({ type: 'cncsim-finished-scene', scene: finishedSceneData }, '*');
+    else if (e.data.type === 'cncsim-finished-progress') finishedProgress(e.data.pct, e.data.done);
+    else if (e.data.type === 'cncsim-finished-close') closeFinishedPart();
+  });
+  window.__finishedPart = () => ({ open: finishedPanel.classList.contains('open'), src: finishedFrame.getAttribute('src'), pct: el('finishedPartPct').textContent, done: el('finishedPartProgress').hidden, frame: finishedFrame.contentWindow });
+  updateFinishedPartBtn();
+
+  function finishedLoadScene(sc) {
+    loadTextClassic(sc.programText, sc.programFilename, { size: sc.programSize || sc.programText.length, lastModified: null });
+    if (sc.machineType) { machineTypeSelect.value = sc.machineType; if (machineTypeSelect.value === sc.machineType) applyActiveMachineType(); }
+    document.querySelectorAll('.paste-panel.open').forEach(p => p.classList.remove('open'));
+    loadDxfText(sc.dxfText, sc.dxfFilename);
+    const d = sc.dxf || {};
+    dxfOffset = d.offset || { x: 0, y: 0, z: 0 }; dxfMirrorX = !!d.mirrorX; dxfMirrorY = !!d.mirrorY; dxfRotateDeg = d.rotateDeg || 0; dxfScale = d.scale || 1;
+    dxfThickness = d.thickness || 0; dxfThicknessTransparency = d.transparency != null ? d.transparency : 100;
+    dxfThicknessColor = d.color || dxfThicknessColor; dxfOutlineColor = d.outline || dxfOutlineColor; dxfFillMode = d.fillMode || 'color'; dxfTextureId = d.textureId || null;
+    dxfCreatedPart = d.createdPart || null; dxfTopView = d.topView || null; dxfTopFrontDown = !!d.topFrontDown; dxfPartType = d.partType || dxfPartType;
+    dxfThicknessEverConfirmed = true;
+    recomputeMortise(); bakeParams = null; updateDxfUI();
+    hiddenOpIndexes = new Set();
+    showTool = false; showToolHolder = false;
+    setAbtragOn(true); abtragHidePath = true;
+    window.dispatchEvent(new Event('resize'));
+    goHomeView();
+    scrubIdx = Math.max(0, points.length - 1); hasStarted = true; scrubEl.value = String(scrubIdx);
+    updateReadoutAndHighlight(); bakeParams = null; requestRender();
+    const t0 = Date.now();
+    const tick = () => {
+      const a = window.__lastAbtragInfo, target = points.length ? (abtragState ? abtragState.offset : 0) + scrubIdx : -1;
+      let pct = 0, done = false;
+      if (!abtragOn) { done = true; pct = 100; }
+      else if (a && a.target === target && !a.error) {
+        if (a.dexel) { pct = a.want ? 100 * (a.shown || 0) / a.want : 0; done = !a.pending; }
+        else { pct = 100; done = true; }
+      } else if (a && a.error) { pct = 100; done = true; }
+      if (done) pct = 100;
+      window.parent.postMessage({ type: 'cncsim-finished-progress', pct, done }, '*');
+      if (!done && Date.now() - t0 < 600000) setTimeout(tick, 150);
+    };
+    setTimeout(tick, 50);
+  }
+  if (finishedView) {
+    window.addEventListener('message', e => {
+      if (e.source !== window.parent || !e.data || e.data.type !== 'cncsim-finished-scene') return;
+      try { finishedLoadScene(e.data.scene); } catch (err) { window.__finishedError = String(err); window.parent.postMessage({ type: 'cncsim-finished-progress', pct: 100, done: true }, '*'); }
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') window.parent.postMessage({ type: 'cncsim-finished-close' }, '*'); });
+    window.parent.postMessage({ type: 'cncsim-finished-ready' }, '*');
+  }
 
   btnOpPrev.addEventListener('click', () => gotoAdjacentOp(-1));
   btnOpNext.addEventListener('click', () => gotoAdjacentOp(1));
