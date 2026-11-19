@@ -8498,7 +8498,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 370;
+  const APP_RELEASE_NUMBER = 371;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8507,7 +8507,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 10:55 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 11:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12887,6 +12887,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 371, date: '19.11.2026', items: [
+      { de: 'Abtragsimulation: Drehen, Kippen und Zoomen des fertig gerechneten Volumenkörpers laufen deutlich flüssiger (in der Simulation und im Fenster „Fertiges Teil“).',
+        en: 'Removal simulation: rotating, tilting and zooming the fully calculated solid are much smoother (in the simulation and in the "Finished part" window).' },
+    ] },
     { release: 370, date: '19.11.2026', items: [
       { de: 'Fenster „Fertiges Teil“: Würfel mit Kompass und Iso-Würfel-Knopf (wechselt die Iso-Ansichten) wie in der Simulation.',
         en: '"Finished part" window: cube with compass and iso cube button (cycles the iso views) as in the simulation.' },
@@ -16875,6 +16879,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dex.ccN = 0;
     return dex;
   }
+  const ABDEX_LOD_MIN_TRIS = 60000;
+  let abdexLodTimer = 0;
+  function abdexLodMesh(dex, mesh, keepFn) {
+    if (!dex || dex.disposed || !mesh || !mesh.dexel || mesh.dexel.nT < ABDEX_LOD_MIN_TRIS) return null;
+    if (dex.lod && dex.lod.src === mesh) return dex.lod.mesh;
+    if (dex.shown !== dex.want || dex.inflight || dex.meshing) return null;
+    const D = dex.D, S = 2;
+    const nx = Math.floor(D.nx / S), ny = Math.floor(D.ny / S), nz = Math.floor(D.nz / S);
+    if (nx < 2 || ny < 2 || nz < 2) return null;
+    const NX = D.nx + 1, NY = D.ny + 1, NX2 = nx + 1, NY2 = ny + 1, NZ2 = nz + 1;
+    const R0 = new Array(NY2 * NZ2), R1 = new Array(NX2 * NZ2), R2 = new Array(NX2 * NY2);
+    for (let k = 0; k < NZ2; k++) { for (let j = 0; j < NY2; j++) R0[j + k * NY2] = D.rays[0][S * j + S * k * NY]; for (let i = 0; i < NX2; i++) R1[i + k * NX2] = D.rays[1][S * i + S * k * NX]; }
+    for (let j = 0; j < NY2; j++) for (let i = 0; i < NX2; i++) R2[i + j * NX2] = D.rays[2][S * i + S * j * NX];
+    const t0 = performance.now();
+    const ms = abdexMesher({ box: D.box, nx, ny, nz, h: D.h * S, g: D.g, rays: [R0, R1, R2] });
+    if (keepFn) ms.setKeep(keepFn);
+    ms.settleDrop(); ms.update();
+    const chunks = ms.chunks(); let nT = 0; chunks.forEach(c => { nT += c.nT; });
+    const lm = Object.assign({}, mesh, { dexel: { chunks, box: mesh.dexel.box, nT } });
+    dex.lod = { src: mesh, mesh: lm, ms: Math.round(performance.now() - t0), nT, want: dex.want, builds: (dex.lod ? dex.lod.builds : 0) + 1 };
+    return lm;
+  }
   function abdexMeshObject(dex) {
     const chunks = dex.mesher.chunks();
     let nT = 0; chunks.forEach(c => { nT += c.nT; });
@@ -18113,6 +18139,23 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const sc = m.a || 1;
     const cv = ctx.canvas;
     const RS = mortiseRenderScale();
+    if (RS < 1 && mesh && mesh.dexel && abtragState && abtragState.dex) {
+      const dx = abtragState.dex, idle = dx.shown === dx.want && !dx.inflight && !dx.meshing;
+      let lm = dx.lod && dx.lod.src === mesh ? dx.lod.mesh : null;
+      if (!lm && idle && dx.lod && dx.lod.want === dx.want) lm = dx.lod.mesh;
+      else if (!lm && !dx.lod) lm = abdexLodMesh(dx, mesh, abtragState.keepFn);
+      if (lm) mesh = lm;
+    }
+    else if (RS === 1 && mesh && mesh.dexel && mesh.dexel.nT >= ABDEX_LOD_MIN_TRIS && abtragState && abtragState.dex && !(abtragState.dex.lod && abtragState.dex.lod.src === mesh) && !abdexLodTimer) {
+      const dx = abtragState.dex, src = mesh, kf = abtragState.keepFn;
+      const tick = () => {
+        abdexLodTimer = 0;
+        if (dx.disposed || !dx.mesh || dx.mesh.dexel !== src.dexel) return;
+        if (performance.now() < viewInteractionUntil) { abdexLodTimer = setTimeout(tick, 400); return; }
+        abdexLodMesh(dx, src, kf);
+      };
+      abdexLodTimer = setTimeout(tick, 400);
+    }
     const tStart = performance.now();
     const W = Math.ceil(cv.width * RS), H = Math.ceil(cv.height * RS);
     if (!W || !H) return null;
@@ -24377,6 +24420,7 @@ Max Mustermann (Anschrift wie oben)`,
     applyViewAngles(v.theta, v.phi);
   }
   window.__debug_viewPreset = k => applyViewPreset(k);
+  window.__abdexLod = () => { const d = abtragState && abtragState.dex; return d && d.lod ? { nT: d.lod.nT, fine: d.lod.src.dexel.nT, ms: d.lod.ms, builds: d.lod.builds, cur: d.lod.want === d.want && !!d.mesh && d.lod.src.dexel === d.mesh.dexel } : null; };
   window.__viewCube = () => ({ hover: gizmoHoverView, presets: Object.keys(VIEW_PRESETS), cells: gizmoHitFaces.filter(f => f.points).map(f => ({ view: f.view, kind: f.kind, x: f.points.reduce((a, p) => a + p.x, 0) / f.points.length, y: f.points.reduce((a, p) => a + p.y, 0) / f.points.length })), dir: { x: -cam.orient.fwd.x, y: -cam.orient.fwd.y, z: -cam.orient.fwd.z } });
 
   btnWholeProgram.addEventListener('click', () => setScope({ type: 'all' }));
