@@ -8513,7 +8513,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 374;
+  const APP_RELEASE_NUMBER = 375;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8522,7 +8522,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 14:43 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 15:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12905,6 +12905,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 375, date: '19.11.2026', items: [
+      { de: 'Abtragsimulation (Volumenmodell): Bei komplexen 5-Achs-Programmen (z. B. Krümmling) ist der Abtrag beim Sprung ans Ende bzw. im Fenster „Fertiges Teil“ deutlich schneller berechnet (Beispiel: ~5 s statt bis zu 80 s).',
+        en: 'Removal simulation (volume model): for complex 5-axis programs (e.g. wreath pieces) the removal is calculated much faster when jumping to the end or in the "Finished part" window (example: ~5 s instead of up to 80 s).' },
+    ] },
     { release: 374, date: '19.11.2026', items: [
       { de: 'Abtragsimulation (Volumenmodell): Beim Drehen und Zoomen wirkten manche Bauteile (z. B. schmale Stäbe) durchsichtig – behoben.',
         en: 'Removal simulation (volume model): some parts (e.g. narrow bars) looked transparent while rotating and zooming - fixed.' },
@@ -16891,11 +16895,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   let abdexWorkerUrl = null;
   function abdexWorkerSource() {
     return 'const CORE = (' + ABDEX_CORE.toString() + ')();\n' +
-      'let R = null, target = 0, req = 0, owe = false, timer = 0, ahead = 0;\n' +
-      'self.onmessage = e => { const m = e.data; if (m.type === "init") { R = CORE.makeRunner(m.cfg); ahead = 0; kick(); } else if (m.type === "goto") { target = m.n; req = m.req; owe = true; kick(); } };\n' +
+      'let R = null, target = 0, req = 0, owe = false, timer = 0, ahead = 0, max = 0;\n' +
+      'self.onmessage = e => { const m = e.data; if (m.type === "init") { R = CORE.makeRunner(m.cfg); ahead = 0; kick(); } else if (m.type === "goto") { target = m.n; max = m.max != null ? m.max : m.n; req = m.req; owe = true; kick(); } };\n' +
       'function kick() { if (!timer) timer = setTimeout(loop, 0); }\n' +
       'function loop() { timer = 0; if (owe) { if (R.run(target, 30)) { owe = false; const d = R.takeDelta(); self.postMessage({ type: "deliver", req: req, n: R.cur, keys: d.keys, lens: d.lens, data: d.data }, [d.keys.buffer, d.lens.buffer, d.data.buffer]); } kick(); return; }\n' +
-      '  if (ahead < R.nSteps) { const n = Math.max(ahead, R.cur); R.run(R.nSteps, 30); ahead = Math.max(n, R.cur); if (ahead < R.nSteps) kick(); } }\n';
+      '  if (target >= max && ahead < R.nSteps) { const n = Math.max(ahead, R.cur); R.run(R.nSteps, 30); ahead = Math.max(n, R.cur); if (ahead < R.nSteps) kick(); } }\n';
   }
   function abdexStart(st, poly) {
     const CORE = ABDEX_CORE();
@@ -16977,7 +16981,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     dex.ccN = -1;
     dex.req++;
     dex.inflight = { req: dex.req, n, got: 0, t0: performance.now() };
-    if (dex.workers.length) dex.workers.forEach(w => w.postMessage({ type: 'goto', n, req: dex.req }));
+    if (dex.workers.length) dex.workers.forEach(w => w.postMessage({ type: 'goto', n, max: dex.want, req: dex.req }));
     else {
       const L = dex.local; L.target = n; L.req = dex.req;
       const loop = () => {
