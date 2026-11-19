@@ -8513,7 +8513,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 373;
+  const APP_RELEASE_NUMBER = 374;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8522,7 +8522,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 13:05 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 14:43 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12905,6 +12905,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 374, date: '19.11.2026', items: [
+      { de: 'Abtragsimulation (Volumenmodell): Beim Drehen und Zoomen wirkten manche Bauteile (z. B. schmale Stäbe) durchsichtig – behoben.',
+        en: 'Removal simulation (volume model): some parts (e.g. narrow bars) looked transparent while rotating and zooming - fixed.' },
+    ] },
     { release: 373, date: '19.11.2026', items: [
       { de: 'Neuer Knopf „Zielflagge CNC“ in der CNC-Leiste (nur ohne geladenes Programm): CNC-Programm wählen – Bauteil aus dem Programmkopf, Abtrag direkt im Fenster „Fertiges Teil“, ohne „Ok“. Fehlen Bauteil- oder Werkzeuginformationen, erscheint ein Hinweis.',
         en: 'New "finish flag CNC" button in the CNC toolbar (only without a loaded program): choose a CNC program - part from the program header, removal shown directly in the "Finished part" window, no "Ok" needed. If part or tool information is missing, a notice is shown.' },
@@ -16944,12 +16948,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (dex.lod && dex.lod.src === mesh) return dex.lod.mesh;
     if (dex.shown !== dex.want || dex.inflight || dex.meshing) return null;
     const D = dex.D, S = 2;
-    const nx = Math.floor(D.nx / S), ny = Math.floor(D.ny / S), nz = Math.floor(D.nz / S);
+    const nx = Math.ceil(D.nx / S), ny = Math.ceil(D.ny / S), nz = Math.ceil(D.nz / S);
     if (nx < 2 || ny < 2 || nz < 2) return null;
     const NX = D.nx + 1, NY = D.ny + 1, NX2 = nx + 1, NY2 = ny + 1, NZ2 = nz + 1;
+    const fx = i => Math.min(S * i, D.nx), fy = j => Math.min(S * j, D.ny), fz = k => Math.min(S * k, D.nz);
     const R0 = new Array(NY2 * NZ2), R1 = new Array(NX2 * NZ2), R2 = new Array(NX2 * NY2);
-    for (let k = 0; k < NZ2; k++) { for (let j = 0; j < NY2; j++) R0[j + k * NY2] = D.rays[0][S * j + S * k * NY]; for (let i = 0; i < NX2; i++) R1[i + k * NX2] = D.rays[1][S * i + S * k * NX]; }
-    for (let j = 0; j < NY2; j++) for (let i = 0; i < NX2; i++) R2[i + j * NX2] = D.rays[2][S * i + S * j * NX];
+    for (let k = 0; k < NZ2; k++) { for (let j = 0; j < NY2; j++) R0[j + k * NY2] = D.rays[0][fy(j) + fz(k) * NY]; for (let i = 0; i < NX2; i++) R1[i + k * NX2] = D.rays[1][fx(i) + fz(k) * NX]; }
+    for (let j = 0; j < NY2; j++) for (let i = 0; i < NX2; i++) R2[i + j * NX2] = D.rays[2][fx(i) + fy(j) * NX];
     const t0 = performance.now();
     const ms = abdexMesher({ box: D.box, nx, ny, nz, h: D.h * S, g: D.g, rays: [R0, R1, R2] });
     if (keepFn) ms.setKeep(keepFn);
@@ -18206,13 +18211,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     else if (RS === 1 && mesh && mesh.dexel && mesh.dexel.nT >= ABDEX_LOD_MIN_TRIS && abtragState && abtragState.dex && !(abtragState.dex.lod && abtragState.dex.lod.src === mesh) && !abdexLodTimer) {
       const dx = abtragState.dex, src = mesh, kf = abtragState.keepFn;
-      const tick = () => {
+      const tick = cur => {
         abdexLodTimer = 0;
-        if (dx.disposed || !dx.mesh || dx.mesh.dexel !== src.dexel) return;
-        if (performance.now() < viewInteractionUntil) { abdexLodTimer = setTimeout(tick, 400); return; }
-        abdexLodMesh(dx, src, kf);
+        if (dx.disposed || !dx.mesh || !dx.mesh.dexel || dx.mesh.dexel.nT < ABDEX_LOD_MIN_TRIS) return;
+        if (dx.mesh.dexel !== cur.dexel) cur = dx.mesh;
+        if (dx.lod && dx.lod.src === cur) return;
+        const idle = dx.shown === dx.want && !dx.inflight && !dx.meshing;
+        if (!idle || performance.now() < viewInteractionUntil) { abdexLodTimer = setTimeout(() => tick(cur), 400); return; }
+        abdexLodMesh(dx, cur, kf);
       };
-      abdexLodTimer = setTimeout(tick, 400);
+      abdexLodTimer = setTimeout(() => tick(src), 400);
     }
     const tStart = performance.now();
     const W = Math.ceil(cv.width * RS), H = Math.ceil(cv.height * RS);
@@ -24549,6 +24557,12 @@ Max Mustermann (Anschrift wie oben)`,
     applyViewAngles(v.theta, v.phi);
   }
   window.__debug_viewPreset = k => applyViewPreset(k);
+  window.__abdexLodVol = () => {
+    const d = abtragState && abtragState.dex; if (!d || !d.lod) return null;
+    const vol = cs => { let v = 0; cs.forEach(c => { const P = c.pos, I = c.idx; for (let t = 0; t < c.nT * 3; t += 3) { const a = I[t] * 3, b = I[t + 1] * 3, e = I[t + 2] * 3;
+      v += P[a] * (P[b + 1] * P[e + 2] - P[b + 2] * P[e + 1]) - P[a + 1] * (P[b] * P[e + 2] - P[b + 2] * P[e]) + P[a + 2] * (P[b] * P[e + 1] - P[b + 1] * P[e]); } }); return Math.abs(v) / 6000; };
+    return { fine: vol(d.lod.src.dexel.chunks), lod: vol(d.lod.mesh.dexel.chunks), dex: d.vol };
+  };
   window.__abdexLod = () => { const d = abtragState && abtragState.dex; return d && d.lod ? { nT: d.lod.nT, fine: d.lod.src.dexel.nT, ms: d.lod.ms, builds: d.lod.builds, cur: d.lod.want === d.want && !!d.mesh && d.lod.src.dexel === d.mesh.dexel } : null; };
   window.__viewCube = () => ({ hover: gizmoHoverView, presets: Object.keys(VIEW_PRESETS), cells: gizmoHitFaces.filter(f => f.points).map(f => ({ view: f.view, kind: f.kind, x: f.points.reduce((a, p) => a + p.x, 0) / f.points.length, y: f.points.reduce((a, p) => a + p.y, 0) / f.points.length })), dir: { x: -cam.orient.fwd.x, y: -cam.orient.fwd.y, z: -cam.orient.fwd.z } });
 
