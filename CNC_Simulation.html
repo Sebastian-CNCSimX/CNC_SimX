@@ -2619,6 +2619,17 @@
     </div>
   </div>
 </div>
+
+<div class="paste-panel" id="ufCollisionPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="⚠ Collision of the under-table unit">⚠ Kollision Unterfluraggregat</h3>
+    <p id="ufCollisionText"></p>
+    <p class="panel-hint" data-i18n-en="After Ok the simulation continues. Further collisions are not reported again - they are coloured orange and shown in the info panel.">Nach Ok läuft die Simulation weiter. Weitere Kollisionen werden nicht mehr gemeldet – sie sind orange markiert und stehen im Infofeld.</p>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnUfCollisionOk" type="button">Ok</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
@@ -8659,7 +8670,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 381;
+  const APP_RELEASE_NUMBER = 382;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8668,7 +8679,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '20.11.2026, 16:05 Uhr';
+  const APP_RELEASE_TIMESTAMP = '20.11.2026, 16:50 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13052,6 +13063,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 382, date: '20.11.2026', items: [
+      { de: 'Unterfluraggregat: Bei der ersten Kollision hält die Simulation an und zeigt eine Meldung mit Zeile und Grund. Nach „Ok“ läuft sie weiter; weitere Kollisionen werden bis zum nächsten Laden nicht mehr gemeldet (orange markiert, im Infofeld).',
+        en: 'Under-table unit: at the first collision the simulation stops and shows a message with line and reason. After "Ok" it continues; further collisions are not reported again until the next load (coloured orange, in the info panel).' },
+      { de: 'Unterfluraggregat: Zwei Unterfluraggregate sind vorbelegt – UF_KB und UF_TL. UF_KB ist im Fenster vorausgewählt.',
+        en: 'Under-table unit: two under-table units are predefined - UF_KB and UF_TL. UF_KB is preselected in the window.' },
+    ] },
     { release: 381, date: '20.11.2026', items: [
       { de: 'Unterfluraggregat: Der Drehwinkel „a=“ in der Zeile „XBOTTOM …“ wird jetzt ausgewertet – wie der Drehwinkel bei normalen Bearbeitungen (a=0: Säule in +Y, a=-90: +X, a=-180: −Y, a=-270: −X). Ohne „a=“ kommt der Ausleger wie bisher von der nächsten Bauteilkante.',
         en: 'Under-table unit: the rotation angle "a=" in the "XBOTTOM …" line is now evaluated - like the rotation angle of normal machining (a=0: column in +Y, a=-90: +X, a=-180: -Y, a=-270: -X). Without "a=" the arm comes from the nearest part edge as before.' },
@@ -13949,9 +13966,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     UF_PARAM_KEYS.concat(UF_SHAPE_KEYS).forEach(d => { const v = Number(raw[d.k]); if (Number.isFinite(v)) o[d.k] = v; });
     return o;
   }
+  const UF_DEFAULT_LIST = [
+    { name: 'UF_KB', achsmass: 113.54, einfahrt: 150, kbreite: 74, klaenge: 204, khoehe: 110, arx: 146, ary: 37, armH: 40, gehH: 70, gehVorn: 55 },
+    { name: 'UF_TL', achsmass: 131.75, einfahrt: 135, kbreite: 85, klaenge: 224, khoehe: 107, arx: 173.5, ary: 42.5, armH: 40, gehH: 70, gehVorn: 55 }
+  ];
+  const UF_DEFAULT_PRESELECT = 'UF_KB';
   function loadUfList() {
-    try { const a = JSON.parse(window.localStorage.getItem(UF_LS_KEY) || '[]'); return Array.isArray(a) ? a.map(normalizeUf).filter(u => u && u.name) : []; }
-    catch (e) { return []; }
+    let list = [];
+    try { const a = JSON.parse(window.localStorage.getItem(UF_LS_KEY) || '[]'); list = Array.isArray(a) ? a.map(normalizeUf).filter(u => u && u.name) : []; }
+    catch (e) { list = []; }
+    let seeded = false;
+    try { seeded = window.localStorage.getItem('cncsim.ufDefaultsV1') === '1'; } catch (e) { seeded = true; }
+    if (!seeded) {
+      UF_DEFAULT_LIST.forEach(d => { if (!list.some(u => u.name.toLowerCase() === d.name.toLowerCase())) list.push(normalizeUf(d)); });
+      try { window.localStorage.setItem(UF_LS_KEY, JSON.stringify(list)); window.localStorage.setItem('cncsim.ufDefaultsV1', '1'); } catch (e) {  }
+    }
+    return list;
   }
   function saveUfList(list) {
     try { window.localStorage.setItem(UF_LS_KEY, JSON.stringify(list)); } catch (e) {  }
@@ -14069,6 +14099,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     name: p.uf.name, source: p.uf.source, missing: p.uf.missing, achsmass: p.uf.achsmass, dir: p.ufDir, hit: p.ufHit || null } : null);
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
+    if (typeof ufCollisionReset === 'function') ufCollisionReset();
     if (activeMachineTypeName === BIESSE_CIX_NAME) {
       const r = trimBiesseCixPreamble(rawProgramText);
       if (r.removed) { rawProgramText = r.text; lastBiesseCixRemoved = r.removed; }
@@ -20227,7 +20258,39 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     readoutEl.innerHTML = rows;
   }
 
+  var ufCollisionAcked = false, ufCollisionResume = false, ufCollisionLastIdx = -1;
+  function ufCollisionCheck() {
+    const panel = el('ufCollisionPanel');
+    if (ufCollisionAcked || finishedView || !points.length || panel.classList.contains('open')) { ufCollisionLastIdx = scrubIdx; return; }
+    let hitIdx = -1;
+    if (playing && ufCollisionLastIdx >= 0 && ufCollisionLastIdx < scrubIdx) {
+      for (let i = ufCollisionLastIdx + 1; i <= scrubIdx; i++) if (points[i] && points[i].ufHit) { hitIdx = i; break; }
+    } else if (points[scrubIdx] && points[scrubIdx].ufHit) hitIdx = scrubIdx;
+    ufCollisionLastIdx = scrubIdx;
+    if (hitIdx < 0) return;
+    const p = points[hitIdx];
+    if (hitIdx !== scrubIdx) { scrubIdx = hitIdx; scrubEl.value = String(scrubIdx); ufCollisionLastIdx = scrubIdx; }
+    ufCollisionResume = playing;
+    if (playing) { playing = false; updatePlayIcon(); stepPlayback._last = null; }
+    const what = p.ufHit === 'head' ? T('Der Kopf taucht ins Bauteil.', 'The head dips into the part.') : T('Die Säule steht im Bauteil.', 'The column stands in the part.');
+    el('ufCollisionText').textContent = T('Zeile ', 'Line ') + (p.lineIdx + 1) + (p.opTitle ? ' (' + p.opTitle + ')' : '') + ': ' + what;
+    panel.classList.add('open');
+    setTimeout(() => { try { el('btnUfCollisionOk').focus(); } catch (e) {  } }, 0);
+  }
+  function ufCollisionClose() {
+    const panel = el('ufCollisionPanel');
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    ufCollisionAcked = true;
+    if (ufCollisionResume && points.length) { ufCollisionResume = false; playing = true; hasStarted = true; updatePlayIcon(); stepPlayback._last = null; requestAnimationFrame(stepPlayback); }
+  }
+  el('btnUfCollisionOk').addEventListener('click', ufCollisionClose);
+  el('ufCollisionPanel').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ufCollisionClose(); } });
+  function ufCollisionReset() { ufCollisionAcked = false; ufCollisionResume = false; ufCollisionLastIdx = -1; el('ufCollisionPanel').classList.remove('open'); }
+  window.__ufCollision = () => ({ open: el('ufCollisionPanel').classList.contains('open'), acked: ufCollisionAcked, text: el('ufCollisionText').textContent, playing, scrubIdx });
+  window.__ufCollisionOk = ufCollisionClose;
   function updateReadoutAndHighlight() {
+    ufCollisionCheck();
     updateReadout();
     updateLineHighlight();
     updateActiveOpHighlight();
@@ -20950,7 +21013,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     el('btnUfCancel').addEventListener('click', () => { if (!confirmDiscard()) return; close(); });
     function openUf() {
       closeAllMenus(); closeContextMenu();
-      list = loadUfList(); cur = list.length ? 0 : -1; changed = false; renderList(); fill(list[cur] || null);
+      list = loadUfList(); const pre = list.findIndex(u => u.name === UF_DEFAULT_PRESELECT); cur = pre >= 0 ? pre : (list.length ? 0 : -1); changed = false; renderList(); fill(list[cur] || null);
       if (cur < 0) { nameIn.value = 'BeispielUF'; dirty = true; draw(); }
       panel.classList.add('open');
     }
