@@ -336,6 +336,13 @@
   .fp-text { font-weight: 600; font-size: 15px; }
   
   #btnFinishedLoadIcon { gap: 4px; }
+  
+  #btnFinishedListIcon { display: inline-flex; align-items: center; gap: 3px; }
+  .finished-list-card { width: 660px; max-width: 94vw; }
+  .finished-list-card .finished-list-items { max-height: 52vh; overflow-y: auto; margin: 4px 0 0; }
+  .finished-list-bar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .finished-list-bar .finished-list-mt { flex: 1; color: var(--ink-muted); font-size: 13px; }
+  .finished-list-empty { color: var(--ink-muted); padding: 10px 4px; }
   .finished-warn { margin: -4px 0 8px; padding: 6px 10px; border: 1px solid #f0c27b; border-radius: 6px; background: #fff6e8; color: #7a4b00; font-size: 13px; }
   .finished-warn[hidden] { display: none; }
   .fp-error { width: 560px; text-align: left; }
@@ -2096,6 +2103,7 @@
     <input type="file" id="fileInput" hidden>
     
     <input type="file" id="fileInputList" hidden multiple>
+    <input type="file" id="fileInputFinishedList" hidden multiple>   
     <input type="file" id="dxfFileInput" hidden accept=".dxf">
     
     <input type="file" id="objFileInput" hidden multiple accept=".zip,.obj,.mtl,.jpg,.jpeg,.png,.bmp">
@@ -2129,6 +2137,8 @@
       <span class="toolbar-sep" id="clearProgramSep"></span>
       
       <button class="toolbar-btn" id="btnNewProgramListIcon" type="button" title="Neue CNC-Programmliste erstellen (Datei-Dialog mit Mehrfachauswahl, bis zu 10 Programme - dieselbe Aktion wie 'Datei' → 'CNC-Programm' → 'Neue CNC-Programmliste')" data-i18n-en-title="Create a new CNC program list (file dialog with multi-selection, up to 10 programs - same action as 'File' → 'CNC-Program' → 'New CNC-Program list')"><span data-i18n-en="☰+ List">☰+ Liste</span></button>
+      
+      <button class="toolbar-btn" id="btnFinishedListIcon" type="button" disabled title="CNC-Programmliste laden und fertiges Teil anzeigen: Programme wählen, Reihenfolge und Drehungen festlegen, alle Programme nacheinander im Fenster „Fertiges Teil“ abtragen (nur ohne geladenes Programm; die Simulation bleibt leer)" data-i18n-en-title="Load a CNC program list and show the finished part: choose programs, set order and rotations, remove all programs one after another in the &quot;Finished part&quot; window (only without a loaded program; the simulation stays empty)"><svg width="15" height="13" viewBox="0 0 18 16" aria-hidden="true"><line x1="3" y1="1.5" x2="3" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="2" width="12" height="9" fill="none" stroke="currentColor" stroke-width="0.8"/><rect x="4" y="2" width="3" height="3" fill="currentColor"/><rect x="10" y="2" width="3" height="3" fill="currentColor"/><rect x="7" y="5" width="3" height="3" fill="currentColor"/><rect x="13" y="5" width="3" height="3" fill="currentColor"/><rect x="4" y="8" width="3" height="3" fill="currentColor"/><rect x="10" y="8" width="3" height="3" fill="currentColor"/></svg><span data-i18n-en="☰+ List">☰+ Liste</span></button>
       
       <button class="toolbar-btn" id="btnClearProgramListIcon" type="button" disabled title="Alle im Hintergrund geladenen CNC-Programme aus der Programmliste entfernen (dieselbe Aktion wie 'Bearbeiten' → 'CNC' → 'CNC-Programmliste löschen')" data-i18n-en-title="Remove all CNC programs loaded in the background from the program list (same action as 'Edit' → 'CNC' → 'Delete CNC-Program list')"><span class="dxf-delete-glyph">☰✕</span> <span data-i18n-en="List">Liste</span></button>
     </div>
@@ -3240,6 +3250,19 @@
   </div>
 </div>
 
+<div class="paste-panel" id="finishedListPanel">
+  <div class="paste-card finished-list-card">
+    <h3 data-i18n-en="Finished part – program list">Fertiges Teil – Programmliste</h3>
+    <p class="panel-hint" data-i18n-en-html="Change the order by dragging the grip ⋮⋮. “Rotation” = turn the stock 180° about the X axis &lt;b&gt;before&lt;/b&gt; this program. Part from the program header of the &lt;b&gt;first&lt;/b&gt; program, the machine type applies to all.">Reihenfolge per Ziehen am Griff ⋮⋮ ändern. „Drehung“ = Rohblock <b>vor</b> diesem Programm 180° um die X-Achse drehen. Bauteil aus dem Programmkopf des <b>ersten</b> Programms, Maschinentyp gilt für alle.</p>
+    <div class="finished-list-items" id="finishedListItems"></div>
+    <div class="finished-list-bar">
+      <button class="btn ghost" id="btnFinishedListAdd" type="button" data-i18n-en="+ Add programs">+ Programme hinzufügen</button>
+      <span class="finished-list-mt" id="finishedListMt"></span>
+      <button class="btn ghost" id="btnFinishedListCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn" id="btnFinishedListStart" type="button" data-i18n-en="🏁 Calculate finished part">🏁 Fertiges Teil berechnen</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel finished-panel" id="finishedPartPanel">
   <div class="paste-card finished-card">
     <div class="finished-head"><h3 data-i18n-en="Finished part">Fertiges Teil</h3><span class="finished-file" id="finishedPartFile"></span></div>
@@ -8513,7 +8536,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 375;
+  const APP_RELEASE_NUMBER = 376;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8522,7 +8545,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 15:40 Uhr';
+  const APP_RELEASE_TIMESTAMP = '19.11.2026, 16:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11220,6 +11243,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   el('btnMachineTypePromptConfirm').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
+    if (finishedMtPending && finishedMtPending.listMode) { finishedMtPending = null; finishedList.mt = machineTypePromptSelect.value; finishedList.mtDetected = false; finishedListOpen(); return; }
     if (finishedMtPending) { const sc = finishedMtPending; finishedMtPending = null; sc.machineType = machineTypePromptSelect.value; sc.mtDetected = false; finishedShow(sc, sc.programFilename); return; }
     if (rawProgramText == null) return;
     machineTypeSelect.value = machineTypePromptSelect.value;
@@ -11228,7 +11252,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   el('btnMachineTypePromptCancel').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
-    if (finishedMtPending) { finishedMtPending = null; return; }
+    if (finishedMtPending) { if (finishedMtPending.listMode) finishedList.items = []; finishedMtPending = null; return; }
     if (rawProgramText != null) setMachineTypePending(true);
     loadWithPartPending = false;
   });
@@ -12905,6 +12929,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 376, date: '19.11.2026', items: [
+      { de: 'Neuer Knopf „Zielflagge ☰+ Liste“ in der CNC-Leiste (nur ohne geladenes Programm): mehrere CNC-Programme wählen, Reihenfolge per Ziehen ändern, „Drehung“ je Programm setzen, Programme entfernen – dann werden alle nacheinander im Fenster „Fertiges Teil“ abgetragen. Hinweise wie bei „Zielflagge CNC“.',
+        en: 'New "finish flag ☰+ List" button in the CNC toolbar (only without a loaded program): choose several CNC programs, change the order by dragging, set "Rotation" per program, remove programs - then all are removed one after another in the "Finished part" window. Notices as with "finish flag CNC".' },
+    ] },
     { release: 375, date: '19.11.2026', items: [
       { de: 'Abtragsimulation (Volumenmodell): Bei komplexen 5-Achs-Programmen (z. B. Krümmling) ist der Abtrag beim Sprung ans Ende bzw. im Fenster „Fertiges Teil“ deutlich schneller berechnet (Beispiel: ~5 s statt bis zu 80 s).',
         en: 'Removal simulation (volume model): for complex 5-axis programs (e.g. wreath pieces) the removal is calculated much faster when jumping to the end or in the "Finished part" window (example: ~5 s instead of up to 80 s).' },
@@ -16883,9 +16911,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         idx.push(idxOf(S.idx[n]));
       }
     };
-    chain.prev.forEach(pr => add(abdexBuildSteps(pr.pts, () => false, profileOf), pr.flip, () => -1));
-    add(cur, false, i => i);
-    return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idx), tools };
+    const bounds = [];
+    chain.prev.forEach(pr => { add(abdexBuildSteps(pr.pts, () => false, profileOf), pr.flip, () => -1); bounds.push(tool.length); });
+    add(cur, false, i => i); bounds.push(tool.length);
+    return { steps: Float64Array.from(steps), tool: Int32Array.from(tool), idx: Int32Array.from(idx), tools, bounds };
   }
   function abdexGridH(box, rays) {
     const X = box.x1 - box.x0, Y = box.y1 - box.y0, Z = box.z1 - box.z0;
@@ -20358,7 +20387,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const TOOLBAR_LAYOUT_KEY = 'cncsim.toolbarLayout';
   const TOOLBAR_GROUPS = [
     { key: 'cnc', de: 'CNC', en: 'CNC', ids: ['btnLoadFileIcon', 'btnLoadFileWithPartIcon', 'btnFinishedLoadIcon', 'btnEditProgramToolbarIcon', 'btnClearProgramIcon'] },
-    { key: 'cncList', de: 'CNC-Liste', en: 'CNC list', ids: ['btnNewProgramListIcon', 'btnClearProgramListIcon'] },
+    { key: 'cncList', de: 'CNC-Liste', en: 'CNC list', ids: ['btnNewProgramListIcon', 'btnFinishedListIcon', 'btnClearProgramListIcon'] },
     { key: 'part', de: 'Bauteil', en: 'Part', ids: ['btnPartCreateIcon'] },
     { key: 'dxf', de: 'DXF', en: 'DXF', ids: ['btnDxfImportIcon', 'btnDxfDeleteIcon', 'btnDxfSaveAsIcon', 'btnDxfExplodeIcon', 'btnToggleDxf', 'btnDxfMoveIcon', 'btnDxfMirrorX', 'btnDxfMirrorY', 'btnDxfRotate', 'btnDxfThickness', 'btnDxfScale'] },
     { key: 'obj', de: 'OBJ', en: 'OBJ', ids: ['btnObjLoadIcon', 'btnObjDeleteIcon'] },
@@ -24094,6 +24123,8 @@ Max Mustermann (Anschrift wie oben)`,
     if (b) b.disabled = finishedView || rawProgramText == null || !abtragAvailable();
     const lb = el('btnFinishedLoadIcon');
     if (lb) lb.disabled = finishedView || rawProgramText != null;
+    const lt = el('btnFinishedListIcon');
+    if (lt) lt.disabled = finishedView || rawProgramText != null || programList.length > 0;
   }
   function finishedScene() {
     return JSON.parse(JSON.stringify({
@@ -24121,6 +24152,7 @@ Max Mustermann (Anschrift wie oben)`,
     finishedInfo(null);
     el('finishedPartFile').textContent = fileLabel || '';
     finishedProgress(0, false);
+    el('finishedPartProgress').querySelector('.fp-text').textContent = T('Abtrag wird berechnet …', 'Calculating removal …');
     const u = new URL(window.location.href); u.hash = ''; u.searchParams.set('finishedView', '1');
     finishedFrame.src = u.toString();
     closeAllMenus(); closeContextMenu();
@@ -24142,6 +24174,102 @@ Max Mustermann (Anschrift wie oben)`,
     openMachineTypePrompt(sug, name);
     finishedMtPending = sc;
   }
+  const finishedList = { items: [], mt: null, mtDetected: false };
+  el('btnFinishedListIcon').addEventListener('click', () => {
+    if (finishedView || rawProgramText != null || programList.length) return;
+    finishedList.items = []; finishedList.mt = null;
+    el('fileInputFinishedList').click();
+  });
+  el('btnFinishedListAdd').addEventListener('click', () => el('fileInputFinishedList').click());
+  el('fileInputFinishedList').addEventListener('change', (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = '';
+    if (!files.length) return;
+    readFilesAsText(files, results => finishedListAdd(results));
+  });
+  function finishedListAdd(results) {
+    const wasEmpty = !finishedList.items.length;
+    results.forEach(r => {
+      if (r.text == null) return;
+      if (finishedList.items.length >= PROGRAM_LIST_MAX) return;
+      finishedList.items.push({ id: 'fl' + (++programListIdCounter), name: r.file.name, text: r.text, size: r.file.size, rotate: false });
+    });
+    if (!finishedList.items.length) return;
+    if (wasEmpty && !finishedList.mt) {
+      const first = finishedList.items[0];
+      const sug = suggestMachineType(first.text, machineTypes.map(mt => mt.name));
+      if (sug && sug.toLowerCase() !== 'iso') { finishedList.mt = sug; finishedList.mtDetected = true; finishedListOpen(); return; }
+      openMachineTypePrompt(sug, first.name);
+      finishedMtPending = { listMode: true };
+      return;
+    }
+    finishedListRender();
+  }
+  function finishedListOpen() {
+    finishedListRender();
+    closeAllMenus(); closeContextMenu();
+    el('finishedListPanel').classList.add('open');
+  }
+  function finishedListClose() { el('finishedListPanel').classList.remove('open'); finishedList.items = []; }
+  function finishedListRender() {
+    const box = el('finishedListItems'), items = finishedList.items;
+    box.innerHTML = '';
+    let dragId = null;
+    const clearMarks = () => box.querySelectorAll('.drop-before, .drop-after').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+    items.forEach((it, idx) => {
+      if (it.rotate) {
+        const turn = document.createElement('div'); turn.className = 'program-list-turn';
+        turn.textContent = T('⟲ Drehung 180° um die X-Achse: Unterkante (an X) klappt nach oben weg', '⟲ Rotation 180° about the X axis: the lower edge (at X) turns upwards');
+        box.appendChild(turn);
+      }
+      const row = document.createElement('div'); row.className = 'program-list-item'; row.dataset.id = it.id; row.draggable = true;
+      const grip = document.createElement('span'); grip.className = 'program-list-grip'; grip.textContent = '⋮⋮'; grip.title = T('Ziehen, um die Reihenfolge zu ändern', 'Drag to change the order');
+      const nr = document.createElement('span'); nr.className = 'program-list-nr'; nr.textContent = String(idx + 1);
+      const name = document.createElement('span'); name.className = 'program-list-item-name'; name.textContent = it.name; name.title = it.name;
+      const rot = document.createElement('label'); rot.className = 'program-list-rot' + (it.rotate ? ' on' : '');
+      rot.title = T('Rohblock vor diesem Programm um 180° um die X-Achse drehen (die Unterkante an der X-Achse klappt nach oben weg)', 'Turn the stock 180° about the X axis before this program (the lower edge at the X axis turns upwards)');
+      const chk = document.createElement('input'); chk.type = 'checkbox'; chk.className = 'program-list-rot-chk'; chk.checked = !!it.rotate;
+      chk.addEventListener('change', () => { it.rotate = chk.checked; finishedListRender(); });
+      rot.append(chk, ' ' + T('Drehung', 'Rotation'));
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'program-list-item-del'; del.textContent = '✕';
+      del.title = T('Aus der Liste entfernen: ', 'Remove from the list: ') + it.name;
+      del.addEventListener('click', () => { finishedList.items = items.filter(x => x !== it); finishedListRender(); });
+      row.addEventListener('dragstart', (e) => { dragId = it.id; row.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', it.id); } catch (err) {  } });
+      row.addEventListener('dragend', () => { dragId = null; row.classList.remove('dragging'); clearMarks(); });
+      row.addEventListener('dragover', (e) => { if (!dragId || dragId === it.id) return; e.preventDefault(); const r = row.getBoundingClientRect(); clearMarks(); row.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-after' : 'drop-before'); });
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const r = row.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2, from = dragId; dragId = null; clearMarks();
+        if (from) finishedListMove(from, it.id, after);
+      });
+      row.append(grip, nr, name, rot, del);
+      box.appendChild(row);
+    });
+    if (!items.length) { const em = document.createElement('div'); em.className = 'finished-list-empty'; em.textContent = T('Keine Programme - bitte hinzufügen.', 'No programs - please add some.'); box.appendChild(em); }
+    el('finishedListMt').textContent = items.length + ' ' + T(items.length === 1 ? 'Programm' : 'Programme', items.length === 1 ? 'program' : 'programs')
+      + (finishedList.mt ? '  ·  ' + T('Maschinentyp ', 'Machine type ') + finishedList.mt + (finishedList.mtDetected ? T(' (erkannt)', ' (detected)') : T(' (ausgewählt)', ' (selected)')) : '');
+    el('btnFinishedListStart').disabled = !items.length;
+    el('btnFinishedListAdd').disabled = items.length >= PROGRAM_LIST_MAX;
+  }
+  function finishedListMove(fromId, toId, after) {
+    const items = finishedList.items, from = items.findIndex(x => x.id === fromId);
+    if (from < 0) return;
+    const [m] = items.splice(from, 1);
+    let to = items.findIndex(x => x.id === toId); if (to < 0) { items.splice(from, 0, m); return; }
+    items.splice(after ? to + 1 : to, 0, m);
+    finishedListRender();
+  }
+  window.__finishedListMove = (from, to, after) => finishedListMove(finishedList.items[from].id, finishedList.items[to].id, after);
+  window.__finishedList = () => finishedList.items.map(x => ({ name: x.name, rotate: x.rotate }));
+  el('btnFinishedListCancel').addEventListener('click', finishedListClose);
+  el('btnFinishedListStart').addEventListener('click', () => {
+    const items = finishedList.items.slice();
+    if (!items.length) return;
+    const sc = { list: items.map(x => ({ programText: x.text, programFilename: x.name, programSize: x.size, rotate: !!x.rotate })), machineType: finishedList.mt, mtDetected: finishedList.mtDetected, autoPart: true };
+    el('finishedListPanel').classList.remove('open');
+    finishedShow(sc, T('Programmliste (', 'Program list (') + items.length + ')');
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && el('finishedListPanel').classList.contains('open') && !machineTypePromptPanel.classList.contains('open')) { e.preventDefault(); finishedListClose(); } });
   function finishedInfo(info) {
     const warn = el('finishedPartWarn'), err = el('finishedPartError'), box = err.parentElement.querySelector('.fp-box:not(.fp-error)');
     warn.hidden = true; warn.textContent = ''; err.hidden = true; err.textContent = ''; box.hidden = false;
@@ -24160,7 +24288,9 @@ Max Mustermann (Anschrift wie oben)`,
       add('fp-error-title', '⚠ ' + T('Abtragsberechnung nicht möglich', 'Removal calculation not possible'));
       if (info.error === 'part') {
         add('fp-error-why', T('Es fehlen ', 'Missing: '), T('Bauteilinformationen', 'part information'), '.');
-        add('fp-error-detail', T('Im Programmkopf wurden keine eindeutigen Bauteilmaße (Länge, Breite, Stärke) gefunden.', 'No unambiguous part dimensions (length, width, thickness) were found in the program header.'));
+        add('fp-error-detail', info.firstFile
+          ? T('Im Programmkopf des ersten Programms (' + info.firstFile + ') wurden keine eindeutigen Bauteilmaße (Länge, Breite, Stärke) gefunden.', 'No unambiguous part dimensions (length, width, thickness) were found in the program header of the first program (' + info.firstFile + ').')
+          : T('Im Programmkopf wurden keine eindeutigen Bauteilmaße (Länge, Breite, Stärke) gefunden.', 'No unambiguous part dimensions (length, width, thickness) were found in the program header.'));
       } else if (info.error === 'tools') {
         add('fp-error-why', T('Es fehlen ', 'Missing: '), T('Werkzeuginformationen', 'tool information'), '.');
         add('fp-error-detail', T('Im Programm ist für keinen Arbeitsgang ein Werkzeugradius angegeben.', 'The program does not specify a tool radius for any machining step.') + (info.ops && info.ops.length ? ' ' + T('Betroffen: ', 'Affected: ') + info.ops.join(', ') : ''));
@@ -24175,7 +24305,10 @@ Max Mustermann (Anschrift wie oben)`,
   window.addEventListener('message', e => {
     if (finishedView || !e.data || e.source !== finishedFrame.contentWindow) return;
     if (e.data.type === 'cncsim-finished-ready' && finishedSceneData) finishedFrame.contentWindow.postMessage({ type: 'cncsim-finished-scene', scene: finishedSceneData }, '*');
-    else if (e.data.type === 'cncsim-finished-progress') { if (el('finishedPartError').hidden) finishedProgress(e.data.pct, e.data.done); }
+    else if (e.data.type === 'cncsim-finished-progress') {
+      if (el('finishedPartError').hidden) finishedProgress(e.data.pct, e.data.done);
+      if (e.data.prog) el('finishedPartProgress').querySelector('.fp-text').textContent = T('Abtrag wird berechnet … Programm ', 'Calculating removal … program ') + e.data.prog + T(' von ', ' of ') + e.data.of + ': ' + (e.data.name || '');
+    }
     else if (e.data.type === 'cncsim-finished-info') finishedInfo(e.data.info);
     else if (e.data.type === 'cncsim-finished-close') closeFinishedPart();
   });
@@ -24203,11 +24336,47 @@ Max Mustermann (Anschrift wie oben)`,
     info.missing = names;
     return true;
   }
+  function finishedListScene(sc) {
+    const info = finishedAutoInfo = { file: sc.list.map(p => (p.rotate ? '⟲ ' : '') + p.programFilename).join(', '), mt: sc.machineType, mtDetected: !!sc.mtDetected };
+    const fail = kind => { info.error = kind; window.parent.postMessage({ type: 'cncsim-finished-info', info }, '*'); return false; };
+    programList = sc.list.map((p, i) => ({ id: 'f' + i, filename: p.programFilename, text: p.programText, size: p.programSize || p.programText.length, lastModified: null, rotate: !!p.rotate, chainPts: null, chainKey: null }));
+    listMachineType = sc.machineType || 'ISO'; programListActivated = true; activeProgramId = null;
+    const names = []; let withTool = 0, anyCut = false;
+    programList.forEach((e, i) => {
+      loadListEntry(e);
+      if (scopeMode.type !== 'all') setScope({ type: 'all' });
+      const ops = getOpSections(), seen = new Set();
+      points.forEach((q, n) => {
+        if (n === 0 || q.rapid) return;
+        anyCut = true;
+        if (q.toolRadius > 0) { withTool++; return; }
+        const k = q.opIndex == null ? 'none' : q.opIndex;
+        if (seen.has(k)) return; seen.add(k);
+        const o = ops.findIndex(x => x.index === q.opIndex);
+        names.push(T('Programm ', 'program ') + (i + 1) + ' ' + e.filename + ' – ' + (o >= 0 ? (o + 1) + '. ' + ops[o].title : T('ohne Arbeitsgang', 'without machining step')));
+      });
+    });
+    document.querySelectorAll('.paste-panel.open').forEach(p => p.classList.remove('open'));
+    if (!anyCut) return fail('program');
+    loadListEntry(programList[0]);
+    const pf = programPartPrefill();
+    if (!pf || !pf.read || !pf.z) { info.firstFile = programList[0].filename; return fail('part'); }
+    partCreateTop = null; fillPartCreateFromProgram(); createRectPart({ auto: true });
+    if (!withTool) { info.ops = names; return fail('tools'); }
+    info.missing = names;
+    activateProgramFromList(programList[programList.length - 1].id);
+    document.querySelectorAll('.paste-panel.open').forEach(p => p.classList.remove('open'));
+    return true;
+  }
   function finishedLoadScene(sc) {
+    if (sc.list) { if (!finishedListScene(sc)) return; }
+    else {
     loadTextClassic(sc.programText, sc.programFilename, { size: sc.programSize || sc.programText.length, lastModified: null });
     if (sc.machineType) { machineTypeSelect.value = sc.machineType; if (machineTypeSelect.value === sc.machineType) applyActiveMachineType(); }
     document.querySelectorAll('.paste-panel.open').forEach(p => p.classList.remove('open'));
-    if (sc.autoPart) { if (!finishedAutoPart(sc)) return; }
+    }
+    if (sc.list) {  }
+    else if (sc.autoPart) { if (!finishedAutoPart(sc)) return; }
     else {
     loadDxfText(sc.dxfText, sc.dxfFilename);
     const d = sc.dxf || {};
@@ -24236,7 +24405,10 @@ Max Mustermann (Anschrift wie oben)`,
         else { pct = 100; done = true; }
       } else if (a && a.error) { pct = 100; done = true; }
       if (done) pct = 100;
-      window.parent.postMessage({ type: 'cncsim-finished-progress', pct, done }, '*');
+      let prog = 0, of = 0, name = '';
+      const bd = sc.list && abtragState && abtragState.dexSteps && abtragState.dexSteps.bounds;
+      if (bd && a && a.dexel && !done) { of = bd.length; prog = Math.min(of, bd.findIndex(b => (a.shown || 0) < b) + 1 || of); name = sc.list[prog - 1] ? sc.list[prog - 1].programFilename : ''; }
+      window.parent.postMessage({ type: 'cncsim-finished-progress', pct, done, prog, of, name }, '*');
       if (!done && Date.now() - t0 < 600000) setTimeout(tick, 150);
     };
     setTimeout(tick, 50);
