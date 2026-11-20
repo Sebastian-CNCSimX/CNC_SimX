@@ -2565,7 +2565,6 @@
             <div class="color-field-row"><span><span data-i18n-en="Collision width">Kollisionsbreite</span> <span class="uf-tag">; KOLLISIONSBREITE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_kbreite" data-uf="kbreite"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Collision length">Kollisionslänge</span> <span class="uf-tag">; KOLLISIONSLAENGE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_klaenge" data-uf="klaenge"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Collision height">Kollisionshöhe</span> <span class="uf-tag">; KOLLISIONSHOEHE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_khoehe" data-uf="khoehe"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Distance A/C axis">Abstand A/C-Achse</span> <span class="uf-tag">; ABSTAND_A_C</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ac" data-uf="ac"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Axis reference X">Achsreferenz X</span> <span class="uf-tag">; ACHSREFERENZ_X</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_arx" data-uf="arx"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Axis reference Y">Achsreferenz Y</span> <span class="uf-tag">; ACHSREFERENZ_Y</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ary" data-uf="ary"> mm</span></div>
           </div>
@@ -2578,8 +2577,12 @@
           <p class="panel-hint" id="ufHint" hidden></p>
         </div>
         <div class="tool-dxf-import-preview">
+          <div class="dxf-measure-toolrow">
+            <button class="btn ghost small uf-view-btn" id="btnUfIso" type="button" title="Isometrische Ansicht - wechselt bei jedem Klick zur nächsten von vier um 90° gedrehten Ansichten" data-i18n-en-title="Isometric view - cycles to the next of four 90°-rotated views on each click"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 2 L21 7 L21 17 L12 22 L3 17 L3 7 Z"></path><path d="M3 7 L12 12 L21 7"></path><path d="M12 12 L12 22"></path></svg></button>
+            <button class="btn ghost small uf-view-btn" id="btnUfTop" type="button" title="Draufsicht" data-i18n-en-title="Top view">&#8962;</button>
+          </div>
           <canvas id="ufPreviewCanvas" width="260" height="420"></canvas>
-          <p class="panel-hint" data-i18n-en="The 3D preview appears as soon as all parameters are entered. Drag = rotate. Blue = cutter (points upwards), red dashed = axis of rotation C.">3D-Vorschau erscheint, sobald alle Parameter eingegeben sind. Ziehen = drehen. Blau = Fräser (zeigt nach oben), rot gestrichelt = Drehachse C.</p>
+          <p class="panel-hint" data-i18n-en="The 3D preview appears as soon as all parameters are entered. Drag = rotate, cube = isometric views, house = top view. Blue = cutter (points upwards), red dashed = axis of rotation C.">3D-Vorschau erscheint, sobald alle Parameter eingegeben sind. Ziehen = drehen, Würfel = Iso-Ansichten, Haus = Draufsicht. Blau = Fräser (zeigt nach oben), rot gestrichelt = Drehachse C.</p>
         </div>
         <div class="tool-dxf-import-help">
           <p class="tool-dxf-import-help-heading" data-i18n-en="Meaning of the dimensions (keyword in the CNC program):">Bedeutung der Maße (Schlüsselwort im CNC-Programm):</p>
@@ -8656,7 +8659,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 378;
+  const APP_RELEASE_NUMBER = 379;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8665,7 +8668,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '20.11.2026, 13:15 Uhr';
+  const APP_RELEASE_TIMESTAMP = '20.11.2026, 14:05 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13049,6 +13052,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 379, date: '20.11.2026', items: [
+      { de: 'Unterfluraggregat: Ausleger, Säule, Kopf und Fräser verdecken sich beim Drehen jetzt richtig gegenseitig und werden vom Bauteil verdeckt (in der Simulation und in der Vorschau im Fenster „Unterfluraggregat“).',
+        en: 'Under-table unit: arm, column, head and cutter now hide each other correctly when rotating and are hidden by the part (in the simulation and in the preview of the "Under-table unit" window).' },
+      { de: 'Vorschau im Fenster „Unterfluraggregat“: Würfel-Knopf wechselt durch vier Iso-Ansichten, Haus-Knopf zeigt die Draufsicht.',
+        en: 'Preview in the "Under-table unit" window: the cube button cycles through four isometric views, the house button shows the top view.' },
+      { de: 'Fenster „Unterfluraggregat“: Feld „Abstand A/C-Achse“ entfernt (alter Parameter, wird nicht verwendet).',
+        en: '"Under-table unit" window: field "Distance A/C axis" removed (old parameter, not used).' },
+    ] },
     { release: 378, date: '20.11.2026', items: [
       { de: 'Unterfluraggregat (UF): Steht im Werkzeugwechsel eines Arbeitsgangs „; ACHSMASS …“ usw. oder „; UF Name“, fräst der Fräser von unten nach oben. Die Bearbeitung in „XBOTTOM“ wird mit Z von der Unterseite des Bauteils dargestellt, das Aggregat (Ausleger, Säule, Kopf) wird angezeigt, und die Abtragsimulation trägt von unten ab. Zwischen zwei XBOTTOM-Blöcken fährt das Werkzeug nach unten aus dem Bauteil zurück.',
         en: 'Under-table unit (UF): if the tool change of a processing step contains "; ACHSMASS …" etc. or "; UF name", the cutter mills from below upwards. Machining inside "XBOTTOM" is shown with Z measured from the underside of the part, the unit (arm, column, head) is displayed, and the material removal simulation removes from below. Between two XBOTTOM blocks the tool retracts downwards out of the part.' },
@@ -13908,8 +13919,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { k: 'klaenge', re: /^KOLLISIONSLAENGE$/, de: 'Kollisionslänge', en: 'Collision length', tag: 'KOLLISIONSLAENGE', def: 204 },
     { k: 'khoehe', re: /^KOLL?IISIONSHOEHE$|^KOLLISIONSHOEHE$/, de: 'Kollisionshöhe', en: 'Collision height', tag: 'KOLLISIONSHOEHE', def: 110 },
     { k: 'arx', re: /^ACHSREFERENZ_X$/, de: 'Achsreferenz X (Achs_r_x)', en: 'Axis reference X (Achs_r_x)', tag: 'ACHSREFERENZ_X', def: 146 },
-    { k: 'ary', re: /^ACHSREFERENZ_Y$/, de: 'Achsreferenz Y (Achs_r_y)', en: 'Axis reference Y (Achs_r_y)', tag: 'ACHSREFERENZ_Y', def: 37 },
-    { k: 'ac', re: /^ABSTAND_A_C$/, de: 'Abstand A/C-Achse', en: 'Distance A/C axis', tag: 'ABSTAND_A_C', def: 145 }
+    { k: 'ary', re: /^ACHSREFERENZ_Y$/, de: 'Achsreferenz Y (Achs_r_y)', en: 'Axis reference Y (Achs_r_y)', tag: 'ACHSREFERENZ_Y', def: 37 }
   ];
   const UF_SHAPE_KEYS = [
     { k: 'armH', de: 'Höhe Ausleger unten', en: 'Height of lower arm', def: 40 },
@@ -19586,6 +19596,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const occ = bodyOccluder;
     const tStart = performance.now();
     window.__lastToolOcclusion = null;
+    { const pu = points[scrubIdx]; if (pu && pu.uf && (showTool || showToolHolder)) { drawUfOccluded(pu, camPos, basis, w, h); return; } }
     if (!occ || occ.alpha <= 0.001 || (!showTool && !showToolHolder)) { drawTool(proj); return; }
     const cw = canvas.width, ch = canvas.height;
     if (!toolLayerCanvas) toolLayerCanvas = document.createElement('canvas');
@@ -19843,31 +19854,126 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     parts.push({ type: 'cyl', color: 'steel', origin: W(0, 0, zG), profile: [{ r: 31.5, dist: 0 }, { r: 23.5, dist: 45 }] });
     return { parts, axisTop: W(0, 0, zG + 45), axisBottom: W(0, 0, armTop - uf.armH) };
   }
-  function drawUfBody(p, tip, proj) {
-    const body = ufBodyParts(p.uf, tip, p.toolLength, p.ufDir);
-    const up = { x: 0, y: 0, z: 1 }, u = { x: 0, y: 1, z: 0 }, v = { x: -1, y: 0, z: 0 };
-    const alpha = Math.max(0, Math.min(100, colletAppearance.transparency || 0));
-    body.parts.forEach(part => {
-      const app = { filled: true, color: UF_COLORS[part.color], transparency: alpha };
-      if (part.type === 'cyl') { drawToolHolder(part.origin, up, u, v, proj, part.profile, app, 32); return; }
-      const ringAt = z => part.ring.map(c => ({ x: c.x, y: c.y, z })).concat([{ x: part.ring[0].x, y: part.ring[0].y, z }]);
-      const world = [ringAt(part.z0), ringAt(part.z1)];
-      const screen = world.map(r => r.map(c => proj(toRender(c))));
-      fillRevolutionBody(world, screen, app, { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: up }, { x: 0, y: 1, z: 0 });
-      ctx.strokeStyle = cssVar('--tool-color'); ctx.lineWidth = 1.1; ctx.globalAlpha = 0.85; ctx.setLineDash([]);
-      for (let k = 0; k < 4; k++) {
-        const a0 = screen[0][k], a1 = screen[0][k + 1], b0 = screen[1][k], b1 = screen[1][k + 1];
-        ctx.beginPath();
-        if (a0 && a1) { ctx.moveTo(a0.x, a0.y); ctx.lineTo(a1.x, a1.y); }
-        if (b0 && b1) { ctx.moveTo(b0.x, b0.y); ctx.lineTo(b1.x, b1.y); }
-        if (a0 && b0) { ctx.moveTo(a0.x, a0.y); ctx.lineTo(b0.x, b0.y); }
-        ctx.stroke();
+  function ufTriangles(uf, tip, toolLength, toolRadius, dir, withTool) {
+    const body = ufBodyParts(uf, tip, toolLength, dir), T = [];
+    let gid = 0;
+    const quad = (a, b, c, d, n, color, g) => { T.push({ p: [a, b, c], n, color, g }, { p: [a, c, d], n, color, g }); };
+    const cyl = (cx, cy, z0, z1, r0, r1, color) => {
+      const N = 32, side = ++gid, bot = ++gid, top = ++gid;
+      const A = [], B = [];
+      for (let i = 0; i < N; i++) { const t = i / N * 2 * Math.PI; A.push({ x: cx + r0 * Math.cos(t), y: cy + r0 * Math.sin(t), z: z0 }); B.push({ x: cx + r1 * Math.cos(t), y: cy + r1 * Math.sin(t), z: z1 }); }
+      for (let i = 0; i < N; i++) {
+        const j = (i + 1) % N, t = (i + 0.5) / N * 2 * Math.PI;
+        quad(A[i], A[j], B[j], B[i], { x: Math.cos(t), y: Math.sin(t), z: 0 }, color, side);
+        if (i > 0 && i < N - 1) { T.push({ p: [A[0], A[j], A[i]], n: { x: 0, y: 0, z: -1 }, color, g: bot }); T.push({ p: [B[0], B[i], B[j]], n: { x: 0, y: 0, z: 1 }, color, g: top }); }
       }
-      ctx.globalAlpha = 1;
+    };
+    body.parts.forEach(part => {
+      const color = UF_COLORS[part.color];
+      if (part.type === 'cyl') { const pr = part.profile; cyl(part.origin.x, part.origin.y, part.origin.z + pr[0].dist, part.origin.z + pr[pr.length - 1].dist, pr[0].r, pr[pr.length - 1].r, color); return; }
+      const r = part.ring, Bt = r.map(q => ({ x: q.x, y: q.y, z: part.z0 })), Up = r.map(q => ({ x: q.x, y: q.y, z: part.z1 }));
+      quad(Bt[3], Bt[2], Bt[1], Bt[0], { x: 0, y: 0, z: -1 }, color, ++gid);
+      quad(Up[0], Up[1], Up[2], Up[3], { x: 0, y: 0, z: 1 }, color, ++gid);
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4, dx = r[j].x - r[i].x, dy = r[j].y - r[i].y, l = Math.hypot(dx, dy) || 1;
+        quad(Bt[i], Bt[j], Up[j], Up[i], { x: dy / l, y: -dx / l, z: 0 }, color, ++gid);
+      }
     });
-    const a = proj(toRender(body.axisBottom)), b = proj(toRender(body.axisTop));
-    if (a && b) { ctx.strokeStyle = '#e53935'; ctx.lineWidth = 1; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]); }
-    window.__lastUfRenderInfo = { name: p.uf.name, dir: (p.ufDir || [-1, 0]).slice(), parts: body.parts.length, axis: { x: body.axisTop.x, y: body.axisTop.y } };
+    if (withTool && toolRadius > 0 && toolLength > 0) cyl(tip.x, tip.y, tip.z - toolLength, tip.z, toolRadius, toolRadius, UF_COLORS.tool);
+    return { tris: T, body };
+  }
+  const UF_LIGHT = (() => { const x = -0.4, y = -0.6, z = 0.7, n = Math.hypot(x, y, z); return { x: x / n, y: y / n, z: z / n }; })();
+  function ufRasterTris(tris, prj, W, H) {
+    const P = tris.map(t => t.p.map(prj));
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    P.forEach(tr => tr.forEach(q => { if (!q) return; bx0 = Math.min(bx0, q.x); bx1 = Math.max(bx1, q.x); by0 = Math.min(by0, q.y); by1 = Math.max(by1, q.y); }));
+    const X0 = Math.max(0, Math.floor(bx0) - 1), Y0 = Math.max(0, Math.floor(by0) - 1), X1 = Math.min(W - 1, Math.ceil(bx1) + 1), Y1 = Math.min(H - 1, Math.ceil(by1) + 1);
+    if (!(X1 >= X0 && Y1 >= Y0)) return null;
+    const bw = X1 - X0 + 1, bh = Y1 - Y0 + 1;
+    const Z = new Float32Array(bw * bh).fill(Infinity), C = new Uint8ClampedArray(bw * bh * 4), G = new Int32Array(bw * bh);
+    tris.forEach((t, k) => {
+      const [a, b, c] = P[k];
+      if (!a || !b || !c) return;
+      const ar = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+      if (Math.abs(ar) < 1e-9) return;
+      const n = t.n, sh = 0.5 + 0.5 * Math.max(0, n.x * UF_LIGHT.x + n.y * UF_LIGHT.y + n.z * UF_LIGHT.z);
+      const v = parseInt(t.color.slice(1), 16), cr = ((v >> 16) & 255) * sh, cg = ((v >> 8) & 255) * sh, cb = (v & 255) * sh;
+      const minX = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x)) - X0), maxX = Math.min(bw - 1, Math.ceil(Math.max(a.x, b.x, c.x)) - X0);
+      const minY = Math.max(0, Math.floor(Math.min(a.y, b.y, c.y)) - Y0), maxY = Math.min(bh - 1, Math.ceil(Math.max(a.y, b.y, c.y)) - Y0);
+      for (let y = minY; y <= maxY; y++) {
+        const py = Y0 + y + 0.5;
+        for (let x = minX; x <= maxX; x++) {
+          const px = X0 + x + 0.5;
+          const w0 = ((b.x - px) * (c.y - py) - (c.x - px) * (b.y - py)) / ar; if (w0 < -1e-6) continue;
+          const w1 = ((c.x - px) * (a.y - py) - (a.x - px) * (c.y - py)) / ar; if (w1 < -1e-6) continue;
+          const w2 = 1 - w0 - w1; if (w2 < -1e-6) continue;
+          const d = w0 * a.d + w1 * b.d + w2 * c.d, i = y * bw + x;
+          if (d >= Z[i]) continue;
+          Z[i] = d; G[i] = t.g; C[i * 4] = cr; C[i * 4 + 1] = cg; C[i * 4 + 2] = cb; C[i * 4 + 3] = 255;
+        }
+      }
+    });
+    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) {
+      const i = y * bw + x; if (!C[i * 4 + 3]) continue;
+      const g = G[i], r = x + 1 < bw ? G[i + 1] : 0, d = y + 1 < bh ? G[i + bw] : 0, l = x > 0 ? G[i - 1] : 0, u = y > 0 ? G[i - bw] : 0;
+      if (r !== g || d !== g || l !== g || u !== g) { C[i * 4] *= 0.55; C[i * 4 + 1] *= 0.55; C[i * 4 + 2] *= 0.55; }
+    }
+    return { X0, Y0, X1, Y1, bw, bh, Z, C };
+  }
+  function ufBodyDepthSampler(occ, R, camPos, basis, w, h, T0, scl) {
+    if (!occ || !(occ.alpha > 0.001)) return null;
+    const { X0, Y0, bw, bh } = R;
+    if (occ.kind === 'rings') {
+      const zb = new Float32Array(bw * bh).fill(Infinity);
+      const pj = q => { const rel = sub(toRender(q), camPos); return { x: (w / 2 + dot(rel, basis.right) * scl) * T0.a + T0.e - X0, y: (h / 2 - dot(rel, basis.up) * scl) * T0.d + T0.f - Y0, d: dot(rel, basis.fwd) }; };
+      const L = occ.lower.map(pj), U = occ.upper.map(pj);
+      const tri = (a, b, c) => {
+        const ar = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+        if (Math.abs(ar) < 1e-9) return;
+        const minX = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x))), maxX = Math.min(bw - 1, Math.ceil(Math.max(a.x, b.x, c.x)));
+        const minY = Math.max(0, Math.floor(Math.min(a.y, b.y, c.y))), maxY = Math.min(bh - 1, Math.ceil(Math.max(a.y, b.y, c.y)));
+        for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
+          const px = x + 0.5, py = y + 0.5;
+          const w0 = ((b.x - px) * (c.y - py) - (c.x - px) * (b.y - py)) / ar, w1 = ((c.x - px) * (a.y - py) - (a.x - px) * (c.y - py)) / ar, w2 = 1 - w0 - w1;
+          if (w0 < -1e-6 || w1 < -1e-6 || w2 < -1e-6) continue;
+          const d = w0 * a.d + w1 * b.d + w2 * c.d, k = y * bw + x;
+          if (d < zb[k]) zb[k] = d;
+        }
+      };
+      const n = Math.min(L.length, U.length);
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; tri(L[i], L[j], U[j]); tri(L[i], U[j], U[i]); }
+      for (let k = 0; k + 2 < occ.capL.length; k += 3) tri(L[occ.capL[k]], L[occ.capL[k + 1]], L[occ.capL[k + 2]]);
+      for (let k = 0; k + 2 < occ.capU.length; k += 3) tri(U[occ.capU[k]], U[occ.capU[k + 1]], U[occ.capU[k + 2]]);
+      return (x, y) => zb[y * bw + x];
+    }
+    const RS = occ.RS, OW = occ.W, oz = occ.z;
+    return (x, y) => {
+      const ox = Math.floor((X0 + x + 0.5) * RS), oy = Math.floor((Y0 + y + 0.5) * RS);
+      return (ox >= occ.X0 && ox <= occ.X1 && oy >= occ.Y0 && oy <= occ.Y1) ? oz[oy * OW + ox] : Infinity;
+    };
+  }
+  let ufLayerCanvas = null;
+  function drawUfOccluded(p, camPos, basis, w, h) {
+    const t0 = performance.now(), occ = bodyOccluder, cw = canvas.width, ch = canvas.height, T0 = liveCtx.getTransform();
+    const scl = (h / 2) * (1 / Math.tan((45 * Math.PI / 180) / 2)) / cam.dist;
+    const prj = q => { const rel = sub(toRender(q), camPos), d = dot(rel, basis.fwd); return d <= 0.01 ? null : { x: (w / 2 + dot(rel, basis.right) * scl) * T0.a + T0.e, y: (h / 2 - dot(rel, basis.up) * scl) * T0.d + T0.f, d }; };
+    const { tris, body } = ufTriangles(p.uf, { x: p.x, y: p.y, z: p.z }, p.toolLength, p.toolRadius, p.ufDir, showTool);
+    const R = ufRasterTris(tris, prj, cw, ch);
+    window.__lastUfRenderInfo = { name: p.uf.name, dir: (p.ufDir || [-1, 0]).slice(), parts: body.parts.length, axis: { x: body.axisTop.x, y: body.axisTop.y }, hidden: 0, shown: 0, occluder: occ ? (occ.kind || 'mesh') : null };
+    if (!R) return;
+    const zf = ufBodyDepthSampler(occ, R, camPos, basis, w, h, T0, scl);
+    let hidden = 0, shown = 0;
+    for (let y = 0; y < R.bh; y++) for (let x = 0; x < R.bw; x++) {
+      const i = y * R.bw + x; if (!R.C[i * 4 + 3]) continue;
+      const z = zf ? zf(x, y) : Infinity;
+      if (z < Infinity && R.Z[i] > z + 0.3) { R.C[i * 4 + 3] = Math.round(255 * (1 - occ.alpha)); hidden++; } else shown++;
+    }
+    if (!ufLayerCanvas) ufLayerCanvas = document.createElement('canvas');
+    ufLayerCanvas.width = R.bw; ufLayerCanvas.height = R.bh;
+    const g = ufLayerCanvas.getContext('2d'), img = g.createImageData(R.bw, R.bh);
+    img.data.set(R.C); g.putImageData(img, 0, 0);
+    liveCtx.save(); liveCtx.setTransform(1, 0, 0, 1, 0, 0); liveCtx.globalAlpha = 1; liveCtx.drawImage(ufLayerCanvas, R.X0, R.Y0); liveCtx.restore();
+    Object.assign(window.__lastUfRenderInfo, { hidden, shown, ms: performance.now() - t0 });
   }
 
   function drawTool(proj) {
@@ -19973,7 +20079,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
 
-    if (p.uf) { drawUfBody(p, tip, proj); return; }
+    if (p.uf) return;
     if (showToolHolder) {
       const chuckProfileEntry = p.chuckProfileId ? getChuckDxfProfileById(p.chuckProfileId) : null;
       const chuckRenderProfile = chuckProfileEntry ? buildChuckProfileForRender(chuckProfileEntry) : null;
@@ -20676,7 +20782,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   (function initUfPanel() {
     const panel = el('ufPanel'), sel = el('ufSelect'), nameIn = el('ufNameInput'), hint = el('ufHint'), cv = el('ufPreviewCanvas');
     const KEYS = UF_PARAM_KEYS.concat(UF_SHAPE_KEYS);
-    let list = [], cur = -1, dirty = false, changed = false, yaw = -2.35, pitch = 0.42;
+    let list = [], cur = -1, dirty = false, changed = false, isoIdx = 0, yaw = Math.PI / 4, pitch = Math.asin(1 / Math.sqrt(3));
     const field = k => el('ufIn_' + k);
     const num = s => { const v = parseFloat(String(s == null ? '' : s).trim().replace(',', '.')); return Number.isFinite(v) ? v : null; };
     const fmtNum = v => (Math.round(v * 100) / 100).toFixed(2);
@@ -20689,11 +20795,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const uf = { name: nameIn.value.trim().replace(/\s+/g, '_') }, bad = [];
       KEYS.forEach(d => {
         const v = num(field(d.k).value); uf[d.k] = v;
-        const okv = d.k === 'ac' ? true : (d.k === 'gehVorn' ? v !== null && v >= 0 : v !== null && v > 0);
+        const okv = d.k === 'gehVorn' ? v !== null && v >= 0 : v !== null && v > 0;
         field(d.k).classList.toggle('invalid', !okv);
         if (!okv) bad.push(T(d.de, d.en));
       });
-      if (uf.ac === null) uf.ac = 0;
       return { uf, bad };
     }
     function renderList() {
@@ -20717,50 +20822,23 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (uf.einfahrt >= uf.klaenge) warn.push(T('Max. Einfahrtiefe ist nicht kleiner als die Kollisionslänge - keine Säule.', 'Max. reach depth is not smaller than the collision length - no column.'));
       if (uf.ary > uf.kbreite) warn.push(T('Achsreferenz Y ist größer als die Kollisionsbreite.', 'Axis reference Y is larger than the collision width.'));
       showHint(warn.join(' '));
-      const L = 42, R = 6, body = ufBodyParts(uf, { x: 0, y: 0, z: 0 }, L, [1, 0]);
-      const faces = [];
-      const N = 24;
-      const ring = (c, r, z) => Array.from({ length: N }, (_, i) => [c.x + r * Math.cos(i / N * 2 * Math.PI), c.y + r * Math.sin(i / N * 2 * Math.PI), z]);
-      const cyl = (c, z0, z1, r0, r1, color) => {
-        const A = ring(c, r0, z0), B = ring(c, r1, z1);
-        for (let i = 0; i < N; i++) { const j = (i + 1) % N; faces.push({ pts: [A[i], A[j], B[j], B[i]], color }); }
-        faces.push({ pts: A.slice().reverse(), color }); faces.push({ pts: B, color });
-      };
-      body.parts.forEach(p => {
-        const color = UF_COLORS[p.color];
-        if (p.type === 'cyl') { cyl(p.origin, p.origin.z, p.origin.z + p.profile[1].dist, p.profile[0].r, p.profile[1].r, color); return; }
-        const b = p.ring.map(q => [q.x, q.y, p.z0]), t = p.ring.map(q => [q.x, q.y, p.z1]);
-        for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; faces.push({ pts: [b[i], b[j], t[j], t[i]], color }); }
-        faces.push({ pts: b.slice().reverse(), color }); faces.push({ pts: t, color });
-      });
-      cyl({ x: 0, y: 0 }, -L, 0, R, R, UF_COLORS.tool);
+      const L = 42, R = 6, { tris, body } = ufTriangles(uf, { x: 0, y: 0, z: 0 }, L, R, [1, 0], true);
       const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-      const view = q => { const x1 = q[0] * cy - q[1] * sy, y1 = q[0] * sy + q[1] * cy; return [x1, q[2] * cp - y1 * sp, y1 * cp + q[2] * sp]; };
-      const V = faces.map(f => ({ v: f.pts.map(view), color: f.color }));
+      const view = q => { const x1 = q.x * cy - q.y * sy, y1 = q.x * sy + q.y * cy; return [x1, y1 * sp + q.z * cp, -y1 * cp + q.z * sp]; };
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      V.forEach(f => f.v.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }));
+      tris.forEach(t => t.p.forEach(q => { const v = view(q); x0 = Math.min(x0, v[0]); x1 = Math.max(x1, v[0]); y0 = Math.min(y0, v[1]); y1 = Math.max(y1, v[1]); }));
       const sc = Math.min((W - 24) / (x1 - x0 || 1), (H - 24) / (y1 - y0 || 1)), ox = W / 2 - (x0 + x1) / 2 * sc, oy = H / 2 + (y0 + y1) / 2 * sc;
-      const S = q => [ox + q[0] * sc, oy - q[1] * sc];
-      const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16); const f = c => Math.round(Math.min(255, c * k)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
-      V.forEach(f => {
-        const a = f.v[0], b = f.v[1], c = f.v[2];
-        const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = c[0] - a[0], wy = c[1] - a[1], wz = c[2] - a[2];
-        const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, nl = Math.hypot(nx, ny, nz) || 1;
-        f.front = -nz / nl; f.light = 0.55 + 0.45 * Math.max(0, -(0.35 * nx + 0.75 * ny + 0.55 * nz) / nl);
-        f.depth = f.v.reduce((s, q) => s + q[2], 0) / f.v.length;
-      });
-      V.filter(f => f.front > 0).sort((p, q) => p.depth - q.depth).forEach(f => {
-        g.beginPath(); f.v.forEach((q, i) => { const s = S(q); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); }); g.closePath();
-        g.fillStyle = shade(f.color, f.light); g.fill();
-        if (f.v.length === 4) { g.strokeStyle = 'rgba(40,46,52,.55)'; g.lineWidth = 0.7; g.stroke(); }
-      });
-      const a = S(view([body.axisBottom.x, body.axisBottom.y, body.axisBottom.z - 15])), b = S(view([body.axisTop.x, body.axisTop.y, body.axisTop.z + 15]));
+      const prj = q => { const v = view(q); return { x: ox + v[0] * sc, y: oy - v[1] * sc, d: -v[2] }; };
+      const Rr = ufRasterTris(tris, prj, W, H);
+      if (Rr) { const img = g.createImageData(Rr.bw, Rr.bh); for (let i = 0; i < Rr.C.length; i += 4) { const al = Rr.C[i + 3]; if (al) { img.data[i] = Rr.C[i]; img.data[i + 1] = Rr.C[i + 1]; img.data[i + 2] = Rr.C[i + 2]; img.data[i + 3] = 255; } else { img.data[i] = 244; img.data[i + 1] = 246; img.data[i + 2] = 248; img.data[i + 3] = 255; } } g.putImageData(img, Rr.X0, Rr.Y0); }
+      const S = q => { const v = view(q); return [ox + v[0] * sc, oy - v[1] * sc]; };
+      const a = S({ x: body.axisBottom.x, y: body.axisBottom.y, z: body.axisBottom.z - 15 }), b = S({ x: body.axisTop.x, y: body.axisTop.y, z: body.axisTop.z + 15 });
       g.strokeStyle = '#e53935'; g.lineWidth = 1; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.setLineDash([]);
-      cv.__ufDrawn = faces.length;
+      cv.__ufDrawn = tris.length;
     }
     let drag = null;
     cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
-    cv.addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - drag[0]) * 0.01; pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY - drag[1]) * 0.01)); drag = [e.clientX, e.clientY]; draw(); });
+    cv.addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - drag[0]) * 0.01; pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch + (e.clientY - drag[1]) * 0.01)); drag = [e.clientX, e.clientY]; draw(); });
     cv.addEventListener('pointerup', () => { drag = null; });
     panel.addEventListener('input', e => { if (e.target.matches('input')) { dirty = true; draw(); } });
     function confirmDiscard() {
@@ -20813,8 +20891,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       panel.classList.add('open');
     }
     el('btnOpenUf').addEventListener('click', openUf);
+    el('btnUfIso').addEventListener('click', () => { isoIdx = (isoIdx + 1) % 4; yaw = Math.PI / 4 + isoIdx * Math.PI / 2; pitch = Math.asin(1 / Math.sqrt(3)); draw(); });
+    el('btnUfTop').addEventListener('click', () => { yaw = 0; pitch = Math.PI / 2; draw(); });
     window.__uf = { open: openUf, state: () => ({ open: panel.classList.contains('open'), cur, dirty, names: list.map(u => u.name), hint: hint.hidden ? '' : hint.textContent, drawn: cv.__ufDrawn || 0 }),
-      setYawPitch: (y, p) => { yaw = y; pitch = p; draw(); } };
+      setYawPitch: (y, p) => { yaw = y; pitch = p; draw(); }, view: () => ({ yaw, pitch, isoIdx }) };
   })();
 
   const TOOLBAR_LAYOUT_KEY = 'cncsim.toolbarLayout';
