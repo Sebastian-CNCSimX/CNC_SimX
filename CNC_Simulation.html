@@ -1657,6 +1657,21 @@
   .shortcut-desc { color: var(--ink-muted); font-size: 13px; text-align: right; }
   
   #shortcutsPanel .paste-card { width: min(1180px, 96vw); }
+  
+  .shortcut-key.empty { opacity: 0.55; }
+  .sc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; margin-top: 4px; }
+  .sc-group { grid-column: 1 / -1; font-weight: 600; margin: 10px 0 2px; padding-bottom: 3px; border-bottom: 1px solid var(--border); }
+  .sc-row { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  .sc-name { flex: 1; min-width: 0; }
+  .sc-key { min-width: 150px; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font: 600 12.5px "Open Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--muted-soft); cursor: pointer; }
+  .sc-key.empty { color: var(--ink-muted); font-weight: 400; }
+  .sc-key.recording { border-color: var(--accent); color: var(--accent); outline: 2px solid var(--accent); outline-offset: 1px; }
+  .sc-key.error { border-color: var(--danger); color: var(--danger); outline-color: var(--danger); }
+  .sc-fixed { color: var(--ink-muted); }
+  .sc-fixed .sc-key { cursor: default; color: var(--ink-muted); background: none; }
+  .sc-del { border: 0; background: none; color: var(--danger); font-size: 15px; line-height: 1; cursor: pointer; width: 24px; padding: 2px 0; }
+  .sc-msg { grid-column: 1 / -1; color: var(--danger); font-size: 12px; text-align: right; margin: -2px 0 4px; }
+  @media (max-width: 900px) { .sc-grid { grid-template-columns: minmax(0, 1fr); } }
   .shortcut-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; align-items: stretch; }
   .shortcut-col + .shortcut-col { border-left: 1px solid var(--border); padding-left: 24px; }
   @media (max-width: 900px) {
@@ -2401,6 +2416,8 @@
       
       <button class="settings-tab" type="button" role="tab" data-tab="general" id="settingsTabGeneral" data-i18n-en="General">Allgemein</button>
       
+      <button class="settings-tab" type="button" role="tab" data-tab="shortcuts" id="settingsTabShortcuts" data-i18n-en="Shortcuts">Shortcuts</button>
+      
       <button class="settings-tab" type="button" role="tab" data-tab="machine" id="settingsTabMachine" data-i18n-en="Machine types/Processing step names">Maschinentypen/Arbeitsgangnamen</button>
       <button class="settings-tab" type="button" role="tab" data-tab="colors" id="settingsTabColors" data-i18n-en="Colours">Farben</button>
       <button class="settings-tab" type="button" role="tab" data-tab="columns" id="settingsTabColumns" data-i18n-en="Columns">Spalten</button>
@@ -2425,6 +2442,7 @@
           <p class="panel-hint settings-reset-hint" data-i18n-en="Resets all colours, the column widths and column arrangement, the cube and information window position, the removal simulation and &quot;Automatically check for version updates&quot; to their defaults. Not reset: 3D area (tilt/rotation direction, grid), machine types, processing step names, DXF part definition, 3D display, textures, part profiles and tools.">Setzt alle Farben, die Spaltenbreiten und Spaltenanordnung, die Würfel- und Informationsfensterposition, die Abtragsimulation sowie „Automatisch nach Versionsupdate prüfen“ auf die Standardwerte zurück. Nicht zurückgesetzt werden: 3D Bereich (Kipp-/Drehrichtung, Raster), Maschinentypen, Arbeitsgangnamen, DXF-Bauteildefinition, 3D Darstellung, Texturen, Bauteilprofile und Werkzeuge.</p>
         </div>
       </div>
+      <div class="settings-pane" data-pane="shortcuts" id="settingsPaneShortcuts" hidden></div>   
       <div class="settings-pane" data-pane="machine" id="settingsPaneMachine" hidden>
         <div class="settings-cols"><div class="settings-col" id="settingsColMachineTypes"></div><div class="settings-vsep"></div><div class="settings-col" id="settingsColOpNames"></div></div>
       </div>
@@ -2568,41 +2586,43 @@
     
     <div class="shortcut-cols">
     <div class="shortcut-col" id="shortcutColF">
-      <div class="shortcut-row"><span class="shortcut-key">F1</span><span class="shortcut-desc" data-i18n-en="Open shortcuts list">Shortcuts-Liste öffnen</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F2</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F3</span><span class="shortcut-desc" data-i18n-en="Show/hide DXF">DXF aus-/einblenden</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F4</span><span class="shortcut-desc" data-i18n-en="Edit machine type">Maschinentyp bearbeiten</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F5</span><span class="shortcut-desc" data-i18n-en="Edit CNC-Code">CNC-Code bearbeiten</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F6</span><span class="shortcut-desc" data-i18n-en="Approximated milling time">Fräszeitberechnung</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F7</span><span class="shortcut-desc" data-i18n-en="Change background">Hintergrundmodus umschalten</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F8</span><span class="shortcut-desc" data-i18n-en="3D area settings">3D Bereichseinstellungen</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F9</span><span class="shortcut-desc" data-i18n-en="Knowledge Base">Knowledge Base</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgangnamen bearbeiten</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">F11</span><span class="shortcut-desc" data-i18n-en="Empty everything">Simulation leeren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="help">F1</span><span class="shortcut-desc" data-i18n-en="Open shortcuts list">Shortcuts-Liste öffnen</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="dxfPart">F2</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="dxfToggle">F3</span><span class="shortcut-desc" data-i18n-en="Show/hide DXF">DXF aus-/einblenden</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="machineType">F4</span><span class="shortcut-desc" data-i18n-en="Edit machine type">Maschinentyp bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="editCode">F5</span><span class="shortcut-desc" data-i18n-en="Edit CNC-Code">CNC-Code bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="millTime">F6</span><span class="shortcut-desc" data-i18n-en="Approximated milling time">Fräszeitberechnung</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="background">F7</span><span class="shortcut-desc" data-i18n-en="Change background">Hintergrundmodus umschalten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="area3d">F8</span><span class="shortcut-desc" data-i18n-en="3D area settings">3D Bereichseinstellungen</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="kb">F9</span><span class="shortcut-desc" data-i18n-en="Knowledge Base">Knowledge Base</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="opNames">F10</span><span class="shortcut-desc" data-i18n-en="Edit processing step names">Arbeitsgangnamen bearbeiten</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="empty">F11</span><span class="shortcut-desc" data-i18n-en="Empty everything">Simulation leeren</span></div>
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + F5">Strg + F5</span><span class="shortcut-desc" data-i18n-en="Reload page">Seite neu laden</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="reload">Strg + F5</span><span class="shortcut-desc" data-i18n-en="Reload page">Seite neu laden</span></div>
     </div>
     <div class="shortcut-col" id="shortcutColSim">
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Space">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Arrow right/left">Pfeiltaste rechts/links</span><span class="shortcut-desc" data-i18n-en="Next program code processing lines">Nächste Programmcodezeile</span></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow right">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + Arrow left">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="play">Leertaste</span><span class="shortcut-desc" data-i18n-en="Start/Pause Simulation">Simulation starten/pausieren</span></div>
+      
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="lineNext">Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next program code line">Nächste Programmcodezeile</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="linePrev">Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Previous program code line">Vorherige Programmcodezeile</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="opNext">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="opPrev">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Home">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="topView">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
-      <div class="shortcut-row"><span class="shortcut-key">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="measure">Shift + L</span><span class="shortcut-desc" data-i18n-en="Measure length on/off">Längenmessung an/aus</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="angle">Shift + W</span><span class="shortcut-desc" data-i18n-en="Measure angle on/off">Winkelmessung an/aus</span></div>
     </div>
     <div class="shortcut-col" id="shortcutColFiles">
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + O">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="loadCnc">Strg + O</span><span class="shortcut-desc" data-i18n-en="Load CNC program">CNC-Programm laden</span></div>
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + O">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Shift + B">Shift + B</span><span class="shortcut-desc" data-i18n-en="Define DXF part">DXF-Bauteil definieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="loadDxf">Shift + O</span><span class="shortcut-desc" data-i18n-en="Load DXF">DXF laden</span></div>
+      
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + W">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + Alt + S">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="toolProfile">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="chuck">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
       <div class="shortcut-sep"></div>
-      <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Ctrl + L">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="lang">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
       <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
       <div class="shortcut-row"><span class="shortcut-key" data-i18n-en="Esc">Escape</span><span class="shortcut-desc" data-i18n-en="Close menus, cancel active measurement/Codejump/dialog">Menüs schließen, aktive Messung/Codesprung/offenen Dialog abbrechen</span></div>
     </div>
@@ -3277,6 +3297,21 @@
       </div>
     </div>
     <div class="paste-actions"><button class="btn ghost" id="btnFinishedPartClose" type="button" data-i18n-en="Close">Schließen</button></div>
+  </div>
+</div>
+
+<div class="paste-panel" id="shortcutEditPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="Shortcuts">Shortcuts</h3>
+    <p class="panel-hint sc-hint" data-i18n-en="Click a field and press the new key combination (up to three keys, e.g. &quot;Ctrl + Shift + 3&quot;, &quot;Shift + 3&quot; or &quot;3&quot;). Red ✕ = remove shortcut. Enter and Escape are fixed.">Feld anklicken und die neue Tastenkombination drücken (bis zu drei Tasten, z. B. „Strg + Shift + 3“, „Shift + 3“ oder „3“). Rotes ✕ = Kürzel entfernen. Enter und Escape sind fest.</p>
+    <div class="sc-grid" id="shortcutEditGrid"></div>
+    <div class="sc-msg" id="shortcutEditMsg" hidden></div>
+    <div class="paste-actions">
+      <button class="btn ghost" id="btnShortcutEditOpen" type="button" hidden></button>
+      <button class="btn ghost" id="btnShortcutEditReset" type="button" data-i18n-en="Defaults">Standardwerte</button>
+      <button class="btn ghost" id="btnShortcutEditCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+      <button class="btn primary" id="btnShortcutEditApply" type="button" data-i18n-en="Apply">Übernehmen</button>
+    </div>
   </div>
 </div>
 <div class="paste-panel" id="abtragModePanel">
@@ -8536,7 +8571,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 376;
+  const APP_RELEASE_NUMBER = 377;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8545,7 +8580,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '19.11.2026, 16:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '20.11.2026, 10:55 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12929,6 +12964,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 377, date: '20.11.2026', items: [
+      { de: 'Neuer Reiter „Shortcuts“ in den Einstellungen: Tastenkürzel frei festlegen (bis zu drei Tasten, z. B. „Strg + Shift + 3“), mit rotem ✕ entfernen, „Standardwerte“ stellt die bisherige Belegung wieder her. Doppelte und von Windows/Browser belegte Kombinationen werden mit Hinweis abgelehnt. „? → Shortcuts“ zeigt die aktuelle Belegung.',
+        en: 'New "Shortcuts" tab in the settings: assign keyboard shortcuts freely (up to three keys, e.g. "Ctrl + Shift + 3"), remove them with the red ✕, "Defaults" restores the previous assignment. Duplicate combinations and combinations used by Windows/the browser are rejected with a notice. "? → Shortcuts" shows the current assignment.' },
+      { de: 'Pfeiltaste rechts und links sind jetzt zwei getrennte Kürzel; „Shift + B“ entfällt (DXF-Bauteil definieren bleibt auf F2).',
+        en: 'Arrow right and arrow left are now two separate shortcuts; "Shift + B" has been removed (Define DXF part stays on F2).' },
+    ] },
     { release: 376, date: '19.11.2026', items: [
       { de: 'Neuer Knopf „Zielflagge ☰+ Liste“ in der CNC-Leiste (nur ohne geladenes Programm): mehrere CNC-Programme wählen, Reihenfolge per Ziehen ändern, „Drehung“ je Programm setzen, Programme entfernen – dann werden alle nacheinander im Fenster „Fertiges Teil“ abgetragen. Hinweise wie bei „Zielflagge CNC“.',
         en: 'New "finish flag ☰+ List" button in the CNC toolbar (only without a loaded program): choose several CNC programs, change the order by dragging, set "Rotation" per program, remove programs - then all are removed one after another in the "Finished part" window. Notices as with "finish flag CNC".' },
@@ -20084,6 +20125,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const SETTINGS_SECTIONS = [
     { key: 'abtragMode', tab: 'general', panel: 'abtragModePanel', open: 'btnAbtragModeOpen', apply: 'btnAbtragModeApply', cancel: 'btnAbtragModeCancel', reset: null, de: 'Abtragsimulation', en: 'Removal simulation', host: 'settingsPaneGeneral' },
     { key: 'autoUpdate', tab: 'general', panel: 'autoUpdatePanel', open: 'btnAutoUpdateOpen', apply: 'btnAutoUpdateApply', cancel: 'btnAutoUpdateCancel', reset: null, de: 'Versionsupdate', en: 'Version update', host: 'settingsPaneGeneral' },
+    { key: 'shortcuts', tab: 'shortcuts', panel: 'shortcutEditPanel', open: 'btnShortcutEditOpen', apply: 'btnShortcutEditApply', cancel: 'btnShortcutEditCancel', reset: 'btnShortcutEditReset', de: 'Shortcuts', en: 'Shortcuts', host: 'settingsPaneShortcuts' },
     { key: 'machineTypes', tab: 'machine', panel: 'machineTypeEditPanel', open: 'btnEditMachineTypes', apply: 'btnMachineTypeEditApply', cancel: 'btnMachineTypeEditCancel', reset: 'btnMachineTypeResetDefaults', de: 'Maschinentypen', en: 'Machine types', host: 'settingsColMachineTypes' },
     { key: 'opNames', tab: 'machine', panel: 'opNamesEditPanel', open: 'btnEditOpNames', apply: 'btnOpNamesEditApply', cancel: 'btnOpNamesEditCancel', reset: null, de: 'Arbeitsgangnamen', en: 'Processing step names', host: 'settingsColOpNames' },
     { key: 'menuColor', tab: 'colors', panel: 'menuColorPanel', open: 'btnMenuColor', apply: 'btnMenuColorApply', cancel: 'btnMenuColorCancel', reset: 'btnMenuColorResetDefaults', de: 'Buttonfarbe', en: 'Button colour', host: 'settingsPaneColors' },
@@ -21079,6 +21121,7 @@ Max Mustermann (Anschrift wie oben)`,
     el('infoReleaseTimeValue').textContent = formatAppTimestampForLang(APP_RELEASE_TIMESTAMP, currentLang);
     langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
     try { localStorage.setItem('cncsimx_lang', lang); } catch (e) {  }
+    document.dispatchEvent(new CustomEvent('cncsim:lang-changed'));
   }
   langButtons.forEach(btn => btn.addEventListener('click', () => applyLanguage(btn.dataset.lang)));
   let savedLang = 'de';
@@ -21099,7 +21142,8 @@ Max Mustermann (Anschrift wie oben)`,
     LS_KEY_AXIS_COLORS, LS_KEY_AXIS_LABEL_SIZE, LS_KEY_GRID_STEP,
     LS_KEY_SHOW_TOOL_HOLDER,
     LS_KEY_DXF_TEXTURES,
-    LS_KEY_PART_PROFILES
+    LS_KEY_PART_PROFILES,
+    'cncsim.shortcuts'
   ];
   function collectOtherCncsimSettings() {
     const out = {};
@@ -21154,6 +21198,7 @@ Max Mustermann (Anschrift wie oben)`,
       dxfTextureId,
       dxfTextures: dxfTextures.map(t => Object.assign({}, t)),
       partProfiles: partProfiles.map(p => JSON.parse(JSON.stringify(p))),
+      shortcuts: window.__cncsimShortcuts ? window.__cncsimShortcuts.get() : undefined,
       otherSettings: collectOtherCncsimSettings()
     }, null, 2);
   }
@@ -21344,6 +21389,7 @@ Max Mustermann (Anschrift wie oben)`,
       if (typeof data.uiLanguage === 'string') {
         applyLanguage(data.uiLanguage);
       }
+      if (data.shortcuts && typeof data.shortcuts === 'object' && window.__cncsimShortcuts) window.__cncsimShortcuts.set(data.shortcuts);
       let otherSettingsRestored = 0;
       if (data.otherSettings && typeof data.otherSettings === 'object') {
         Object.keys(data.otherSettings).forEach(key => {
@@ -23478,38 +23524,245 @@ Max Mustermann (Anschrift wie oben)`,
   }
   btnOpenShortcuts.addEventListener('click', () => shortcutsPanel.classList.add('open'));
   el('btnShortcutsClose').addEventListener('click', () => shortcutsPanel.classList.remove('open'));
-  window.addEventListener('keydown', (e) => {
-    if (e.key !== 'F1' || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
-    e.preventDefault();
-    if (document.querySelector('.paste-panel.open')) return;
-    shortcutsPanel.classList.add('open');
-  });
-  const FKEY_ACTIONS = {
-    F2: () => openDxfThicknessPanel(),
-    F3: () => btnToggleDxf.click(),
-    F4: () => btnEditMachineTypes.click(),
-    F5: () => btnEditProgramToolbarIcon.click(),
-    F6: () => el('btnMillTime').click(),
-    F7: () => toggleBackgroundMode(),
-    F8: () => el('btnArea3dSettings').click(),
-    F9: () => btnOpenKnowledgeBase.click(),
-    F10: () => btnEditOpNames.click(),
-    F11: () => emptySimulation()
+  const LS_KEY_SHORTCUTS = 'cncsim.shortcuts';
+  const SHORTCUT_DEFS = [
+    { id: 'help', grp: 'help', def: 'F1', dlg: true, de: 'Shortcuts-Liste öffnen', en: 'Open shortcuts list', act: () => { shortcutsPanel.classList.add('open'); } },
+    { id: 'kb', grp: 'help', def: 'F9', dlg: true, de: 'Knowledge Base', en: 'Knowledge Base', act: () => { btnOpenKnowledgeBase.click(); } },
+    { id: 'lang', grp: 'help', def: 'Ctrl+KeyL', de: 'Sprache umschalten (DE ↔ EN)', en: 'Switch language (DE ↔ EN)', act: () => { applyLanguage(currentLang === 'en' ? 'de' : 'en'); } },
+    { id: 'reload', grp: 'help', def: 'Ctrl+F5', noRep: true, de: 'Seite neu laden', en: 'Reload page', act: () => { window.location.reload(); } },
+    { id: 'dxfPart', grp: 'dialogs', def: 'F2', dlg: true, de: 'DXF-Bauteil definieren', en: 'Define DXF part', act: () => { openDxfThicknessPanel(); } },
+    { id: 'machineType', grp: 'dialogs', def: 'F4', dlg: true, de: 'Maschinentyp bearbeiten', en: 'Edit machine type', act: () => { btnEditMachineTypes.click(); } },
+    { id: 'editCode', grp: 'dialogs', def: 'F5', dlg: true, de: 'CNC-Code bearbeiten', en: 'Edit CNC-Code', act: () => { btnEditProgramToolbarIcon.click(); } },
+    { id: 'millTime', grp: 'dialogs', def: 'F6', dlg: true, de: 'Fräszeitberechnung', en: 'Approximated milling time', act: () => { el('btnMillTime').click(); } },
+    { id: 'area3d', grp: 'dialogs', def: 'F8', dlg: true, de: '3D Bereichseinstellungen', en: '3D area settings', act: () => { el('btnArea3dSettings').click(); } },
+    { id: 'opNames', grp: 'dialogs', def: 'F10', dlg: true, de: 'Arbeitsgangnamen bearbeiten', en: 'Edit processing step names', act: () => { btnEditOpNames.click(); } },
+    { id: 'toolProfile', grp: 'dialogs', def: 'Ctrl+Alt+KeyW', de: 'Werkzeugprofil editieren', en: 'Edit tool profile', act: () => { el('btnToolDxfImport').click(); } },
+    { id: 'chuck', grp: 'dialogs', def: 'Ctrl+Alt+KeyS', de: 'Spannfutter editieren', en: 'Edit chuck profile', act: () => { el('btnChuckDxfImport').click(); } },
+    { id: 'play', grp: 'sim', def: 'Space', de: 'Simulation starten/pausieren', en: 'Start/Pause Simulation', act: () => { if (!points.length) return false; btnPlay.click(); } },
+    { id: 'lineNext', grp: 'sim', def: 'ArrowRight', de: 'Nächste Programmcodezeile', en: 'Next program code line', act: () => stepCodeLine(1) },
+    { id: 'linePrev', grp: 'sim', def: 'ArrowLeft', de: 'Vorherige Programmcodezeile', en: 'Previous program code line', act: () => stepCodeLine(-1) },
+    { id: 'opNext', grp: 'sim', def: 'Shift+ArrowRight', de: 'Nächster Arbeitsgang', en: 'Next processing step', act: () => { gotoAdjacentOp(1); } },
+    { id: 'opPrev', grp: 'sim', def: 'Shift+ArrowLeft', de: 'Vorheriger Arbeitsgang', en: 'Last processing step', act: () => { gotoAdjacentOp(-1); } },
+    { id: 'empty', grp: 'sim', def: 'F11', dlg: true, de: 'Simulation leeren', en: 'Empty everything', act: () => { emptySimulation(); } },
+    { id: 'topView', grp: 'view', def: 'Home', de: '3D-Ansicht Top', en: '3D from top', act: () => { goTopView(); } },
+    { id: 'background', grp: 'view', def: 'F7', dlg: true, de: 'Hintergrundmodus umschalten', en: 'Change background', act: () => { toggleBackgroundMode(); } },
+    { id: 'dxfToggle', grp: 'view', def: 'F3', dlg: true, de: 'DXF aus-/einblenden', en: 'Show/hide DXF', act: () => { btnToggleDxf.click(); } },
+    { id: 'measure', grp: 'view', def: 'Shift+KeyL', de: 'Längenmessung an/aus', en: 'Measure length on/off', act: () => { toggleMeasure(); } },
+    { id: 'angle', grp: 'view', def: 'Shift+KeyW', de: 'Winkelmessung an/aus', en: 'Measure angle on/off', act: () => { toggleMeasureAngle(); } },
+    { id: 'loadCnc', grp: 'load', def: 'Ctrl+KeyO', de: 'CNC-Programm laden', en: 'Load CNC program', act: () => { el('fileInput').click(); } },
+    { id: 'loadDxf', grp: 'load', def: 'Shift+KeyO', de: 'DXF laden', en: 'Load DXF', act: () => { el('dxfFileInput').click(); } },
+  ];
+  const SC_GROUPS = [
+    { id: 'help', de: 'Hilfe', en: 'Help' },
+    { id: 'dialogs', de: 'Dialoge / Einstellungen', en: 'Dialogs / settings' },
+    { id: 'sim', de: 'Simulation', en: 'Simulation' },
+    { id: 'view', de: '3D-Ansicht / Messen', en: '3D view / measuring' },
+    { id: 'load', de: 'Laden', en: 'Load' },
+  ];
+  const SHORTCUT_DEFAULTS = {};
+  SHORTCUT_DEFS.forEach(d => { SHORTCUT_DEFAULTS[d.id] = d.def; });
+  const SC_KEY_NAMES = {
+    Space: ['Leertaste', 'Space'], ArrowRight: ['Pfeiltaste rechts', 'Arrow right'], ArrowLeft: ['Pfeiltaste links', 'Arrow left'],
+    ArrowUp: ['Pfeiltaste oben', 'Arrow up'], ArrowDown: ['Pfeiltaste unten', 'Arrow down'], Home: ['Pos1 (Home)', 'Home'], End: ['Ende', 'End'],
+    PageUp: ['Bild auf', 'Page up'], PageDown: ['Bild ab', 'Page down'], Insert: ['Einfg', 'Insert'], Delete: ['Entf', 'Delete'],
+    Backspace: ['Rücktaste', 'Backspace'], Tab: ['Tab', 'Tab'], Enter: ['Enter', 'Enter'], NumpadEnter: ['Enter', 'Enter'], Escape: ['Escape', 'Esc'],
+    NumpadAdd: ['Num +', 'Num +'], NumpadSubtract: ['Num -', 'Num -'], NumpadMultiply: ['Num *', 'Num *'], NumpadDivide: ['Num /', 'Num /'],
+    NumpadDecimal: ['Num ,', 'Num .'], Pause: ['Pause', 'Pause'], ScrollLock: ['Rollen', 'Scroll lock'], ContextMenu: ['Menütaste', 'Menu key']
   };
+  function scKeyLabel(code) {
+    const n = SC_KEY_NAMES[code];
+    if (n) return currentLang === 'en' ? n[1] : n[0];
+    let m;
+    if ((m = /^Key([A-Z])$/.exec(code))) return m[1];
+    if ((m = /^Digit(\d)$/.exec(code))) return m[1];
+    if ((m = /^Numpad(\d)$/.exec(code))) return 'Num ' + m[1];
+    return code;
+  }
+  function shortcutLabel(combo) {
+    if (!combo) return currentLang === 'en' ? '-not defined-' : '-leer-';
+    return combo.split('+').map(p => p === 'Ctrl' ? (currentLang === 'en' ? 'Ctrl' : 'Strg') : (p === 'Alt' || p === 'Shift') ? p : scKeyLabel(p)).join(' + ');
+  }
+  function shortcutFromEvent(e) {
+    let code = e.code;
+    if (!code && typeof e.key === 'string') {
+      const k = e.key;
+      code = k === ' ' ? 'Space' : /^[a-z]$/i.test(k) ? 'Key' + k.toUpperCase() : /^\d$/.test(k) ? 'Digit' + k : /^(F\d+|Arrow\w+|Home|End|Page\w+|Insert|Delete|Backspace|Tab|Enter|Escape)$/.test(k) ? k : '';
+    }
+    if (!code || /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$|^AltGraph$/.test(code)) return '';
+    const p = [];
+    if (e.ctrlKey) p.push('Ctrl');
+    if (e.altKey) p.push('Alt');
+    if (e.shiftKey) p.push('Shift');
+    p.push(code);
+    return p.join('+');
+  }
+  const SC_RESERVED = ['Ctrl+KeyW', 'Ctrl+KeyT', 'Ctrl+KeyN', 'Ctrl+Shift+KeyN', 'Ctrl+Shift+KeyT', 'Ctrl+Shift+KeyW', 'Ctrl+Shift+KeyI',
+    'Ctrl+Shift+KeyJ', 'Ctrl+Shift+KeyC', 'Ctrl+Tab', 'Ctrl+Shift+Tab', 'Ctrl+F4', 'Alt+F4', 'Alt+Tab', 'Alt+Space', 'Tab', 'Shift+Tab',
+    'Ctrl+KeyA', 'Ctrl+KeyC', 'Ctrl+KeyV', 'Ctrl+KeyX', 'Ctrl+KeyZ', 'Ctrl+KeyY', 'Ctrl+Alt+Delete', 'Ctrl+Shift+Escape'];
+  function shortcutBlockReason(combo, meta) {
+    const parts = combo.split('+'), key = parts[parts.length - 1];
+    if (meta) return T('Die Windows-Taste ist für Windows reserviert und kann nicht verwendet werden.', 'The Windows key is reserved for Windows and cannot be used.');
+    if (key === 'Enter' || key === 'NumpadEnter' || key === 'Escape') return T('Enter und Escape sind fest belegt und können nicht verwendet werden.', 'Enter and Escape are fixed and cannot be used.');
+    if (key === 'F12') return T('F12 ist für die Entwicklertools reserviert.', 'F12 is reserved for the developer tools.');
+    if (parts.length > 3) return T('Höchstens drei Tasten je Kürzel (z. B. „Strg + Shift + 3“).', 'At most three keys per shortcut (e.g. "Ctrl + Shift + 3").');
+    if (SC_RESERVED.indexOf(combo) !== -1) return T('„' + shortcutLabel(combo) + '“ ist von Windows bzw. dem Browser belegt und kann nicht verwendet werden.',
+      '"' + shortcutLabel(combo) + '" is used by Windows or the browser and cannot be used.');
+    return '';
+  }
+  function normalizeShortcuts(src) {
+    const out = {}, used = new Set();
+    SHORTCUT_DEFS.forEach(d => {
+      const v = src && typeof src === 'object' ? src[d.id] : undefined;
+      if (typeof v !== 'string') return;
+      if (v === '') { out[d.id] = ''; return; }
+      if (!/^(Ctrl\+)?(Alt\+)?(Shift\+)?[A-Za-z0-9]+$/.test(v) || shortcutBlockReason(v) || used.has(v)) return;
+      out[d.id] = v; used.add(v);
+    });
+    SHORTCUT_DEFS.forEach(d => {
+      if (d.id in out) return;
+      out[d.id] = used.has(d.def) ? '' : d.def;
+      if (out[d.id]) used.add(d.def);
+    });
+    return out;
+  }
+  let shortcutBindings = normalizeShortcuts((() => { try { return JSON.parse(window.localStorage.getItem(LS_KEY_SHORTCUTS) || 'null'); } catch (e) { return null; } })());
+  let shortcutMap = new Map();
+  function rebuildShortcutMap() {
+    shortcutMap = new Map();
+    SHORTCUT_DEFS.forEach(d => { const c = shortcutBindings[d.id]; if (c) shortcutMap.set(c, d); });
+  }
+  function renderShortcutList() {
+    shortcutsPanel.querySelectorAll('.shortcut-key[data-sc]').forEach(k => {
+      const c = shortcutBindings[k.dataset.sc];
+      k.textContent = shortcutLabel(c);
+      k.classList.toggle('empty', !c);
+    });
+  }
+  function setShortcutBindings(b, persist) {
+    shortcutBindings = normalizeShortcuts(b);
+    rebuildShortcutMap();
+    if (persist) { try { window.localStorage.setItem(LS_KEY_SHORTCUTS, JSON.stringify(shortcutBindings)); } catch (e) {  } }
+    renderShortcutList();
+  }
+  rebuildShortcutMap();
+  renderShortcutList();
+  function isTypingTarget() {
+    const a = document.activeElement;
+    if (!a) return false;
+    const t = a.tagName;
+    return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || a.isContentEditable;
+  }
   window.addEventListener('keydown', (e) => {
-    if (e.key !== 'F5' || !e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
-    e.preventDefault();
-    if (e.repeat) return;
-    window.location.reload();
+    if (e.metaKey) return;
+    const combo = shortcutFromEvent(e);
+    if (!combo) return;
+    if (/^F([1-9]|1[01])$/.test(combo)) e.preventDefault();
+    const d = shortcutMap.get(combo);
+    if (!d) return;
+    const typing = isTypingTarget();
+    if (typing && !e.ctrlKey && !e.altKey && !/(^|\+)F\d+$/.test(combo)) return;
+    if (typing && e.getModifierState && e.getModifierState('AltGraph')) return;
+    if (d.dlg || d.noRep) { e.preventDefault(); if (e.repeat) return; }
+    if (d.dlg && document.querySelector('.paste-panel.open')) return;
+    if (d.act() !== false) e.preventDefault();
   });
-  window.addEventListener('keydown', (e) => {
-    const act = FKEY_ACTIONS[e.key];
-    if (!act || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
-    e.preventDefault();
-    if (e.repeat) return;
-    if (document.querySelector('.paste-panel.open')) return;
-    act();
+  let shortcutWork = null, shortcutRec = null, shortcutErr = null;
+  const scGrid = el('shortcutEditGrid'), scMsgEl = el('shortcutEditMsg');
+  function buildShortcutEditor() {
+    scGrid.textContent = '';
+    const row = (cls, name, id) => {
+      const r = document.createElement('div'); r.className = 'sc-row' + (cls ? ' ' + cls : '');
+      const n = document.createElement('span'); n.className = 'sc-name'; n.textContent = name;
+      const k = document.createElement('button'); k.type = 'button'; k.className = 'sc-key';
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'sc-del'; x.textContent = '✕';
+      if (id) { r.dataset.sc = id; k.dataset.sc = id; x.dataset.sc = id; k.title = T('Anklicken und die neue Tastenkombination drücken', 'Click and press the new key combination'); x.title = T('Kürzel entfernen', 'Remove shortcut'); }
+      r.append(n, k, x); scGrid.appendChild(r); return r;
+    };
+    const head = txt => { const h = document.createElement('div'); h.className = 'sc-group'; h.textContent = txt; scGrid.appendChild(h); };
+    SC_GROUPS.forEach(g => {
+      head(currentLang === 'en' ? g.en : g.de);
+      SHORTCUT_DEFS.filter(d => d.grp === g.id).forEach(d => row('', currentLang === 'en' ? d.en : d.de, d.id));
+    });
+    head(T('Fest', 'Fixed'));
+    [[T('Dialog bestätigen+verlassen', 'Apply + close dialog'), 'Enter'], [T('Menüs schließen / abbrechen', 'Close menus / cancel'), T('Escape', 'Esc')]].forEach(([n, k]) => {
+      const r = row('sc-fixed', n, null); const b = r.querySelector('.sc-key'); b.textContent = k; b.disabled = true; r.querySelector('.sc-del').style.visibility = 'hidden';
+    });
+    updateShortcutEditor();
+  }
+  function updateShortcutEditor() {
+    if (!shortcutWork) return;
+    scGrid.querySelectorAll('.sc-row[data-sc]').forEach(r => {
+      const id = r.dataset.sc, c = shortcutWork[id], k = r.querySelector('.sc-key'), x = r.querySelector('.sc-del');
+      const rec = shortcutRec === id;
+      k.textContent = rec ? T('Taste(n) drücken …', 'Press key(s) …') : shortcutLabel(c);
+      k.classList.toggle('empty', !c && !rec);
+      k.classList.toggle('recording', rec);
+      k.classList.toggle('error', !!(shortcutErr && shortcutErr.id === id));
+      x.style.visibility = c ? '' : 'hidden';
+    });
+    if (shortcutErr) {
+      const r = scGrid.querySelector('.sc-row[data-sc="' + shortcutErr.id + '"]');
+      scMsgEl.textContent = shortcutErr.msg; scMsgEl.hidden = false;
+      if (r) r.after(scMsgEl);
+    } else { scMsgEl.hidden = true; scMsgEl.textContent = ''; }
+  }
+  function stopShortcutRecording() { shortcutRec = null; shortcutErr = null; updateShortcutEditor(); }
+  scGrid.addEventListener('click', e => {
+    const k = e.target.closest('.sc-key[data-sc]'), x = e.target.closest('.sc-del[data-sc]');
+    if (k) {
+      shortcutErr = null;
+      shortcutRec = shortcutRec === k.dataset.sc ? null : k.dataset.sc;
+      updateShortcutEditor();
+      if (shortcutRec) k.focus();
+    } else if (x) {
+      shortcutWork[x.dataset.sc] = '';
+      shortcutRec = null; shortcutErr = null;
+      updateShortcutEditor();
+    }
   });
+  window.addEventListener('keydown', e => {
+    if (!shortcutRec) return;
+    if (!settingsPanel.classList.contains('open')) { shortcutRec = null; shortcutErr = null; return; }
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (e.code === 'Escape' && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) { stopShortcutRecording(); return; }
+    const combo = shortcutFromEvent(e);
+    if (!combo || e.repeat) return;
+    const id = shortcutRec;
+    const why = shortcutBlockReason(combo, e.metaKey);
+    const other = why ? null : SHORTCUT_DEFS.find(d => d.id !== id && shortcutWork[d.id] === combo);
+    if (why || other) {
+      shortcutErr = { id, combo, msg: why || T('„' + shortcutLabel(combo) + '“ ist schon belegt: ' + other.de, '"' + shortcutLabel(combo) + '" is already assigned: ' + other.en) };
+      updateShortcutEditor();
+      return;
+    }
+    shortcutWork[id] = combo;
+    settingsDirty.add('shortcuts');
+    stopShortcutRecording();
+  }, true);
+  document.addEventListener('mousedown', e => {
+    if (!shortcutRec) return;
+    const k = e.target.closest && e.target.closest('.sc-key[data-sc]');
+    if (!k || k.dataset.sc !== shortcutRec) stopShortcutRecording();
+  }, true);
+  el('btnShortcutEditOpen').addEventListener('click', () => {
+    shortcutWork = Object.assign({}, shortcutBindings); shortcutRec = null; shortcutErr = null;
+    buildShortcutEditor();
+    el('shortcutEditPanel').classList.add('open');
+  });
+  el('btnShortcutEditApply').addEventListener('click', () => {
+    shortcutRec = null; shortcutErr = null;
+    if (shortcutWork) setShortcutBindings(shortcutWork, true);
+    updateShortcutEditor();
+    el('shortcutEditPanel').classList.remove('open');
+  });
+  el('btnShortcutEditCancel').addEventListener('click', () => { stopShortcutRecording(); el('shortcutEditPanel').classList.remove('open'); });
+  el('btnShortcutEditReset').addEventListener('click', () => {
+    shortcutWork = Object.assign({}, SHORTCUT_DEFAULTS); shortcutRec = null; shortcutErr = null;
+    updateShortcutEditor();
+  });
+  document.addEventListener('cncsim:lang-changed', () => { renderShortcutList(); if (shortcutWork) buildShortcutEditor(); });
+  window.__cncsimShortcuts = { get: () => Object.assign({}, shortcutBindings), set: b => setShortcutBindings(b, true) };
+  window.__shortcutDefs = () => SHORTCUT_DEFS.map(d => ({ id: d.id, def: d.def, cur: shortcutBindings[d.id], label: shortcutLabel(shortcutBindings[d.id]) }));
   function emptySimulation() {
     clearProgram();
     clearDxf();
@@ -24468,16 +24721,10 @@ Max Mustermann (Anschrift wie oben)`,
     if (e.key === 'Enter') { e.preventDefault(); jumpToLine(); }
   });
 
-  window.addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    if (e.shiftKey) return;
-    if (playing || !points.length) return;
-    const activeTag = document.activeElement && document.activeElement.tagName;
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return;
-    e.preventDefault();
-
+  function stepCodeLine(dir) {
+    if (playing || !points.length) return false;
     if (scopeMode.type === 'op') {
-      if (e.key === 'ArrowLeft' && scrubIdx === 0) {
+      if (dir < 0 && scrubIdx === 0) {
         const prevOp = findAdjacentVisibleOp(scopeMode.index, -1);
         if (prevOp) {
           setScope({ type: 'op', index: prevOp.index });
@@ -24489,7 +24736,7 @@ Max Mustermann (Anschrift wie oben)`,
           requestRender();
           return;
         }
-      } else if (e.key === 'ArrowRight' && scrubIdx === points.length - 1) {
+      } else if (dir > 0 && scrubIdx === points.length - 1) {
         const nextOp = findAdjacentVisibleOp(scopeMode.index, 1);
         if (nextOp) {
           flashCodeLine(nextOp.startIdx);
@@ -24505,80 +24752,13 @@ Max Mustermann (Anschrift wie oben)`,
     }
 
     hasStarted = true;
-    scrubIdx = e.key === 'ArrowRight'
+    scrubIdx = dir > 0
       ? Math.min(scrubIdx + 1, points.length - 1)
       : Math.max(scrubIdx - 1, 0);
     scrubEl.value = String(scrubIdx);
     updateReadoutAndHighlight();
     requestRender();
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (e.code !== 'Space' && e.key !== ' ') return;
-    const activeTag = document.activeElement && document.activeElement.tagName;
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || (document.activeElement && document.activeElement.isContentEditable)) return;
-    if (!points.length) return;
-    e.preventDefault();
-    btnPlay.click();
-  });
-
-  window.addEventListener('keydown', (e) => {
-    const activeTag = document.activeElement && document.activeElement.tagName;
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || (document.activeElement && document.activeElement.isContentEditable)) return;
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyL') {
-      e.preventDefault();
-      toggleMeasure();
-      return;
-    }
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyW') {
-      e.preventDefault();
-      toggleMeasureAngle();
-      return;
-    }
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyO') {
-      e.preventDefault();
-      el('dxfFileInput').click();
-      return;
-    }
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyB') {
-      e.preventDefault();
-      openDxfThicknessPanel();
-      return;
-    }
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'ArrowRight') {
-      e.preventDefault();
-      gotoAdjacentOp(1);
-      return;
-    }
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'ArrowLeft') {
-      e.preventDefault();
-      gotoAdjacentOp(-1);
-      return;
-    }
-    if (e.key === 'Home') {
-      e.preventDefault();
-      goTopView();
-    }
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyL') {
-      e.preventDefault();
-      applyLanguage(currentLang === 'en' ? 'de' : 'en');
-    }
-    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyO') {
-      e.preventDefault();
-      el('fileInput').click();
-    }
-    if (e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && e.code === 'KeyW') {
-      e.preventDefault();
-      el('btnToolDxfImport').click();
-    }
-    if (e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && e.code === 'KeyS') {
-      e.preventDefault();
-      el('btnChuckDxfImport').click();
-    }
-  });
+  }
 
   let downPX = 0, downPY = 0, dragButton = 0;
   let pendingContextMenuAt = null;
