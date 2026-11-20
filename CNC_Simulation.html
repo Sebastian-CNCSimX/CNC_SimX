@@ -307,7 +307,7 @@
   #featuresPanel .paste-card { width: min(760px, 96vw); }   
   .features-body ul ul { margin-top: 3px; }
   
-  #settingsPanel .settings-card, #toolsPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
+  #settingsPanel .settings-card, #toolsPanel .settings-card, #ufPanel .settings-card { width: min(1400px, 96vw); max-width: none; height: min(820px, 92vh); display: flex; flex-direction: column; }
   .settings-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 6px 0 0; flex: none; }
   .settings-tab { padding: 8px 16px; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-muted); cursor: pointer; margin-bottom: -1px; }
   .settings-tab:hover { color: var(--ink); }
@@ -1771,6 +1771,14 @@
   .tool-dxf-import-preview { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
   
   .tool-dxf-import-help { flex: none; display: flex; flex-direction: column; gap: 8px; width: 260px; }
+  
+  .uf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; }
+  .uf-grid .color-field-inputs input { width: 110px; text-align: right; }
+  .uf-tag { color: var(--ink-faint, #8a929a); font-size: 11px; }
+  .uf-sub { margin-top: 10px; }
+  #ufPreviewCanvas { width: 260px; height: 420px; border: 1px solid var(--line, #d4d9de); border-radius: 6px; background: #f4f6f8; cursor: grab; }
+  .uf-help-svg { width: 260px; height: 300px; border: 1px solid var(--line, #d4d9de); border-radius: 6px; }
+  @media (max-width: 900px) { .uf-grid { grid-template-columns: 1fr; } }
   .tool-dxf-import-help-heading { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.4; }
   
   .tool-dxf-import-help-img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; display: block; -webkit-user-drag: none; user-select: none; }
@@ -2020,6 +2028,8 @@
           <div class="context-menu-divider"></div>
           
           <button class="menu-item" id="btnOpenTools" type="button" title="Werkzeugprofil, Spannfutter und Werkzeugdarstellung in einem Fenster mit Reitern" data-i18n-en="Tools" data-i18n-en-title="Tool profile, chuck and tool display in one window with tabs">Werkzeuge</button>
+          
+          <button class="menu-item" id="btnOpenUf" type="button" title="Unterfluraggregate (Fräser von unten) anlegen, kopieren, löschen - mit 3D-Vorschau" data-i18n-en="Under-table unit" data-i18n-en-title="Create, copy and delete under-table units (cutter from below) - with 3D preview">Unterfluraggregat</button>
           
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Alle Einstellungen sichern' gespeicherte Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Load all settings" data-i18n-en-title="Loads a settings file previously saved via 'Save all settings' and replaces all settings contained in it">Alle Einstellungen laden</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Save all settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Alle Einstellungen sichern</button>
@@ -2530,6 +2540,81 @@
     <button class="menu-item" id="btnToolAppearanceCutter" type="button" title="Darstellung des Fräsers in der 3D-Simulation festlegen (Drahtgitter oder gefüllt mit wählbarer Farbe/Transparenz)" data-i18n-en="Cutter" data-i18n-en-title="Set the display of the cutter in the 3D simulation (wireframe or filled with a selectable color/transparency)">Fräser</button>
   </div>
   <div id="toolsHiddenActions" hidden></div>
+</div>
+
+<div class="paste-panel" id="ufPanel">
+  <div class="paste-card settings-card">
+    <h3 data-i18n-en="Under-table unit">Unterfluraggregat</h3>
+    <div class="settings-body" id="ufBody">
+      <p class="panel-hint" data-i18n-en="Under-table units (UF) with a name. In the CNC program a UF is called at the tool change with &quot;; UF name&quot; or directly via the parameters (; ACHSMASS …). If both are present, the parameters in the program win. The cutter sits in the lower arm and cuts from below upwards.">Unterfluraggregate (UF) mit Namen anlegen. Im CNC-Programm wird ein UF beim Werkzeugwechsel über „; UF Name“ aufgerufen oder direkt über die Parameter (; ACHSMASS …). Stehen beide da, gelten die Parameter aus dem Programm. Der Fräser sitzt im Ausleger und fräst von unten nach oben.</p>
+      <div class="tool-dxf-import-body">
+        <div class="tool-dxf-import-controls">
+          <div class="scale-group">
+            <div class="scale-group-title" data-i18n-en="Saved under-table units">Gespeicherte Unterfluraggregate</div>
+            <select id="ufSelect" size="4" class="tool-dxf-profile-select"></select>
+            <div class="tool-dxf-profile-list-actions">
+              <button class="btn ghost small" id="btnUfNew" type="button" data-i18n-en="New">Neu</button>
+              <button class="btn ghost small" id="btnUfCopy" type="button" data-i18n-en="Copy">Kopieren</button>
+              <button class="btn ghost small" id="btnUfDelete" type="button" data-i18n-en="Delete">Löschen</button>
+            </div>
+          </div>
+          <div class="color-field-row"><span data-i18n-en="Name (; UF name)">Name (; UF Name)</span><input type="text" id="ufNameInput" class="filename-input" maxlength="60" placeholder="z. B. BeispielUF"></div>
+          <div class="uf-grid" id="ufParamGrid">
+            <div class="color-field-row"><span><span data-i18n-en="Axis distance">Achsmaß</span> <span class="uf-tag">; ACHSMASS</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_achsmass" data-uf="achsmass"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Max. reach depth">Max. Einfahrtiefe</span> <span class="uf-tag">; MAXEINFAHRTIEFE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_einfahrt" data-uf="einfahrt"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision width">Kollisionsbreite</span> <span class="uf-tag">; KOLLISIONSBREITE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_kbreite" data-uf="kbreite"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision length">Kollisionslänge</span> <span class="uf-tag">; KOLLISIONSLAENGE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_klaenge" data-uf="klaenge"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision height">Kollisionshöhe</span> <span class="uf-tag">; KOLLISIONSHOEHE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_khoehe" data-uf="khoehe"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Distance A/C axis">Abstand A/C-Achse</span> <span class="uf-tag">; ABSTAND_A_C</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ac" data-uf="ac"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Axis reference X">Achsreferenz X</span> <span class="uf-tag">; ACHSREFERENZ_X</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_arx" data-uf="arx"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Axis reference Y">Achsreferenz Y</span> <span class="uf-tag">; ACHSREFERENZ_Y</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ary" data-uf="ary"> mm</span></div>
+          </div>
+          <div class="scale-group-title uf-sub" data-i18n-en="Only for the display (not in the program)">Nur für die Darstellung (nicht im Programm)</div>
+          <div class="uf-grid" id="ufShapeGrid">
+            <div class="color-field-row"><span><span data-i18n-en="Height of lower arm">Höhe Ausleger unten</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_armH" data-uf="armH"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Height of upper head">Höhe Kopf oben</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehH" data-uf="gehH"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Head starts from front edge">Kopf ab Vorderkante</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehVorn" data-uf="gehVorn"> mm</span></div>
+          </div>
+          <p class="panel-hint" id="ufHint" hidden></p>
+        </div>
+        <div class="tool-dxf-import-preview">
+          <canvas id="ufPreviewCanvas" width="260" height="420"></canvas>
+          <p class="panel-hint" data-i18n-en="The 3D preview appears as soon as all parameters are entered. Drag = rotate. Blue = cutter (points upwards), red dashed = axis of rotation C.">3D-Vorschau erscheint, sobald alle Parameter eingegeben sind. Ziehen = drehen. Blau = Fräser (zeigt nach oben), rot gestrichelt = Drehachse C.</p>
+        </div>
+        <div class="tool-dxf-import-help">
+          <p class="tool-dxf-import-help-heading" data-i18n-en="Meaning of the dimensions (keyword in the CNC program):">Bedeutung der Maße (Schlüsselwort im CNC-Programm):</p>
+          <svg class="uf-help-svg" viewBox="0 0 260 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial,sans-serif" font-size="8.5">
+            <rect width="260" height="300" fill="#fff"/>
+            <text x="6" y="12" font-weight="bold" fill="#333">Draufsicht</text>
+            <rect x="40" y="30" width="190" height="62" fill="none" stroke="#222"/>
+            <line x1="20" y1="61" x2="250" y2="61" stroke="#d32f2f"/>
+            <circle cx="70" cy="61" r="6" fill="none" stroke="#1e63d6"/>
+            <line x1="176" y1="22" x2="176" y2="98" stroke="#d32f2f"/>
+            <line x1="40" y1="24" x2="230" y2="24" stroke="#222"/><text x="96" y="20" fill="#222">KOLLISIONSLAENGE</text>
+            <line x1="34" y1="30" x2="34" y2="92" stroke="#222"/><text x="2" y="40" fill="#222">KOLLISIONS-</text><text x="2" y="50" fill="#222">BREITE</text>
+            <line x1="46" y1="30" x2="46" y2="61" stroke="#d32f2f"/><text x="48" y="80" fill="#d32f2f">ACHSREFERENZ_Y</text>
+            <line x1="70" y1="104" x2="176" y2="104" stroke="#d32f2f"/><text x="102" y="114" fill="#d32f2f">ACHSMASS</text>
+            <line x1="40" y1="122" x2="176" y2="122" stroke="#d32f2f"/><text x="70" y="132" fill="#d32f2f">ACHSREFERENZ_X</text>
+            <text x="6" y="156" font-weight="bold" fill="#333">Seitenansicht</text>
+            <path d="M95 166 H230 V280 H40 V250 H160 V204 H95 Z" fill="#eef1f4" stroke="#222"/>
+            <line x1="176" y1="160" x2="176" y2="296" stroke="#d32f2f" stroke-dasharray="5 3"/>
+            <rect x="64" y="228" width="12" height="22" fill="#1e63d6"/>
+            <line x1="40" y1="218" x2="160" y2="218" stroke="#222"/><text x="44" y="214" fill="#222">MAXEINFAHRTIEFE</text>
+            <line x1="244" y1="204" x2="244" y2="250" stroke="#222"/><text x="256" y="200" fill="#222" text-anchor="end">KOLLISIONSHOEHE</text>
+            <text x="180" y="294" fill="#d32f2f">Drehachse C</text>
+            <text x="80" y="244" fill="#1e63d6">Fräser</text>
+          </svg>
+        </div>
+      </div>
+      <div class="settings-sec-actions">
+        <button class="btn ghost" id="btnUfSave" type="button" data-i18n-en="Save under-table unit">Unterfluraggregat speichern</button>
+      </div>
+    </div>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnUfOk" type="button">Ok</button>
+      <button class="btn ghost" id="btnUfCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
+    </div>
+  </div>
 </div>
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
@@ -8571,7 +8656,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 377;
+  const APP_RELEASE_NUMBER = 378;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8580,7 +8665,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '20.11.2026, 10:55 Uhr';
+  const APP_RELEASE_TIMESTAMP = '20.11.2026, 13:15 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -12964,6 +13049,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 378, date: '20.11.2026', items: [
+      { de: 'Unterfluraggregat (UF): Steht im Werkzeugwechsel eines Arbeitsgangs „; ACHSMASS …“ usw. oder „; UF Name“, fräst der Fräser von unten nach oben. Die Bearbeitung in „XBOTTOM“ wird mit Z von der Unterseite des Bauteils dargestellt, das Aggregat (Ausleger, Säule, Kopf) wird angezeigt, und die Abtragsimulation trägt von unten ab. Zwischen zwei XBOTTOM-Blöcken fährt das Werkzeug nach unten aus dem Bauteil zurück.',
+        en: 'Under-table unit (UF): if the tool change of a processing step contains "; ACHSMASS …" etc. or "; UF name", the cutter mills from below upwards. Machining inside "XBOTTOM" is shown with Z measured from the underside of the part, the unit (arm, column, head) is displayed, and the material removal simulation removes from below. Between two XBOTTOM blocks the tool retracts downwards out of the part.' },
+      { de: 'Neuer Menüpunkt Einstellungen → „Unterfluraggregat“: Unterfluraggregate mit Namen anlegen, kopieren und löschen, mit sofortiger 3D-Vorschau.',
+        en: 'New menu item Settings → "Under-table unit": create, copy and delete named under-table units, with an instant 3D preview.' },
+    ] },
     { release: 377, date: '20.11.2026', items: [
       { de: 'Neuer Reiter „Shortcuts“ in den Einstellungen: Tastenkürzel frei festlegen (bis zu drei Tasten, z. B. „Strg + Shift + 3“), mit rotem ✕ entfernen, „Standardwerte“ stellt die bisherige Belegung wieder her. Doppelte und von Windows/Browser belegte Kombinationen werden mit Hinweis abgelehnt. „? → Shortcuts“ zeigt die aktuelle Belegung.',
         en: 'New "Shortcuts" tab in the settings: assign keyboard shortcuts freely (up to three keys, e.g. "Ctrl + Shift + 3"), remove them with the red ✕, "Defaults" restores the previous assignment. Duplicate combinations and combinations used by Windows/the browser are rejected with a notice. "? → Shortcuts" shows the current assignment.' },
@@ -13809,6 +13900,112 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     lines.splice(b, first - b);
     return { text: lines.join(eol), removed: first - b };
   }
+  const UF_LS_KEY = 'cncsim.ufAggregates';
+  const UF_PARAM_KEYS = [
+    { k: 'achsmass', re: /^ACHSMASS$/, de: 'Achsmaß', en: 'Axis distance', tag: 'ACHSMASS', def: 113.54 },
+    { k: 'einfahrt', re: /^MAXEINFAHRTIEFE$/, de: 'Max. Einfahrtiefe', en: 'Max. reach depth', tag: 'MAXEINFAHRTIEFE', def: 150 },
+    { k: 'kbreite', re: /^KOLLISIONSBREITE$/, de: 'Kollisionsbreite', en: 'Collision width', tag: 'KOLLISIONSBREITE', def: 74 },
+    { k: 'klaenge', re: /^KOLLISIONSLAENGE$/, de: 'Kollisionslänge', en: 'Collision length', tag: 'KOLLISIONSLAENGE', def: 204 },
+    { k: 'khoehe', re: /^KOLL?IISIONSHOEHE$|^KOLLISIONSHOEHE$/, de: 'Kollisionshöhe', en: 'Collision height', tag: 'KOLLISIONSHOEHE', def: 110 },
+    { k: 'arx', re: /^ACHSREFERENZ_X$/, de: 'Achsreferenz X (Achs_r_x)', en: 'Axis reference X (Achs_r_x)', tag: 'ACHSREFERENZ_X', def: 146 },
+    { k: 'ary', re: /^ACHSREFERENZ_Y$/, de: 'Achsreferenz Y (Achs_r_y)', en: 'Axis reference Y (Achs_r_y)', tag: 'ACHSREFERENZ_Y', def: 37 },
+    { k: 'ac', re: /^ABSTAND_A_C$/, de: 'Abstand A/C-Achse', en: 'Distance A/C axis', tag: 'ABSTAND_A_C', def: 145 }
+  ];
+  const UF_SHAPE_KEYS = [
+    { k: 'armH', de: 'Höhe Ausleger unten', en: 'Height of lower arm', def: 40 },
+    { k: 'gehH', de: 'Höhe Kopf oben', en: 'Height of upper head', def: 70 },
+    { k: 'gehVorn', de: 'Kopf ab Vorderkante', en: 'Head starts from front edge', def: 55 }
+  ];
+  function ufDefaults(name) {
+    const o = { name: name || '' };
+    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS).forEach(d => { o[d.k] = d.def; });
+    return o;
+  }
+  function normalizeUf(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = ufDefaults(String(raw.name || '').trim());
+    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS).forEach(d => { const v = Number(raw[d.k]); if (Number.isFinite(v)) o[d.k] = v; });
+    return o;
+  }
+  function loadUfList() {
+    try { const a = JSON.parse(window.localStorage.getItem(UF_LS_KEY) || '[]'); return Array.isArray(a) ? a.map(normalizeUf).filter(u => u && u.name) : []; }
+    catch (e) { return []; }
+  }
+  function saveUfList(list) {
+    try { window.localStorage.setItem(UF_LS_KEY, JSON.stringify(list)); } catch (e) {  }
+  }
+  function findUfByName(name) {
+    const n = String(name || '').trim().toLowerCase();
+    return n ? loadUfList().find(u => u.name.toLowerCase() === n) || null : null;
+  }
+  function extractUfData(secLines) {
+    let name = null; const params = {};
+    for (const line of secLines) {
+      const m = /^\s*;\s*([A-Z_]+)\s+(\S+)/i.exec(line);
+      if (!m) continue;
+      const key = m[1].toUpperCase();
+      if (key === 'UF') { if (name === null) name = m[2]; continue; }
+      const d = UF_PARAM_KEYS.find(e => e.re.test(key));
+      if (!d || params[d.k] !== undefined) continue;
+      const v = parseFloat(m[2].replace(',', '.'));
+      if (Number.isFinite(v)) params[d.k] = v;
+    }
+    const hasParams = Object.keys(params).length > 0;
+    const saved = name ? findUfByName(name) : null;
+    if (!hasParams && !saved) return null;
+    const uf = Object.assign(saved ? normalizeUf(saved) : ufDefaults(name || ''), params);
+    uf.source = saved ? (hasParams ? 'mixed' : 'saved') : 'program';
+    uf.missing = name && !saved ? name : null;
+    return uf;
+  }
+  function ufPartInfo() {
+    let dims = null;
+    try { dims = readProgramPartDims(rawProgramText, activeMachineTypeName); } catch (e) { dims = null; }
+    if (dims && dims.z) return { bottom: dims.neg ? -Math.abs(dims.z) : 0, rect: [0, 0, Math.abs(dims.x), Math.abs(dims.y)] };
+    if (dxfKonturLoop && dxfKonturLoop.length && typeof dxfTransformPoint === 'function') {
+      const P = dxfKonturLoop.map(q => dxfTransformPoint({ x: q.x, y: q.y, z: q.z || 0 }));
+      const xs = P.map(q => q.x), ys = P.map(q => q.y), zb = Math.min.apply(null, P.map(q => q.z));
+      return { bottom: Math.min(zb, zb + Math.min(0, dxfThickness || 0)), rect: [Math.min.apply(null, xs), Math.min.apply(null, ys), Math.max.apply(null, xs), Math.max.apply(null, ys)] };
+    }
+    return { bottom: 0, rect: null };
+  }
+  function applyUfToPoints(sec, pts) {
+    if (!sec || !sec.uf || !pts.length) return pts;
+    const uf = sec.uf, info = ufPartInfo(), bottom = info.bottom;
+    const blocks = [];
+    let open = null;
+    sec.lines.forEach((l, k) => {
+      if (!/^\s*XBOTTOM\b/i.test(l)) return;
+      const idx = sec.startIdx + k;
+      if (/^\s*XBOTTOM\s*$/i.test(l)) { if (open !== null) { blocks.push([open, idx]); open = null; } }
+      else { if (open !== null) blocks.push([open, idx - 1]); open = idx; }
+    });
+    if (open !== null) blocks.push([open, sec.startIdx + sec.lines.length]);
+    const blockOf = p => { if (!blocks.length) return 0; for (let b = 0; b < blocks.length; b++) if (p.lineIdx >= blocks[b][0] && p.lineIdx <= blocks[b][1]) return b; return -1; };
+    const dirFor = (x, y) => {
+      const r = info.rect; if (!r) return [-1, 0];
+      const c = [[x - r[0], [-1, 0]], [r[2] - x, [1, 0]], [y - r[1], [0, -1]], [r[3] - y, [0, 1]]];
+      c.sort((a, b) => a[0] - b[0]); return c[0][1];
+    };
+    const out = [];
+    let cur = -2, dir = null, approach = null, last = null;
+    const retract = () => { if (last) out.push(Object.assign({}, last, { z: approach, ufZ: bottom - approach, rapid: true, ufRetract: true })); last = null; };
+    pts.forEach(p => {
+      const b = blockOf(p);
+      if (b !== cur) { retract(); cur = b; dir = null; approach = null; }
+      if (b < 0) { out.push(p); return; }
+      const q = Object.assign({}, p, { z: bottom - p.z, ufZ: p.z, uf, axisOverride: { x: 0, y: 0, z: -1 } });
+      if (blocks.length && p.lineIdx === blocks[b][0]) Object.assign(q, { z: bottom - 0.5, ufZ: 0.5, rapid: true });
+      if (!dir) dir = dirFor(q.x, q.y);
+      q.ufDir = dir;
+      if (approach === null) approach = Math.min(q.z, bottom - 0.5);
+      out.push(q); last = q;
+    });
+    retract();
+    return out;
+  }
+  window.__ufPoints = () => points.map(p => p.uf ? { z: p.z, ufZ: p.ufZ, rapid: !!p.rapid, retract: !!p.ufRetract, line: p.lineIdx, op: p.opIndex,
+    name: p.uf.name, source: p.uf.source, missing: p.uf.missing, achsmass: p.uf.achsmass, dir: p.ufDir } : null);
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
     if (activeMachineTypeName === BIESSE_CIX_NAME) {
@@ -13837,6 +14034,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const toolChange = secLines.some(l => TOOL_CHANGE_RE.test(l));
         if (!ownTool && !toolChange && lastTool) { Object.assign(sec, lastTool); sec.toolInherited = true; return; }
         sec.toolInherited = false;
+        sec.uf = extractUfData(secLines);
         sec.toolRadius = toolData.radius;
         sec.toolLength = toolData.length;
         sec.toolIsBlade = toolData.isBlade;
@@ -13844,7 +14042,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         sec.toolMode = toolData.toolMode;
         sec.toolProfileId = resolveProfileMarker('tool', toolData.toolProfileId);
         sec.chuckProfileId = resolveProfileMarker('chuck', toolData.chuckProfileId);
-        if (ownTool) lastTool = { toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolType: sec.toolType, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId };
+        if (ownTool) lastTool = { toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolType: sec.toolType, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId, uf: sec.uf };
         else if (toolChange) lastTool = null;
       });
     }
@@ -14425,7 +14623,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (opSections.length) {
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
-            const pts = extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
+            const pts = applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
             segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId });
           });
         } else if (current.sections.length) {
@@ -14444,7 +14642,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const isActive = sec.index === mode.index;
           const state = newModalState();
           const axesSink = isActive ? usedAxes : new Set();
-          const pts = extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex);
+          const pts = applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
@@ -14521,7 +14719,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (opSections.length) {
       opSections.forEach(sec => {
         const state = newModalState();
-        ptsPerChunk.push(extractMotion(sec.lines, sec.startIdx, state, new Set(), activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
+        ptsPerChunk.push(applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, new Set(), activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex)));
       });
     } else {
       splitAtOriginResets(cur.lines).forEach(chunk => {
@@ -17217,7 +17415,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (q.rapid || hidden(q) || !q.toolIsBlade || !(q.toolRadius > 0) || Math.hypot(q.x - list[i - 1].x, q.y - list[i - 1].y, q.z - list[i - 1].z) < 0.01) continue;
         if ((q.a || 0) !== 0 || (q.b || 0) !== 0 || (q.c || 0) !== 0) nBlade5++;
       }
-      const tiltDex = nTilt >= 2 || nBlade5 > 0;
+      const nUf = list.some((q, i) => i > 0 && q.uf && !q.rapid && !hidden(q) && q.toolRadius > 0) ? 1 : 0;
+      const tiltDex = nTilt >= 2 || nBlade5 > 0 || nUf > 0;
       let nHoriz = 0;
       if (abtragModePref === 'horiz') for (let i = 1; i < list.length && !nHoriz; i++) {
         const q = list[i];
@@ -19629,6 +19828,48 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
   }
 
+  const UF_COLORS = { alu: '#cfd4d9', red: '#c62828', steel: '#7d848b', tool: '#1e63d6' };
+  function ufBodyParts(uf, tip, toolLength, dir) {
+    const d = dir || [-1, 0], n = [-d[1], d[0]];
+    const armTop = tip.z - toolLength - 6, xF = -uf.arx, xB = uf.klaenge - uf.arx, yA = -uf.ary, yB = uf.kbreite - uf.ary;
+    const W = (xl, yl, z) => ({ x: tip.x + (xl + uf.achsmass) * d[0] + yl * n[0], y: tip.y + (xl + uf.achsmass) * d[1] + yl * n[1], z });
+    const parts = [];
+    const box = (x0, x1, z0, z1, color) => { if (x1 - x0 > 0.01 && z1 - z0 > 0.01) parts.push({ type: 'box', color, z0, z1, ring: [W(x0, yA, 0), W(x1, yA, 0), W(x1, yB, 0), W(x0, yB, 0)] }); };
+    box(xF, xB, armTop - uf.armH, armTop, 'alu');
+    box(xF + uf.einfahrt, xB, armTop, armTop + uf.khoehe, 'alu');
+    const zG = armTop + uf.khoehe + uf.gehH;
+    box(xF + uf.gehVorn, xB, armTop + uf.khoehe, zG, 'red');
+    parts.push({ type: 'cyl', color: 'steel', origin: W(-uf.achsmass, 0, armTop), profile: [{ r: 25, dist: 0 }, { r: 25, dist: 6 }] });
+    parts.push({ type: 'cyl', color: 'steel', origin: W(0, 0, zG), profile: [{ r: 31.5, dist: 0 }, { r: 23.5, dist: 45 }] });
+    return { parts, axisTop: W(0, 0, zG + 45), axisBottom: W(0, 0, armTop - uf.armH) };
+  }
+  function drawUfBody(p, tip, proj) {
+    const body = ufBodyParts(p.uf, tip, p.toolLength, p.ufDir);
+    const up = { x: 0, y: 0, z: 1 }, u = { x: 0, y: 1, z: 0 }, v = { x: -1, y: 0, z: 0 };
+    const alpha = Math.max(0, Math.min(100, colletAppearance.transparency || 0));
+    body.parts.forEach(part => {
+      const app = { filled: true, color: UF_COLORS[part.color], transparency: alpha };
+      if (part.type === 'cyl') { drawToolHolder(part.origin, up, u, v, proj, part.profile, app, 32); return; }
+      const ringAt = z => part.ring.map(c => ({ x: c.x, y: c.y, z })).concat([{ x: part.ring[0].x, y: part.ring[0].y, z }]);
+      const world = [ringAt(part.z0), ringAt(part.z1)];
+      const screen = world.map(r => r.map(c => proj(toRender(c))));
+      fillRevolutionBody(world, screen, app, { startCapNormal: { x: 0, y: 0, z: -1 }, endCapNormal: up }, { x: 0, y: 1, z: 0 });
+      ctx.strokeStyle = cssVar('--tool-color'); ctx.lineWidth = 1.1; ctx.globalAlpha = 0.85; ctx.setLineDash([]);
+      for (let k = 0; k < 4; k++) {
+        const a0 = screen[0][k], a1 = screen[0][k + 1], b0 = screen[1][k], b1 = screen[1][k + 1];
+        ctx.beginPath();
+        if (a0 && a1) { ctx.moveTo(a0.x, a0.y); ctx.lineTo(a1.x, a1.y); }
+        if (b0 && b1) { ctx.moveTo(b0.x, b0.y); ctx.lineTo(b1.x, b1.y); }
+        if (a0 && b0) { ctx.moveTo(a0.x, a0.y); ctx.lineTo(b0.x, b0.y); }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    });
+    const a = proj(toRender(body.axisBottom)), b = proj(toRender(body.axisTop));
+    if (a && b) { ctx.strokeStyle = '#e53935'; ctx.lineWidth = 1; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]); }
+    window.__lastUfRenderInfo = { name: p.uf.name, dir: (p.ufDir || [-1, 0]).slice(), parts: body.parts.length, axis: { x: body.axisTop.x, y: body.axisTop.y } };
+  }
+
   function drawTool(proj) {
     toolSnapPoints = []; toolSnapRings = [];
     const p = points[scrubIdx];
@@ -19732,6 +19973,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
 
+    if (p.uf) { drawUfBody(p, tip, proj); return; }
     if (showToolHolder) {
       const chuckProfileEntry = p.chuckProfileId ? getChuckDxfProfileById(p.chuckProfileId) : null;
       const chuckRenderProfile = chuckProfileEntry ? buildChuckProfileForRender(chuckProfileEntry) : null;
@@ -19791,7 +20033,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     rows += '<div class="readout-sep"></div>';
     rows += `<div class="readout-row"><span class="k">X</span><span class="v">${fmt(p.x)} mm</span></div>`;
     rows += `<div class="readout-row"><span class="k">Y</span><span class="v">${fmt(p.y)} mm</span></div>`;
-    rows += `<div class="readout-row"><span class="k">Z</span><span class="v">${fmt(p.z)} mm</span></div>`;
+    if (p.uf && p.ufZ !== undefined) rows += `<div class="readout-row" title="${T('Unterfluraggregat: Z von der Unterseite des Bauteils', 'Under-table unit: Z measured from the underside of the part')}"><span class="k">Z ${T('(unten)', '(bottom)')}</span><span class="v">${fmt(p.ufZ)} mm</span></div>`;
+    else rows += `<div class="readout-row"><span class="k">Z</span><span class="v">${fmt(p.z)} mm</span></div>`;
     const axesOrder = ['C', 'A', 'B'];
     const present = axesOrder.filter(a => usedAxes.has(a));
     if (present.length) {
@@ -19805,6 +20048,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       rows += '<div class="readout-sep"></div>';
       rows += `<div class="readout-row" title="${T('Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)', 'Tool data read from the program (see the tool eye icon in the toolbar)')}"><span class="k">${T('Werkzeug ⌀', 'Tool ⌀')}</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
       rows += `<div class="readout-row"><span class="k">${p.toolIsBlade ? T('Sägeblattstärke', 'Blade thickness') : T('Länge', 'Length')}</span><span class="v">${fmt(p.toolLength)} mm</span></div>`;
+    }
+    if (p.uf) {
+      const nm = p.uf.source === 'program' ? T('aus Programm', 'from program') : escapeHtml(p.uf.name);
+      rows += `<div class="readout-row uf" title="${T('Unterfluraggregat - fräst von unten', 'Under-table unit - cuts from below')}"><span class="k">${T('Unterflur', 'Under-table')}</span><span class="v">${nm}</span></div>`;
     }
     rows += `<span class="move-tag ${p.rapid ? '' : 'feed'}">${p.rapid ? T('Eilgang · G0', 'Rapid · G0') : T('Vorschub', 'Feed')}</span>`;
     readoutEl.innerHTML = rows;
@@ -20425,6 +20672,150 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   window.__openTools = (tab, key) => openTools(tab, key);
   window.__toolsState = () => ({ open: toolsPanel.classList.contains('open'), tab: toolsTab, kind: el('toolsLookKind').value, dirty: Array.from(toolsDirty),
     unsaved: TOOLS_SECTIONS.filter(s => { const f = el(s.panel).__unsaved; return typeof f === 'function' && f(); }).map(s => s.key) });
+
+  (function initUfPanel() {
+    const panel = el('ufPanel'), sel = el('ufSelect'), nameIn = el('ufNameInput'), hint = el('ufHint'), cv = el('ufPreviewCanvas');
+    const KEYS = UF_PARAM_KEYS.concat(UF_SHAPE_KEYS);
+    let list = [], cur = -1, dirty = false, changed = false, yaw = -2.35, pitch = 0.42;
+    const field = k => el('ufIn_' + k);
+    const num = s => { const v = parseFloat(String(s == null ? '' : s).trim().replace(',', '.')); return Number.isFinite(v) ? v : null; };
+    const fmtNum = v => (Math.round(v * 100) / 100).toFixed(2);
+    function fill(uf) {
+      nameIn.value = uf ? uf.name : '';
+      KEYS.forEach(d => { field(d.k).value = uf ? fmtNum(uf[d.k]) : fmtNum(d.def); });
+      dirty = false; draw();
+    }
+    function read() {
+      const uf = { name: nameIn.value.trim().replace(/\s+/g, '_') }, bad = [];
+      KEYS.forEach(d => {
+        const v = num(field(d.k).value); uf[d.k] = v;
+        const okv = d.k === 'ac' ? true : (d.k === 'gehVorn' ? v !== null && v >= 0 : v !== null && v > 0);
+        field(d.k).classList.toggle('invalid', !okv);
+        if (!okv) bad.push(T(d.de, d.en));
+      });
+      if (uf.ac === null) uf.ac = 0;
+      return { uf, bad };
+    }
+    function renderList() {
+      sel.innerHTML = '';
+      list.forEach((u, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = u.name; sel.appendChild(o); });
+      sel.value = cur >= 0 ? String(cur) : '';
+    }
+    function showHint(text) { hint.textContent = text || ''; hint.hidden = !text; }
+    function draw() {
+      const g = cv.getContext('2d'), W = cv.width, H = cv.height;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.fillStyle = '#f4f6f8'; g.fillRect(0, 0, W, H);
+      const { uf, bad } = read();
+      if (bad.length) {
+        g.fillStyle = '#7a828a'; g.font = '13px Segoe UI, Arial, sans-serif'; g.textAlign = 'center';
+        g.fillText(T('Bitte alle Maße eingeben', 'Please enter all dimensions'), W / 2, H / 2);
+        showHint(T('Fehlt oder ungültig: ', 'Missing or invalid: ') + bad.join(', '));
+        return;
+      }
+      const warn = [];
+      if (uf.achsmass > uf.arx) warn.push(T('Achsmaß ist größer als Achsreferenz X - der Fräser läge vor dem Ausleger.', 'Axis distance is larger than axis reference X - the cutter would be in front of the arm.'));
+      if (uf.einfahrt >= uf.klaenge) warn.push(T('Max. Einfahrtiefe ist nicht kleiner als die Kollisionslänge - keine Säule.', 'Max. reach depth is not smaller than the collision length - no column.'));
+      if (uf.ary > uf.kbreite) warn.push(T('Achsreferenz Y ist größer als die Kollisionsbreite.', 'Axis reference Y is larger than the collision width.'));
+      showHint(warn.join(' '));
+      const L = 42, R = 6, body = ufBodyParts(uf, { x: 0, y: 0, z: 0 }, L, [1, 0]);
+      const faces = [];
+      const N = 24;
+      const ring = (c, r, z) => Array.from({ length: N }, (_, i) => [c.x + r * Math.cos(i / N * 2 * Math.PI), c.y + r * Math.sin(i / N * 2 * Math.PI), z]);
+      const cyl = (c, z0, z1, r0, r1, color) => {
+        const A = ring(c, r0, z0), B = ring(c, r1, z1);
+        for (let i = 0; i < N; i++) { const j = (i + 1) % N; faces.push({ pts: [A[i], A[j], B[j], B[i]], color }); }
+        faces.push({ pts: A.slice().reverse(), color }); faces.push({ pts: B, color });
+      };
+      body.parts.forEach(p => {
+        const color = UF_COLORS[p.color];
+        if (p.type === 'cyl') { cyl(p.origin, p.origin.z, p.origin.z + p.profile[1].dist, p.profile[0].r, p.profile[1].r, color); return; }
+        const b = p.ring.map(q => [q.x, q.y, p.z0]), t = p.ring.map(q => [q.x, q.y, p.z1]);
+        for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; faces.push({ pts: [b[i], b[j], t[j], t[i]], color }); }
+        faces.push({ pts: b.slice().reverse(), color }); faces.push({ pts: t, color });
+      });
+      cyl({ x: 0, y: 0 }, -L, 0, R, R, UF_COLORS.tool);
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const view = q => { const x1 = q[0] * cy - q[1] * sy, y1 = q[0] * sy + q[1] * cy; return [x1, q[2] * cp - y1 * sp, y1 * cp + q[2] * sp]; };
+      const V = faces.map(f => ({ v: f.pts.map(view), color: f.color }));
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      V.forEach(f => f.v.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }));
+      const sc = Math.min((W - 24) / (x1 - x0 || 1), (H - 24) / (y1 - y0 || 1)), ox = W / 2 - (x0 + x1) / 2 * sc, oy = H / 2 + (y0 + y1) / 2 * sc;
+      const S = q => [ox + q[0] * sc, oy - q[1] * sc];
+      const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16); const f = c => Math.round(Math.min(255, c * k)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
+      V.forEach(f => {
+        const a = f.v[0], b = f.v[1], c = f.v[2];
+        const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = c[0] - a[0], wy = c[1] - a[1], wz = c[2] - a[2];
+        const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, nl = Math.hypot(nx, ny, nz) || 1;
+        f.front = -nz / nl; f.light = 0.55 + 0.45 * Math.max(0, -(0.35 * nx + 0.75 * ny + 0.55 * nz) / nl);
+        f.depth = f.v.reduce((s, q) => s + q[2], 0) / f.v.length;
+      });
+      V.filter(f => f.front > 0).sort((p, q) => p.depth - q.depth).forEach(f => {
+        g.beginPath(); f.v.forEach((q, i) => { const s = S(q); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); }); g.closePath();
+        g.fillStyle = shade(f.color, f.light); g.fill();
+        if (f.v.length === 4) { g.strokeStyle = 'rgba(40,46,52,.55)'; g.lineWidth = 0.7; g.stroke(); }
+      });
+      const a = S(view([body.axisBottom.x, body.axisBottom.y, body.axisBottom.z - 15])), b = S(view([body.axisTop.x, body.axisTop.y, body.axisTop.z + 15]));
+      g.strokeStyle = '#e53935'; g.lineWidth = 1; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.setLineDash([]);
+      cv.__ufDrawn = faces.length;
+    }
+    let drag = null;
+    cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - drag[0]) * 0.01; pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY - drag[1]) * 0.01)); drag = [e.clientX, e.clientY]; draw(); });
+    cv.addEventListener('pointerup', () => { drag = null; });
+    panel.addEventListener('input', e => { if (e.target.matches('input')) { dirty = true; draw(); } });
+    function confirmDiscard() {
+      return !dirty || confirm(T('Das Unterfluraggregat ist noch nicht gespeichert.\n\nÄnderungen verwerfen?', 'The under-table unit is not saved yet.\n\nDiscard the changes?'));
+    }
+    sel.addEventListener('change', () => {
+      const i = parseInt(sel.value, 10);
+      if (i === cur) return;
+      if (!confirmDiscard()) { sel.value = cur >= 0 ? String(cur) : ''; return; }
+      cur = Number.isFinite(i) ? i : -1; fill(list[cur] || null);
+    });
+    function uniqueName(base) {
+      let n = base, k = 2;
+      while (list.some(u => u.name.toLowerCase() === n.toLowerCase())) n = base + '_' + (k++);
+      return n;
+    }
+    function persist() { saveUfList(list); changed = true; renderList(); }
+    function save() {
+      const { uf, bad } = read();
+      if (!uf.name) { showHint(T('Bitte einen Namen eingeben.', 'Please enter a name.')); nameIn.focus(); return false; }
+      if (bad.length) { showHint(T('Fehlt oder ungültig: ', 'Missing or invalid: ') + bad.join(', ')); return false; }
+      if (list.some((u, i) => i !== cur && u.name.toLowerCase() === uf.name.toLowerCase())) { showHint(T('Diesen Namen gibt es schon.', 'This name already exists.')); nameIn.focus(); return false; }
+      const n = normalizeUf(uf);
+      if (cur >= 0) list[cur] = n; else { list.push(n); cur = list.length - 1; }
+      persist(); fill(n); return true;
+    }
+    el('btnUfSave').addEventListener('click', save);
+    el('btnUfNew').addEventListener('click', () => { if (!confirmDiscard()) return; cur = -1; renderList(); fill(null); nameIn.value = uniqueName('UF'); dirty = true; nameIn.focus(); draw(); });
+    el('btnUfCopy').addEventListener('click', () => {
+      if (cur < 0 || !confirmDiscard()) return;
+      const c = Object.assign({}, list[cur], { name: uniqueName(list[cur].name + '_Kopie') });
+      list.push(c); cur = list.length - 1; persist(); fill(c);
+    });
+    el('btnUfDelete').addEventListener('click', () => {
+      if (cur < 0) return;
+      if (!confirm(T('Unterfluraggregat „' + list[cur].name + '“ löschen?', 'Delete under-table unit "' + list[cur].name + '"?'))) return;
+      list.splice(cur, 1); cur = list.length ? Math.min(cur, list.length - 1) : -1; persist(); fill(list[cur] || null);
+    });
+    function close() {
+      panel.classList.remove('open');
+      if (changed && rawProgramText && /^\s*;\s*UF\s+\S/im.test(rawProgramText)) displayCurrentProgram();
+      changed = false;
+    }
+    el('btnUfOk').addEventListener('click', () => { if (dirty && !save()) return; close(); });
+    el('btnUfCancel').addEventListener('click', () => { if (!confirmDiscard()) return; close(); });
+    function openUf() {
+      closeAllMenus(); closeContextMenu();
+      list = loadUfList(); cur = list.length ? 0 : -1; changed = false; renderList(); fill(list[cur] || null);
+      if (cur < 0) { nameIn.value = 'BeispielUF'; dirty = true; draw(); }
+      panel.classList.add('open');
+    }
+    el('btnOpenUf').addEventListener('click', openUf);
+    window.__uf = { open: openUf, state: () => ({ open: panel.classList.contains('open'), cur, dirty, names: list.map(u => u.name), hint: hint.hidden ? '' : hint.textContent, drawn: cv.__ufDrawn || 0 }),
+      setYawPitch: (y, p) => { yaw = y; pitch = p; draw(); } };
+  })();
 
   const TOOLBAR_LAYOUT_KEY = 'cncsim.toolbarLayout';
   const TOOLBAR_GROUPS = [
