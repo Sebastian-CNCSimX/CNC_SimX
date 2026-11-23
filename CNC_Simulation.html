@@ -1008,6 +1008,8 @@
   
   .code-line .ln { text-align: right; padding-right: 8px; color: var(--font-code-linenum, var(--ink-faint)); user-select: none; }
   .code-line .tx { color: var(--font-code-text, var(--ink)); overflow-x: auto; }
+  
+  .code-line.op-title .tx { font-weight: 700; }
   .code-line.active-line {
     background: var(--accent-soft);
     border-left-color: var(--accent);
@@ -1774,7 +1776,10 @@
   
   .uf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; }
   .uf-grid .color-field-inputs input { width: 110px; text-align: right; }
-  .uf-tag { color: var(--ink-faint, #8a929a); font-size: 11px; }
+  
+  .uf-tag { display: block; color: var(--ink-faint, #8a929a); font-size: calc(1em - 1px); line-height: 1.25; white-space: nowrap; }
+  #ufPanel .tool-dxf-import-help { width: 400px; }
+  #ufPanel .uf-help-svg { width: 400px; height: 462px; }
   .uf-sub { margin-top: 10px; }
   #ufPreviewCanvas { width: 260px; height: 420px; border: 1px solid var(--line, #d4d9de); border-radius: 6px; background: #f4f6f8; cursor: grab; }
   .uf-help-svg { width: 260px; height: 300px; border: 1px solid var(--line, #d4d9de); border-radius: 6px; }
@@ -2558,7 +2563,7 @@
               <button class="btn ghost small" id="btnUfDelete" type="button" data-i18n-en="Delete">Löschen</button>
             </div>
           </div>
-          <div class="color-field-row"><span data-i18n-en="Name (; UF name)">Name (; UF Name)</span><input type="text" id="ufNameInput" class="filename-input" maxlength="60" placeholder="z. B. BeispielUF"></div>
+          <div class="color-field-row"><span><span data-i18n-en="Name">Name</span><span class="uf-tag">(; UF Name)</span></span><input type="text" id="ufNameInput" class="filename-input" maxlength="60" placeholder="z. B. BeispielUF"></div>
           <div class="uf-grid" id="ufParamGrid">
             <div class="color-field-row"><span><span data-i18n-en="Axis distance">Achsmaß</span> <span class="uf-tag">; ACHSMASS</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_achsmass" data-uf="achsmass"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Max. reach depth">Max. Einfahrtiefe</span> <span class="uf-tag">; MAXEINFAHRTIEFE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_einfahrt" data-uf="einfahrt"> mm</span></div>
@@ -2567,6 +2572,9 @@
             <div class="color-field-row"><span><span data-i18n-en="Collision height">Kollisionshöhe</span> <span class="uf-tag">; KOLLISIONSHOEHE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_khoehe" data-uf="khoehe"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Axis reference X">Achsreferenz X</span> <span class="uf-tag">; ACHSREFERENZ_X</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_arx" data-uf="arx"> mm</span></div>
             <div class="color-field-row"><span><span data-i18n-en="Axis reference Y">Achsreferenz Y</span> <span class="uf-tag">; ACHSREFERENZ_Y</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ary" data-uf="ary"> mm</span></div>
+          </div>
+          <div class="uf-grid">
+            <div class="color-field-row"><span><span data-i18n-en="Angle offset">Winkeloffset</span><span class="uf-tag" data-i18n-en="(machine, added to a=)">(Maschine, wird auf a= addiert)</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_offset" data-uf="offset"> °</span></div>
           </div>
           <div class="scale-group-title uf-sub" data-i18n-en="Only for the display (not in the program)">Nur für die Darstellung (nicht im Programm)</div>
           <div class="uf-grid" id="ufShapeGrid">
@@ -2586,24 +2594,24 @@
         </div>
         <div class="tool-dxf-import-help">
           <p class="tool-dxf-import-help-heading" data-i18n-en="Meaning of the dimensions (keyword in the CNC program):">Bedeutung der Maße (Schlüsselwort im CNC-Programm):</p>
-          <svg class="uf-help-svg" viewBox="0 0 260 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial,sans-serif" font-size="8.5">
+          <svg class="uf-help-svg" viewBox="0 0 260 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial,sans-serif" font-size="7.5">
             <rect width="260" height="300" fill="#fff"/>
             <text x="6" y="12" font-weight="bold" fill="#333">Draufsicht</text>
             <rect x="40" y="30" width="190" height="62" fill="none" stroke="#222"/>
             <line x1="20" y1="61" x2="250" y2="61" stroke="#d32f2f"/>
             <circle cx="70" cy="61" r="6" fill="none" stroke="#1e63d6"/>
             <line x1="176" y1="22" x2="176" y2="98" stroke="#d32f2f"/>
-            <line x1="40" y1="24" x2="230" y2="24" stroke="#222"/><text x="96" y="20" fill="#222">KOLLISIONSLAENGE</text>
-            <line x1="34" y1="30" x2="34" y2="92" stroke="#222"/><text x="2" y="40" fill="#222">KOLLISIONS-</text><text x="2" y="50" fill="#222">BREITE</text>
-            <line x1="46" y1="30" x2="46" y2="61" stroke="#d32f2f"/><text x="48" y="80" fill="#d32f2f">ACHSREFERENZ_Y</text>
-            <line x1="70" y1="104" x2="176" y2="104" stroke="#d32f2f"/><text x="102" y="114" fill="#d32f2f">ACHSMASS</text>
-            <line x1="40" y1="122" x2="176" y2="122" stroke="#d32f2f"/><text x="70" y="132" fill="#d32f2f">ACHSREFERENZ_X</text>
+            <line x1="40" y1="24" x2="230" y2="24" stroke="#222"/><text x="135" y="20" fill="#222" text-anchor="middle">KOLLISIONSLAENGE <tspan id="ufHv_klaenge" font-weight="bold"></tspan></text>
+            <line x1="34" y1="30" x2="34" y2="92" stroke="#222"/><text x="2" y="40" fill="#222">KOLLISIONS-</text><text x="2" y="49" fill="#222">BREITE</text><text x="2" y="58" fill="#222" font-weight="bold" id="ufHv_kbreite"></text>
+            <line x1="46" y1="30" x2="46" y2="61" stroke="#d32f2f"/><text x="48" y="78" fill="#d32f2f">ACHSREFERENZ_Y <tspan id="ufHv_ary" font-weight="bold"></tspan></text>
+            <line x1="70" y1="104" x2="176" y2="104" stroke="#d32f2f"/><text x="123" y="114" fill="#d32f2f" text-anchor="middle">ACHSMASS <tspan id="ufHv_achsmass" font-weight="bold"></tspan></text>
+            <line x1="40" y1="122" x2="176" y2="122" stroke="#d32f2f"/><text x="108" y="132" fill="#d32f2f" text-anchor="middle">ACHSREFERENZ_X <tspan id="ufHv_arx" font-weight="bold"></tspan></text>
             <text x="6" y="156" font-weight="bold" fill="#333">Seitenansicht</text>
             <path d="M95 166 H230 V280 H40 V250 H160 V204 H95 Z" fill="#eef1f4" stroke="#222"/>
             <line x1="176" y1="160" x2="176" y2="296" stroke="#d32f2f" stroke-dasharray="5 3"/>
             <rect x="64" y="228" width="12" height="22" fill="#1e63d6"/>
-            <line x1="40" y1="218" x2="160" y2="218" stroke="#222"/><text x="44" y="214" fill="#222">MAXEINFAHRTIEFE</text>
-            <line x1="244" y1="204" x2="244" y2="250" stroke="#222"/><text x="256" y="200" fill="#222" text-anchor="end">KOLLISIONSHOEHE</text>
+            <line x1="40" y1="218" x2="160" y2="218" stroke="#222"/><text x="100" y="214" fill="#222" text-anchor="middle">MAXEINFAHRTIEFE <tspan id="ufHv_einfahrt" font-weight="bold"></tspan></text>
+            <line x1="244" y1="204" x2="244" y2="250" stroke="#222"/><text x="256" y="192" fill="#222" text-anchor="end">KOLLISIONSHOEHE</text><text x="256" y="200" fill="#222" text-anchor="end" font-weight="bold" id="ufHv_khoehe"></text>
             <text x="180" y="294" fill="#d32f2f">Drehachse C</text>
             <text x="80" y="244" fill="#1e63d6">Fräser</text>
           </svg>
@@ -8670,7 +8678,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 382;
+  const APP_RELEASE_NUMBER = 383;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8679,7 +8687,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '20.11.2026, 16:50 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 07:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13063,6 +13071,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 383, date: '23.11.2026', items: [
+      { de: 'CNC-Programmcode: Die Kommentarzeile jedes erkannten Arbeitsgangs wird fett dargestellt.',
+        en: 'CNC program code: the comment line of each detected processing step is shown in bold.' },
+      { de: 'Unterfluraggregat: Neues Feld „Winkeloffset“ je UF – wird auf den Drehwinkel a= aus dem Programm addiert (für die Maschine mit eigenem Winkeloffset).',
+        en: 'Under-table unit: new field "Angle offset" per unit - added to the rotation angle a= from the program (for machines with their own angle offset).' },
+      { de: 'Fenster „Unterfluraggregat“: Das Hilfebild ist größer und zeigt die eingetragenen Werte an den Maßlinien; Schlüsselwörter stehen jetzt unter der Beschriftung.',
+        en: '"Under-table unit" window: the help picture is larger and shows the entered values at the dimension lines; keywords are now below the labels.' },
+      { de: 'Unterfluraggregat: Neue Vorgaben für die Darstellung – Höhe Ausleger 45 mm, Kopf ab Vorderkante 100 mm, Höhe Kopf 50 mm (auch für UF_KB und UF_TL).',
+        en: 'Under-table unit: new display defaults - arm height 45 mm, head from front edge 100 mm, head height 50 mm (also for UF_KB and UF_TL).' },
+    ] },
     { release: 382, date: '20.11.2026', items: [
       { de: 'Unterfluraggregat: Bei der ersten Kollision hält die Simulation an und zeigt eine Meldung mit Zeile und Grund. Nach „Ok“ läuft sie weiter; weitere Kollisionen werden bis zum nächsten Laden nicht mehr gemeldet (orange markiert, im Infofeld).',
         en: 'Under-table unit: at the first collision the simulation stops and shows a message with line and reason. After "Ok" it continues; further collisions are not reported again until the next load (coloured orange, in the info panel).' },
@@ -13951,24 +13969,27 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { k: 'ary', re: /^ACHSREFERENZ_Y$/, de: 'Achsreferenz Y (Achs_r_y)', en: 'Axis reference Y (Achs_r_y)', tag: 'ACHSREFERENZ_Y', def: 37 }
   ];
   const UF_SHAPE_KEYS = [
-    { k: 'armH', de: 'Höhe Ausleger unten', en: 'Height of lower arm', def: 40 },
-    { k: 'gehH', de: 'Höhe Kopf oben', en: 'Height of upper head', def: 70 },
-    { k: 'gehVorn', de: 'Kopf ab Vorderkante', en: 'Head starts from front edge', def: 55 }
+    { k: 'armH', de: 'Höhe Ausleger unten', en: 'Height of lower arm', def: 45 },
+    { k: 'gehH', de: 'Höhe Kopf oben', en: 'Height of upper head', def: 50 },
+    { k: 'gehVorn', de: 'Kopf ab Vorderkante', en: 'Head starts from front edge', def: 100 }
+  ];
+  const UF_EXTRA_KEYS = [
+    { k: 'offset', de: 'Winkeloffset', en: 'Angle offset', def: 0, any: true }
   ];
   function ufDefaults(name) {
     const o = { name: name || '' };
-    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS).forEach(d => { o[d.k] = d.def; });
+    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS, UF_EXTRA_KEYS).forEach(d => { o[d.k] = d.def; });
     return o;
   }
   function normalizeUf(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const o = ufDefaults(String(raw.name || '').trim());
-    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS).forEach(d => { const v = Number(raw[d.k]); if (Number.isFinite(v)) o[d.k] = v; });
+    UF_PARAM_KEYS.concat(UF_SHAPE_KEYS, UF_EXTRA_KEYS).forEach(d => { const v = Number(raw[d.k]); if (Number.isFinite(v)) o[d.k] = v; });
     return o;
   }
   const UF_DEFAULT_LIST = [
-    { name: 'UF_KB', achsmass: 113.54, einfahrt: 150, kbreite: 74, klaenge: 204, khoehe: 110, arx: 146, ary: 37, armH: 40, gehH: 70, gehVorn: 55 },
-    { name: 'UF_TL', achsmass: 131.75, einfahrt: 135, kbreite: 85, klaenge: 224, khoehe: 107, arx: 173.5, ary: 42.5, armH: 40, gehH: 70, gehVorn: 55 }
+    { name: 'UF_KB', achsmass: 113.54, einfahrt: 150, kbreite: 74, klaenge: 204, khoehe: 110, arx: 146, ary: 37, armH: 45, gehH: 50, gehVorn: 100, offset: 0 },
+    { name: 'UF_TL', achsmass: 131.75, einfahrt: 135, kbreite: 85, klaenge: 224, khoehe: 107, arx: 173.5, ary: 42.5, armH: 45, gehH: 50, gehVorn: 100, offset: 0 }
   ];
   const UF_DEFAULT_PRESELECT = 'UF_KB';
   function loadUfList() {
@@ -13980,6 +14001,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!seeded) {
       UF_DEFAULT_LIST.forEach(d => { if (!list.some(u => u.name.toLowerCase() === d.name.toLowerCase())) list.push(normalizeUf(d)); });
       try { window.localStorage.setItem(UF_LS_KEY, JSON.stringify(list)); window.localStorage.setItem('cncsim.ufDefaultsV1', '1'); } catch (e) {  }
+    }
+    let v2 = false;
+    try { v2 = window.localStorage.getItem('cncsim.ufDefaultsV2') === '1'; } catch (e) { v2 = true; }
+    if (!v2) {
+      list.forEach(u => { if (/^UF_(KB|TL)$/.test(u.name) && u.armH === 40 && u.gehH === 70 && u.gehVorn === 55) Object.assign(u, { armH: 45, gehH: 50, gehVorn: 100 }); });
+      try { window.localStorage.setItem(UF_LS_KEY, JSON.stringify(list)); window.localStorage.setItem('cncsim.ufDefaultsV2', '1'); } catch (e) {  }
     }
     return list;
   }
@@ -14044,7 +14071,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const line = sec.lines[blocks[b][0] - sec.startIdx] || '';
       const m = /\ba\s*=\s*([+-]?\d+(?:\.\d+)?)/.exec(line);
       if (!m) return null;
-      const a = parseFloat(m[1]) * Math.PI / 180, v = [-Math.sin(a), Math.cos(a)];
+      const a = (parseFloat(m[1]) + (Number(uf.offset) || 0)) * Math.PI / 180, v = [-Math.sin(a), Math.cos(a)];
       return v.map(c => Math.abs(c) < 1e-12 ? 0 : c);
     };
     const out = [];
@@ -14366,12 +14393,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
     const lineColors = computeLineColors(current);
 
+    const opTitleLines = new Set();
+    current.sections.forEach(sec => {
+      if (sec.type !== 'arbeitsgang' || !sec.title) return;
+      const t = String(sec.title).trim(), last = Math.max(sec.startIdx, sec.headerEndIdx != null ? sec.headerEndIdx : sec.startIdx);
+      if (!t) return;
+      for (let i = sec.startIdx; i <= last && i < current.lines.length; i++) if (current.lines[i].indexOf(t) !== -1) { opTitleLines.add(i); break; }
+    });
+
     const htmlParts = new Array(current.lines.length);
     for (let lineIdx = 0; lineIdx < current.lines.length; lineIdx++) {
       const color = lineColors.get(lineIdx);
       const style = color ? ` style="border-left-color:${color}"` : '';
       const hiddenAttr = blankLineIdx.has(lineIdx) ? ' hidden' : '';
-      htmlParts[lineIdx] = `<div class="code-line"${style}${hiddenAttr}><span class="ln">${lineIdx + 1}</span><span class="tx">${escapeHtml(current.lines[lineIdx]) || '&nbsp;'}</span></div>`;
+      htmlParts[lineIdx] = `<div class="code-line${opTitleLines.has(lineIdx) ? ' op-title' : ''}"${style}${hiddenAttr}><span class="ln">${lineIdx + 1}</span><span class="tx">${escapeHtml(current.lines[lineIdx]) || '&nbsp;'}</span></div>`;
     }
     const treeParent = treeEl.parentNode;
     const treeNextSibling = treeEl.nextSibling;
@@ -20908,7 +20943,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   (function initUfPanel() {
     const panel = el('ufPanel'), sel = el('ufSelect'), nameIn = el('ufNameInput'), hint = el('ufHint'), cv = el('ufPreviewCanvas');
-    const KEYS = UF_PARAM_KEYS.concat(UF_SHAPE_KEYS);
+    const KEYS = UF_PARAM_KEYS.concat(UF_SHAPE_KEYS, UF_EXTRA_KEYS);
     let list = [], cur = -1, dirty = false, changed = false, isoIdx = 0, yaw = Math.PI / 4, pitch = Math.asin(1 / Math.sqrt(3));
     const field = k => el('ufIn_' + k);
     const num = s => { const v = parseFloat(String(s == null ? '' : s).trim().replace(',', '.')); return Number.isFinite(v) ? v : null; };
@@ -20922,7 +20957,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const uf = { name: nameIn.value.trim().replace(/\s+/g, '_') }, bad = [];
       KEYS.forEach(d => {
         const v = num(field(d.k).value); uf[d.k] = v;
-        const okv = d.k === 'gehVorn' ? v !== null && v >= 0 : v !== null && v > 0;
+        const okv = d.any ? v !== null : (d.k === 'gehVorn' ? v !== null && v >= 0 : v !== null && v > 0);
         field(d.k).classList.toggle('invalid', !okv);
         if (!okv) bad.push(T(d.de, d.en));
       });
@@ -20938,6 +20973,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const g = cv.getContext('2d'), W = cv.width, H = cv.height;
       g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.fillStyle = '#f4f6f8'; g.fillRect(0, 0, W, H);
       const { uf, bad } = read();
+      ['klaenge', 'kbreite', 'ary', 'achsmass', 'arx', 'einfahrt', 'khoehe'].forEach(k => { const t = document.getElementById('ufHv_' + k); if (t) t.textContent = uf[k] != null ? fmtNum(uf[k]) : '–'; });
       if (bad.length) {
         g.fillStyle = '#7a828a'; g.font = '13px Segoe UI, Arial, sans-serif'; g.textAlign = 'center';
         g.fillText(T('Bitte alle Maße eingeben', 'Please enter all dimensions'), W / 2, H / 2);
