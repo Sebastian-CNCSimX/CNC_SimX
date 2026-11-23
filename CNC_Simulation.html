@@ -1777,6 +1777,10 @@
   .uf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; }
   .uf-grid .color-field-inputs input { width: 110px; text-align: right; }
   
+  .uf-unit { display: inline-block; width: 2em; }
+  
+  #ufPanel .uf-grid { row-gap: 2px; }
+  
   .uf-tag { display: block; color: var(--ink-faint, #8a929a); font-size: calc(1em - 1px); line-height: 1.25; white-space: nowrap; }
   #ufPanel .tool-dxf-import-help { width: 400px; }
   #ufPanel .uf-help-svg { width: 400px; height: 462px; }
@@ -2565,22 +2569,22 @@
           </div>
           <div class="color-field-row"><span><span data-i18n-en="Name">Name</span><span class="uf-tag">(; UF Name)</span></span><input type="text" id="ufNameInput" class="filename-input" maxlength="60" placeholder="z. B. BeispielUF"></div>
           <div class="uf-grid" id="ufParamGrid">
-            <div class="color-field-row"><span><span data-i18n-en="Axis distance">Achsmaß</span> <span class="uf-tag">; ACHSMASS</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_achsmass" data-uf="achsmass"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Max. reach depth">Max. Einfahrtiefe</span> <span class="uf-tag">; MAXEINFAHRTIEFE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_einfahrt" data-uf="einfahrt"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Collision width">Kollisionsbreite</span> <span class="uf-tag">; KOLLISIONSBREITE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_kbreite" data-uf="kbreite"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Collision length">Kollisionslänge</span> <span class="uf-tag">; KOLLISIONSLAENGE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_klaenge" data-uf="klaenge"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Collision height">Kollisionshöhe</span> <span class="uf-tag">; KOLLISIONSHOEHE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_khoehe" data-uf="khoehe"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Axis reference X">Achsreferenz X</span> <span class="uf-tag">; ACHSREFERENZ_X</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_arx" data-uf="arx"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Axis reference Y">Achsreferenz Y</span> <span class="uf-tag">; ACHSREFERENZ_Y</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ary" data-uf="ary"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Axis distance">Achsmaß</span> <span class="uf-tag">; ACHSMASS</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_achsmass" data-uf="achsmass"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Max. reach depth">Max. Einfahrtiefe</span> <span class="uf-tag">; MAXEINFAHRTIEFE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_einfahrt" data-uf="einfahrt"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision width">Kollisionsbreite</span> <span class="uf-tag">; KOLLISIONSBREITE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_kbreite" data-uf="kbreite"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision length">Kollisionslänge</span> <span class="uf-tag">; KOLLISIONSLAENGE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_klaenge" data-uf="klaenge"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Collision height">Kollisionshöhe</span> <span class="uf-tag">; KOLLISIONSHOEHE</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_khoehe" data-uf="khoehe"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Axis reference X">Achsreferenz X</span> <span class="uf-tag">; ACHSREFERENZ_X</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_arx" data-uf="arx"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Axis reference Y">Achsreferenz Y</span> <span class="uf-tag">; ACHSREFERENZ_Y</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_ary" data-uf="ary"><span class="uf-unit">mm</span></span></div>
           </div>
           <div class="uf-grid">
-            <div class="color-field-row"><span><span data-i18n-en="Angle offset">Winkeloffset</span><span class="uf-tag" data-i18n-en="(machine, added to a=)">(Maschine, wird auf a= addiert)</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_offset" data-uf="offset"> °</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Angle offset">Winkeloffset</span><span class="uf-tag" data-i18n-en="(added to &quot;a=&quot;)">(Wird auf „a=“ addiert)</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_offset" data-uf="offset"><span class="uf-unit">°</span></span></div>
           </div>
           <div class="scale-group-title uf-sub" data-i18n-en="Only for the display (not in the program)">Nur für die Darstellung (nicht im Programm)</div>
           <div class="uf-grid" id="ufShapeGrid">
-            <div class="color-field-row"><span><span data-i18n-en="Height of lower arm">Höhe Ausleger unten</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_armH" data-uf="armH"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Height of upper head">Höhe Kopf oben</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehH" data-uf="gehH"> mm</span></div>
-            <div class="color-field-row"><span><span data-i18n-en="Head starts from front edge">Kopf ab Vorderkante</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehVorn" data-uf="gehVorn"> mm</span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Height of lower arm">Höhe Ausleger unten</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_armH" data-uf="armH"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Height of upper head">Höhe Kopf oben</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehH" data-uf="gehH"><span class="uf-unit">mm</span></span></div>
+            <div class="color-field-row"><span><span data-i18n-en="Head starts from front edge">Kopf ab Vorderkante</span></span><span class="color-field-inputs"><input type="text" class="filename-input" inputmode="decimal" id="ufIn_gehVorn" data-uf="gehVorn"><span class="uf-unit">mm</span></span></div>
           </div>
           <p class="panel-hint" id="ufHint" hidden></p>
         </div>
@@ -8678,7 +8682,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 383;
+  const APP_RELEASE_NUMBER = 384;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8687,7 +8691,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 07:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 08:25 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13071,6 +13075,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 384, date: '23.11.2026', items: [
+      { de: 'Fenster „Unterfluraggregat“: Eingabefelder bündig und mit etwas Abstand, Hinweis beim Winkeloffset gekürzt.',
+        en: '"Under-table unit" window: input fields aligned and slightly spaced, hint at the angle offset shortened.' },
+    ] },
     { release: 383, date: '23.11.2026', items: [
       { de: 'CNC-Programmcode: Die Kommentarzeile jedes erkannten Arbeitsgangs wird fett dargestellt.',
         en: 'CNC program code: the comment line of each detected processing step is shown in bold.' },
