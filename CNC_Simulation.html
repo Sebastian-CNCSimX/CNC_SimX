@@ -8722,7 +8722,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 386;
+  const APP_RELEASE_NUMBER = 387;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8731,7 +8731,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 12:56 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 14:01 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13115,6 +13115,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 387, date: '23.11.2026', items: [
+      { de: 'Abtragsimulation: Nach „+Werkzeuge (T)“ wird sofort mit dem eingefügten Werkzeug abgetragen (vorher erst nach erneutem „Bauteil erstellen“).',
+        en: 'Material removal: after "+Tools (T)" the inserted tool removes material right away (before, only after "Create part" again).' },
+      { de: 'Abtragsimulation: Innenecke nach einer Eintauchrampe mit Radiuskorrektur (z. B. Setzstufennut) ohne Beule neben der Nut.',
+        en: 'Material removal: inner corner after a ramp with radius compensation (e.g. riser groove) without a bulge next to the groove.' },
+    ] },
     { release: 386, date: '23.11.2026', items: [
       { de: 'Neu: „Ebene Tisch“ – eine Ebene unter dem Bauteil (ab X=0/Y=0; Abstand, Größe, Farbe und Transparenz im Fenster „Bauteil erstellen“), ein-/ausblendbar über das Tisch-Symbol. Fährt das Werkzeug unter die Tischoberkante, erscheint eine Kollisionsmeldung.',
         en: 'New: "Table plane" – a plane below the part (from X=0/Y=0; distance, size, colour and transparency in the "Create part" window), shown/hidden with the table icon. If the tool moves below the top of the table, a collision message appears.' },
@@ -16561,8 +16567,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   var abtragModePref = (() => { try { const v = localStorage.getItem('cncsim.abtragMode'); return v === 'horiz' || v === 'always' ? v : 'simple'; } catch (e) { return 'simple'; } })();
   var abtragForce25D = false;
+  var abtragToolSigOf = null, abtragToolSigVal = '';
+  function abtragToolSig() {
+    if (abtragToolSigOf !== points) {
+      abtragToolSigOf = points;
+      const seen = new Set();
+      for (let i = 0; i < points.length; i++) { const p = points[i]; seen.add(p.opIndex + ':' + p.toolRadius + ':' + p.toolLength + ':' + (p.toolIsBlade ? 1 : 0) + ':' + (p.toolProfileId || '')); }
+      abtragToolSigVal = Array.from(seen).join(',');
+    }
+    return abtragToolSigVal + '/' + segments.filter(sg => sg.context).map(sg => sg.opIndex + ':' + sg.toolRadius + ':' + sg.toolLength + ':' + (sg.toolIsBlade ? 1 : 0) + ':' + (sg.toolProfileId || '')).join(',');
+  }
   function abtragKey() {
-    return [segments.length, points.length, hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
+    return [segments.length, points.length, abtragToolSig(), hiddenOpsVersion, dxfThickness, JSON.stringify(dxfOffset), JSON.stringify(dxfAnchorCorrection), dxfMirrorX, dxfMirrorY, dxfRotateDeg, dxfScale, JSON.stringify(dxfCreatedPart), reichenbacherCorrectionActive(),
       useToolProfileShapes, toolDxfProfiles.map(e => e.id + ':' + e.lengthRef + ':' + e.radiusRef + ':' + (e.usedAlternate ? 1 : 0) + ':' + (e.mainProfile ? e.mainProfile.length : 0)).join(','),
       (() => { const c = listChainInfo(); return c ? c.sig : ''; })(),
       postRotationActive() ? 'post' + postCurrentQuarter() + postRotDir : '',
@@ -17779,6 +17795,32 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         const ux = dx / L, uy = dy / L, s = q.comp === 'left' ? 1 : (q.comp === 'right' ? -1 : 0);
         const nx = -uy * s * r, ny = ux * s * r;
         segs.push({ a: [a[0] + nx, a[1] + ny], b: [b[0] + nx, b[1] + ny], r, depth, u: [ux, uy], s, v: b, idx: qIdx, prof: profileOf(q), zTip: Math.min(p0.z, q.z), ramp });
+      }
+      {
+        const groups = [];
+        segs.forEach((g, k) => { const last = groups[groups.length - 1]; if (last && last.idx === g.idx) last.items.push(k); else groups.push({ idx: g.idx, items: [k] }); });
+        const drop = new Set();
+        for (let m = 0; m + 1 < groups.length; m++) {
+          const G = groups[m], H = groups[m + 1];
+          if (G.items.length < 2 && H.items.length < 2) continue;
+          const g0 = segs[G.items[0]], g1 = segs[G.items[G.items.length - 1]], h0 = segs[H.items[0]], h1 = segs[H.items[H.items.length - 1]];
+          if (!g0.u || !h0.u || !g0.s || g0.s !== h0.s || g0.prof !== h0.prof) continue;
+          const gu = g0.u, hu = h0.u;
+          if (!((gu[0] * hu[1] - gu[1] * hu[0]) * g0.s > 1e-9)) continue;
+          const A = g0.a, B = g1.b, C = h0.a, D = h1.b;
+          const den = (B[0] - A[0]) * (D[1] - C[1]) - (B[1] - A[1]) * (D[0] - C[0]);
+          if (Math.abs(den) < 1e-12) continue;
+          const t = ((C[0] - A[0]) * (D[1] - C[1]) - (C[1] - A[1]) * (D[0] - C[0])) / den;
+          const u = ((C[0] - A[0]) * (B[1] - A[1]) - (C[1] - A[1]) * (B[0] - A[0])) / den;
+          if (!(t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9)) continue;
+          const X = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t];
+          const LG = Math.hypot(B[0] - A[0], B[1] - A[1]), LH = Math.hypot(D[0] - C[0], D[1] - C[1]);
+          const par = (P, O, d, L) => ((P[0] - O[0]) * d[0] + (P[1] - O[1]) * d[1]) / L;
+          G.items.forEach(k => { const sg = segs[k]; if (par(sg.a, A, gu, LG) >= t - 1e-9) drop.add(k); else if (par(sg.b, A, gu, LG) > t) sg.b = X.slice(); });
+          H.items.forEach(k => { const sg = segs[k]; if (par(sg.b, C, hu, LH) <= u + 1e-9) drop.add(k); else if (par(sg.a, C, hu, LH) < u) sg.a = X.slice(); });
+        }
+        if (drop.size) { const s2 = segs.filter((_, k) => !drop.has(k)); segs.length = 0; s2.forEach(x => segs.push(x)); }
+        if (window.__abtragCornerInfo) window.__abtragCornerInfo.dropped += drop.size;
       }
       {
         const X2 = (g, h) => {
