@@ -1765,6 +1765,8 @@
   
   .dxf-part-sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0 10px; }
   
+  .table-plane-title { font-weight: 600; }
+  
   .tool-dxf-import-body { display: flex; gap: 20px; align-items: flex-start; }
   
   #dxfTexturePanel .paste-card.wide { width: min(720px, 96vw); }
@@ -2271,6 +2273,9 @@
           
           <span class="finish-sep" aria-hidden="true"></span>
           <button class="toolbar-btn abtrag-path-btn" id="btnFinishedPart" type="button" disabled title="Fertiges Teil: Abtragsergebnis des ganzen Programms in einem eigenen Fenster berechnen und ansehen" data-i18n-en-title="Finished part: calculate and view the removal result of the whole program in a separate window"><svg width="18" height="16" viewBox="0 0 18 16" aria-hidden="true"><line x1="3" y1="1.5" x2="3" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="2" width="12" height="9" fill="none" stroke="currentColor" stroke-width="0.8"/><rect x="4" y="2" width="3" height="3" fill="currentColor"/><rect x="10" y="2" width="3" height="3" fill="currentColor"/><rect x="7" y="5" width="3" height="3" fill="currentColor"/><rect x="13" y="5" width="3" height="3" fill="currentColor"/><rect x="4" y="8" width="3" height="3" fill="currentColor"/><rect x="10" y="8" width="3" height="3" fill="currentColor"/></svg></button>
+          
+          <span class="finish-sep" aria-hidden="true"></span>
+          <button class="toolbar-btn abtrag-path-btn" id="btnTablePlane" type="button" disabled aria-pressed="false" title="Ebene Tisch ein-/ausblenden (Einstellungen unter „Bauteil erstellen“)" data-i18n-en-title="Show/hide table plane (settings under &quot;Create part&quot;)"></button>
         <span class="abtrag-progress" id="abtragProgress" hidden></span>
       </div>
     </div>
@@ -2642,6 +2647,17 @@
     </div>
   </div>
 </div>
+
+<div class="paste-panel" id="tableCollisionPanel">
+  <div class="paste-card">
+    <h3 data-i18n-en="⚠ Collision with the table">⚠ Kollision mit dem Tisch</h3>
+    <p id="tableCollisionText"></p>
+    <p class="panel-hint" data-i18n-en="After Ok the simulation continues. Further collisions are not reported again - they are shown in the info panel.">Nach Ok läuft die Simulation weiter. Weitere Kollisionen werden nicht noch einmal gemeldet – sie stehen im Infofeld.</p>
+    <div class="paste-actions">
+      <button class="btn primary" id="btnTableCollisionOk" type="button">Ok</button>
+    </div>
+  </div>
+</div>
 <div class="paste-panel" id="machineTypeEditPanel">
   <div class="paste-card wide">
     <h3 data-i18n-en="Edit machine types">Maschinentypen bearbeiten</h3>
@@ -2913,6 +2929,30 @@
       <input type="file" id="partCreateTopFileInput" hidden accept=".dxf">
     </div>
     <p class="panel-hint" id="partCreateTopHint"></p>
+    
+    <hr class="dxf-part-sep">
+    <div class="scale-group" id="tablePlaneGroup">
+      <label class="scale-option"><input type="checkbox" id="tablePlaneOn"> <span class="table-plane-title" data-i18n-en="Show table plane">Ebene Tisch anzeigen</span></label>
+      <p class="panel-hint" data-i18n-en="Plane below the part (e.g. top edge of the consoles/beams of the machine), starting at X=0/Y=0 - shows collisions between tool and table.">Ebene unter dem Bauteil (z.&nbsp;B. Oberkante der Konsolen/Balken der Maschine), beginnt bei X=0/Y=0 – so sieht man Kollisionen zwischen Werkzeug und Tisch.</p>
+      <div class="tool-data-row">
+        <label class="tool-data-field"><span data-i18n-en="Distance below part (mm)">Abstand unter Bauteil (mm)</span><input type="text" id="tablePlaneDist" class="filename-input" inputmode="decimal" spellcheck="false"></label>
+        <label class="tool-data-field"><span data-i18n-en="Size X (mm)">Größe X (mm)</span><input type="text" id="tablePlaneX" class="filename-input" inputmode="decimal" spellcheck="false"></label>
+        <label class="tool-data-field"><span data-i18n-en="Size Y (mm)">Größe Y (mm)</span><input type="text" id="tablePlaneY" class="filename-input" inputmode="decimal" spellcheck="false"></label>
+      </div>
+      <div class="color-field-row">
+        <span data-i18n-en="Color">Farbe</span>
+        <span class="color-field-inputs">
+          <input type="color" id="tablePlaneColorPicker" title="Farbe wählen" data-i18n-en-title="Choose color">
+          <input type="text" id="tablePlaneColorHex" class="filename-input color-hex-input" maxlength="7" spellcheck="false" placeholder="#7d8796">
+        </span>
+      </div>
+      <div class="scale-group-title"><span data-i18n-en="Transparency">Transparenz</span>: <span id="tablePlaneTransparencyValue">60%</span></div>
+      <div class="slider-row">
+        <span class="slider-pct-label">0%</span>
+        <input type="range" id="tablePlaneTransparencySlider" min="0" max="100" step="1" value="60">
+        <span class="slider-pct-label">100%</span>
+      </div>
+    </div>
     <p class="panel-hint" id="partCreateError" hidden></p>
     <div class="paste-actions">
       <button class="btn ghost" id="btnPartCreateCancel" type="button" data-i18n-en="Cancel">Abbrechen</button>
@@ -8682,7 +8722,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 385;
+  const APP_RELEASE_NUMBER = 386;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8691,7 +8731,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 10:40 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 12:56 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13075,6 +13115,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 386, date: '23.11.2026', items: [
+      { de: 'Neu: „Ebene Tisch“ – eine Ebene unter dem Bauteil (ab X=0/Y=0; Abstand, Größe, Farbe und Transparenz im Fenster „Bauteil erstellen“), ein-/ausblendbar über das Tisch-Symbol. Fährt das Werkzeug unter die Tischoberkante, erscheint eine Kollisionsmeldung.',
+        en: 'New: "Table plane" – a plane below the part (from X=0/Y=0; distance, size, colour and transparency in the "Create part" window), shown/hidden with the table icon. If the tool moves below the top of the table, a collision message appears.' },
+    ] },
     { release: 385, date: '23.11.2026', items: [
       { de: 'Programmcode: Der Arbeitsgangkommentar erscheint zusätzlich in der Farbe seiner Fräsbahn.',
         en: 'Program code: the operation comment is now also shown in the colour of its toolpath.' },
@@ -14139,6 +14183,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
     if (typeof ufCollisionReset === 'function') ufCollisionReset();
+    if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) tableCollisionReset();
     if (activeMachineTypeName === BIESSE_CIX_NAME) {
       const r = trimBiesseCixPreamble(rawProgramText);
       if (r.removed) { rawProgramText = r.text; lastBiesseCixRemoved = r.removed; }
@@ -15199,6 +15244,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = newParams.bg;
       ctx.fillRect(0, 0, w, h);
+      const tableFromBelow = tablePlaneVisible() && tableViewFromBelow(basis);
+      if (tablePlaneVisible() && !tableFromBelow) drawTablePlane(camPos, basis, w, h, false);
       if (gridVisible) drawGrid(proj);
       drawAxisGizmo(proj);
       dxf3dLastDepth = null;
@@ -15209,6 +15256,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!abtragPathHidden()) drawPolyline(seg, proj, 0);
         seg._baked = segRevealCount(seg);
       });
+      if (tableFromBelow) drawTablePlane(camPos, basis, w, h, true);
       ctx = liveCtx;
       bakeParams = newParams;
     } else {
@@ -18571,6 +18619,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     hb.disabled = !abtragOn;
     const rb = el('btnAbtragReset'); if (rb) rb.disabled = !abtragOn;
     updateFinishedPartBtn();
+    if (typeof updateTableUI === 'function' && typeof TABLE_ICON === 'function') { updateTableUI(); if (tablePlane && tablePlane.on) tableRebake(); }
     if (!abtragOn) abdexProgressUI(null);
     hb.classList.toggle('active', abtragPathHidden());
     hb.setAttribute('aria-pressed', abtragPathHidden() ? 'true' : 'false');
@@ -20298,6 +20347,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       rows += `<div class="readout-row" title="${T('Aus dem Programm gelesene Werkzeugdaten (siehe Werkzeug-Auge in der Werkzeugleiste)', 'Tool data read from the program (see the tool eye icon in the toolbar)')}"><span class="k">${T('Werkzeug ⌀', 'Tool ⌀')}</span><span class="v">${fmt(p.toolRadius * 2)} mm</span></div>`;
       rows += `<div class="readout-row"><span class="k">${p.toolIsBlade ? T('Sägeblattstärke', 'Blade thickness') : T('Länge', 'Length')}</span><span class="v">${fmt(p.toolLength)} mm</span></div>`;
     }
+    if (tableCollides(p, tableTopZ())) rows += `<div class="readout-row table-hit" style="color:#d84315;font-weight:600"><span class="k">⚠ ${T('Kollision', 'Collision')}</span><span class="v">${T('Tisch', 'Table')}</span></div>`;
     if (p.uf) {
       const nm = p.uf.source === 'program' ? T('aus Programm', 'from program') : escapeHtml(p.uf.name);
       rows += `<div class="readout-row uf" title="${T('Unterfluraggregat - fräst von unten', 'Under-table unit - cuts from below')}"><span class="k">${T('Unterflur', 'Under-table')}</span><span class="v">${nm}</span></div>`;
@@ -20338,8 +20388,141 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function ufCollisionReset() { ufCollisionAcked = false; ufCollisionResume = false; ufCollisionLastIdx = -1; el('ufCollisionPanel').classList.remove('open'); }
   window.__ufCollision = () => ({ open: el('ufCollisionPanel').classList.contains('open'), acked: ufCollisionAcked, text: el('ufCollisionText').textContent, playing, scrubIdx });
   window.__ufCollisionOk = ufCollisionClose;
+  var TABLE_LS_KEY = 'cncsim.tablePlane';
+  var TABLE_DEFAULTS = { on: false, dist: 110, x: 5000, y: 1300, color: '#7d8796', transp: 60 };
+  function loadTablePlane() {
+    const t = Object.assign({}, TABLE_DEFAULTS);
+    try {
+      const o = JSON.parse(window.localStorage.getItem(TABLE_LS_KEY) || 'null');
+      if (o && typeof o === 'object') {
+        if (typeof o.on === 'boolean') t.on = o.on;
+        ['dist', 'x', 'y', 'transp'].forEach(k => { if (typeof o[k] === 'number' && isFinite(o[k])) t[k] = o[k]; });
+        if (typeof o.color === 'string' && /^#[0-9a-f]{6}$/i.test(o.color)) t.color = o.color.toLowerCase();
+      }
+    } catch (e) {  }
+    t.dist = Math.max(0, t.dist); t.x = t.x > 0 ? t.x : TABLE_DEFAULTS.x; t.y = t.y > 0 ? t.y : TABLE_DEFAULTS.y; t.transp = Math.min(100, Math.max(0, t.transp));
+    return t;
+  }
+  var tablePlane = loadTablePlane();
+  function saveTablePlane() { try { window.localStorage.setItem(TABLE_LS_KEY, JSON.stringify(tablePlane)); } catch (e) {  } }
+  function tableAvailable() { return !!(dxfGeometry && dxfKonturLoop && dxfKonturLoop.length >= 3); }
+  function tablePlaneVisible() { return !!(tablePlane && tablePlane.on && tableAvailable()); }
+  function tableTopZ() {
+    if (!tablePlaneVisible()) return null;
+    let zb = Infinity;
+    dxfKonturLoop.forEach(q => { const r = dxfTransformPoint({ x: q.x, y: q.y, z: q.z || 0 }); if (r.z < zb) zb = r.z; });
+    if (!isFinite(zb)) return null;
+    return Math.min(zb, zb + Math.min(0, dxfThickness || 0)) - tablePlane.dist;
+  }
+  function tableViewFromBelow(basis) {
+    const u = sub(toRender({ x: 0, y: 0, z: 1 }), toRender({ x: 0, y: 0, z: 0 }));
+    return dot(basis.fwd, u) > 0;
+  }
+  function drawTablePlane(camPos, basis, w, h, fromBelow) {
+    const z = tableTopZ(); if (z == null) return;
+    const T0 = tablePlane, NEAR = 1;
+    const P = [[0, 0], [T0.x, 0], [T0.x, T0.y], [0, T0.y]].map(q => { const rel = sub(toRender({ x: q[0], y: q[1], z }), camPos); return [dot(rel, basis.right), dot(rel, basis.up), dot(rel, basis.fwd)]; });
+    const out = [];
+    for (let i = 0; i < P.length; i++) {
+      const A = P[i], B = P[(i + 1) % P.length], ia = A[2] >= NEAR, ib = B[2] >= NEAR;
+      if (ia) out.push(A);
+      if (ia !== ib) { const t = (NEAR - A[2]) / (B[2] - A[2]); out.push([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, NEAR]); }
+    }
+    const sc = (h / 2) * (1 / Math.tan((45 * Math.PI / 180) / 2)) / cam.dist;
+    const c = out.map(q => ({ x: w / 2 + q[0] * sc, y: h / 2 - q[1] * sc }));
+    window.__lastTableInfo = { z, x: T0.x, y: T0.y, color: T0.color, transp: T0.transp, fromBelow: !!fromBelow, corners: c.length,
+      screen: c.map(q => ({ x: Math.round(q.x), y: Math.round(q.y) })) };
+    if (c.length < 3) return;
+    ctx.save();
+    ctx.beginPath(); c.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); ctx.closePath();
+    ctx.globalAlpha = 1 - T0.transp / 100; ctx.fillStyle = T0.color; ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = T0.color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+  function tableCollides(p, tz) { return tz != null && !!p && !p.uf && p.toolRadius != null && p.z < tz - 1e-6; }
+  var tableCollisionAcked = false, tableCollisionResume = false, tableCollisionLastIdx = -1;
+  function tableCollisionCheck() {
+    const panel = el('tableCollisionPanel');
+    if (tableCollisionAcked || finishedView || !points.length || panel.classList.contains('open') || el('ufCollisionPanel').classList.contains('open')) { tableCollisionLastIdx = scrubIdx; return; }
+    const tz = tableTopZ();
+    if (tz == null) { tableCollisionLastIdx = scrubIdx; return; }
+    let hitIdx = -1;
+    if (playing && tableCollisionLastIdx >= 0 && tableCollisionLastIdx < scrubIdx) {
+      for (let i = tableCollisionLastIdx + 1; i <= scrubIdx; i++) if (tableCollides(points[i], tz)) { hitIdx = i; break; }
+    } else if (tableCollides(points[scrubIdx], tz)) hitIdx = scrubIdx;
+    tableCollisionLastIdx = scrubIdx;
+    if (hitIdx < 0) return;
+    const p = points[hitIdx];
+    if (hitIdx !== scrubIdx) { scrubIdx = hitIdx; scrubEl.value = String(scrubIdx); tableCollisionLastIdx = scrubIdx; }
+    tableCollisionResume = playing;
+    if (playing) { playing = false; updatePlayIcon(); stepPlayback._last = null; }
+    const depth = (tz - p.z).toFixed(2), depthDe = depth.replace('.', ',');
+    el('tableCollisionText').textContent = T('Zeile ', 'Line ') + (p.lineIdx + 1) + (p.opTitle ? ' (' + p.opTitle + ')' : '') + ': '
+      + T('Das Werkzeug fährt ' + depthDe + ' mm unter die Tischoberkante.', 'The tool moves ' + depth + ' mm below the top of the table.');
+    panel.classList.add('open');
+    setTimeout(() => { try { el('btnTableCollisionOk').focus(); } catch (e) {  } }, 0);
+  }
+  function tableCollisionClose() {
+    const panel = el('tableCollisionPanel');
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    tableCollisionAcked = true;
+    if (tableCollisionResume && points.length) { tableCollisionResume = false; playing = true; hasStarted = true; updatePlayIcon(); stepPlayback._last = null; requestAnimationFrame(stepPlayback); }
+  }
+  function tableCollisionReset() { tableCollisionAcked = false; tableCollisionResume = false; tableCollisionLastIdx = -1; el('tableCollisionPanel').classList.remove('open'); }
+  el('btnTableCollisionOk').addEventListener('click', tableCollisionClose);
+  el('tableCollisionPanel').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tableCollisionClose(); } });
+  var TABLE_ICON = hidden => '<svg width="28" height="18" viewBox="0 0 28 18" aria-hidden="true"><rect x="1" y="8" width="17" height="2.6" rx="0.8" fill="currentColor"/>'
+    + '<line x1="3.5" y1="10" x2="3.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="15.5" y1="10" x2="15.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+    + '<path d="M17.5 4.5 Q22 -0.5 26.5 4.5 Q22 9.5 17.5 4.5 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="22" cy="4.5" r="1.6" fill="currentColor"/>'
+    + (hidden ? '<line x1="18" y1="9" x2="26" y2="0.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' : '') + '</svg>';
+  function updateTableUI() {
+    const b = el('btnTablePlane'); if (!b) return;
+    const avail = tableAvailable(), on = !!tablePlane.on;
+    b.disabled = !avail;
+    b.classList.toggle('active', avail && on);
+    b.setAttribute('aria-pressed', avail && on ? 'true' : 'false');
+    b.innerHTML = TABLE_ICON(!on);
+    const c = el('tablePlaneOn'); if (c) c.checked = on;
+  }
+  function tableRebake() { bakeParams = null; requestRender(); }
+  function tableChanged(recheck) {
+    saveTablePlane(); updateTableUI(); tableRebake();
+    if (recheck) { tableCollisionReset(); if (points.length) tableCollisionCheck(); }
+    if (points.length) updateReadout();
+  }
+  el('btnTablePlane').addEventListener('click', () => { if (!tableAvailable()) return; tablePlane.on = !tablePlane.on; tableChanged(tablePlane.on); });
+  function fillTablePlaneFields() {
+    el('tablePlaneOn').checked = !!tablePlane.on;
+    ['tablePlaneDist', 'tablePlaneX', 'tablePlaneY'].forEach(id => el(id).classList.remove('invalid'));
+    el('tablePlaneDist').value = String(tablePlane.dist); el('tablePlaneX').value = String(tablePlane.x); el('tablePlaneY').value = String(tablePlane.y);
+    el('tablePlaneColorPicker').value = tablePlane.color; el('tablePlaneColorHex').value = tablePlane.color;
+    el('tablePlaneTransparencySlider').value = String(tablePlane.transp); el('tablePlaneTransparencyValue').textContent = Math.round(tablePlane.transp) + '%';
+  }
+  el('btnPartCreateIcon').addEventListener('click', fillTablePlaneFields);
+  el('tablePlaneOn').addEventListener('change', e => { tablePlane.on = e.target.checked; tableChanged(false); });
+  var tableNum = (id, key, allowZero) => el(id).addEventListener('input', e => {
+    const v = parseFloat(String(e.target.value).replace(',', '.'));
+    const ok = isFinite(v) && (allowZero ? v >= 0 : v > 0);
+    e.target.classList.toggle('invalid', !ok && e.target.value.trim() !== '');
+    if (ok) { tablePlane[key] = v; tableChanged(false); }
+  });
+  tableNum('tablePlaneDist', 'dist', true); tableNum('tablePlaneX', 'x', false); tableNum('tablePlaneY', 'y', false);
+  el('tablePlaneColorPicker').addEventListener('input', e => { tablePlane.color = e.target.value.toLowerCase(); el('tablePlaneColorHex').value = tablePlane.color; tableChanged(false); });
+  el('tablePlaneColorHex').addEventListener('input', e => {
+    let v = e.target.value.trim(); if (v && v[0] !== '#') v = '#' + v;
+    if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+    if (/^#[0-9a-f]{6}$/i.test(v)) { tablePlane.color = v.toLowerCase(); el('tablePlaneColorPicker').value = tablePlane.color; tableChanged(false); }
+  });
+  el('tablePlaneTransparencySlider').addEventListener('input', e => { tablePlane.transp = +e.target.value; el('tablePlaneTransparencyValue').textContent = tablePlane.transp + '%'; tableChanged(false); });
+  el('btnPartCreateOk').addEventListener('click', () => setTimeout(() => { updateTableUI(); if (tablePlaneVisible()) tableChanged(true); }, 0));
+  document.addEventListener('cncsim:settings-imported', () => { tablePlane = loadTablePlane(); updateTableUI(); tableRebake(); });
+  updateTableUI();
+  window.__table = { state: () => Object.assign({}, tablePlane), available: tableAvailable, topZ: tableTopZ, info: () => window.__lastTableInfo || null,
+    collision: () => ({ open: el('tableCollisionPanel').classList.contains('open'), acked: tableCollisionAcked, text: el('tableCollisionText').textContent }), ok: tableCollisionClose };
   function updateReadoutAndHighlight() {
     ufCollisionCheck();
+    tableCollisionCheck();
     updateReadout();
     updateLineHighlight();
     updateActiveOpHighlight();
