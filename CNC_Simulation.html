@@ -8682,7 +8682,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 384;
+  const APP_RELEASE_NUMBER = 385;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8691,7 +8691,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 08:25 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 10:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13075,6 +13075,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 385, date: '23.11.2026', items: [
+      { de: 'Programmcode: Der Arbeitsgangkommentar erscheint zusätzlich in der Farbe seiner Fräsbahn.',
+        en: 'Program code: the operation comment is now also shown in the colour of its toolpath.' },
+    ] },
     { release: 384, date: '23.11.2026', items: [
       { de: 'Fenster „Unterfluraggregat“: Eingabefelder bündig und mit etwas Abstand, Hinweis beim Winkeloffset gekürzt.',
         en: '"Under-table unit" window: input fields aligned and slightly spaced, hint at the angle offset shortened.' },
@@ -14414,7 +14418,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const color = lineColors.get(lineIdx);
       const style = color ? ` style="border-left-color:${color}"` : '';
       const hiddenAttr = blankLineIdx.has(lineIdx) ? ' hidden' : '';
-      htmlParts[lineIdx] = `<div class="code-line${opTitleLines.has(lineIdx) ? ' op-title' : ''}"${style}${hiddenAttr}><span class="ln">${lineIdx + 1}</span><span class="tx">${escapeHtml(current.lines[lineIdx]) || '&nbsp;'}</span></div>`;
+      const isOpTitle = opTitleLines.has(lineIdx);
+      const txStyle = isOpTitle && color ? ` style="color:${color}"` : '';
+      htmlParts[lineIdx] = `<div class="code-line${isOpTitle ? ' op-title' : ''}"${style}${hiddenAttr}><span class="ln">${lineIdx + 1}</span><span class="tx"${txStyle}>${escapeHtml(current.lines[lineIdx]) || '&nbsp;'}</span></div>`;
     }
     const treeParent = treeEl.parentNode;
     const treeNextSibling = treeEl.nextSibling;
