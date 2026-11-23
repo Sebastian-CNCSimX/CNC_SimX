@@ -8722,7 +8722,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 387;
+  const APP_RELEASE_NUMBER = 388;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8731,7 +8731,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 14:01 Uhr';
+  const APP_RELEASE_TIMESTAMP = '23.11.2026, 15:10 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13115,6 +13115,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 388, date: '23.11.2026', items: [
+      { de: 'Radiuskorrektur: An Ecken steht das gezeigte Werkzeug jetzt dort, wo auch abgetragen wird (wie an der Maschine).',
+        en: 'Radius compensation: at corners the displayed tool now stands where material is removed (as on the machine).' },
+    ] },
     { release: 387, date: '23.11.2026', items: [
       { de: 'Abtragsimulation: Nach „+Werkzeuge (T)“ wird sofort mit dem eingefügten Werkzeug abgetragen (vorher erst nach erneutem „Bauteil erstellen“).',
         en: 'Material removal: after "+Tools (T)" the inserted tool removes material right away (before, only after "Create part" again).' },
@@ -20223,6 +20227,22 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const sign = p.comp === 'left' ? 1 : -1;
       tipX = p.x + sign * leftX * p.toolRadius;
       tipY = p.y + sign * leftY * p.toolRadius;
+      const q0 = points[scrubIdx - 1], q1 = points[scrubIdx + 1];
+      if (q0 && q1 && !p.rapid && !q1.rapid && q1.comp === p.comp && q1.toolRadius === p.toolRadius) {
+        const d1x = p.x - q0.x, d1y = p.y - q0.y, d2x = q1.x - p.x, d2y = q1.y - p.y, L1 = Math.hypot(d1x, d1y), L2 = Math.hypot(d2x, d2y);
+        if (L1 > 1e-6 && L2 > 1e-6) {
+          const u1x = d1x / L1, u1y = d1y / L1, u2x = d2x / L2, u2y = d2y / L2, cr = u1x * u2y - u1y * u2x;
+          if (cr * sign > 1e-9) {
+            const r = p.toolRadius, n1x = -u1y * sign * r, n1y = u1x * sign * r, n2x = -u2y * sign * r, n2y = u2x * sign * r;
+            const wx = n2x - n1x, wy = n2y - n1y;
+            const t = (wx * u2y - wy * u2x) / cr, u = (wx * u1y - wy * u1x) / cr;
+            if (t <= 1e-9 && -t < L1 && u >= -1e-9 && u < L2) { tipX = p.x + n1x + t * u1x; tipY = p.y + n1y + t * u1y; }
+          } else if (cr * sign < -1e-9) {
+            tipX = p.x - u1y * sign * p.toolRadius; tipY = p.y + u1x * sign * p.toolRadius;
+          }
+        }
+      }
+      window.__lastToolTip = { x: tipX, y: tipY, idx: scrubIdx };
     }
 
     const hasTiltAngles = (p.a || 0) !== 0 || (p.b || 0) !== 0 || (p.c || 0) !== 0;
