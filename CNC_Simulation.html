@@ -2734,6 +2734,8 @@
       <div class="shortcut-row"><span class="shortcut-key" data-sc="linePrev">Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Previous program code line">Vorherige Programmcodezeile</span></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="opNext">Shift + Pfeiltaste rechts</span><span class="shortcut-desc" data-i18n-en="Next processing step">Nächster Arbeitsgang</span></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="opPrev">Shift + Pfeiltaste links</span><span class="shortcut-desc" data-i18n-en="Last processing step">Vorheriger Arbeitsgang</span></div>
+      
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="insertTool">T</span><span class="shortcut-desc" data-i18n-en="+Tools: insert tool data">+Werkzeuge: Werkzeugdaten einfügen</span></div>
       <div class="shortcut-sep"></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="topView">Pos1 (Home)</span><span class="shortcut-desc" data-i18n-en="3D from top">3D-Ansicht Top</span></div>
       <div class="shortcut-sep"></div>
@@ -8722,7 +8724,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 388;
+  const APP_RELEASE_NUMBER = 389;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8731,7 +8733,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '23.11.2026, 15:10 Uhr';
+  const APP_RELEASE_TIMESTAMP = '24.11.2026, 08:17 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13115,6 +13117,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 389, date: '24.11.2026', items: [
+      { de: 'Neues Tastenkürzel „T“: öffnet bei gewähltem Arbeitsgang das Fenster „Werkzeugdaten einfügen“ (wie „+Werkzeuge (T)“). Änderbar unter Einstellungen → Shortcuts.',
+        en: 'New shortcut "T": with a processing step selected it opens the "Insert tool data" window (like "+Tools (T)"). Can be changed under Settings → Shortcuts.' },
+    ] },
     { release: 388, date: '23.11.2026', items: [
       { de: 'Radiuskorrektur: An Ecken steht das gezeigte Werkzeug jetzt dort, wo auch abgetragen wird (wie an der Maschine).',
         en: 'Radius compensation: at corners the displayed tool now stands where material is removed (as on the machine).' },
@@ -24436,6 +24442,7 @@ Max Mustermann (Anschrift wie oben)`,
     { id: 'linePrev', grp: 'sim', def: 'ArrowLeft', de: 'Vorherige Programmcodezeile', en: 'Previous program code line', act: () => stepCodeLine(-1) },
     { id: 'opNext', grp: 'sim', def: 'Shift+ArrowRight', de: 'Nächster Arbeitsgang', en: 'Next processing step', act: () => { gotoAdjacentOp(1); } },
     { id: 'opPrev', grp: 'sim', def: 'Shift+ArrowLeft', de: 'Vorheriger Arbeitsgang', en: 'Last processing step', act: () => { gotoAdjacentOp(-1); } },
+    { id: 'insertTool', grp: 'sim', def: 'KeyT', dlg: true, de: '+Werkzeuge: Werkzeugdaten einfügen', en: '+Tools: insert tool data', act: () => { if (btnInsertToolData.disabled) return false; btnInsertToolData.click(); } },
     { id: 'empty', grp: 'sim', def: 'F11', dlg: true, de: 'Simulation leeren', en: 'Empty everything', act: () => { emptySimulation(); } },
     { id: 'topView', grp: 'view', def: 'Home', de: '3D-Ansicht Top', en: '3D from top', act: () => { goTopView(); } },
     { id: 'background', grp: 'view', def: 'F7', dlg: true, de: 'Hintergrundmodus umschalten', en: 'Change background', act: () => { toggleBackgroundMode(); } },
