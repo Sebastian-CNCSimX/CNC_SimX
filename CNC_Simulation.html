@@ -8424,11 +8424,50 @@
     });
     return derived;
   }
-  function applyAxisCalc(text, calcRules, braceIsComment) {
-    if (!calcRules || !calcRules.length) return text;
-    const effectiveRules = calcRules.concat(deriveArcLetterRules(calcRules));
+  function evalSimpleExpr(src) {
+    const t = String(src).replace(/\s+/g, ''); let i = 0;
+    const num = () => { const m = /^(\d+(?:\.\d*)?|\.\d+)/.exec(t.slice(i)); if (!m) throw new Error('x'); i += m[0].length; return parseFloat(m[0]); };
+    const fac = () => { if (t[i] === '+') { i++; return fac(); } if (t[i] === '-') { i++; return -fac(); } if (t[i] === '(') { i++; const v = sum(); if (t[i] !== ')') throw new Error('x'); i++; return v; } return num(); };
+    const prod = () => { let v = fac(); while (t[i] === '*' || t[i] === '/') { const o = t[i++], w = fac(); v = o === '*' ? v * w : v / w; } return v; };
+    const sum = () => { let v = prod(); while (t[i] === '+' || t[i] === '-') { const o = t[i++], w = prod(); v = o === '+' ? v + w : v - w; } return v; };
+    try { const v = sum(); return i === t.length && isFinite(v) ? v : null; } catch (e) { return null; }
+  }
+  function readHeaderVars(text) {
+    const vars = {}, m = /^[ \t]*H[ \t][^\r\n]*/m.exec(text || '');
+    if (m) for (const v of m[0].matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([+-]?\d+(?:\.\d+)?)/g)) { const k = v[1].toUpperCase(); if (!(k in vars)) vars[k] = parseFloat(v[2]); }
+    return vars;
+  }
+  function applyAxisCalc(text, calcRules, braceIsComment, opts) {
+    opts = opts || {};
+    applyAxisCalc.lastMissing = [];
+    if ((!calcRules || !calcRules.length) && !opts.hAsZ) return text;
+    calcRules = calcRules || [];
+    const exprRules = calcRules.filter(r => r.expr !== undefined);
+    const derivedExpr = opts.ijAbsolute ? exprRules.filter(r => AXIS_TO_ARC_LETTER[r.axis] && !calcRules.some(q => q.axis === AXIS_TO_ARC_LETTER[r.axis])).map(r => ({ axis: AXIS_TO_ARC_LETTER[r.axis], expr: r.expr })) : [];
+    const effectiveRules = calcRules.concat(deriveArcLetterRules(calcRules), derivedExpr);
+    const vars = exprRules.length ? readHeaderVars(text) : {}, missing = new Set();
+    const exprValue = (num, expr) => {
+      const src = '(' + num + ')' + expr.replace(/[A-Za-z_][A-Za-z0-9_]*/g, n => { const k = n.toUpperCase(); if (k in vars) return '(' + vars[k] + ')'; missing.add(k); return '(0)'; });
+      const v = evalSimpleExpr(src);
+      if (v === null) return num;
+      const d = num.indexOf('.') === -1 ? 0 : num.length - num.indexOf('.') - 1;
+      let o = (Math.round(v * 1e6) / 1e6).toFixed(Math.max(d, String(Math.round(v * 1e6) / 1e6).split('.')[1] ? Math.min(6, String(Math.round(v * 1e6) / 1e6).split('.')[1].length) : 0));
+      if (/^-0(\.0+)?$/.test(o)) o = o.slice(1);
+      return o;
+    };
     let out = text;
     effectiveRules.forEach(rule => {
+      if (rule.axis === 'H' && !opts.hAsZ) return;
+      if (rule.expr !== undefined) {
+        const re = makeAxisValueRe(rule.axis);
+        const mask = computeCommentMask(out, braceIsComment);
+        out = out.replace(re, (full, axis, ws, num, matchOffset) => {
+          if (!isRangeUncommented(mask, matchOffset, full.length)) return full;
+          if (axis === 'H' && /^[ \t]*$/.test(out.slice(out.lastIndexOf('\n', matchOffset) + 1, matchOffset))) return full;
+          return axis + ws + exprValue(num, rule.expr);
+        });
+        return;
+      }
       const isOffsetRule = rule.factor === undefined;
       if (!isOffsetRule && rule.factor === 1) return;
       if (isOffsetRule && (!rule.offset || rule.offset === 0)) return;
@@ -8439,6 +8478,11 @@
         return axis + ws + (isOffsetRule ? offsetNumberText(num, rule.offset) : scaleNumberText(num, rule.factor));
       });
     });
+    if (opts.hAsZ) {
+      const mask = computeCommentMask(out, braceIsComment);
+      out = out.replace(/\bH(\s*-?\d)/g, (full, rest, off) => (isRangeUncommented(mask, off, full.length) ? 'Z' + rest : full));
+    }
+    applyAxisCalc.lastMissing = Array.from(missing);
     return out;
   }
 
@@ -8460,7 +8504,7 @@
       const t = line.trim();
       if (!t) return;
       const m = /^([A-Za-z])\s*([*+-])\s*(-?\d+(?:\.\d+)?)$/.exec(t);
-      if (!m) return;
+      if (!m) { const f = /^([A-Za-z])\s*([*\/+-].*)$/.exec(t); if (f) rules.push({ axis: f[1].toUpperCase(), expr: f[2].trim() }); return; }
       const axis = m[1].toUpperCase();
       const op = m[2];
       const value = parseFloat(m[3]);
@@ -8587,7 +8631,7 @@
     return dupes;
   }
 
-  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, rulesUseBracesAsCode, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode, parseCornerRadiusMarker };
+  return { parseSwapRules, applySwapRules, negateYZ, applyAxisCalc, parseCalcRules, evalSimpleExpr, readHeaderVars, computeArcChiralityFlip, parseMachineTypes, findDuplicateMachineTypeNames, computeCommentMask, rulesUseBracesAsCode, isRangeUncommented, sortMachineTypeBlocksAlphabetically, parseSwivelAngle, parseIJMode, parseCornerRadiusMarker };
 });
 </script><script>
 (function (root, factory) {
@@ -8832,7 +8876,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 396;
+  const APP_RELEASE_NUMBER = 397;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8841,7 +8885,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 14:16 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 15:51 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -9136,7 +9180,6 @@ G13D->G1
 G03D->G0
 XT G->M6 T
 V->F
-H->Z
 N X->/
 O ->;O
 Q->C
@@ -9156,6 +9199,35 @@ Z*1
 IJMODE=absolute
 CORNERRADIUS=GFIL r=
 [/MACHINETYPE Name="SCM"]
+
+[MACHINETYPE Name="SCM absolut"]
+[SWITCHCASEMACHINE]
+CR=->R
+OPTI->BLA
+G13D->G1
+G03D->G0
+XT G->M6 T
+V->F
+N X->/
+O ->;O
+Q->C
+R->A
+C=2->G41
+C=1->G42
+C=0->G40
+PB->;PB
+XN X=->;X=
+X=-->;X=
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*1
+Z*1+DZ
+H*1
+[/CALCMACHINE]
+IJMODE=absolute
+CORNERRADIUS=GFIL r=
+[/MACHINETYPE Name="SCM absolut"]
 `;
   // SIM_SAVE:MACHINETYPES_DEFAULT:END
 
@@ -9167,7 +9239,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))))))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -9273,6 +9345,28 @@ CORNERRADIUS=GFIL r=
       }
     }
     try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_C0, '1'); } catch (e) {  }
+    return out;
+  }
+  const LS_KEY_MIGRATION_SCM_H397 = 'cncsim.migration.scmH397';
+  function migrateScmH397(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_H397)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM"]', endTag = '[/MACHINETYPE Name="SCM"]';
+    const start = out.indexOf(openTag), end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      let blk = out.slice(start, end + endTag.length);
+      blk = blk.replace(/^H->Z[ \t]*\r?\n/m, '');
+      out = out.slice(0, start) + blk + out.slice(end + endTag.length);
+      if (out.indexOf('[MACHINETYPE Name="SCM absolut"]') === -1) {
+        const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+        let abs = blk.split(openTag).join('[MACHINETYPE Name="SCM absolut"]').split(endTag).join('[/MACHINETYPE Name="SCM absolut"]');
+        abs = abs.replace(/^Z\s*\*\s*1[ \t]*(\r?\n)/m, 'Z*1+DZ$1H*1$1');
+        const pos = start + blk.length;
+        out = out.slice(0, pos) + nl + nl + abs + out.slice(pos);
+      }
+      try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) {  }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_H397, '1'); } catch (e) {  }
     return out;
   }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
@@ -13275,6 +13369,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 397, date: '25.11.2026', items: [
+      { de: 'CALCMACHINE rechnet jetzt mit Formeln und Werten aus dem Programmkopf, z. B. „Z*1+DZ“ (DX, DY, DZ, BX … aus der H-Zeile; fehlt ein Wert, gilt 0 mit Hinweis).',
+        en: 'CALCMACHINE now calculates with formulas and values from the program header, e.g. "Z*1+DZ" (DX, DY, DZ, BX … from the H line; a missing value counts as 0 with a notice).' },
+      { de: 'SCM: H wird direkt als Z-Wert gelesen (ohne Austausch „H->Z“) und hat eine eigene Rechenzeile „H*…“. Neuer Maschinentyp „SCM absolut“ (Z*1+DZ, Bauteil von 0 bis DZ), wird von Hand gewählt.',
+        en: 'SCM: H is read directly as a Z value (without the swap "H->Z") and has its own calculation line "H*…". New machine type "SCM absolut" (Z*1+DZ, part from 0 to DZ), selected manually.' },
+    ] },
     { release: 396, date: '25.11.2026', items: [
       { de: 'SCM: BX/BY/BZ im Programmkopf verschieben das Bauteil (Rohteil) passend zu den Fräsbahnen; fehlt ein Wert, gilt 0. Im Fenster „Bauteil erstellen“ neue Felder „Verschiebung X/Y/Z“.',
         en: 'SCM: BX/BY/BZ in the program header move the part (blank) to match the milling paths; a missing value counts as 0. New fields "Offset X/Y/Z" in the "Create part" window.' },
@@ -14386,6 +14486,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   window.__ufPoints = () => points.map(p => p.uf ? { z: p.z, ufZ: p.ufZ, rapid: !!p.rapid, retract: !!p.ufRetract, line: p.lineIdx, op: p.opIndex,
     name: p.uf.name, source: p.uf.source, missing: p.uf.missing, achsmass: p.uf.achsmass, dir: p.ufDir, hit: p.ufHit || null } : null);
+  function isScmFamilyName(name) { return /^scm/i.test(String(name || '').trim()); }
+  function isScmAbsolutName(name) { return /^scm\s+absolut$/i.test(String(name || '').trim()); }
+  function machineCalcOpts(mt) { return { hAsZ: !!(mt && isScmFamilyName(mt.name)), ijAbsolute: !!(mt && mt.ijMode === 'absolute') }; }
+  var calcMissingWarnedFor = null;
   function displayCurrentProgram() {
     if (rawProgramText == null) return;
     if (typeof ufCollisionReset === 'function') ufCollisionReset();
@@ -14402,7 +14506,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     braceCommentsOff = !!(activeMt && CNCSwap.rulesUseBracesAsCode(activeMt.switchRules));
     if (activeMt) {
       if (activeMt.switchRules.length) text = applySwapRules(text, activeMt.switchRules);
-      if (activeMt.calcRules.length) text = applyAxisCalc(text, activeMt.calcRules, !braceCommentsOff);
+      const calcOpts = machineCalcOpts(activeMt);
+      if (activeMt.calcRules.length || calcOpts.hAsZ) text = applyAxisCalc(text, activeMt.calcRules, !braceCommentsOff, calcOpts);
+      const miss = applyAxisCalc.lastMissing || [];
+      if (miss.length && !finishedView && calcMissingWarnedFor !== activeMt.name + '|' + rawProgramText) {
+        calcMissingWarnedFor = activeMt.name + '|' + rawProgramText;
+        setTimeout(() => alert(T('Maschinentyp „' + activeMt.name + '“: Im Programmkopf fehlt ' + miss.join(', ') + ' für CALCMACHINE – es wird 0 verwendet.',
+          'Machine type "' + activeMt.name + '": ' + miss.join(', ') + ' is missing in the program header for CALCMACHINE – 0 is used.')), 0);
+      }
     }
     current = CNCParser.parse(text, rawProgramText, opNameList);
     {
@@ -15157,7 +15268,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       let text = raw;
       if (mt) {
         if (mt.switchRules.length) text = applySwapRules(text, mt.switchRules);
-        if (mt.calcRules.length) text = applyAxisCalc(text, mt.calcRules, !braceCommentsOff);
+        if (mt.calcRules.length || machineCalcOpts(mt).hAsZ) text = applyAxisCalc(text, mt.calcRules, !braceCommentsOff, machineCalcOpts(mt));
       }
       const cur = CNCParser.parse(text, raw, opNameList);
       return { res: computeApproxMillingTime(cur), ops: countDetectedOps(cur) };
@@ -16766,6 +16877,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const r3 = v => Math.round(v * 1000) / 1000;
     const off = d ? { bx: d.bx || 0, by: d.by || 0, bz: d.bz || 0 } : { bx: 0, by: 0, bz: 0 };
     if (d && isPostProgram()) return Object.assign({ x: r3(d.x), y: r3(d.y), z: r3(programDimFamily(activeMachineTypeName) === 'scm' ? d.z : (d.neg ? -d.z : d.z)), read: true, post: true }, off);
+    if (d && isScmAbsolutName(activeMachineTypeName)) return Object.assign({ x: r3(d.x + 10), y: r3(d.y + 10), z: r3(Math.abs(d.z)), read: true }, off);
     return d ? Object.assign({ x: r3(d.x + 10), y: r3(d.y + 10), z: r3(d.neg ? -d.z : d.z), read: true }, off) : Object.assign({ x: 0, y: 0, z: 0, read: false }, off);
   }
   function abtragCanAutoCreate() {
@@ -21084,7 +21196,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfKonturLoop.forEach(q => { const r = dxfTransformPoint({ x: q.x, y: q.y, z: q.z || 0 }); if (r.z < zb) zb = r.z; });
       if (isFinite(zb)) return Math.min(zb, zb + Math.min(0, dxfThickness || 0));
     }
-    return machineTable && machineTable.dz > 0 ? -machineTable.dz : null;
+    return machineTable && machineTable.dz > 0 ? (isScmAbsolutName(activeMachineTypeName) ? 0 : -machineTable.dz) : null;
   }
   function machineTableAvailable() { return !!(machineTable && partBottomZ() != null); }
   function machineTableActive() { return !!(tablePlane && tablePlane.on && machineTableAvailable()); }
@@ -26829,7 +26941,7 @@ Max Mustermann (Anschrift wie oben)`,
     const pf = partCreatePrefill;
     const post = isPostProgram();
     if (!post && pf && Math.abs(pf.x - X) < 1e-9 && Math.abs(pf.y - Y) < 1e-9) dxfOffset = { x: 0, y: -5, z: 0 };
-    if (post && programDimFamily(activeMachineTypeName) === 'scm') dxfOffset = { x: 0, y: 0, z: zz > 0 ? -zz : 0 };
+    if (post && programDimFamily(activeMachineTypeName) === 'scm' && !isScmAbsolutName(activeMachineTypeName)) dxfOffset = { x: 0, y: 0, z: zz > 0 ? -zz : 0 };
     if (post) { dxfPartType = 'post'; applyPartDefaultsToState('post'); }
     if (OX || OY || OZ) dxfOffset = { x: dxfOffset.x + OX, y: dxfOffset.y + OY, z: dxfOffset.z + OZ };
     partCreatePrefill = null;
