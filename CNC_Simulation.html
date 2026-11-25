@@ -3010,6 +3010,13 @@
       <label class="tool-data-field">Z (mm)<input type="text" id="partCreateZ" class="filename-input" inputmode="decimal" spellcheck="false" value="40"></label>
     </div>
     
+    <div class="tool-data-row">
+      <label class="tool-data-field"><span data-i18n-en="Offset X (mm)">Verschiebung X (mm)</span><input type="text" id="partCreateOffX" class="filename-input" inputmode="decimal" spellcheck="false" value="0"></label>
+      <label class="tool-data-field"><span data-i18n-en="Offset Y (mm)">Verschiebung Y (mm)</span><input type="text" id="partCreateOffY" class="filename-input" inputmode="decimal" spellcheck="false" value="0"></label>
+      <label class="tool-data-field"><span data-i18n-en="Offset Z (mm)">Verschiebung Z (mm)</span><input type="text" id="partCreateOffZ" class="filename-input" inputmode="decimal" spellcheck="false" value="0"></label>
+    </div>
+    <p class="panel-hint" data-i18n-en="Moves the part (not the milling paths). Pre-filled from BX/BY/BZ in the program header (SCM); a missing value counts as 0.">Verschiebt das Bauteil (nicht die Fräsbahnen). Vorbelegt aus BX/BY/BZ im Programmkopf (SCM); fehlt ein Wert, gilt 0.</p>
+    
     <div class="tool-data-row part-create-abtrag-row">
       <label class="layer-toggle abtrag-toggle" id="partCreateAbtragToggle" title="Abtragsimulation mit diesem Rohteil (setzt beim Erstellen den Haken „Abtragsimulation“). Automatisch angehakt, wenn die Bauteilmaße aus dem Programmkopf erkannt wurden." data-i18n-en-title="Material removal simulation with this stock (sets &quot;Material removal simulation&quot; when creating). Checked automatically when the part dimensions were read from the program header.">
         <input type="checkbox" id="partCreateAbtrag"> <span data-i18n-en="Removal">Abtrag</span>
@@ -8825,7 +8832,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 395;
+  const APP_RELEASE_NUMBER = 396;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8834,7 +8841,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 13:11 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 14:16 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13268,6 +13275,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 396, date: '25.11.2026', items: [
+      { de: 'SCM: BX/BY/BZ im Programmkopf verschieben das Bauteil (Rohteil) passend zu den Fräsbahnen; fehlt ein Wert, gilt 0. Im Fenster „Bauteil erstellen“ neue Felder „Verschiebung X/Y/Z“.',
+        en: 'SCM: BX/BY/BZ in the program header move the part (blank) to match the milling paths; a missing value counts as 0. New fields "Offset X/Y/Z" in the "Create part" window.' },
+    ] },
     { release: 395, date: '25.11.2026', items: [
       { de: 'Fünf feste Standardsauger: „Sauger 145x145“ sowie „Sauger 55x145 unten / links / oben / rechts“ – nicht löschbar und nicht änderbar, zum Anpassen „Kopieren“.',
         en: 'Five fixed standard vacuum cups: "Vacuum cup 145x145" and "Vacuum cup 55x145 bottom / left / top / right" – cannot be deleted or changed, use "Copy" to adapt them.' },
@@ -16739,7 +16750,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         }
         if (oPos || (pos > ng && !(mnZ < -Math.abs(z || 0) / 2))) neg = false;
       }
-      return { x, y, z: z == null ? 0 : Math.abs(z), neg, family: fam };
+      let bx = 0, by = 0, bz = 0;
+      if (fam === 'scm') { const hl = head.find(l => /^\s*H\s/.test(l)); if (hl) { bx = keyVal(hl, 'BX') || 0; by = keyVal(hl, 'BY') || 0; bz = keyVal(hl, 'BZ') || 0; } }
+      return { x, y, z: z == null ? 0 : Math.abs(z), neg, family: fam, bx, by, bz };
     };
     const fam = programDimFamily(mtName);
     if (fam) return tryFamily(fam);
@@ -16751,8 +16764,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (rawProgramText == null) return null;
     const d = readProgramPartDims(rawProgramText, activeMachineTypeName);
     const r3 = v => Math.round(v * 1000) / 1000;
-    if (d && isPostProgram()) return { x: r3(d.x), y: r3(d.y), z: r3(programDimFamily(activeMachineTypeName) === 'scm' ? d.z : (d.neg ? -d.z : d.z)), read: true, post: true };
-    return d ? { x: r3(d.x + 10), y: r3(d.y + 10), z: r3(d.neg ? -d.z : d.z), read: true } : { x: 0, y: 0, z: 0, read: false };
+    const off = d ? { bx: d.bx || 0, by: d.by || 0, bz: d.bz || 0 } : { bx: 0, by: 0, bz: 0 };
+    if (d && isPostProgram()) return Object.assign({ x: r3(d.x), y: r3(d.y), z: r3(programDimFamily(activeMachineTypeName) === 'scm' ? d.z : (d.neg ? -d.z : d.z)), read: true, post: true }, off);
+    return d ? Object.assign({ x: r3(d.x + 10), y: r3(d.y + 10), z: r3(d.neg ? -d.z : d.z), read: true }, off) : Object.assign({ x: 0, y: 0, z: 0, read: false }, off);
   }
   function abtragCanAutoCreate() {
     if (dxfCreatedPart || dxfGeometry || dxfKrm || !points.length) return false;
@@ -26768,6 +26782,7 @@ Max Mustermann (Anschrift wie oben)`,
     partCreatePrefill = null;
     if (!pf) return;
     el('partCreateX').value = String(pf.x); el('partCreateY').value = String(pf.y); el('partCreateZ').value = String(pf.z);
+    el('partCreateOffX').value = String(pf.bx); el('partCreateOffY').value = String(pf.by); el('partCreateOffZ').value = String(pf.bz);
     if (pf.read) partCreatePrefill = pf;
   }
   el('btnPartCreateIcon').addEventListener('click', () => {
@@ -26800,6 +26815,8 @@ Max Mustermann (Anschrift wie oben)`,
     const X = partCreateNum('partCreateX'), Y = partCreateNum('partCreateY'), Z = partCreateNum('partCreateZ');
     if (!(X > 0) || !(Y > 0)) { showPartCreateError(T('X und Y müssen größer 0 sein.', 'X and Y must be greater than 0.')); return; }
     if (Z === null) { showPartCreateError(T('Bitte für Z eine Zahl eingeben (auch negativ möglich).', 'Please enter a number for Z (negative is possible).')); return; }
+    const offv = id => (String(el(id).value).trim() === '' ? 0 : partCreateNum(id)), OX = offv('partCreateOffX'), OY = offv('partCreateOffY'), OZ = offv('partCreateOffZ');
+    if (OX === null || OY === null || OZ === null) { showPartCreateError(T('Bitte für die Verschiebung Zahlen eingeben (leer = 0).', 'Please enter numbers for the offset (empty = 0).')); return; }
     if (partCreateTop && !(Math.abs(partCreateTop.w - X) <= 0.05)) { showPartCreateError(T('Die Dimensionen passen nicht: die Draufsicht ist ' + fmtDim(partCreateTop.w) + ' mm breit, X ist ' + fmtDim(X) + ' mm.', 'The dimensions do not match: the top view is ' + fmtDim(partCreateTop.w) + ' mm wide, X is ' + fmtDim(X) + ' mm.')); return; }
     const zz = partCreateTop ? (Z < 0 ? -partCreateTop.h : partCreateTop.h) : Z;
     const n = v => String(Math.round(v * 1e6) / 1e6);
@@ -26814,6 +26831,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (!post && pf && Math.abs(pf.x - X) < 1e-9 && Math.abs(pf.y - Y) < 1e-9) dxfOffset = { x: 0, y: -5, z: 0 };
     if (post && programDimFamily(activeMachineTypeName) === 'scm') dxfOffset = { x: 0, y: 0, z: zz > 0 ? -zz : 0 };
     if (post) { dxfPartType = 'post'; applyPartDefaultsToState('post'); }
+    if (OX || OY || OZ) dxfOffset = { x: dxfOffset.x + OX, y: dxfOffset.y + OY, z: dxfOffset.z + OZ };
     partCreatePrefill = null;
     dxfTopView = top; dxfTopFrontDown = frontDown;
     dxfThickness = zz;
@@ -26828,6 +26846,7 @@ Max Mustermann (Anschrift wie oben)`,
     if (!(opts && opts.auto)) setAbtragOn(el('partCreateAbtrag').checked);
   }
   el('btnPartCreateOk').addEventListener('click', () => createRectPart());
+  window.__partOffset = () => Object.assign({}, dxfOffset);
   el('btnDxfKrmSideLoad').addEventListener('click', () => el('dxfKrmSideFileInput').click());
   el('dxfKrmSideFileInput').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
