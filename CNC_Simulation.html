@@ -2089,7 +2089,7 @@
           
           <button class="menu-item" id="btnOpenUf" type="button" title="Unterfluraggregate (Fräser von unten) anlegen, kopieren, löschen - mit 3D-Vorschau" data-i18n-en="Under-table unit" data-i18n-en-title="Create, copy and delete under-table units (cutter from below) - with 3D preview">Unterfluraggregat</button>
           
-          <button class="menu-item" id="btnOpenMachineTable" type="button" title="Maße von Maschinentisch, Balken, Sockel und Sauger (Darstellung und Kollision)" data-i18n-en="Machine table &amp; suction cups" data-i18n-en-title="Dimensions of machine table, consoles, bases and suction cups (display and collision)">Maschinentisch &amp; Sauger</button>
+          <button class="menu-item" id="btnOpenMachineTable" type="button" title="Maße von Maschinentisch, Balken, Sockel und Sauger (Darstellung und Kollision)" data-i18n-en="Machine table &amp; vacuum cups" data-i18n-en-title="Dimensions of machine table, consoles, bases and vacuum cups (display and collision)">Maschinentisch &amp; Sauger</button>
           
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Alle Einstellungen sichern' gespeicherte Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Load all settings" data-i18n-en-title="Loads a settings file previously saved via 'Save all settings' and replaces all settings contained in it">Alle Einstellungen laden</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Save all settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Alle Einstellungen sichern</button>
@@ -2326,7 +2326,7 @@
           <span class="finish-sep" aria-hidden="true"></span>
           <button class="toolbar-btn abtrag-path-btn" id="btnTablePlane" type="button" disabled aria-pressed="false" title="Ebene Tisch ein-/ausblenden (Einstellungen unter „Bauteil erstellen“)" data-i18n-en-title="Show/hide table plane (settings under &quot;Create part&quot;)"></button>
           
-          <button class="toolbar-btn abtrag-path-btn" id="btnTableAssign" type="button" disabled title="Saugerzuordnung: welcher Sauger wo sitzt (Saugersets unter „Einstellungen → Maschinentisch &amp; Sauger“)" data-i18n-en-title="Suction cup assignment: which cup sits where (sets under &quot;Settings → Machine table &amp; suction cups&quot;)"><svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true"><rect x="1" y="8" width="17" height="2.6" rx="0.8" fill="currentColor"/><line x1="3.5" y1="10" x2="3.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="15.5" y1="10" x2="15.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g transform="translate(23,6)" fill="none" stroke="currentColor" stroke-width="1.6"><circle r="2.4"/><path d="M0-5.2v2M0 3.2v2M-5.2 0h2M3.2 0h2M-3.7-3.7l1.4 1.4M2.3 2.3l1.4 1.4M-3.7 3.7l1.4-1.4M2.3-2.3l1.4-1.4"/></g></svg></button>
+          <button class="toolbar-btn abtrag-path-btn" id="btnTableAssign" type="button" disabled title="Saugerzuordnung: welcher Sauger wo sitzt (Saugersets unter „Einstellungen → Maschinentisch &amp; Sauger“)" data-i18n-en-title="Vacuum cup assignment: which cup sits where (sets under &quot;Settings → Machine table &amp; vacuum cups&quot;)"><svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true"><rect x="1" y="8" width="17" height="2.6" rx="0.8" fill="currentColor"/><line x1="3.5" y1="10" x2="3.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="15.5" y1="10" x2="15.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g transform="translate(23,6)" fill="none" stroke="currentColor" stroke-width="1.6"><circle r="2.4"/><path d="M0-5.2v2M0 3.2v2M-5.2 0h2M3.2 0h2M-3.7-3.7l1.4 1.4M2.3 2.3l1.4 1.4M-3.7 3.7l1.4-1.4M2.3-2.3l1.4-1.4"/></g></svg></button>
         <span class="abtrag-progress" id="abtragProgress" hidden></span>
       </div>
     </div>
@@ -2701,27 +2701,27 @@
 
 <div class="paste-panel" id="machineTablePanel">
   <div class="paste-card">
-    <h3 data-i18n-en="Machine table &amp; suction cups">Maschinentisch &amp; Sauger</h3>
-    <div class="settings-tabs" role="tablist"><button class="settings-tab active" type="button" role="tab" id="mtTabTable" data-i18n-en="Machine table">Maschinentisch</button><button class="settings-tab" type="button" role="tab" id="mtTabCups" data-i18n-en="Suction cups">Sauger</button></div>
+    <h3 data-i18n-en="Machine table &amp; vacuum cups">Maschinentisch &amp; Sauger</h3>
+    <div class="settings-tabs" role="tablist"><button class="settings-tab active" type="button" role="tab" id="mtTabTable" data-i18n-en="Machine table">Maschinentisch</button><button class="settings-tab" type="button" role="tab" id="mtTabCups" data-i18n-en="Vacuum cups">Sauger</button></div>
     <div id="mtPaneTable">
-      <div class="mt-set-head"><p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the suction cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
+      <div class="mt-set-head"><p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the vacuum cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
       <div class="mt-set-grid"><div>
           <div class="mt-set-row"><b data-i18n-en="Machine table">Maschinentisch</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetTX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetTY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div></div></div>
           <div class="mt-set-row"><b data-i18n-en="Console">Balken</b><div><div class="mt-set-fields"><label><span data-i18n-en="X (width)">X (Breite)</span><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z (height)">Z (Höhe)</span><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Y = table depth">Y = Tischtiefe</div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Centre = program position, the same for all suction cups">Mitte = Programmposition, für alle Sauger gleich</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Centre = program position, the same for all vacuum cups">Mitte = Programmposition, für alle Sauger gleich</div></div></div>
       </div><div class="mt-set-sketch"><svg id="mtSetSideTable" width="260" height="250" viewBox="0 0 260 250"></svg></div></div>
     </div>
     <div id="mtPaneCups" hidden>
-      <p class="panel-hint" data-i18n-en="Suction cup sets like the tool profiles: create, copy, delete. &quot;Sauger 145x145&quot; is the default and cannot be deleted. Which cup sits where: table symbol with gear next to the table symbol.">Saugersets wie bei den Werkzeugprofilen: anlegen, kopieren, löschen. „Sauger 145x145“ ist der Standard und kann nicht gelöscht werden. Welcher Sauger wo sitzt: Symbol Tisch mit Zahnrad neben dem Tisch-Symbol.</p>
+      <p class="panel-hint" data-i18n-en="Vacuum cup sets like the tool profiles: create, copy, delete. &quot;Sauger 145x145&quot; is the default and cannot be deleted. Which cup sits where: table symbol with gear next to the table symbol.">Saugersets wie bei den Werkzeugprofilen: anlegen, kopieren, löschen. „Sauger 145x145“ ist der Standard und kann nicht gelöscht werden. Welcher Sauger wo sitzt: Symbol Tisch mit Zahnrad neben dem Tisch-Symbol.</p>
       <div class="mt-cup-grid">
         <div><div class="mt-cup-list" id="mtCupList"></div>
           <div class="mt-cup-btns"><button class="btn ghost small" id="btnMtCupNew" type="button" data-i18n-en="New">Neu</button><button class="btn ghost small" id="btnMtCupCopy" type="button" data-i18n-en="Copy">Kopieren</button><button class="btn ghost small" id="btnMtCupDelete" type="button" data-i18n-en="Delete">Löschen</button></div></div>
         <div>
           <div class="mt-set-row"><b data-i18n-en="Name">Name</b><div><div class="mt-set-fields"><label><span></span><input type="text" id="mtCupName" class="filename-input" spellcheck="false" style="width:240px"></label></div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Suction cup">Sauger</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Suction plate 15mm (display only)">Saugplatte 15mm (nur Darstellung)</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Vacuum cup">Sauger</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Vacuum base 15mm (display only)">Saugplatte 15mm (nur Darstellung)</div></div></div>
           <div class="mt-set-row"><b data-i18n-en="Offset">Verschiebung</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</div></div></div>
           <div class="mt-set-warn" id="mtSetWarn" hidden></div>
-          <div class="mt-cup-save"><button class="btn ghost" id="btnMtCupSave" type="button" data-i18n-en="Save suction cup">Sauger speichern</button><span class="mt-cup-msg" id="mtCupMsg"></span></div>
+          <div class="mt-cup-save"><button class="btn ghost" id="btnMtCupSave" type="button" data-i18n-en="Save vacuum cup">Sauger speichern</button><span class="mt-cup-msg" id="mtCupMsg"></span></div>
         </div>
         <div class="mt-set-sketch"><svg id="mtSetTop" width="260" height="250" viewBox="0 0 260 250"></svg><svg id="mtSetSide" width="260" height="250" viewBox="0 0 260 250"></svg></div>
       </div>
@@ -2842,6 +2842,7 @@
       <div class="shortcut-sep"></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="toolProfile">Strg + Alt + W</span><span class="shortcut-desc" data-i18n-en="Edit tool profile">Werkzeugprofil editieren</span></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="chuck">Strg + Alt + S</span><span class="shortcut-desc" data-i18n-en="Edit chuck profile">Spannfutter editieren</span></div>
+      <div class="shortcut-row"><span class="shortcut-key" data-sc="cupAssign">Shift + S</span><span class="shortcut-desc" data-i18n-en="Vacuum cup assignment">Saugerzuordnung</span></div>   
       <div class="shortcut-sep"></div>
       <div class="shortcut-row"><span class="shortcut-key" data-sc="lang">Strg + L</span><span class="shortcut-desc" data-i18n-en="Switch language (DE ↔ EN)">Sprache umschalten (DE ↔ EN)</span></div>
       <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc" data-i18n-en="Apply + close dialog">Dialog bestätigen+verlassen</span></div>
@@ -8824,7 +8825,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 394;
+  const APP_RELEASE_NUMBER = 395;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8833,7 +8834,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 11:51 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 13:11 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13267,19 +13268,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 395, date: '25.11.2026', items: [
+      { de: 'Fünf feste Standardsauger: „Sauger 145x145“ sowie „Sauger 55x145 unten / links / oben / rechts“ – nicht löschbar und nicht änderbar, zum Anpassen „Kopieren“.',
+        en: 'Five fixed standard vacuum cups: "Vacuum cup 145x145" and "Vacuum cup 55x145 bottom / left / top / right" – cannot be deleted or changed, use "Copy" to adapt them.' },
+      { de: 'Neues Tastenkürzel Shift + S öffnet die Saugerzuordnung.', en: 'New shortcut Shift + S opens the vacuum cup assignment.' },
+      { de: 'Maschinentisch im 3D: Sauger wirkten aus manchen Blickwinkeln hinten „offen“ – behoben.', en: 'Machine table in 3D: vacuum cups looked "open" at the back from some angles – fixed.' },
+    ] },
     { release: 394, date: '25.11.2026', items: [
       { de: '„Einstellungen → Maschinentisch & Sauger“ hat jetzt zwei Reiter: Maschinentisch (Tisch, Balken, Sockel) und Sauger – Saugersets wie die Werkzeugprofile anlegen, kopieren, löschen (z. B. „Sauger 55x145, links“). „Sauger 145x145“ ist der Standard.',
-        en: '"Settings → Machine table & suction cups" now has two tabs: machine table (table, consoles, bases) and suction cups – create, copy and delete suction cup sets like the tool profiles (e.g. "Sauger 55x145, links"). "Sauger 145x145" is the default.' },
+        en: '"Settings → Machine table & vacuum cups" now has two tabs: machine table (table, consoles, bases) and vacuum cups – create, copy and delete vacuum cup sets like the tool profiles (e.g. "Sauger 55x145, links"). "Sauger 145x145" is the default.' },
       { de: 'Neues Symbol „Saugerzuordnung“ neben dem Tisch-Symbol: je Reihe oder je einzelnem Sauger ein Saugerset wählen; die Darstellung und die Kollisionsprüfung ändern sich, der CNC-Code bleibt gleich.',
-        en: 'New "Suction cup assignment" icon next to the table icon: choose a suction cup set per row or per single cup; display and collision check change, the CNC code stays the same.' },
+        en: 'New "Vacuum cup assignment" icon next to the table icon: choose a vacuum cup set per row or per single cup; display and collision check change, the CNC code stays the same.' },
     ] },
     { release: 393, date: '25.11.2026', items: [
       { de: 'Neues Fenster „Einstellungen → Maschinentisch & Sauger“: Maße von Tisch, Balken (Breite, Höhe), Sockel und Sauger (X, Y, Z) sowie die Verschiebung des Saugers auf dem Sockel einstellen – z. B. für halbe oder gedrehte Sauger. Mit Skizze und Warnung bei Überstand. Die Ebene Tisch übernimmt die Tischgröße.',
-        en: 'New window "Settings → Machine table & suction cups": set the dimensions of table, consoles (width, height), bases and suction cups (X, Y, Z) and the offset of the suction cup on its base – e.g. for half or rotated suction cups. With sketch and warning on overhang. The table plane uses the table size.' },
+        en: 'New window "Settings → Machine table & vacuum cups": set the dimensions of table, consoles (width, height), bases and vacuum cups (X, Y, Z) and the offset of the vacuum cup on its base – e.g. for half or rotated vacuum cups. With sketch and warning on overhang. The table plane uses the table size.' },
     ] },
     { release: 392, date: '25.11.2026', items: [
       { de: 'Maschinentisch (SCM): Tischgröße, Balken und Sauger werden aus dem Programm gelesen und dargestellt (Tisch-Symbol); Meldung bei Kollision mit Sauger oder Balken.',
-        en: 'Machine table (SCM): table size, consoles and suction cups are read from the program and displayed (table icon); warning on collision with a suction cup or console.' },
+        en: 'Machine table (SCM): table size, consoles and vacuum cups are read from the program and displayed (table icon); warning on collision with a vacuum cup or console.' },
     ] },
     { release: 391, date: '25.11.2026', items: [
       { de: 'Holztextur im OBJ und in der 3D-DXF: Die Maserung läuft je Bauteil mit der langen Konturseite mit – bei Wangen entlang der Steigung bzw. des Bogens, bei Handläufen entlang des Handlaufs, bei Pfosten senkrecht (vorher immer waagerecht).',
@@ -20725,8 +20732,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var mtSetRaw = (() => { try { return JSON.parse(window.localStorage.getItem(MT_LS_KEY) || 'null'); } catch (e) { return null; } })();
   var mtSet = normMtSettings(mtSetRaw);
   var CUP_LS_KEY = 'cncsim.suctionSets';
-  var CUP_STD = { id: 'std', name: 'Sauger 145x145', x: 145, y: 145, z: 90, ox: 0, oy: 0 };
+  var CUP_FIXED = [
+    { id: 'std', de: 'Sauger 145x145', en: 'Vacuum cup 145x145', x: 145, y: 145, z: 90, ox: 0, oy: 0 },
+    { id: 'half_bottom', de: 'Sauger 55x145 unten', en: 'Vacuum cup 55x145 bottom', x: 145, y: 55, z: 90, ox: 0, oy: 0 },
+    { id: 'half_left', de: 'Sauger 55x145 links', en: 'Vacuum cup 55x145 left', x: 55, y: 145, z: 90, ox: 0, oy: 0 },
+    { id: 'half_top', de: 'Sauger 55x145 oben', en: 'Vacuum cup 55x145 top', x: 145, y: 55, z: 90, ox: 0, oy: 90 },
+    { id: 'half_right', de: 'Sauger 55x145 rechts', en: 'Vacuum cup 55x145 right', x: 55, y: 145, z: 90, ox: 90, oy: 0 },
+  ];
+  var CUP_STD = CUP_FIXED[0];
   var CUP_COLORS = ['#c8ccc8', '#7cb342', '#ffb300', '#42a5f5', '#ab47bc', '#ef5350', '#26a69a', '#8d6e63', '#ec407a', '#5c6bc0'];
+  function cupFixedNames() { const n = new Set(); CUP_FIXED.forEach(c => { n.add(c.de.toLowerCase()); n.add(c.en.toLowerCase()); }); return n; }
   function normCup(c) {
     if (!c || typeof c !== 'object' || typeof c.name !== 'string' || !c.name.trim()) return null;
     const n = v => (typeof v === 'number' && isFinite(v)) ? v : NaN;
@@ -20736,22 +20751,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return o;
   }
   function normCupSets(arr) {
-    const out = [], ids = new Set(), names = new Set();
-    (Array.isArray(arr) ? arr : []).forEach(c => { const o = normCup(c); if (!o || ids.has(o.id) || names.has(o.name.toLowerCase())) return; ids.add(o.id); names.add(o.name.toLowerCase()); out.push(o); });
-    let std = out.find(c => c.id === 'std');
-    if (!std) {
-      std = Object.assign({}, CUP_STD);
-      const r = mtSetRaw && typeof mtSetRaw === 'object' ? mtSetRaw : {};
-      const ok = v => typeof v === 'number' && isFinite(v);
-      if (ok(r.cupX) && r.cupX > 0 && ok(r.cupY) && r.cupY > 0 && ok(r.cupZ) && r.cupZ > 0) { std.x = r.cupX; std.y = r.cupY; std.z = r.cupZ; }
-      if (ok(r.offX)) std.ox = r.offX; if (ok(r.offY)) std.oy = r.offY;
-      if (names.has(std.name.toLowerCase())) std.name = std.name + ' (Standard)';
-    } else out.splice(out.indexOf(std), 1);
-    out.unshift(std);
+    const fixedIds = new Set(CUP_FIXED.map(c => c.id)), fixedNames = cupFixedNames();
+    const out = CUP_FIXED.map(c => Object.assign({ fixed: true, name: c.de }, c)), ids = new Set(fixedIds), names = new Set(fixedNames);
+    (Array.isArray(arr) ? arr : []).forEach(c => {
+      if (c && c.fixed) return;
+      const o = normCup(c); if (!o || ids.has(o.id)) return;
+      while (names.has(o.name.toLowerCase())) o.name = o.name + ' (eigen)';
+      ids.add(o.id); names.add(o.name.toLowerCase()); out.push(o);
+    });
     return out;
   }
+  function cupLocalize() { cupSets.forEach(c => { if (c.fixed) c.name = T(c.de, c.en); }); }
   var cupSets = normCupSets((() => { try { return JSON.parse(window.localStorage.getItem(CUP_LS_KEY) || 'null'); } catch (e) { return null; } })());
-  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets)); } catch (e) {  } }
+  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets.filter(c => !c.fixed).map(c => ({ id: c.id, name: c.name, x: c.x, y: c.y, z: c.z, ox: c.ox, oy: c.oy })))); } catch (e) {  } }
   function cupSetById(id) { return cupSets.find(c => c.id === id) || cupSets[0]; }
   function cupColor(id) { const i = cupSets.findIndex(c => c.id === id); return CUP_COLORS[(i < 0 ? 0 : i) % CUP_COLORS.length]; }
   var cupAssign = new Map();
@@ -20762,19 +20774,19 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function mtWarnings(t, c) {
     const w = [], f = v => String(Math.round(v * 100) / 100).replace('.', currentLang === 'en' ? '.' : ',');
-    if (c.x > t.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).', 'The suction cup is wider than the console (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).'));
+    if (c.x > t.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).', 'The vacuum cup is wider than the console (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).'));
     const over = [];
     if (c.oy < 0) over.push([T('vorn', 'front'), -c.oy]);
     if (c.oy + c.y > t.sockY) over.push([T('hinten', 'back'), c.oy + c.y - t.sockY]);
     if (c.ox < 0) over.push([T('links', 'left'), -c.ox]);
     if (c.ox + c.x > t.sockX) over.push([T('rechts', 'right'), c.ox + c.x - t.sockX]);
-    if (over.length) w.push(T('Der Sauger steht über den Sockel hinaus (', 'The suction cup overhangs the base (') + over.map(o => o[0] + ' ' + f(o[1]) + ' mm').join(', ') + T('). Zulässig – bitte prüfen.', '). Allowed – please check.'));
+    if (over.length) w.push(T('Der Sauger steht über den Sockel hinaus (', 'The vacuum cup overhangs the base (') + over.map(o => o[0] + ' ' + f(o[1]) + ' mm').join(', ') + T('). Zulässig – bitte prüfen.', '). Allowed – please check.'));
     return { list: w, overhang: over.length > 0, wide: c.x > t.beamX };
   }
   function updateTablePlaneSizeHint() {
     const h = el('tablePlaneSizeHint'); if (!h) return;
     const f = v => String(v).replace('.', currentLang === 'en' ? '.' : ',');
-    h.textContent = T('Größe ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm aus „Einstellungen → Maschinentisch & Sauger“.', 'Size ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm from "Settings → Machine table & suction cups".');
+    h.textContent = T('Größe ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm aus „Einstellungen → Maschinentisch & Sauger“.', 'Size ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm from "Settings → Machine table & vacuum cups".');
   }
   function setMtSettings(o, persist) {
     mtSet = normMtSettings(o);
@@ -20787,7 +20799,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const k = Math.min(200 / (maxX - minX || 1), 170 / (maxY - minY || 1)), ox = 130 - ((minX + maxX) / 2) * k, oy = 118 + ((minY + maxY) / 2) * k;
       const R = (x, y, w, h) => 'x="' + (ox + x * k).toFixed(1) + '" y="' + (oy - (y + h) * k).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"';
       const cx = ox + (t.sockX / 2) * k, cy = oy - (t.sockY / 2) * k;
-      topEl.innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, suction cup red)') + '</text>'
+      topEl.innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, vacuum cup red)') + '</text>'
         + '<rect ' + R(0, 0, t.sockX, t.sockY) + ' fill="#3a3d44" fill-opacity="0.15" stroke="#1d4e6b" stroke-width="3" stroke-dasharray="7 5"/>'
         + '<rect ' + R(c.ox, c.oy, c.x, c.y) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
         + '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')" stroke="#555"><circle r="9" fill="none" stroke-width="1.5"/><line x1="-14" x2="14"/><line y1="-14" y2="14"/></g>'
@@ -20825,6 +20837,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function cupDirty() {
     if (!el('machineTablePanel').classList.contains('open')) return false;
+    if (cupSetById(cupSel).fixed) return false;
     const base = cupSetById(cupSel), f = cupReadForm().c;
     return ['name', 'x', 'y', 'z', 'ox', 'oy'].some(k => f[k] !== base[k] && !(typeof base[k] === 'number' && String(el(CUP_FIELDS[k] || 'mtCupName').value).trim() === ''));
   }
@@ -20840,16 +20853,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const sw = document.createElement('span'); sw.className = 'mt-cup-swatch'; sw.style.background = cupColor(c.id);
       const nm = document.createElement('span'); nm.className = 'mt-cup-name'; nm.textContent = c.name;
       d.append(sw, nm);
-      if (c.id === 'std') { const lk = document.createElement('span'); lk.textContent = '🔒'; lk.title = T('Standard – kann nicht gelöscht werden', 'Default – cannot be deleted'); d.appendChild(lk); }
+      if (c.fixed) { const lk = document.createElement('span'); lk.textContent = '🔒'; lk.title = T('Standardsauger – nicht löschbar und nicht änderbar', 'Standard vacuum cup – cannot be deleted or changed'); d.appendChild(lk); }
       L.appendChild(d);
     });
-    el('btnMtCupDelete').disabled = cupSel === 'std';
+    const fx = !!cupSetById(cupSel).fixed;
+    el('btnMtCupDelete').disabled = fx; el('btnMtCupSave').disabled = fx;
+    ['mtCupName'].concat(Object.keys(CUP_FIELDS).map(k => CUP_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
   }
   function fillCupForm() {
     const c = cupSetById(cupSel);
     el('mtCupName').value = c.name; el('mtCupName').classList.remove('invalid', 'warn');
     Object.keys(CUP_FIELDS).forEach(k => { el(CUP_FIELDS[k]).value = String(c[k]); el(CUP_FIELDS[k]).classList.remove('invalid', 'warn'); });
-    el('mtCupMsg').textContent = '';
+    el('mtCupMsg').textContent = c.fixed ? T('Standardsauger – nicht änderbar. Zum Anpassen „Kopieren“.', 'Standard vacuum cup – cannot be changed. Use "Copy" to adapt it.') : '';
     mtRefresh();
   }
   function mtRefresh() {
@@ -20870,19 +20885,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupConfirmLeave() {
     if (!cupDirty()) return true;
     if (confirm(T('Noch nicht gespeichert: Sauger „' + cupSetById(cupSel).name + '“.\n\nTrotzdem fortfahren? Die Änderungen gehen verloren.',
-      'Not saved yet: suction cup "' + cupSetById(cupSel).name + '".\n\nContinue anyway? The changes will be lost.'))) return true;
+      'Not saved yet: vacuum cup "' + cupSetById(cupSel).name + '".\n\nContinue anyway? The changes will be lost.'))) return true;
     showMtTab('cups');
     return false;
   }
   function cupUniqueName(base, exceptId) {
-    const taken = n => cupSets.some(c => c.id !== exceptId && c.name.toLowerCase() === n.toLowerCase());
+    const fixedNames = cupFixedNames(), taken = n => fixedNames.has(n.toLowerCase()) || cupSets.some(c => c.id !== exceptId && c.name.toLowerCase() === n.toLowerCase());
     if (!taken(base)) return base;
     for (let i = 2; ; i++) if (!taken(base + ' ' + i)) return base + ' ' + i;
   }
   function cupSave() {
     const r = cupReadForm();
     if (!r.ok) { el('mtCupMsg').textContent = T('Bitte gültige Werte eingeben (Maße größer als 0).', 'Please enter valid values (dimensions greater than 0).'); return false; }
-    if (cupSets.some(c => c.id !== cupSel && c.name.toLowerCase() === r.c.name.toLowerCase())) { el('mtCupMsg').textContent = T('Der Name „' + r.c.name + '“ ist schon vergeben.', 'The name "' + r.c.name + '" is already used.'); el('mtCupName').classList.add('invalid'); return false; }
+    if (cupSetById(cupSel).fixed) return false;
+    if (cupFixedNames().has(r.c.name.toLowerCase()) || cupSets.some(c => c.id !== cupSel && c.name.toLowerCase() === r.c.name.toLowerCase())) { el('mtCupMsg').textContent = T('Der Name „' + r.c.name + '“ ist schon vergeben.', 'The name "' + r.c.name + '" is already used.'); el('mtCupName').classList.add('invalid'); return false; }
     const i = cupSets.findIndex(c => c.id === cupSel); cupSets[i] = Object.assign({}, cupSets[i], r.c);
     saveCupSets(); renderCupList(); el('mtCupMsg').textContent = T('Gespeichert.', 'Saved.'); mtRefresh(); mtApplyChange(); renderCupAssignIfOpen();
     return true;
@@ -20890,14 +20906,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupSelect(id) { if (id === cupSel || !cupConfirmLeave()) return; cupSel = id; renderCupList(); fillCupForm(); }
   function cupAdd(copy) {
     if (!cupConfirmLeave()) return;
-    const src = copy ? cupSetById(cupSel) : CUP_STD;
-    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New suction cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy };
+    const src = copy ? cupSetById(cupSel) : cupSetById('std');
+    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New vacuum cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy };
     cupSets.push(c); saveCupSets(); cupSel = c.id; renderCupList(); fillCupForm(); el('mtCupName').focus(); el('mtCupName').select();
   }
   function cupDelete() {
-    if (cupSel === 'std') return;
+    if (cupSetById(cupSel).fixed) return;
     const c = cupSetById(cupSel);
-    if (!confirm(T('Sauger „' + c.name + '“ löschen? Zugeordnete Sauger werden wieder zum Standard.', 'Delete suction cup "' + c.name + '"? Assigned suction cups revert to the default.'))) return;
+    if (!confirm(T('Sauger „' + c.name + '“ löschen? Zugeordnete Sauger werden wieder zum Standard.', 'Delete vacuum cup "' + c.name + '"? Assigned vacuum cups revert to the default.'))) return;
     cupSets = cupSets.filter(x => x.id !== c.id);
     Array.from(cupAssign.keys()).forEach(k => { if (cupAssign.get(k) === c.id) cupAssign.delete(k); });
     saveCupSets(); cupSel = 'std'; renderCupList(); fillCupForm(); mtApplyChange(); renderCupAssignIfOpen();
@@ -20971,14 +20987,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     el('cupAssignTable').innerHTML = h + '</table>';
     el('cupAssignHint').textContent = T(mt.beams.length + ' Balken (PB1–PB' + mt.beams.length + ') und ' + rows + ' Saugerreihen (Y1–Y' + rows + ') aus dem Programm erkannt. Je Sauger oder je ganzer Reihe ein Saugerset wählen; ein Klick auf einen Sauger in der Draufsicht springt zu seinem Feld. Der CNC-Code bleibt unverändert.',
-      mt.beams.length + ' consoles (PB1–PB' + mt.beams.length + ') and ' + rows + ' suction cup rows (Y1–Y' + rows + ') detected in the program. Choose a suction cup set per cup or per whole row; clicking a cup in the top view jumps to its field. The CNC code stays unchanged.');
+      mt.beams.length + ' consoles (PB1–PB' + mt.beams.length + ') and ' + rows + ' vacuum cup rows (Y1–Y' + rows + ') detected in the program. Choose a vacuum cup set per cup or per whole row; clicking a cup in the top view jumps to its field. The CNC code stays unchanged.');
   }
   function renderCupAssignIfOpen() { if (el('cupAssignPanel').classList.contains('open')) renderCupAssign(); }
   function openCupAssign() {
     if (!cupAssignAvailable()) return;
     closeAllMenus(); closeContextMenu();
     cupAssignWork = new Map(cupAssign);
-    el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Suction cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
+    el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Vacuum cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
     renderCupAssign();
     el('cupAssignPanel').classList.add('open');
   }
@@ -21007,6 +21023,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   el('btnTableAssign').addEventListener('click', openCupAssign);
   document.addEventListener('cncsim:lang-changed', () => {
+    cupLocalize();
     updateTablePlaneSizeHint();
     if (el('machineTablePanel').classList.contains('open')) { renderCupList(); mtRefresh(); }
     renderCupAssignIfOpen();
@@ -21099,6 +21116,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const rc = toRender({ x: 0, y: 0, z: 0 }), camW = camPos;
     const faces = [];
     let quads = 0;
+    const cupDepth = new Map();
     const plateCol = tablePlane.color, plateAlpha = 1 - tablePlane.transp / 100;
     boxes.forEach(b => {
       if (b.kind === 'plate') {
@@ -21115,18 +21133,25 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         [[-1, 0, 0], [[X0, Y0, Z0], [X0, Y0, Z1], [X0, Y1, Z1], [X0, Y1, Z0]], 0.65],
         [[1, 0, 0], [[X1, Y0, Z0], [X1, Y1, Z0], [X1, Y1, Z1], [X1, Y0, Z1]], 0.75],
       ];
+      const isCup = b.kind !== 'beam', key = b.beam + ':' + b.cup;
+      let gd;
+      if (isCup) { gd = cupDepth.get(key); if (gd === undefined) { gd = cs((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2)[2]; cupDepth.set(key, gd); } }
+      else gd = cs((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2)[2];
+      const grp = { g: isCup ? 1 : 0, gd, sub: b.kind === 'pad' ? 2 : b.kind === 'body' ? 1 : 0 };
       F.forEach(([n, V, f]) => {
         const c = V.reduce((a, v) => [a[0] + v[0] / 4, a[1] + v[1] / 4, a[2] + v[2] / 4], [0, 0, 0]);
         const nr = sub(toRender({ x: n[0], y: n[1], z: n[2] }), rc), toCam = sub(camW, toRender({ x: c[0], y: c[1], z: c[2] }));
         if (dot(nr, toCam) <= 0) return;
         const C = V.map(v => cs(v[0], v[1], v[2]));
         const P = clip(C); if (!P) return;
-        faces.push({ P, rank: ({ beam: 1, sock: 2, body: 3, pad: 4 })[b.kind] || 1, fill: mtShade(b.color, f), alpha: 1, depth: (C[0][2] + C[1][2] + C[2][2] + C[3][2]) / 4 });
+        faces.push({ P, g: grp.g, gd: grp.gd, sub: grp.sub, key: isCup ? key : null, fill: mtShade(b.color, f), alpha: 1, depth: (C[0][2] + C[1][2] + C[2][2] + C[3][2]) / 4 });
         quads++;
       });
     });
     const plate = faces.length && faces[0].plate ? faces.shift() : null;
-    faces.sort((a, b) => (fromBelow ? b.rank - a.rank : a.rank - b.rank) || b.depth - a.depth);
+    faces.sort((a, b) => (fromBelow ? b.g - a.g : a.g - b.g) || (b.gd - a.gd) || (a.key === b.key ? 0 : a.key < b.key ? -1 : 1) || (fromBelow ? b.sub - a.sub : a.sub - b.sub) || b.depth - a.depth);
+    let cupRuns = 0, prevKey = null; const cupKeys = new Set();
+    faces.forEach(f => { if (f.key && f.key !== prevKey) cupRuns++; if (f.key) cupKeys.add(f.key); prevKey = f.key; });
     if (plate) faces.unshift(plate);
     ctx.save();
     faces.forEach(fc => {
@@ -21137,7 +21162,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.restore();
     const mt = machineTable;
     window.__lastMachineTableInfo = { x: mtTableX(), y: mtTableY(), area: mt.area, beams: mt.beams.length, cups: mt.beams.reduce((s, b) => s + b.y.length, 0),
-      boxes: boxes.length, quads, fromBelow: !!fromBelow, zTop: partBottomZ(), ms: +(performance.now() - t0).toFixed(3) };
+      boxes: boxes.length, quads, cupRuns: { cups: cupKeys.size, runs: cupRuns }, fromBelow: !!fromBelow, zTop: partBottomZ(), ms: +(performance.now() - t0).toFixed(3) };
   }
   function mtPointBoxDist(x, y, z, b) {
     const dx = Math.max(b.x0 - x, 0, x - b.x1), dy = Math.max(b.y0 - y, 0, y - b.y1), dz = Math.max(b.z0 - z, 0, z - b.z1);
@@ -21191,7 +21216,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (hitBox) {
       el('tableCollisionText').textContent = head + (hitBox.kind === 'beam'
         ? T('Das Werkzeug fährt in Balken ' + hitBox.beam + '.', 'The tool moves into console ' + hitBox.beam + '.')
-        : T('Das Werkzeug fährt in Sauger ' + hitBox.cup + ' von Balken ' + hitBox.beam + '.', 'The tool moves into suction cup ' + hitBox.cup + ' of console ' + hitBox.beam + '.'));
+        : T('Das Werkzeug fährt in Sauger ' + hitBox.cup + ' von Balken ' + hitBox.beam + '.', 'The tool moves into vacuum cup ' + hitBox.cup + ' of console ' + hitBox.beam + '.'));
     } else {
       const depth = (tz - p.z).toFixed(2), depthDe = depth.replace('.', ',');
       el('tableCollisionText').textContent = head + T('Das Werkzeug fährt ' + depthDe + ' mm unter die Tischoberkante.', 'The tool moves ' + depth + ' mm below the top of the table.');
@@ -25123,6 +25148,7 @@ Max Mustermann (Anschrift wie oben)`,
     { id: 'area3d', grp: 'dialogs', def: 'F8', dlg: true, de: '3D Bereichseinstellungen', en: '3D area settings', act: () => { el('btnArea3dSettings').click(); } },
     { id: 'opNames', grp: 'dialogs', def: 'F10', dlg: true, de: 'Arbeitsgangnamen bearbeiten', en: 'Edit processing step names', act: () => { btnEditOpNames.click(); } },
     { id: 'toolProfile', grp: 'dialogs', def: 'Ctrl+Alt+KeyW', de: 'Werkzeugprofil editieren', en: 'Edit tool profile', act: () => { el('btnToolDxfImport').click(); } },
+    { id: 'cupAssign', grp: 'dialogs', def: 'Shift+KeyS', dlg: true, de: 'Saugerzuordnung', en: 'Vacuum cup assignment', act: () => { if (!cupAssignAvailable()) return false; openCupAssign(); } },
     { id: 'chuck', grp: 'dialogs', def: 'Ctrl+Alt+KeyS', de: 'Spannfutter editieren', en: 'Edit chuck profile', act: () => { el('btnChuckDxfImport').click(); } },
     { id: 'play', grp: 'sim', def: 'Space', de: 'Simulation starten/pausieren', en: 'Start/Pause Simulation', act: () => { if (!points.length) return false; btnPlay.click(); } },
     { id: 'lineNext', grp: 'sim', def: 'ArrowRight', de: 'Nächste Programmcodezeile', en: 'Next program code line', act: () => stepCodeLine(1) },
