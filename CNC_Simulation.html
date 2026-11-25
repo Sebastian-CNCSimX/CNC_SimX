@@ -1660,6 +1660,22 @@
   
   #shortcutsPanel .paste-card { width: min(1180px, 96vw); }
   
+  #machineTablePanel .paste-card { width: min(1000px, 96vw); }
+  .mt-set-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .mt-set-grid { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; align-items: start; }
+  .mt-set-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); align-items: end; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mt-set-row > b { padding-bottom: 6px; }
+  .mt-set-fields { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+  .mt-set-fields label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+  .mt-set-fields input { width: 92px; }
+  .mt-set-fields input.invalid { border-color: #d33; box-shadow: inset 0 0 0 1px #d33; }
+  .mt-set-fields input.warn { border-color: #d84315; color: #d84315; }
+  .mt-set-note { font-size: 12px; color: var(--ink-muted); padding: 0 0 8px 6px; }
+  .mt-set-warn { color: #d84315; font-size: 12.5px; margin: 8px 0 0; display: flex; flex-direction: column; gap: 3px; }
+  .mt-set-sketch { display: flex; flex-direction: column; gap: 10px; color: var(--ink); }
+  .mt-set-sketch svg { background: var(--muted-soft); border-radius: 8px; }
+  @media (max-width: 900px) { .mt-set-grid { grid-template-columns: minmax(0, 1fr); } }
+  
   .shortcut-key.empty { opacity: 0.55; }
   .sc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; margin-top: 4px; }
   .sc-group { grid-column: 1 / -1; font-weight: 600; margin: 10px 0 2px; padding-bottom: 3px; border-bottom: 1px solid var(--border); }
@@ -2041,6 +2057,8 @@
           <button class="menu-item" id="btnOpenTools" type="button" title="Werkzeugprofil, Spannfutter und Werkzeugdarstellung in einem Fenster mit Reitern" data-i18n-en="Tools" data-i18n-en-title="Tool profile, chuck and tool display in one window with tabs">Werkzeuge</button>
           
           <button class="menu-item" id="btnOpenUf" type="button" title="Unterfluraggregate (Fräser von unten) anlegen, kopieren, löschen - mit 3D-Vorschau" data-i18n-en="Under-table unit" data-i18n-en-title="Create, copy and delete under-table units (cutter from below) - with 3D preview">Unterfluraggregat</button>
+          
+          <button class="menu-item" id="btnOpenMachineTable" type="button" title="Maße von Maschinentisch, Balken, Sockel und Sauger (Darstellung und Kollision)" data-i18n-en="Machine table &amp; suction cups" data-i18n-en-title="Dimensions of machine table, consoles, bases and suction cups (display and collision)">Maschinentisch &amp; Sauger</button>
           
           <button class="menu-item" id="btnLoadSettings" type="button" title="Lädt eine zuvor per 'Alle Einstellungen sichern' gespeicherte Einstellungsdatei wieder ein und ersetzt damit alle darin enthaltenen Einstellungen" data-i18n-en="Load all settings" data-i18n-en-title="Loads a settings file previously saved via 'Save all settings' and replaces all settings contained in it">Alle Einstellungen laden</button>
           <button class="menu-item" id="btnSaveSettings" type="button" title="Lädt eine Datei mit dem aktuellen Stand aller Simulationseinstellungen herunter (Arbeitsgangnamen-Liste + Maschinentypen-Konfiguration inkl. Auswahl, Farbprofil, Schriftfarbe, Spaltenskalierung, Menü-Hervorhebungsfarbe, Rotation) - NICHT das geladene CNC-Programm selbst" data-i18n-en="Save all settings" data-i18n-en-title="Downloads a file with the current state of all simulation settings (processing step name list + machine type configuration incl. selection, color profile, font color, column scaling, menu highlight color, rotation) - NOT the loaded CNC program itself">Alle Einstellungen sichern</button>
@@ -2648,6 +2666,21 @@
   </div>
 </div>
 
+<div class="paste-panel" id="machineTablePanel">
+  <div class="paste-card">
+    <div class="mt-set-head"><h3 data-i18n-en="Machine table &amp; suction cups">Maschinentisch &amp; Sauger</h3><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
+    <p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the suction cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p>
+    <div class="mt-set-grid"><div>
+        <div class="mt-set-row"><b data-i18n-en="Machine table">Maschinentisch</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetTX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetTY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div></div>
+        <div class="mt-set-row"><b data-i18n-en="Console">Balken</b><div class="mt-set-fields"><label><span data-i18n-en="X (width)">X (Breite)</span><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z (height)">Z (Höhe)</span><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Y = table depth">Y = Tischtiefe</span></div></div>
+        <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Centre = program position">Mitte = Programmposition</span></div></div>
+        <div class="mt-set-row"><b data-i18n-en="Suction cup">Sauger</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Suction plate 15">Saugplatte 15</span></div></div>
+        <div class="mt-set-row"><b data-i18n-en="Suction cup offset">Verschiebung Sauger</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</span></div></div>
+        <div class="mt-set-warn" id="mtSetWarn" hidden></div>
+      </div><div class="mt-set-sketch"><svg id="mtSetTop" width="260" height="250" viewBox="0 0 260 250"></svg><svg id="mtSetSide" width="260" height="250" viewBox="0 0 260 250"></svg></div></div>
+    <div class="paste-actions"><button class="btn ghost" id="btnMtSetCancel" type="button" data-i18n-en="Cancel">Abbrechen</button><button class="btn primary" id="btnMtSetOk" type="button">Ok</button></div>
+  </div>
+</div>
 <div class="paste-panel" id="tableCollisionPanel">
   <div class="paste-card">
     <h3 data-i18n-en="⚠ Collision with the table">⚠ Kollision mit dem Tisch</h3>
@@ -2938,9 +2971,9 @@
       <p class="panel-hint" data-i18n-en="Plane below the part (e.g. top edge of the consoles/beams of the machine), starting at X=0/Y=0 - shows collisions between tool and table.">Ebene unter dem Bauteil (z.&nbsp;B. Oberkante der Konsolen/Balken der Maschine), beginnt bei X=0/Y=0 – so sieht man Kollisionen zwischen Werkzeug und Tisch.</p>
       <div class="tool-data-row">
         <label class="tool-data-field"><span data-i18n-en="Distance below part (mm)">Abstand unter Bauteil (mm)</span><input type="text" id="tablePlaneDist" class="filename-input" inputmode="decimal" spellcheck="false"></label>
-        <label class="tool-data-field"><span data-i18n-en="Size X (mm)">Größe X (mm)</span><input type="text" id="tablePlaneX" class="filename-input" inputmode="decimal" spellcheck="false"></label>
-        <label class="tool-data-field"><span data-i18n-en="Size Y (mm)">Größe Y (mm)</span><input type="text" id="tablePlaneY" class="filename-input" inputmode="decimal" spellcheck="false"></label>
+        
       </div>
+      <p class="panel-hint" id="tablePlaneSizeHint"></p>
       <div class="color-field-row">
         <span data-i18n-en="Color">Farbe</span>
         <span class="color-field-inputs">
@@ -8732,7 +8765,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 392;
+  const APP_RELEASE_NUMBER = 393;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8741,7 +8774,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 09:11 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 10:40 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13175,6 +13208,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 393, date: '25.11.2026', items: [
+      { de: 'Neues Fenster „Einstellungen → Maschinentisch & Sauger“: Maße von Tisch, Balken (Breite, Höhe), Sockel und Sauger (X, Y, Z) sowie die Verschiebung des Saugers auf dem Sockel einstellen – z. B. für halbe oder gedrehte Sauger. Mit Skizze und Warnung bei Überstand. Die Ebene Tisch übernimmt die Tischgröße.',
+        en: 'New window "Settings → Machine table & suction cups": set the dimensions of table, consoles (width, height), bases and suction cups (X, Y, Z) and the offset of the suction cup on its base – e.g. for half or rotated suction cups. With sketch and warning on overhang. The table plane uses the table size.' },
+    ] },
     { release: 392, date: '25.11.2026', items: [
       { de: 'Maschinentisch (SCM): Tischgröße, Balken und Sauger werden aus dem Programm gelesen und dargestellt (Tisch-Symbol); Meldung bei Kollision mit Sauger oder Balken.',
         en: 'Machine table (SCM): table size, consoles and suction cups are read from the program and displayed (table icon); warning on collision with a suction cup or console.' },
@@ -20593,8 +20630,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function drawTablePlane(camPos, basis, w, h, fromBelow) {
     if (machineTableActive()) { drawMachineTable(camPos, basis, w, h, fromBelow); return; }
     const z = tableTopZ(); if (z == null) return;
-    const T0 = tablePlane, NEAR = 1;
-    const P = [[0, 0], [T0.x, 0], [T0.x, T0.y], [0, T0.y]].map(q => { const rel = sub(toRender({ x: q[0], y: q[1], z }), camPos); return [dot(rel, basis.right), dot(rel, basis.up), dot(rel, basis.fwd)]; });
+    const T0 = tablePlane, NEAR = 1, TX = mtSet.tX, TY = mtSet.tY;
+    const P = [[0, 0], [TX, 0], [TX, TY], [0, TY]].map(q => { const rel = sub(toRender({ x: q[0], y: q[1], z }), camPos); return [dot(rel, basis.right), dot(rel, basis.up), dot(rel, basis.fwd)]; });
     const out = [];
     for (let i = 0; i < P.length; i++) {
       const A = P[i], B = P[(i + 1) % P.length], ia = A[2] >= NEAR, ib = B[2] >= NEAR;
@@ -20603,7 +20640,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     const sc = (h / 2) * (1 / Math.tan((45 * Math.PI / 180) / 2)) / cam.dist;
     const c = out.map(q => ({ x: w / 2 + q[0] * sc, y: h / 2 - q[1] * sc }));
-    window.__lastTableInfo = { z, x: T0.x, y: T0.y, color: T0.color, transp: T0.transp, fromBelow: !!fromBelow, corners: c.length,
+    window.__lastTableInfo = { z, x: TX, y: TY, color: T0.color, transp: T0.transp, fromBelow: !!fromBelow, corners: c.length,
       screen: c.map(q => ({ x: Math.round(q.x), y: Math.round(q.y) })) };
     if (c.length < 3) return;
     ctx.save();
@@ -20612,6 +20649,112 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.globalAlpha = 1; ctx.strokeStyle = T0.color; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
   }
+  var MT_LS_KEY = 'cncsim.machineTableSettings';
+  var MT_DEFAULTS = { tX: 5515, tY: 1600, beamX: 150, beamZ: 100, sockX: 145, sockY: 145, sockZ: 20, cupX: 145, cupY: 145, cupZ: 90, offX: 0, offY: 0 };
+  var MT_POSITIVE = ['tX', 'tY', 'beamX', 'beamZ', 'sockX', 'sockY', 'sockZ', 'cupX', 'cupY', 'cupZ'];
+  var MT_PAD_H = 15;
+  function normMtSettings(o) {
+    const t = Object.assign({}, MT_DEFAULTS);
+    if (o && typeof o === 'object') Object.keys(MT_DEFAULTS).forEach(k => { const v = o[k]; if (typeof v === 'number' && isFinite(v) && (MT_POSITIVE.indexOf(k) < 0 || v > 0)) t[k] = v; });
+    return t;
+  }
+  function loadMtSettings() { try { return normMtSettings(JSON.parse(window.localStorage.getItem(MT_LS_KEY) || 'null')); } catch (e) { return normMtSettings(null); } }
+  var mtSet = loadMtSettings();
+  function mtWarnings(s) {
+    const w = [], f = v => String(Math.round(v * 100) / 100).replace('.', currentLang === 'en' ? '.' : ',');
+    if (s.cupX > s.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(s.cupX) + ' > ' + f(s.beamX) + ' mm).', 'The suction cup is wider than the console (' + f(s.cupX) + ' > ' + f(s.beamX) + ' mm).'));
+    const over = [];
+    if (s.offY < 0) over.push([T('vorn', 'front'), -s.offY]);
+    if (s.offY + s.cupY > s.sockY) over.push([T('hinten', 'back'), s.offY + s.cupY - s.sockY]);
+    if (s.offX < 0) over.push([T('links', 'left'), -s.offX]);
+    if (s.offX + s.cupX > s.sockX) over.push([T('rechts', 'right'), s.offX + s.cupX - s.sockX]);
+    if (over.length) w.push(T('Der Sauger steht über den Sockel hinaus (', 'The suction cup overhangs the base (') + over.map(o => o[0] + ' ' + f(o[1]) + ' mm').join(', ') + T('). Zulässig – bitte prüfen.', '). Allowed – please check.'));
+    return { list: w, overhang: over.length > 0, wide: s.cupX > s.beamX };
+  }
+  function updateTablePlaneSizeHint() {
+    const h = el('tablePlaneSizeHint'); if (!h) return;
+    const f = v => String(v).replace('.', currentLang === 'en' ? '.' : ',');
+    h.textContent = T('Größe ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm aus „Einstellungen → Maschinentisch & Sauger“.', 'Size ' + f(mtSet.tX) + ' × ' + f(mtSet.tY) + ' mm from "Settings → Machine table & suction cups".');
+  }
+  function setMtSettings(o, persist) {
+    mtSet = normMtSettings(o);
+    if (persist) { try { window.localStorage.setItem(MT_LS_KEY, JSON.stringify(mtSet)); } catch (e) {  } }
+    updateTablePlaneSizeHint();
+    bakeParams = null; requestRender();
+    if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
+  }
+  var MT_FIELDS = { tX: 'mtSetTX', tY: 'mtSetTY', beamX: 'mtSetBeamX', beamZ: 'mtSetBeamZ', sockX: 'mtSetSockX', sockY: 'mtSetSockY', sockZ: 'mtSetSockZ',
+    cupX: 'mtSetCupX', cupY: 'mtSetCupY', cupZ: 'mtSetCupZ', offX: 'mtSetOffX', offY: 'mtSetOffY' };
+  var mtWork = null;
+  function mtFill(s) { Object.keys(MT_FIELDS).forEach(k => { const i = el(MT_FIELDS[k]); i.value = String(s[k]); i.classList.remove('invalid', 'warn'); }); mtRefresh(); }
+  function mtRead() {
+    const s = Object.assign({}, mtWork); let ok = true;
+    Object.keys(MT_FIELDS).forEach(k => {
+      const i = el(MT_FIELDS[k]), v = parseFloat(String(i.value).replace(',', '.').trim());
+      const good = String(i.value).trim() !== '' && isFinite(v) && (MT_POSITIVE.indexOf(k) < 0 || v > 0);
+      i.classList.toggle('invalid', !good);
+      if (good) s[k] = v; else ok = false;
+    });
+    return { s, ok };
+  }
+  function mtSketch(s) {
+    const minX = Math.min(0, s.offX), maxX = Math.max(s.sockX, s.offX + s.cupX), minY = Math.min(0, s.offY), maxY = Math.max(s.sockY, s.offY + s.cupY);
+    const k = Math.min(200 / (maxX - minX || 1), 170 / (maxY - minY || 1)), ox = 130 - ((minX + maxX) / 2) * k, oy = 118 + ((minY + maxY) / 2) * k;
+    const R = (x, y, w, h) => 'x="' + (ox + x * k).toFixed(1) + '" y="' + (oy - (y + h) * k).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"';
+    const cx = ox + (s.sockX / 2) * k, cy = oy - (s.sockY / 2) * k;
+    el('mtSetTop').innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, suction cup red)') + '</text>'
+      + '<rect ' + R(0, 0, s.sockX, s.sockY) + ' fill="#3a3d44" fill-opacity="0.15" stroke="#1d4e6b" stroke-width="3" stroke-dasharray="7 5"/>'
+      + '<rect ' + R(s.offX, s.offY, s.cupX, s.cupY) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
+      + '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')" stroke="#555"><circle r="9" fill="none" stroke-width="1.5"/><line x1="-14" x2="14"/><line y1="-14" y2="14"/></g>'
+      + '<text x="10" y="236" font-size="11" fill="currentColor" opacity="0.7">' + T('+ = Sockelmitte (Position aus dem Programm)', '+ = centre of base (position from the program)') + '</text>'
+      + '<text x="10" y="249" font-size="11" fill="currentColor" opacity="0.7">' + T('unten = vorn (kleines Y)', 'bottom = front (small Y)') + '</text>';
+    const tot = s.beamZ + s.sockZ + s.cupZ, kz = Math.min(0.9, 165 / tot), base = 225, bZ = s.beamZ * kz, sZ = s.sockZ * kz, cZ = s.cupZ * kz, pZ = Math.min(MT_PAD_H, s.cupZ) * kz;
+    const wS = Math.min(150, s.sockX * 0.9), wC = Math.min(150, s.cupX * 0.9);
+    el('mtSetSide').innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Seitenansicht (rückwärts vom Bauteil)', 'Side view (calculated down from the part)') + '</text>'
+      + '<rect x="20" y="' + (base - bZ - sZ - cZ - 20) + '" width="160" height="20" fill="#5d8fd8" opacity="0.85"/><text x="28" y="' + (base - bZ - sZ - cZ - 6) + '" font-size="11" fill="#fff">' + T('Bauteil', 'Part') + '</text>'
+      + '<rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + cZ + '" fill="#222224"/><rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + pZ + '" fill="#c8ccc8"/>'
+      + '<rect x="' + (90 - wS / 2) + '" y="' + (base - bZ - sZ) + '" width="' + wS + '" height="' + sZ + '" fill="#3a3d44"/>'
+      + '<rect x="20" y="' + (base - bZ) + '" width="160" height="' + bZ + '" fill="#464e5c"/><line x1="10" x2="250" y1="' + base + '" y2="' + base + '" stroke="#7d8796" stroke-width="4"/>'
+      + '<text x="250" y="' + (base - bZ - sZ - cZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sauger ', 'Cup ') + s.cupZ + '</text>'
+      + '<text x="250" y="' + (base - bZ - sZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sockel ', 'Base ') + s.sockZ + '</text>'
+      + '<text x="250" y="' + (base - bZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Balken ', 'Console ') + s.beamZ + '</text>'
+      + '<text x="10" y="' + (base + 18) + '" font-size="11" fill="currentColor" opacity="0.7">' + T('Tischplatte', 'Table top') + '</text>';
+  }
+  function mtRefresh() {
+    const r = mtRead(); mtWork = r.s;
+    const w = mtWarnings(r.s);
+    ['mtSetOffX', 'mtSetOffY'].forEach(id => el(id).classList.toggle('warn', w.overhang && !el(id).classList.contains('invalid')));
+    el('mtSetCupX').classList.toggle('warn', w.wide && !el('mtSetCupX').classList.contains('invalid'));
+    const box = el('mtSetWarn');
+    box.innerHTML = ''; w.list.forEach(t => { const p = document.createElement('div'); p.textContent = '⚠ ' + t; box.appendChild(p); });
+    box.hidden = !w.list.length;
+    mtSketch(r.s);
+    return r.ok;
+  }
+  function openMachineTableSettings() {
+    closeAllMenus(); closeContextMenu();
+    mtWork = Object.assign({}, mtSet); mtFill(mtWork);
+    el('machineTablePanel').classList.add('open');
+    setTimeout(() => { try { el('mtSetTX').focus(); } catch (e) {  } }, 0);
+  }
+  function machineTableSettingsOk() {
+    if (!mtRefresh()) { const bad = el('machineTablePanel').querySelector('input.invalid'); if (bad) bad.focus(); return false; }
+    setMtSettings(mtWork, true);
+    el('machineTablePanel').classList.remove('open');
+    return true;
+  }
+  el('btnOpenMachineTable').addEventListener('click', openMachineTableSettings);
+  Object.keys(MT_FIELDS).forEach(k => el(MT_FIELDS[k]).addEventListener('input', mtRefresh));
+  el('btnMtSetOk').addEventListener('click', machineTableSettingsOk);
+  el('btnMtSetCancel').addEventListener('click', () => el('machineTablePanel').classList.remove('open'));
+  el('btnMtSetDefaults').addEventListener('click', () => { mtWork = Object.assign({}, MT_DEFAULTS); mtFill(mtWork); });
+  el('machineTablePanel').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); machineTableSettingsOk(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); el('machineTablePanel').classList.remove('open'); }
+  });
+  document.addEventListener('cncsim:lang-changed', () => { updateTablePlaneSizeHint(); if (el('machineTablePanel').classList.contains('open')) mtRefresh(); });
+  window.__mtSettings = { get: () => Object.assign({}, mtSet), set: o => setMtSettings(o, true), open: openMachineTableSettings, ok: machineTableSettingsOk,
+    state: () => ({ open: el('machineTablePanel').classList.contains('open'), work: Object.assign({}, mtWork), warn: el('mtSetWarn').hidden ? '' : el('mtSetWarn').textContent }) };
   var machineTable = null, machineTableWarnedFor = null;
   function parseMachineTable(text) {
     if (typeof text !== 'string') return null;
@@ -20629,11 +20772,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!x) continue;
         const ys = [];
         for (const mm of l.matchAll(/\bY(\d+)=(-?[\d.]+)/g)) ys[+mm[1] - 1] = +mm[2];
+        if (!ys.some(v => isFinite(v))) continue;
         beams.push({ n: n ? +n[1] : beams.length + 1, x: +x[1], y: ys.filter(v => isFinite(v)) });
       }
     }
-    if (!(table.X > 0 && table.Y > 0) || !beams.length) return null;
-    return { x: table.X, y: table.Y, beams, area: area || 'AD', dz };
+    if (!(table.X > 0 || table.Y > 0) && !beams.length) return null;
+    return { x: table.X > 0 ? table.X : null, y: table.Y > 0 ? table.Y : null, beams, area: area || 'AD', dz };
   }
   function machineTableFromProgram(text) {
     machineTable = parseMachineTable(text);
@@ -20653,16 +20797,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function machineTableAvailable() { return !!(machineTable && partBottomZ() != null); }
   function machineTableActive() { return !!(tablePlane && tablePlane.on && machineTableAvailable()); }
-  var MT_BEAM_W = 150, MT_BEAM_H = 100, MT_CUP = 145, MT_CUP_H = 110, MT_PAD_H = 15, MT_BODY = 135;
+  function mtTableX() { return machineTable && machineTable.x > 0 ? machineTable.x : mtSet.tX; }
+  function mtTableY() { return machineTable && machineTable.y > 0 ? machineTable.y : mtSet.tY; }
   function machineTableBoxes() {
     const zb = partBottomZ(); if (zb == null || !machineTable) return null;
-    const T0 = machineTable, beamTop = zb - MT_CUP_H, beamBot = beamTop - MT_BEAM_H, out = [];
-    out.push({ kind: 'plate', x0: 0, x1: T0.x, y0: 0, y1: T0.y, z0: beamBot, z1: beamBot });
-    T0.beams.forEach(b => {
-      out.push({ kind: 'beam', beam: b.n, x0: b.x - MT_BEAM_W / 2, x1: b.x + MT_BEAM_W / 2, y0: 0, y1: T0.y, z0: beamBot, z1: beamTop, color: '#464e5c' });
+    const S = mtSet, TX = mtTableX(), TY = mtTableY();
+    const cupBot = zb - S.cupZ, beamTop = cupBot - S.sockZ, beamBot = beamTop - S.beamZ, padH = Math.min(MT_PAD_H, S.cupZ), out = [];
+    out.push({ kind: 'plate', x0: 0, x1: TX, y0: 0, y1: TY, z0: beamBot, z1: beamBot });
+    machineTable.beams.forEach(b => {
+      out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: 0, y1: TY, z0: beamBot, z1: beamTop, color: '#464e5c' });
       b.y.forEach((y, i) => {
-        out.push({ kind: 'body', beam: b.n, cup: i + 1, x0: b.x - MT_BODY / 2, x1: b.x + MT_BODY / 2, y0: y - MT_BODY / 2, y1: y + MT_BODY / 2, z0: beamTop, z1: zb - MT_PAD_H, color: '#222224' });
-        out.push({ kind: 'pad', beam: b.n, cup: i + 1, x0: b.x - MT_CUP / 2, x1: b.x + MT_CUP / 2, y0: y - MT_CUP / 2, y1: y + MT_CUP / 2, z0: zb - MT_PAD_H, z1: zb, color: '#c8ccc8' });
+        const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, cx0 = sx0 + S.offX, cy0 = sy0 + S.offY;
+        out.push({ kind: 'sock', beam: b.n, cup: i + 1, x0: sx0, x1: sx0 + S.sockX, y0: sy0, y1: sy0 + S.sockY, z0: beamTop, z1: cupBot, color: '#3a3d44' });
+        if (S.cupZ > padH) out.push({ kind: 'body', beam: b.n, cup: i + 1, x0: cx0, x1: cx0 + S.cupX, y0: cy0, y1: cy0 + S.cupY, z0: cupBot, z1: zb - padH, color: '#222224' });
+        out.push({ kind: 'pad', beam: b.n, cup: i + 1, x0: cx0, x1: cx0 + S.cupX, y0: cy0, y1: cy0 + S.cupY, z0: zb - padH, z1: zb, color: '#c8ccc8' });
       });
     });
     return out;
@@ -20710,7 +20858,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (dot(nr, toCam) <= 0) return;
         const C = V.map(v => cs(v[0], v[1], v[2]));
         const P = clip(C); if (!P) return;
-        faces.push({ P, rank: b.kind === 'beam' ? 1 : b.kind === 'body' ? 2 : 3, fill: mtShade(b.color, f), alpha: 1, depth: (C[0][2] + C[1][2] + C[2][2] + C[3][2]) / 4 });
+        faces.push({ P, rank: ({ beam: 1, sock: 2, body: 3, pad: 4 })[b.kind] || 1, fill: mtShade(b.color, f), alpha: 1, depth: (C[0][2] + C[1][2] + C[2][2] + C[3][2]) / 4 });
         quads++;
       });
     });
@@ -20725,7 +20873,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     ctx.restore();
     const mt = machineTable;
-    window.__lastMachineTableInfo = { x: mt.x, y: mt.y, area: mt.area, beams: mt.beams.length, cups: mt.beams.reduce((s, b) => s + b.y.length, 0),
+    window.__lastMachineTableInfo = { x: mtTableX(), y: mtTableY(), area: mt.area, beams: mt.beams.length, cups: mt.beams.reduce((s, b) => s + b.y.length, 0),
       boxes: boxes.length, quads, fromBelow: !!fromBelow, zTop: partBottomZ(), ms: +(performance.now() - t0).toFixed(3) };
   }
   function mtPointBoxDist(x, y, z, b) {
@@ -20754,8 +20902,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     return null;
   }
-  window.__machineTable = () => machineTable ? { x: machineTable.x, y: machineTable.y, area: machineTable.area, dz: machineTable.dz, beams: machineTable.beams.map(b => ({ n: b.n, x: b.x, y: b.y.slice() })) } : null;
+  window.__machineTable = () => machineTable ? { x: mtTableX(), y: mtTableY(), area: machineTable.area, dz: machineTable.dz, beams: machineTable.beams.map(b => ({ n: b.n, x: b.x, y: b.y.slice() })) } : null;
   window.__machineTableParse = t => parseMachineTable(t);
+  window.__machineTableBoxes = () => machineTableBoxes() || [];
   window.__machineTableActive = () => machineTableActive();
   function tableCollides(p, tz) { return tz != null && !!p && !p.uf && p.toolRadius != null && p.z < tz - 1e-6; }
   var tableCollisionAcked = false, tableCollisionResume = false, tableCollisionLastIdx = -1;
@@ -20819,8 +20968,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnTablePlane').addEventListener('click', () => { if (!tableAvailable()) return; tablePlane.on = !tablePlane.on; tableChanged(tablePlane.on); });
   function fillTablePlaneFields() {
     el('tablePlaneOn').checked = !!tablePlane.on;
-    ['tablePlaneDist', 'tablePlaneX', 'tablePlaneY'].forEach(id => el(id).classList.remove('invalid'));
-    el('tablePlaneDist').value = String(tablePlane.dist); el('tablePlaneX').value = String(tablePlane.x); el('tablePlaneY').value = String(tablePlane.y);
+    el('tablePlaneDist').classList.remove('invalid');
+    el('tablePlaneDist').value = String(tablePlane.dist); updateTablePlaneSizeHint();
     el('tablePlaneColorPicker').value = tablePlane.color; el('tablePlaneColorHex').value = tablePlane.color;
     el('tablePlaneTransparencySlider').value = String(tablePlane.transp); el('tablePlaneTransparencyValue').textContent = Math.round(tablePlane.transp) + '%';
   }
@@ -20832,7 +20981,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     e.target.classList.toggle('invalid', !ok && e.target.value.trim() !== '');
     if (ok) { tablePlane[key] = v; tableChanged(false); }
   });
-  tableNum('tablePlaneDist', 'dist', true); tableNum('tablePlaneX', 'x', false); tableNum('tablePlaneY', 'y', false);
+  tableNum('tablePlaneDist', 'dist', true);
   el('tablePlaneColorPicker').addEventListener('input', e => { tablePlane.color = e.target.value.toLowerCase(); el('tablePlaneColorHex').value = tablePlane.color; tableChanged(false); });
   el('tablePlaneColorHex').addEventListener('input', e => {
     let v = e.target.value.trim(); if (v && v[0] !== '#') v = '#' + v;
@@ -22291,6 +22440,7 @@ Max Mustermann (Anschrift wie oben)`,
     LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
     LS_KEY_GRID_VISIBLE,
+    'cncsim.machineTableSettings',
     'cncsim.axesVisible',
     LS_KEY_GRID_COLOR,
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
@@ -22337,6 +22487,7 @@ Max Mustermann (Anschrift wie oben)`,
       uiLanguage: currentLang,
       gridVisible,
       axesVisible,
+      machineTableSettings: (typeof mtSet !== 'undefined') ? Object.assign({}, mtSet) : undefined,
       gridColor: gridColorOverride,
       axisColors: axisColorOverride,
       axisLabelFontSize,
@@ -22460,6 +22611,7 @@ Max Mustermann (Anschrift wie oben)`,
         setGridVisible(data.gridVisible === true || data.gridVisible === '1' || data.gridVisible === 1);
         syncGridSettingsPanelFromActive();
       }
+      if (data.machineTableSettings && typeof data.machineTableSettings === 'object' && window.__mtSettings) window.__mtSettings.set(data.machineTableSettings);
       if (data.axesVisible !== undefined) {
         setAxesVisible(data.axesVisible === true || data.axesVisible === '1' || data.axesVisible === 1);
         syncGridSettingsPanelFromActive();
