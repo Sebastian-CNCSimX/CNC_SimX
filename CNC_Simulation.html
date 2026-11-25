@@ -4415,6 +4415,14 @@
     <p class="panel-hint" id="gridStepSizeWarning" data-i18n-en="Please enter a number greater than 0 (e.g. 10 or 20)." hidden>Bitte eine Zahl größer als 0 eingeben (z.&nbsp;B. 10 oder 20).</p>
     
     <div class="scale-group">
+      <div class="scale-group-title" data-i18n-en="Coordinate axes">Koordinatenachse</div>
+      <div class="scale-choice" id="axesVisibleChoice">
+        <label class="scale-option"><input type="radio" name="axesVisible" value="1"> <span data-i18n-en="Coordinate axes on">Koordinatenachse an</span></label>
+        <label class="scale-option"><input type="radio" name="axesVisible" value="0"> <span data-i18n-en="Coordinate axes off">Koordinatenachse aus</span></label>
+      </div>
+    </div>
+    
+    <div class="scale-group">
       <div class="scale-group-title" data-i18n-en="Cube position">Würfelposition</div>
       <div class="scale-choice" id="gizmoPosChoice">
         <label class="scale-option"><input type="radio" name="gizmoPos" value="left"> <span data-i18n-en="top left">links oben</span></label>
@@ -8724,7 +8732,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 389;
+  const APP_RELEASE_NUMBER = 390;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8733,7 +8741,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '24.11.2026, 08:17 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 07:15 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -9403,6 +9411,28 @@ CORNERRADIUS=GFIL r=
     bakeParams = null;
     requestRender();
   }
+  const LS_KEY_AXES_VISIBLE = 'cncsim.axesVisible';
+  const DEFAULT_AXES_VISIBLE = true;
+  function loadPersistedAxesVisible() {
+    try {
+      const raw = window.localStorage.getItem(LS_KEY_AXES_VISIBLE);
+      if (raw === null) return DEFAULT_AXES_VISIBLE;
+      return raw === '1' || raw === 'true';
+    } catch (e) {  }
+    return DEFAULT_AXES_VISIBLE;
+  }
+  let axesVisible = DEFAULT_AXES_VISIBLE;
+  function setAxesVisible(visible) {
+    axesVisible = !!visible;
+    try { window.localStorage.setItem(LS_KEY_AXES_VISIBLE, axesVisible ? '1' : '0'); } catch (e) {  }
+    bakeParams = null;
+    requestRender();
+  }
+  window.addEventListener('storage', e => {
+    if (e.key !== LS_KEY_AXES_VISIBLE) return;
+    axesVisible = loadPersistedAxesVisible(); bakeParams = null; requestRender();
+  });
+  window.__axesVisible = () => axesVisible;
 
   const LS_KEY_GRID_STEP = 'cncsim.gridStep';
   function loadPersistedGridStep() {
@@ -13117,6 +13147,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 390, date: '25.11.2026', items: [
+      { de: 'Einstellungen → 3D Bereichseinstellungen: neuer Punkt „Koordinatenachse“ – „Koordinatenachse an“ / „aus“ blendet die XYZ-Achsen im 3D ein oder aus. Wird beim Einstellungen sichern/laden mitgenommen.',
+        en: 'Settings → 3D area settings: new option "Coordinate axes" – "Coordinate axes on" / "off" shows or hides the XYZ axes in 3D. Included when saving/loading settings.' },
+    ] },
     { release: 389, date: '24.11.2026', items: [
       { de: 'Neues Tastenkürzel „T“: öffnet bei gewähltem Arbeitsgang das Fenster „Werkzeugdaten einfügen“ (wie „+Werkzeuge (T)“). Änderbar unter Einstellungen → Shortcuts.',
         en: 'New shortcut "T": with a processing step selected it opens the "Insert tool data" window (like "+Tools (T)"). Can be changed under Settings → Shortcuts.' },
@@ -15263,7 +15297,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const tableFromBelow = tablePlaneVisible() && tableViewFromBelow(basis);
       if (tablePlaneVisible() && !tableFromBelow) drawTablePlane(camPos, basis, w, h, false);
       if (gridVisible) drawGrid(proj);
-      drawAxisGizmo(proj);
+      if (axesVisible) drawAxisGizmo(proj);
       dxf3dLastDepth = null;
       drawDxf(proj);
       drawObjModel(proj);
@@ -22034,6 +22068,7 @@ Max Mustermann (Anschrift wie oben)`,
     LS_KEY_MENU_COLOR, LS_KEY_FONT_COLORS,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
     LS_KEY_GRID_VISIBLE,
+    'cncsim.axesVisible',
     LS_KEY_GRID_COLOR,
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
     LS_KEY_FEED_SCALE,
@@ -22078,6 +22113,7 @@ Max Mustermann (Anschrift wie oben)`,
       opColors: activeOpColors ? activeOpColors.slice() : Array.from({ length: OP_COLOR_COUNT }, (_, i) => normalizeHex(pathColor(i)) || '#000000'),
       uiLanguage: currentLang,
       gridVisible,
+      axesVisible,
       gridColor: gridColorOverride,
       axisColors: axisColorOverride,
       axisLabelFontSize,
@@ -22199,6 +22235,10 @@ Max Mustermann (Anschrift wie oben)`,
       }
       if (data.gridVisible !== undefined) {
         setGridVisible(data.gridVisible === true || data.gridVisible === '1' || data.gridVisible === 1);
+        syncGridSettingsPanelFromActive();
+      }
+      if (data.axesVisible !== undefined) {
+        setAxesVisible(data.axesVisible === true || data.axesVisible === '1' || data.axesVisible === 1);
         syncGridSettingsPanelFromActive();
       }
       if (data.gridColor === null || typeof data.gridColor === 'string') {
@@ -24303,6 +24343,8 @@ Max Mustermann (Anschrift wie oben)`,
     gridStepSizeInput.value = String(gridStepOverride || computeAutoGridStep());
     gridStepSizeWarning.hidden = true;
     checkLr('gizmoPos', gizmoPosPref); checkLr('infoPanelPos', infoPanelPosPref);
+    const axesRadio = document.querySelector('input[name="axesVisible"][value="' + (axesVisible ? '1' : '0') + '"]');
+    if (axesRadio) axesRadio.checked = true;
   }
   el('btnArea3dSettings').addEventListener('click', () => {
     syncRotationSettingsPanelFromActive();
@@ -24320,6 +24362,8 @@ Max Mustermann (Anschrift wie oben)`,
     persistInvertRotation(invertRotationPreference);
     const checkedGrid = document.querySelector('input[name="gridVisible"]:checked');
     setGridVisible(checkedGrid ? checkedGrid.value === '1' : gridVisible);
+    const checkedAxes = document.querySelector('input[name="axesVisible"]:checked');
+    if (checkedAxes && (checkedAxes.value === '1') !== axesVisible) setAxesVisible(checkedAxes.value === '1');
     const enteredStep = normalizeFeedScaleFactor(gridStepSizeInput.value, null);
     if (enteredStep === null) {
       gridStepSizeWarning.hidden = false;
@@ -24333,12 +24377,13 @@ Max Mustermann (Anschrift wie oben)`,
     area3dSettingsPanel.classList.remove('open');
   });
   el('btnArea3dSettingsResetDefaults').addEventListener('click', () => {
-    if (!window.confirm('Kipprichtung, Drehrichtung, Raster-Sichtbarkeit und Rastergröße werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
+    if (!window.confirm('Kipprichtung, Drehrichtung, Raster-Sichtbarkeit, Rastergröße und Koordinatenachse werden auf ihre Standardwerte zurückgesetzt. Fortführen?')) return;
     invertTiltPreference = false;
     persistInvertTilt(false);
     invertRotationPreference = false;
     persistInvertRotation(false);
     setGridVisible(true);
+    setAxesVisible(true);
     gridStepOverride = applyGridStep(null);
     applyGizmoPos('right', true); applyInfoPanelPos('left', true);
     syncRotationSettingsPanelFromActive();
@@ -27427,6 +27472,7 @@ Max Mustermann (Anschrift wie oben)`,
   invertTiltPreference = loadPersistedInvertTilt();
   invertRotationPreference = loadPersistedInvertRotation();
   gridVisible = loadPersistedGridVisible();
+  axesVisible = loadPersistedAxesVisible();
   gridColorOverride = loadPersistedGridColor();
   gridStepOverride = loadPersistedGridStep();
   feedScaleFactor = loadPersistedFeedScaleFactor() || 1;
