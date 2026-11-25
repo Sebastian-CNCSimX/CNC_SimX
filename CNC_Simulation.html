@@ -8732,7 +8732,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 390;
+  const APP_RELEASE_NUMBER = 391;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8741,7 +8741,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 07:15 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 08:05 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13004,6 +13004,24 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     objModel.grains = null;
     objVersion++;
   }
+  function grainAddEdge(T, k, dx, dy, dz) {
+    const n = Math.hypot(dx, dy, dz);
+    if (n < 1e-9) return;
+    const w = 1 / n;
+    T[k] += dx * dx * w; T[k + 1] += dx * dy * w; T[k + 2] += dx * dz * w; T[k + 3] += dy * dy * w; T[k + 4] += dy * dz * w; T[k + 5] += dz * dz * w;
+  }
+  function grainAxis(T, k) {
+    const a = T[k], b = T[k + 1], c = T[k + 2], d = T[k + 3], e = T[k + 4], f = T[k + 5];
+    if (!(a + d + f > 0)) return null;
+    let x, y, z;
+    if (a >= d && a >= f) { x = a; y = b; z = c; } else if (d >= f) { x = b; y = d; z = e; } else { x = c; y = e; z = f; }
+    for (let it = 0; it < 40; it++) {
+      const nx = a * x + b * y + c * z, ny = b * x + d * y + e * z, nz = c * x + e * y + f * z, l = Math.hypot(nx, ny, nz);
+      if (!(l > 0)) return null;
+      x = nx / l; y = ny / l; z = nz / l;
+    }
+    return [x, y, z];
+  }
   function objTriGrain(i) {
     const M = objModel;
     if (!M.compOf) {
@@ -13014,16 +13032,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       for (let t = 0; t < nt; t++) { const a = find(V[t * 3]), b = find(V[t * 3 + 1]), c = find(V[t * 3 + 2]); if (b !== a) par[b] = a; if (c !== a && find(c) !== a) par[find(c)] = a; }
       const id = new Map(), compOf = new Int32Array(nt);
       for (let t = 0; t < nt; t++) { const r = find(V[t * 3]); let c = id.get(r); if (c === undefined) { c = id.size; id.set(r, c); } compOf[t] = c; }
-      const best = new Float64Array(id.size), G = new Float32Array(id.size * 3), has = new Uint8Array(id.size), P = M.pos;
+      const TT = new Float64Array(id.size * 6), G = new Float32Array(id.size * 3), has = new Uint8Array(id.size), P = M.pos;
       for (let t = 0; t < nt; t++) {
         const c = compOf[t];
         for (let j = 0; j < 3; j++) {
           if (!((M.eflags[t] >> j) & 1)) continue;
           const a = t * 9 + j * 3, b = t * 9 + ((j + 1) % 3) * 3;
           const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], len = Math.hypot(dx, dy);
-          if (len > best[c] && Math.abs(dz) < 0.2 * len) { best[c] = len; const n = Math.hypot(dx, dy, dz); G[c * 3] = dx / n; G[c * 3 + 1] = dy / n; G[c * 3 + 2] = dz / n; has[c] = 1; }
+          if (len + Math.abs(dz) > 1e-9) { grainAddEdge(TT, c * 6, dx, dy, dz); has[c] = 1; }
         }
       }
+      for (let q = 0; q < id.size; q++) { const g = has[q] ? grainAxis(TT, q * 6) : null; if (g) { G[q * 3] = g[0]; G[q * 3 + 1] = g[1]; G[q * 3 + 2] = g[2]; } else has[q] = 0; }
       M.compOf = compOf; M.compGrain = G; M.compHas = has; M.compCount = id.size;
     }
     const c = M.compOf[i];
@@ -13033,22 +13052,30 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   window.__objComponentCount = () => { if (!objModel) return 0; objTriGrain(0); return objModel.compCount; };
   window.__objTriGrain = i => (objModel ? objTriGrain(i) : null);
+  window.__objGrainsByGroup = () => {
+    if (!objModel) return null;
+    const M = objModel; objTriGrain(0);
+    const out = {}, seen = new Set();
+    for (let i = 0; i < M.tg.length; i++) { const c = M.compOf[i]; if (seen.has(c)) continue; seen.add(c); const g = objTriGrain(i); if (!g) continue; const n = M.groups[M.tg[i]].name; (out[n] = out[n] || []).push([g[0], g[1], g[2]]); }
+    return out;
+  };
   function objGroupGrain(gi) {
     const M = objModel;
     if (!M.grains) M.grains = new Map();
     let g = M.grains.get(gi);
     if (g) return g;
-    let best = 0; g = [1, 0, 0];
-    const P = M.pos;
+    g = [1, 0, 0];
+    const P = M.pos, TT = new Float64Array(6);
     for (let i = 0; i < M.tg.length; i++) {
       if (M.tg[i] !== gi) continue;
       for (let j = 0; j < 3; j++) {
         if (M.eflags && !((M.eflags[i] >> j) & 1)) continue;
         const a = i * 9 + j * 3, b = i * 9 + ((j + 1) % 3) * 3;
         const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], len = Math.hypot(dx, dy);
-        if (len > best && Math.abs(dz) < 0.2 * len) { best = len; const n = Math.hypot(dx, dy, dz); g = [dx / n, dy / n, dz / n]; }
+        if (len + Math.abs(dz) > 1e-9) grainAddEdge(TT, 0, dx, dy, dz);
       }
     }
+    g = grainAxis(TT, 0) || g;
     M.grains.set(gi, g);
     return g;
   }
@@ -13147,6 +13174,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 391, date: '25.11.2026', items: [
+      { de: 'Holztextur im OBJ und in der 3D-DXF: Die Maserung läuft je Bauteil mit der langen Konturseite mit – bei Wangen entlang der Steigung bzw. des Bogens, bei Handläufen entlang des Handlaufs, bei Pfosten senkrecht (vorher immer waagerecht).',
+        en: 'Wood texture in OBJ and 3D DXF: the grain now follows the long contour side of each part – along the slope or curve on stringers, along the handrail on handrails, vertical on posts (previously always horizontal).' },
+    ] },
     { release: 390, date: '25.11.2026', items: [
       { de: 'Einstellungen → 3D Bereichseinstellungen: neuer Punkt „Koordinatenachse“ – „Koordinatenachse an“ / „aus“ blendet die XYZ-Achsen im 3D ein oder aus. Wird beim Einstellungen sichern/laden mitgenommen.',
         en: 'Settings → 3D area settings: new option "Coordinate axes" – "Coordinate axes on" / "off" shows or hides the XYZ axes in 3D. Included when saving/loading settings.' },
@@ -16172,18 +16203,38 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       for (let i = 1; i < s.points.length; i++) {
         const a = vert(s.points[i - 1]), b = vert(s.points[i]);
         if (a === b) continue;
-        const dz = Math.abs(a.z - b.z), len = Math.hypot(a.x - b.x, a.y - b.y);
-        const g = grain.get(s.layer);
-        if (len > 1e-6 && dz < 0.2 * len && (!g || len > g.len)) grain.set(s.layer, { a, b, len });
+        let g = grain.get(s.layer);
+        if (!g) { g = { T: new Float64Array(6), o: a }; grain.set(s.layer, g); }
+        grainAddEdge(g.T, 0, b.x - a.x, b.y - a.y, b.z - a.z);
         const ek = ck + '\u0000' + Math.min(a.id, b.id) + '-' + Math.max(a.id, b.id);
         if (edges.has(ek)) continue;
         edges.add(ek);
         out.push({ points: [a, b], closed: false, color: s.color, layer: s.layer, face: true });
       }
     }
-    dxfFaceDataFor = dxfGeometry; dxfFaceDataCache = { strokes: out, faces, faceLayers, grain };
+    grain.forEach((g, l) => { const d = grainAxis(g.T, 0); if (d) grain.set(l, { a: g.o, b: { x: g.o.x + d[0] * 100, y: g.o.y + d[1] * 100, z: g.o.z + d[2] * 100 } }); else grain.delete(l); });
+    const par = new Int32Array(verts.size);
+    for (let i = 0; i < par.length; i++) par[i] = i;
+    const find = v => { while (par[v] !== v) { par[v] = par[par[v]]; v = par[v]; } return v; };
+    for (const f of faces) { const r = find(f.v[0].id); for (let i = 1; i < f.v.length; i++) { const q = find(f.v[i].id); if (q !== r) par[q] = r; } }
+    const compIdx = new Map(), cT = [], cO = [];
+    for (const f of faces) {
+      const r = find(f.v[0].id);
+      let c = compIdx.get(r);
+      if (c === undefined) { c = cT.length; compIdx.set(r, c); cT.push(new Float64Array(6)); cO.push(f.v[0]); }
+      f.comp = c;
+      for (let i = 0; i < f.v.length; i++) { const a = f.v[i], b = f.v[(i + 1) % f.v.length]; grainAddEdge(cT[c], 0, b.x - a.x, b.y - a.y, b.z - a.z); }
+    }
+    const compGrain = cT.map((T, c) => { const d = grainAxis(T, 0), o = cO[c]; return d ? { a: o, b: { x: o.x + d[0] * 100, y: o.y + d[1] * 100, z: o.z + d[2] * 100 } } : null; });
+    dxfFaceDataFor = dxfGeometry; dxfFaceDataCache = { strokes: out, faces, faceLayers, grain, compGrain };
     return dxfFaceDataCache;
   }
+  window.__dxfCompGrains = () => {
+    if (!dxfGeometry) return null;
+    const d = dxfFaceData(), out = {}, seen = new Set();
+    d.faces.forEach(f => { if (seen.has(f.comp)) return; seen.add(f.comp); const g = d.compGrain && d.compGrain[f.comp]; if (!g) return; const v = [g.b.x - g.a.x, g.b.y - g.a.y, g.b.z - g.a.z].map(x => x / 100); (out[f.layer] = out[f.layer] || []).push(v); });
+    return out;
+  };
   const dxfDrawStrokes = () => dxfFaceData().strokes;
 
   function normalizeDxf3dCfg(d, partial) {
@@ -16383,6 +16434,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     const opaque = [], glass = [];
     let bx0 = W, by0 = H, bx1 = -1, by1 = -1;
+    const compGrain = data.compGrain || [], compDir = new Array(compGrain.length);
+    const faceGrain = f => {
+      const c = f.comp;
+      if (c === undefined || !compGrain[c]) return null;
+      if (compDir[c] === undefined) { const g = compGrain[c], P = tp(g.a), Q = tp(g.b), dx = Q.x - P.x, dy = Q.y - P.y, dz = Q.z - P.z, n = Math.hypot(dx, dy, dz); compDir[c] = n > 1e-9 ? { x: dx / n, y: dy / n, z: dz / n } : null; }
+      return compDir[c];
+    };
     for (const f of data.faces) {
       const li = layerInfo.get(f.layer);
       if (!li || li.alpha <= 0) continue;
@@ -16398,7 +16456,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
       const it = { li, P, shade: 0.55 + 0.45 * Math.abs(nx * Lt.x + ny * Lt.y + nz * Lt.z), uv: null, lv: 0, depth: 0 };
       if (li.TX) {
-        const gr = li.grain;
+        const gr = faceGrain(f) || li.grain;
         let k = gr.x * nx + gr.y * ny + gr.z * nz;
         let ax = gr.x - k * nx, ay = gr.y - k * ny, az = gr.z - k * nz, al = Math.hypot(ax, ay, az);
         if (al < 0.2) { k = nz; ax = -k * nx; ay = -k * ny; az = 1 - k * nz; al = Math.hypot(ax, ay, az) || 1; }
