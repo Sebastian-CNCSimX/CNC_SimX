@@ -1661,16 +1661,47 @@
   #shortcutsPanel .paste-card { width: min(1180px, 96vw); }
   
   #machineTablePanel .paste-card { width: min(1000px, 96vw); }
-  .mt-set-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .mt-set-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  
+  #machineTablePanel .settings-tabs { margin-bottom: 8px; }
+  .mt-cup-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr) 270px; gap: 16px; align-items: start; }
+  .mt-cup-list { border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-height: 230px; max-height: 360px; overflow: auto; }
+  .mt-cup-item { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 6px; cursor: pointer; }
+  .mt-cup-item:hover { background: var(--muted-soft); }
+  .mt-cup-item.active { background: var(--accent); color: #fff; }
+  .mt-cup-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mt-cup-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid #0003; flex: none; }
+  .mt-cup-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .mt-cup-save { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .mt-cup-msg { font-size: 12.5px; color: var(--ink-muted); }
+  #mtCupName.warn { border-color: #d84315; color: #d84315; }
+  #mtCupName.invalid { border-color: #d33; box-shadow: inset 0 0 0 1px #d33; }
+  #cupAssignPanel .paste-card { width: min(1560px, 97vw); }
+  .cup-assign-scroll { overflow-x: auto; }
+  #cupAssignTop { background: var(--muted-soft); border-radius: 8px; }
+  .cup-assign-legends { margin: 8px 0 10px; }
+  .cup-assign-legend { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 12.5px; }
+  .cup-assign-table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+  .cup-assign-table th { padding: 4px; font-weight: 600; }
+  .cup-assign-table td { padding: 3px; border-top: 1px solid var(--border); text-align: center; }
+  .cup-assign-x { font-weight: 400; color: var(--ink-muted); }
+  .cup-assign-row { font-weight: 600; text-align: left !important; }
+  .cup-assign-table select { font-size: 11.5px; width: 158px; padding-left: 4px; }
+  .cup-assign-table select.flash { outline: 3px solid var(--accent); }
+  .cup-assign-actions { justify-content: space-between !important; }
+  #mtPaneCups .mt-set-row { grid-template-columns: 110px minmax(0, 1fr); }
+  #mtPaneCups .mt-set-fields { flex-wrap: nowrap; }
+  #mtPaneCups .mt-set-fields input { width: 78px; }
+  @media (max-width: 1000px) { .mt-cup-grid { grid-template-columns: minmax(0, 1fr); } }
   .mt-set-grid { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; align-items: start; }
-  .mt-set-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); align-items: end; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mt-set-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .mt-set-row > b { padding-bottom: 6px; }
   .mt-set-fields { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
   .mt-set-fields label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
   .mt-set-fields input { width: 92px; }
   .mt-set-fields input.invalid { border-color: #d33; box-shadow: inset 0 0 0 1px #d33; }
   .mt-set-fields input.warn { border-color: #d84315; color: #d84315; }
-  .mt-set-note { font-size: 12px; color: var(--ink-muted); padding: 0 0 8px 6px; }
+  .mt-set-note { font-size: 12px; color: var(--ink-muted); padding: 4px 0 0; }   
   .mt-set-warn { color: #d84315; font-size: 12.5px; margin: 8px 0 0; display: flex; flex-direction: column; gap: 3px; }
   .mt-set-sketch { display: flex; flex-direction: column; gap: 10px; color: var(--ink); }
   .mt-set-sketch svg { background: var(--muted-soft); border-radius: 8px; }
@@ -2294,6 +2325,8 @@
           
           <span class="finish-sep" aria-hidden="true"></span>
           <button class="toolbar-btn abtrag-path-btn" id="btnTablePlane" type="button" disabled aria-pressed="false" title="Ebene Tisch ein-/ausblenden (Einstellungen unter „Bauteil erstellen“)" data-i18n-en-title="Show/hide table plane (settings under &quot;Create part&quot;)"></button>
+          
+          <button class="toolbar-btn abtrag-path-btn" id="btnTableAssign" type="button" disabled title="Saugerzuordnung: welcher Sauger wo sitzt (Saugersets unter „Einstellungen → Maschinentisch &amp; Sauger“)" data-i18n-en-title="Suction cup assignment: which cup sits where (sets under &quot;Settings → Machine table &amp; suction cups&quot;)"><svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true"><rect x="1" y="8" width="17" height="2.6" rx="0.8" fill="currentColor"/><line x1="3.5" y1="10" x2="3.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="15.5" y1="10" x2="15.5" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g transform="translate(23,6)" fill="none" stroke="currentColor" stroke-width="1.6"><circle r="2.4"/><path d="M0-5.2v2M0 3.2v2M-5.2 0h2M3.2 0h2M-3.7-3.7l1.4 1.4M2.3 2.3l1.4 1.4M-3.7 3.7l1.4-1.4M2.3-2.3l1.4-1.4"/></g></svg></button>
         <span class="abtrag-progress" id="abtragProgress" hidden></span>
       </div>
     </div>
@@ -2668,17 +2701,43 @@
 
 <div class="paste-panel" id="machineTablePanel">
   <div class="paste-card">
-    <div class="mt-set-head"><h3 data-i18n-en="Machine table &amp; suction cups">Maschinentisch &amp; Sauger</h3><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
-    <p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the suction cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p>
-    <div class="mt-set-grid"><div>
-        <div class="mt-set-row"><b data-i18n-en="Machine table">Maschinentisch</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetTX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetTY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div></div>
-        <div class="mt-set-row"><b data-i18n-en="Console">Balken</b><div class="mt-set-fields"><label><span data-i18n-en="X (width)">X (Breite)</span><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z (height)">Z (Höhe)</span><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Y = table depth">Y = Tischtiefe</span></div></div>
-        <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Centre = program position">Mitte = Programmposition</span></div></div>
-        <div class="mt-set-row"><b data-i18n-en="Suction cup">Sauger</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="Suction plate 15">Saugplatte 15</span></div></div>
-        <div class="mt-set-row"><b data-i18n-en="Suction cup offset">Verschiebung Sauger</b><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label><span class="mt-set-note" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</span></div></div>
-        <div class="mt-set-warn" id="mtSetWarn" hidden></div>
-      </div><div class="mt-set-sketch"><svg id="mtSetTop" width="260" height="250" viewBox="0 0 260 250"></svg><svg id="mtSetSide" width="260" height="250" viewBox="0 0 260 250"></svg></div></div>
+    <h3 data-i18n-en="Machine table &amp; suction cups">Maschinentisch &amp; Sauger</h3>
+    <div class="settings-tabs" role="tablist"><button class="settings-tab active" type="button" role="tab" id="mtTabTable" data-i18n-en="Machine table">Maschinentisch</button><button class="settings-tab" type="button" role="tab" id="mtTabCups" data-i18n-en="Suction cups">Sauger</button></div>
+    <div id="mtPaneTable">
+      <div class="mt-set-head"><p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the suction cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
+      <div class="mt-set-grid"><div>
+          <div class="mt-set-row"><b data-i18n-en="Machine table">Maschinentisch</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetTX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetTY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Console">Balken</b><div><div class="mt-set-fields"><label><span data-i18n-en="X (width)">X (Breite)</span><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z (height)">Z (Höhe)</span><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Y = table depth">Y = Tischtiefe</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Centre = program position, the same for all suction cups">Mitte = Programmposition, für alle Sauger gleich</div></div></div>
+      </div><div class="mt-set-sketch"><svg id="mtSetSideTable" width="260" height="250" viewBox="0 0 260 250"></svg></div></div>
+    </div>
+    <div id="mtPaneCups" hidden>
+      <p class="panel-hint" data-i18n-en="Suction cup sets like the tool profiles: create, copy, delete. &quot;Sauger 145x145&quot; is the default and cannot be deleted. Which cup sits where: table symbol with gear next to the table symbol.">Saugersets wie bei den Werkzeugprofilen: anlegen, kopieren, löschen. „Sauger 145x145“ ist der Standard und kann nicht gelöscht werden. Welcher Sauger wo sitzt: Symbol Tisch mit Zahnrad neben dem Tisch-Symbol.</p>
+      <div class="mt-cup-grid">
+        <div><div class="mt-cup-list" id="mtCupList"></div>
+          <div class="mt-cup-btns"><button class="btn ghost small" id="btnMtCupNew" type="button" data-i18n-en="New">Neu</button><button class="btn ghost small" id="btnMtCupCopy" type="button" data-i18n-en="Copy">Kopieren</button><button class="btn ghost small" id="btnMtCupDelete" type="button" data-i18n-en="Delete">Löschen</button></div></div>
+        <div>
+          <div class="mt-set-row"><b data-i18n-en="Name">Name</b><div><div class="mt-set-fields"><label><span></span><input type="text" id="mtCupName" class="filename-input" spellcheck="false" style="width:240px"></label></div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Suction cup">Sauger</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Suction plate 15mm (display only)">Saugplatte 15mm (nur Darstellung)</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Offset">Verschiebung</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</div></div></div>
+          <div class="mt-set-warn" id="mtSetWarn" hidden></div>
+          <div class="mt-cup-save"><button class="btn ghost" id="btnMtCupSave" type="button" data-i18n-en="Save suction cup">Sauger speichern</button><span class="mt-cup-msg" id="mtCupMsg"></span></div>
+        </div>
+        <div class="mt-set-sketch"><svg id="mtSetTop" width="260" height="250" viewBox="0 0 260 250"></svg><svg id="mtSetSide" width="260" height="250" viewBox="0 0 260 250"></svg></div>
+      </div>
+    </div>
     <div class="paste-actions"><button class="btn ghost" id="btnMtSetCancel" type="button" data-i18n-en="Cancel">Abbrechen</button><button class="btn primary" id="btnMtSetOk" type="button">Ok</button></div>
+  </div>
+</div>
+
+<div class="paste-panel" id="cupAssignPanel">
+  <div class="paste-card">
+    <h3 id="cupAssignTitle">Saugerzuordnung</h3>
+    <p class="panel-hint" id="cupAssignHint"></p>
+    <div class="cup-assign-scroll"><svg id="cupAssignTop" width="920" height="300"></svg></div>
+    <div class="cup-assign-legends" id="cupAssignLegend"></div>
+    <div class="cup-assign-scroll" id="cupAssignTable"></div>
+    <div class="paste-actions cup-assign-actions"><button class="btn ghost" id="btnCupAssignStd" type="button" data-i18n-en="All to default">Alle auf Standard</button><span><button class="btn ghost" id="btnCupAssignCancel" type="button" data-i18n-en="Cancel">Abbrechen</button> <button class="btn primary" id="btnCupAssignOk" type="button">Ok</button></span></div>
   </div>
 </div>
 <div class="paste-panel" id="tableCollisionPanel">
@@ -8765,7 +8824,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 393;
+  const APP_RELEASE_NUMBER = 394;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8774,7 +8833,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 10:40 Uhr';
+  const APP_RELEASE_TIMESTAMP = '25.11.2026, 11:51 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13208,6 +13267,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 394, date: '25.11.2026', items: [
+      { de: '„Einstellungen → Maschinentisch & Sauger“ hat jetzt zwei Reiter: Maschinentisch (Tisch, Balken, Sockel) und Sauger – Saugersets wie die Werkzeugprofile anlegen, kopieren, löschen (z. B. „Sauger 55x145, links“). „Sauger 145x145“ ist der Standard.',
+        en: '"Settings → Machine table & suction cups" now has two tabs: machine table (table, consoles, bases) and suction cups – create, copy and delete suction cup sets like the tool profiles (e.g. "Sauger 55x145, links"). "Sauger 145x145" is the default.' },
+      { de: 'Neues Symbol „Saugerzuordnung“ neben dem Tisch-Symbol: je Reihe oder je einzelnem Sauger ein Saugerset wählen; die Darstellung und die Kollisionsprüfung ändern sich, der CNC-Code bleibt gleich.',
+        en: 'New "Suction cup assignment" icon next to the table icon: choose a suction cup set per row or per single cup; display and collision check change, the CNC code stays the same.' },
+    ] },
     { release: 393, date: '25.11.2026', items: [
       { de: 'Neues Fenster „Einstellungen → Maschinentisch & Sauger“: Maße von Tisch, Balken (Breite, Höhe), Sockel und Sauger (X, Y, Z) sowie die Verschiebung des Saugers auf dem Sockel einstellen – z. B. für halbe oder gedrehte Sauger. Mit Skizze und Warnung bei Überstand. Die Ebene Tisch übernimmt die Tischgröße.',
         en: 'New window "Settings → Machine table & suction cups": set the dimensions of table, consoles (width, height), bases and suction cups (X, Y, Z) and the offset of the suction cup on its base – e.g. for half or rotated suction cups. With sketch and warning on overhang. The table plane uses the table size.' },
@@ -20650,26 +20715,61 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ctx.restore();
   }
   var MT_LS_KEY = 'cncsim.machineTableSettings';
-  var MT_DEFAULTS = { tX: 5515, tY: 1600, beamX: 150, beamZ: 100, sockX: 145, sockY: 145, sockZ: 20, cupX: 145, cupY: 145, cupZ: 90, offX: 0, offY: 0 };
-  var MT_POSITIVE = ['tX', 'tY', 'beamX', 'beamZ', 'sockX', 'sockY', 'sockZ', 'cupX', 'cupY', 'cupZ'];
+  var MT_DEFAULTS = { tX: 5515, tY: 1600, beamX: 150, beamZ: 100, sockX: 145, sockY: 145, sockZ: 20 };
   var MT_PAD_H = 15;
   function normMtSettings(o) {
     const t = Object.assign({}, MT_DEFAULTS);
-    if (o && typeof o === 'object') Object.keys(MT_DEFAULTS).forEach(k => { const v = o[k]; if (typeof v === 'number' && isFinite(v) && (MT_POSITIVE.indexOf(k) < 0 || v > 0)) t[k] = v; });
+    if (o && typeof o === 'object') Object.keys(MT_DEFAULTS).forEach(k => { const v = o[k]; if (typeof v === 'number' && isFinite(v) && v > 0) t[k] = v; });
     return t;
   }
-  function loadMtSettings() { try { return normMtSettings(JSON.parse(window.localStorage.getItem(MT_LS_KEY) || 'null')); } catch (e) { return normMtSettings(null); } }
-  var mtSet = loadMtSettings();
-  function mtWarnings(s) {
+  var mtSetRaw = (() => { try { return JSON.parse(window.localStorage.getItem(MT_LS_KEY) || 'null'); } catch (e) { return null; } })();
+  var mtSet = normMtSettings(mtSetRaw);
+  var CUP_LS_KEY = 'cncsim.suctionSets';
+  var CUP_STD = { id: 'std', name: 'Sauger 145x145', x: 145, y: 145, z: 90, ox: 0, oy: 0 };
+  var CUP_COLORS = ['#c8ccc8', '#7cb342', '#ffb300', '#42a5f5', '#ab47bc', '#ef5350', '#26a69a', '#8d6e63', '#ec407a', '#5c6bc0'];
+  function normCup(c) {
+    if (!c || typeof c !== 'object' || typeof c.name !== 'string' || !c.name.trim()) return null;
+    const n = v => (typeof v === 'number' && isFinite(v)) ? v : NaN;
+    const o = { id: typeof c.id === 'string' && c.id ? c.id : 'c' + Math.random().toString(36).slice(2, 9), name: c.name.trim().slice(0, 60),
+      x: n(c.x), y: n(c.y), z: n(c.z), ox: n(c.ox), oy: n(c.oy) };
+    if (!(o.x > 0 && o.y > 0 && o.z > 0) || !isFinite(o.ox) || !isFinite(o.oy)) return null;
+    return o;
+  }
+  function normCupSets(arr) {
+    const out = [], ids = new Set(), names = new Set();
+    (Array.isArray(arr) ? arr : []).forEach(c => { const o = normCup(c); if (!o || ids.has(o.id) || names.has(o.name.toLowerCase())) return; ids.add(o.id); names.add(o.name.toLowerCase()); out.push(o); });
+    let std = out.find(c => c.id === 'std');
+    if (!std) {
+      std = Object.assign({}, CUP_STD);
+      const r = mtSetRaw && typeof mtSetRaw === 'object' ? mtSetRaw : {};
+      const ok = v => typeof v === 'number' && isFinite(v);
+      if (ok(r.cupX) && r.cupX > 0 && ok(r.cupY) && r.cupY > 0 && ok(r.cupZ) && r.cupZ > 0) { std.x = r.cupX; std.y = r.cupY; std.z = r.cupZ; }
+      if (ok(r.offX)) std.ox = r.offX; if (ok(r.offY)) std.oy = r.offY;
+      if (names.has(std.name.toLowerCase())) std.name = std.name + ' (Standard)';
+    } else out.splice(out.indexOf(std), 1);
+    out.unshift(std);
+    return out;
+  }
+  var cupSets = normCupSets((() => { try { return JSON.parse(window.localStorage.getItem(CUP_LS_KEY) || 'null'); } catch (e) { return null; } })());
+  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets)); } catch (e) {  } }
+  function cupSetById(id) { return cupSets.find(c => c.id === id) || cupSets[0]; }
+  function cupColor(id) { const i = cupSets.findIndex(c => c.id === id); return CUP_COLORS[(i < 0 ? 0 : i) % CUP_COLORS.length]; }
+  var cupAssign = new Map();
+  function cupFor(bIdx, row) { return cupSetById(cupAssign.get(bIdx + ':' + row) || 'std'); }
+  function mtApplyChange() {
+    bakeParams = null; requestRender();
+    if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
+  }
+  function mtWarnings(t, c) {
     const w = [], f = v => String(Math.round(v * 100) / 100).replace('.', currentLang === 'en' ? '.' : ',');
-    if (s.cupX > s.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(s.cupX) + ' > ' + f(s.beamX) + ' mm).', 'The suction cup is wider than the console (' + f(s.cupX) + ' > ' + f(s.beamX) + ' mm).'));
+    if (c.x > t.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).', 'The suction cup is wider than the console (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).'));
     const over = [];
-    if (s.offY < 0) over.push([T('vorn', 'front'), -s.offY]);
-    if (s.offY + s.cupY > s.sockY) over.push([T('hinten', 'back'), s.offY + s.cupY - s.sockY]);
-    if (s.offX < 0) over.push([T('links', 'left'), -s.offX]);
-    if (s.offX + s.cupX > s.sockX) over.push([T('rechts', 'right'), s.offX + s.cupX - s.sockX]);
+    if (c.oy < 0) over.push([T('vorn', 'front'), -c.oy]);
+    if (c.oy + c.y > t.sockY) over.push([T('hinten', 'back'), c.oy + c.y - t.sockY]);
+    if (c.ox < 0) over.push([T('links', 'left'), -c.ox]);
+    if (c.ox + c.x > t.sockX) over.push([T('rechts', 'right'), c.ox + c.x - t.sockX]);
     if (over.length) w.push(T('Der Sauger steht über den Sockel hinaus (', 'The suction cup overhangs the base (') + over.map(o => o[0] + ' ' + f(o[1]) + ' mm').join(', ') + T('). Zulässig – bitte prüfen.', '). Allowed – please check.'));
-    return { list: w, overhang: over.length > 0, wide: s.cupX > s.beamX };
+    return { list: w, overhang: over.length > 0, wide: c.x > t.beamX };
   }
   function updateTablePlaneSizeHint() {
     const h = el('tablePlaneSizeHint'); if (!h) return;
@@ -20679,82 +20779,242 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function setMtSettings(o, persist) {
     mtSet = normMtSettings(o);
     if (persist) { try { window.localStorage.setItem(MT_LS_KEY, JSON.stringify(mtSet)); } catch (e) {  } }
-    updateTablePlaneSizeHint();
-    bakeParams = null; requestRender();
-    if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
+    updateTablePlaneSizeHint(); mtApplyChange();
   }
-  var MT_FIELDS = { tX: 'mtSetTX', tY: 'mtSetTY', beamX: 'mtSetBeamX', beamZ: 'mtSetBeamZ', sockX: 'mtSetSockX', sockY: 'mtSetSockY', sockZ: 'mtSetSockZ',
-    cupX: 'mtSetCupX', cupY: 'mtSetCupY', cupZ: 'mtSetCupZ', offX: 'mtSetOffX', offY: 'mtSetOffY' };
-  var mtWork = null;
-  function mtFill(s) { Object.keys(MT_FIELDS).forEach(k => { const i = el(MT_FIELDS[k]); i.value = String(s[k]); i.classList.remove('invalid', 'warn'); }); mtRefresh(); }
-  function mtRead() {
+  function mtSketch(t, c, topEl, sideEl) {
+    if (topEl) {
+      const minX = Math.min(0, c.ox), maxX = Math.max(t.sockX, c.ox + c.x), minY = Math.min(0, c.oy), maxY = Math.max(t.sockY, c.oy + c.y);
+      const k = Math.min(200 / (maxX - minX || 1), 170 / (maxY - minY || 1)), ox = 130 - ((minX + maxX) / 2) * k, oy = 118 + ((minY + maxY) / 2) * k;
+      const R = (x, y, w, h) => 'x="' + (ox + x * k).toFixed(1) + '" y="' + (oy - (y + h) * k).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"';
+      const cx = ox + (t.sockX / 2) * k, cy = oy - (t.sockY / 2) * k;
+      topEl.innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, suction cup red)') + '</text>'
+        + '<rect ' + R(0, 0, t.sockX, t.sockY) + ' fill="#3a3d44" fill-opacity="0.15" stroke="#1d4e6b" stroke-width="3" stroke-dasharray="7 5"/>'
+        + '<rect ' + R(c.ox, c.oy, c.x, c.y) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
+        + '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')" stroke="#555"><circle r="9" fill="none" stroke-width="1.5"/><line x1="-14" x2="14"/><line y1="-14" y2="14"/></g>'
+        + '<text x="10" y="236" font-size="11" fill="currentColor" opacity="0.7">' + T('+ = Sockelmitte (Position aus dem Programm)', '+ = centre of base (position from the program)') + '</text>'
+        + '<text x="10" y="249" font-size="11" fill="currentColor" opacity="0.7">' + T('unten = vorn (kleines Y)', 'bottom = front (small Y)') + '</text>';
+    }
+    if (sideEl) {
+      const tot = t.beamZ + t.sockZ + c.z, kz = Math.min(0.9, 165 / tot), base = 225, bZ = t.beamZ * kz, sZ = t.sockZ * kz, cZ = c.z * kz, pZ = Math.min(MT_PAD_H, c.z) * kz;
+      const wS = Math.min(150, t.sockX * 0.9), wC = Math.min(150, c.x * 0.9);
+      sideEl.innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Seitenansicht (rückwärts vom Bauteil)', 'Side view (calculated down from the part)') + '</text>'
+        + '<rect x="20" y="' + (base - bZ - sZ - cZ - 20) + '" width="160" height="20" fill="#5d8fd8" opacity="0.85"/><text x="28" y="' + (base - bZ - sZ - cZ - 6) + '" font-size="11" fill="#fff">' + T('Bauteil', 'Part') + '</text>'
+        + '<rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + cZ + '" fill="#222224"/><rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + pZ + '" fill="#c8ccc8"/>'
+        + '<rect x="' + (90 - wS / 2) + '" y="' + (base - bZ - sZ) + '" width="' + wS + '" height="' + sZ + '" fill="#3a3d44"/>'
+        + '<rect x="20" y="' + (base - bZ) + '" width="160" height="' + bZ + '" fill="#464e5c"/><line x1="10" x2="250" y1="' + base + '" y2="' + base + '" stroke="#7d8796" stroke-width="4"/>'
+        + '<text x="250" y="' + (base - bZ - sZ - cZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sauger ', 'Cup ') + c.z + '</text>'
+        + '<text x="250" y="' + (base - bZ - sZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sockel ', 'Base ') + t.sockZ + '</text>'
+        + '<text x="250" y="' + (base - bZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Balken ', 'Console ') + t.beamZ + '</text>'
+        + '<text x="10" y="' + (base + 18) + '" font-size="11" fill="currentColor" opacity="0.7">' + T('Tischplatte', 'Table top') + '</text>';
+    }
+  }
+  var MT_FIELDS = { tX: 'mtSetTX', tY: 'mtSetTY', beamX: 'mtSetBeamX', beamZ: 'mtSetBeamZ', sockX: 'mtSetSockX', sockY: 'mtSetSockY', sockZ: 'mtSetSockZ' };
+  var CUP_FIELDS = { x: 'mtCupX', y: 'mtCupY', z: 'mtCupZ', ox: 'mtCupOffX', oy: 'mtCupOffY' };
+  var mtWork = null, cupSel = 'std', mtTab = 'table';
+  const numIn = (i, positive) => { const v = parseFloat(String(i.value).replace(',', '.').trim()); const good = String(i.value).trim() !== '' && isFinite(v) && (!positive || v > 0); i.classList.toggle('invalid', !good); return good ? v : null; };
+  function mtReadTable() {
     const s = Object.assign({}, mtWork); let ok = true;
-    Object.keys(MT_FIELDS).forEach(k => {
-      const i = el(MT_FIELDS[k]), v = parseFloat(String(i.value).replace(',', '.').trim());
-      const good = String(i.value).trim() !== '' && isFinite(v) && (MT_POSITIVE.indexOf(k) < 0 || v > 0);
-      i.classList.toggle('invalid', !good);
-      if (good) s[k] = v; else ok = false;
-    });
+    Object.keys(MT_FIELDS).forEach(k => { const v = numIn(el(MT_FIELDS[k]), true); if (v == null) ok = false; else s[k] = v; });
     return { s, ok };
   }
-  function mtSketch(s) {
-    const minX = Math.min(0, s.offX), maxX = Math.max(s.sockX, s.offX + s.cupX), minY = Math.min(0, s.offY), maxY = Math.max(s.sockY, s.offY + s.cupY);
-    const k = Math.min(200 / (maxX - minX || 1), 170 / (maxY - minY || 1)), ox = 130 - ((minX + maxX) / 2) * k, oy = 118 + ((minY + maxY) / 2) * k;
-    const R = (x, y, w, h) => 'x="' + (ox + x * k).toFixed(1) + '" y="' + (oy - (y + h) * k).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"';
-    const cx = ox + (s.sockX / 2) * k, cy = oy - (s.sockY / 2) * k;
-    el('mtSetTop').innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, suction cup red)') + '</text>'
-      + '<rect ' + R(0, 0, s.sockX, s.sockY) + ' fill="#3a3d44" fill-opacity="0.15" stroke="#1d4e6b" stroke-width="3" stroke-dasharray="7 5"/>'
-      + '<rect ' + R(s.offX, s.offY, s.cupX, s.cupY) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
-      + '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')" stroke="#555"><circle r="9" fill="none" stroke-width="1.5"/><line x1="-14" x2="14"/><line y1="-14" y2="14"/></g>'
-      + '<text x="10" y="236" font-size="11" fill="currentColor" opacity="0.7">' + T('+ = Sockelmitte (Position aus dem Programm)', '+ = centre of base (position from the program)') + '</text>'
-      + '<text x="10" y="249" font-size="11" fill="currentColor" opacity="0.7">' + T('unten = vorn (kleines Y)', 'bottom = front (small Y)') + '</text>';
-    const tot = s.beamZ + s.sockZ + s.cupZ, kz = Math.min(0.9, 165 / tot), base = 225, bZ = s.beamZ * kz, sZ = s.sockZ * kz, cZ = s.cupZ * kz, pZ = Math.min(MT_PAD_H, s.cupZ) * kz;
-    const wS = Math.min(150, s.sockX * 0.9), wC = Math.min(150, s.cupX * 0.9);
-    el('mtSetSide').innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Seitenansicht (rückwärts vom Bauteil)', 'Side view (calculated down from the part)') + '</text>'
-      + '<rect x="20" y="' + (base - bZ - sZ - cZ - 20) + '" width="160" height="20" fill="#5d8fd8" opacity="0.85"/><text x="28" y="' + (base - bZ - sZ - cZ - 6) + '" font-size="11" fill="#fff">' + T('Bauteil', 'Part') + '</text>'
-      + '<rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + cZ + '" fill="#222224"/><rect x="' + (90 - wC / 2) + '" y="' + (base - bZ - sZ - cZ) + '" width="' + wC + '" height="' + pZ + '" fill="#c8ccc8"/>'
-      + '<rect x="' + (90 - wS / 2) + '" y="' + (base - bZ - sZ) + '" width="' + wS + '" height="' + sZ + '" fill="#3a3d44"/>'
-      + '<rect x="20" y="' + (base - bZ) + '" width="160" height="' + bZ + '" fill="#464e5c"/><line x1="10" x2="250" y1="' + base + '" y2="' + base + '" stroke="#7d8796" stroke-width="4"/>'
-      + '<text x="250" y="' + (base - bZ - sZ - cZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sauger ', 'Cup ') + s.cupZ + '</text>'
-      + '<text x="250" y="' + (base - bZ - sZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Sockel ', 'Base ') + s.sockZ + '</text>'
-      + '<text x="250" y="' + (base - bZ / 2 + 4) + '" font-size="11" text-anchor="end" fill="currentColor">' + T('Balken ', 'Console ') + s.beamZ + '</text>'
-      + '<text x="10" y="' + (base + 18) + '" font-size="11" fill="currentColor" opacity="0.7">' + T('Tischplatte', 'Table top') + '</text>';
+  function cupReadForm() {
+    const base = cupSetById(cupSel), c = Object.assign({}, base); let ok = true;
+    Object.keys(CUP_FIELDS).forEach(k => { const v = numIn(el(CUP_FIELDS[k]), k === 'x' || k === 'y' || k === 'z'); if (v == null) ok = false; else c[k] = v; });
+    const nm = el('mtCupName'); c.name = nm.value.trim(); const nameOk = !!c.name; nm.classList.toggle('invalid', !nameOk); if (!nameOk) ok = false;
+    return { c, ok };
+  }
+  function cupDirty() {
+    if (!el('machineTablePanel').classList.contains('open')) return false;
+    const base = cupSetById(cupSel), f = cupReadForm().c;
+    return ['name', 'x', 'y', 'z', 'ox', 'oy'].some(k => f[k] !== base[k] && !(typeof base[k] === 'number' && String(el(CUP_FIELDS[k] || 'mtCupName').value).trim() === ''));
+  }
+  function showMtTab(t) {
+    mtTab = t;
+    ['table', 'cups'].forEach(x => { el(x === 'table' ? 'mtTabTable' : 'mtTabCups').classList.toggle('active', x === t); el(x === 'table' ? 'mtPaneTable' : 'mtPaneCups').hidden = x !== t; });
+    mtRefresh();
+  }
+  function renderCupList() {
+    const L = el('mtCupList'); L.textContent = '';
+    cupSets.forEach(c => {
+      const d = document.createElement('div'); d.className = 'mt-cup-item' + (c.id === cupSel ? ' active' : ''); d.dataset.id = c.id;
+      const sw = document.createElement('span'); sw.className = 'mt-cup-swatch'; sw.style.background = cupColor(c.id);
+      const nm = document.createElement('span'); nm.className = 'mt-cup-name'; nm.textContent = c.name;
+      d.append(sw, nm);
+      if (c.id === 'std') { const lk = document.createElement('span'); lk.textContent = '🔒'; lk.title = T('Standard – kann nicht gelöscht werden', 'Default – cannot be deleted'); d.appendChild(lk); }
+      L.appendChild(d);
+    });
+    el('btnMtCupDelete').disabled = cupSel === 'std';
+  }
+  function fillCupForm() {
+    const c = cupSetById(cupSel);
+    el('mtCupName').value = c.name; el('mtCupName').classList.remove('invalid', 'warn');
+    Object.keys(CUP_FIELDS).forEach(k => { el(CUP_FIELDS[k]).value = String(c[k]); el(CUP_FIELDS[k]).classList.remove('invalid', 'warn'); });
+    el('mtCupMsg').textContent = '';
+    mtRefresh();
   }
   function mtRefresh() {
-    const r = mtRead(); mtWork = r.s;
-    const w = mtWarnings(r.s);
-    ['mtSetOffX', 'mtSetOffY'].forEach(id => el(id).classList.toggle('warn', w.overhang && !el(id).classList.contains('invalid')));
-    el('mtSetCupX').classList.toggle('warn', w.wide && !el('mtSetCupX').classList.contains('invalid'));
-    const box = el('mtSetWarn');
-    box.innerHTML = ''; w.list.forEach(t => { const p = document.createElement('div'); p.textContent = '⚠ ' + t; box.appendChild(p); });
-    box.hidden = !w.list.length;
-    mtSketch(r.s);
-    return r.ok;
+    const rt = mtReadTable(); mtWork = rt.s;
+    const rc = cupReadForm(), c = rc.c, w = mtWarnings(mtWork, c);
+    ['mtCupOffX', 'mtCupOffY'].forEach(id => el(id).classList.toggle('warn', w.overhang && !el(id).classList.contains('invalid')));
+    el('mtCupX').classList.toggle('warn', w.wide && !el('mtCupX').classList.contains('invalid'));
+    const box = el('mtSetWarn'); box.textContent = '';
+    w.list.forEach(t => { const p = document.createElement('div'); p.textContent = '⚠ ' + t; box.appendChild(p); });
+    const dirty = cupDirty();
+    if (dirty) { const p = document.createElement('div'); p.textContent = '⚠ ' + T('Noch nicht gespeichert: „' + (c.name || cupSetById(cupSel).name) + '“.', 'Not saved yet: "' + (c.name || cupSetById(cupSel).name) + '".'); box.appendChild(p); }
+    box.hidden = !box.childNodes.length;
+    el('mtCupName').classList.toggle('warn', dirty && !el('mtCupName').classList.contains('invalid'));
+    mtSketch(mtWork, c, el('mtSetTop'), el('mtSetSide'));
+    mtSketch(mtWork, cupSetById('std'), null, el('mtSetSideTable'));
+    return rt.ok;
   }
-  function openMachineTableSettings() {
+  function cupConfirmLeave() {
+    if (!cupDirty()) return true;
+    if (confirm(T('Noch nicht gespeichert: Sauger „' + cupSetById(cupSel).name + '“.\n\nTrotzdem fortfahren? Die Änderungen gehen verloren.',
+      'Not saved yet: suction cup "' + cupSetById(cupSel).name + '".\n\nContinue anyway? The changes will be lost.'))) return true;
+    showMtTab('cups');
+    return false;
+  }
+  function cupUniqueName(base, exceptId) {
+    const taken = n => cupSets.some(c => c.id !== exceptId && c.name.toLowerCase() === n.toLowerCase());
+    if (!taken(base)) return base;
+    for (let i = 2; ; i++) if (!taken(base + ' ' + i)) return base + ' ' + i;
+  }
+  function cupSave() {
+    const r = cupReadForm();
+    if (!r.ok) { el('mtCupMsg').textContent = T('Bitte gültige Werte eingeben (Maße größer als 0).', 'Please enter valid values (dimensions greater than 0).'); return false; }
+    if (cupSets.some(c => c.id !== cupSel && c.name.toLowerCase() === r.c.name.toLowerCase())) { el('mtCupMsg').textContent = T('Der Name „' + r.c.name + '“ ist schon vergeben.', 'The name "' + r.c.name + '" is already used.'); el('mtCupName').classList.add('invalid'); return false; }
+    const i = cupSets.findIndex(c => c.id === cupSel); cupSets[i] = Object.assign({}, cupSets[i], r.c);
+    saveCupSets(); renderCupList(); el('mtCupMsg').textContent = T('Gespeichert.', 'Saved.'); mtRefresh(); mtApplyChange(); renderCupAssignIfOpen();
+    return true;
+  }
+  function cupSelect(id) { if (id === cupSel || !cupConfirmLeave()) return; cupSel = id; renderCupList(); fillCupForm(); }
+  function cupAdd(copy) {
+    if (!cupConfirmLeave()) return;
+    const src = copy ? cupSetById(cupSel) : CUP_STD;
+    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New suction cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy };
+    cupSets.push(c); saveCupSets(); cupSel = c.id; renderCupList(); fillCupForm(); el('mtCupName').focus(); el('mtCupName').select();
+  }
+  function cupDelete() {
+    if (cupSel === 'std') return;
+    const c = cupSetById(cupSel);
+    if (!confirm(T('Sauger „' + c.name + '“ löschen? Zugeordnete Sauger werden wieder zum Standard.', 'Delete suction cup "' + c.name + '"? Assigned suction cups revert to the default.'))) return;
+    cupSets = cupSets.filter(x => x.id !== c.id);
+    Array.from(cupAssign.keys()).forEach(k => { if (cupAssign.get(k) === c.id) cupAssign.delete(k); });
+    saveCupSets(); cupSel = 'std'; renderCupList(); fillCupForm(); mtApplyChange(); renderCupAssignIfOpen();
+  }
+  function openMachineTableSettings(tab) {
     closeAllMenus(); closeContextMenu();
-    mtWork = Object.assign({}, mtSet); mtFill(mtWork);
+    mtWork = Object.assign({}, mtSet);
+    Object.keys(MT_FIELDS).forEach(k => { const i = el(MT_FIELDS[k]); i.value = String(mtSet[k]); i.classList.remove('invalid'); });
+    if (!cupSets.some(c => c.id === cupSel)) cupSel = 'std';
     el('machineTablePanel').classList.add('open');
-    setTimeout(() => { try { el('mtSetTX').focus(); } catch (e) {  } }, 0);
+    renderCupList(); fillCupForm(); showMtTab(tab === 'cups' ? 'cups' : 'table');
+    setTimeout(() => { try { el(mtTab === 'cups' ? 'mtCupName' : 'mtSetTX').focus(); } catch (e) {  } }, 0);
   }
   function machineTableSettingsOk() {
-    if (!mtRefresh()) { const bad = el('machineTablePanel').querySelector('input.invalid'); if (bad) bad.focus(); return false; }
+    if (!mtRefresh()) { showMtTab('table'); const bad = el('mtPaneTable').querySelector('input.invalid'); if (bad) bad.focus(); return false; }
+    if (!cupConfirmLeave()) return false;
     setMtSettings(mtWork, true);
     el('machineTablePanel').classList.remove('open');
     return true;
   }
-  el('btnOpenMachineTable').addEventListener('click', openMachineTableSettings);
+  function machineTableSettingsCancel() { if (!cupConfirmLeave()) return; el('machineTablePanel').classList.remove('open'); }
+  el('btnOpenMachineTable').addEventListener('click', () => openMachineTableSettings('table'));
+  el('mtTabTable').addEventListener('click', () => showMtTab('table'));
+  el('mtTabCups').addEventListener('click', () => showMtTab('cups'));
   Object.keys(MT_FIELDS).forEach(k => el(MT_FIELDS[k]).addEventListener('input', mtRefresh));
+  Object.keys(CUP_FIELDS).forEach(k => el(CUP_FIELDS[k]).addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); }));
+  el('mtCupName').addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); });
+  el('mtCupList').addEventListener('click', e => { const it = e.target.closest('.mt-cup-item'); if (it) cupSelect(it.dataset.id); });
+  el('btnMtCupSave').addEventListener('click', cupSave);
+  el('btnMtCupNew').addEventListener('click', () => cupAdd(false));
+  el('btnMtCupCopy').addEventListener('click', () => cupAdd(true));
+  el('btnMtCupDelete').addEventListener('click', cupDelete);
   el('btnMtSetOk').addEventListener('click', machineTableSettingsOk);
-  el('btnMtSetCancel').addEventListener('click', () => el('machineTablePanel').classList.remove('open'));
-  el('btnMtSetDefaults').addEventListener('click', () => { mtWork = Object.assign({}, MT_DEFAULTS); mtFill(mtWork); });
+  el('btnMtSetCancel').addEventListener('click', machineTableSettingsCancel);
+  el('btnMtSetDefaults').addEventListener('click', () => { Object.keys(MT_FIELDS).forEach(k => { el(MT_FIELDS[k]).value = String(MT_DEFAULTS[k]); }); mtRefresh(); });
   el('machineTablePanel').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); machineTableSettingsOk(); }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); el('machineTablePanel').classList.remove('open'); }
+    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (mtTab === 'cups' && cupDirty()) cupSave(); else machineTableSettingsOk(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); machineTableSettingsCancel(); }
   });
-  document.addEventListener('cncsim:lang-changed', () => { updateTablePlaneSizeHint(); if (el('machineTablePanel').classList.contains('open')) mtRefresh(); });
+  var cupAssignWork = null;
+  function cupAssignAvailable() { return !!(machineTable && machineTable.beams.some(b => b.y.length)); }
+  function cupAssignRows() { return machineTable ? Math.max(0, ...machineTable.beams.map(b => b.y.length)) : 0; }
+  function renderCupAssign() {
+    const mt = machineTable; if (!mt) return;
+    const rows = cupAssignRows(), W = 900, TX = mtTableX(), TY = mtTableY(), kx = W / TX, H = Math.max(120, Math.min(300, TY * kx)), ky = H / TY;
+    const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std';
+    let svg = '<g transform="translate(10,10)"><rect width="' + W + '" height="' + H + '" fill="#7d8796" opacity="0.35"/>';
+    mt.beams.forEach((b, bi) => {
+      svg += '<rect x="' + ((b.x - mtSet.beamX / 2) * kx).toFixed(1) + '" y="0" width="' + Math.max(2, mtSet.beamX * kx).toFixed(1) + '" height="' + H + '" fill="#464e5c"/>'
+        + '<text x="' + (b.x * kx).toFixed(1) + '" y="' + (H - 4) + '" font-size="10" fill="#fff" text-anchor="middle">PB' + (bi + 1) + '</text>';
+      b.y.forEach((y, r) => {
+        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2;
+        svg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + mtSet.sockY) * ky).toFixed(1) + '" width="' + (mtSet.sockX * kx).toFixed(1) + '" height="' + (mtSet.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
+          + '<rect class="cup-assign-cup" data-b="' + bi + '" data-r="' + r + '" x="' + ((sx + c.ox) * kx).toFixed(1) + '" y="' + (H - (sy + c.oy + c.y) * ky).toFixed(1) + '" width="' + Math.max(2, c.x * kx).toFixed(1) + '" height="' + Math.max(2, c.y * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="#222" stroke-width="0.6" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></rect>';
+      });
+    });
+    const top = el('cupAssignTop'); top.setAttribute('width', W + 20); top.setAttribute('height', H + 20); top.innerHTML = svg + '</g>';
+    el('cupAssignLegend').innerHTML = cupSets.map(c => '<span class="cup-assign-legend"><span class="mt-cup-swatch" style="background:' + cupColor(c.id) + '"></span>' + escapeHtml(c.name) + '</span>').join('');
+    const opts = sel => cupSets.map(c => '<option value="' + c.id + '"' + (c.id === sel ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('');
+    let h = '<table class="cup-assign-table"><tr><th>' + T('Reihe', 'Row') + '</th><th>' + T('ganze Reihe', 'whole row') + '</th>'
+      + mt.beams.map((b, bi) => '<th>PB' + (bi + 1) + '<div class="cup-assign-x">X ' + b.x + '</div></th>').join('') + '</tr>';
+    for (let r = rows - 1; r >= 0; r--) {
+      const vals = mt.beams.map((b, bi) => b.y.length > r ? get(bi, r) : null).filter(v => v != null), uni = vals.every(v => v === vals[0]) ? vals[0] : '';
+      h += '<tr><td class="cup-assign-row">Y' + (r + 1) + '</td><td><select class="filename-input cup-assign-rowsel" data-r="' + r + '"><option value=""' + (uni ? '' : ' selected') + '>' + T('– gemischt –', '– mixed –') + '</option>' + opts(uni) + '</select></td>';
+      mt.beams.forEach((b, bi) => {
+        if (b.y.length <= r) { h += '<td></td>'; return; }
+        const v = get(bi, r);
+        h += '<td><select class="filename-input cup-assign-sel" data-b="' + bi + '" data-r="' + r + '" style="border-left:5px solid ' + cupColor(v) + '">' + opts(v) + '</select></td>';
+      });
+      h += '</tr>';
+    }
+    el('cupAssignTable').innerHTML = h + '</table>';
+    el('cupAssignHint').textContent = T(mt.beams.length + ' Balken (PB1–PB' + mt.beams.length + ') und ' + rows + ' Saugerreihen (Y1–Y' + rows + ') aus dem Programm erkannt. Je Sauger oder je ganzer Reihe ein Saugerset wählen; ein Klick auf einen Sauger in der Draufsicht springt zu seinem Feld. Der CNC-Code bleibt unverändert.',
+      mt.beams.length + ' consoles (PB1–PB' + mt.beams.length + ') and ' + rows + ' suction cup rows (Y1–Y' + rows + ') detected in the program. Choose a suction cup set per cup or per whole row; clicking a cup in the top view jumps to its field. The CNC code stays unchanged.');
+  }
+  function renderCupAssignIfOpen() { if (el('cupAssignPanel').classList.contains('open')) renderCupAssign(); }
+  function openCupAssign() {
+    if (!cupAssignAvailable()) return;
+    closeAllMenus(); closeContextMenu();
+    cupAssignWork = new Map(cupAssign);
+    el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Suction cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
+    renderCupAssign();
+    el('cupAssignPanel').classList.add('open');
+  }
+  function cupAssignOk() {
+    cupAssign = new Map(Array.from(cupAssignWork).filter(e => e[1] && e[1] !== 'std'));
+    el('cupAssignPanel').classList.remove('open');
+    mtApplyChange();
+  }
+  el('cupAssignTable').addEventListener('change', e => {
+    const s = e.target;
+    if (s.classList.contains('cup-assign-sel')) cupAssignWork.set(s.dataset.b + ':' + s.dataset.r, s.value);
+    else if (s.classList.contains('cup-assign-rowsel') && s.value) machineTable.beams.forEach((b, bi) => { if (b.y.length > +s.dataset.r) cupAssignWork.set(bi + ':' + s.dataset.r, s.value); });
+    renderCupAssign();
+  });
+  el('cupAssignTop').addEventListener('click', e => {
+    const r = e.target.closest && e.target.closest('.cup-assign-cup'); if (!r) return;
+    const s = el('cupAssignTable').querySelector('.cup-assign-sel[data-b="' + r.dataset.b + '"][data-r="' + r.dataset.r + '"]');
+    if (s) { s.focus(); s.classList.add('flash'); setTimeout(() => s.classList.remove('flash'), 700); }
+  });
+  el('btnCupAssignStd').addEventListener('click', () => { cupAssignWork.clear(); renderCupAssign(); });
+  el('btnCupAssignOk').addEventListener('click', cupAssignOk);
+  el('btnCupAssignCancel').addEventListener('click', () => el('cupAssignPanel').classList.remove('open'));
+  el('cupAssignPanel').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); e.stopPropagation(); cupAssignOk(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); el('cupAssignPanel').classList.remove('open'); }
+  });
+  el('btnTableAssign').addEventListener('click', openCupAssign);
+  document.addEventListener('cncsim:lang-changed', () => {
+    updateTablePlaneSizeHint();
+    if (el('machineTablePanel').classList.contains('open')) { renderCupList(); mtRefresh(); }
+    renderCupAssignIfOpen();
+  });
   window.__mtSettings = { get: () => Object.assign({}, mtSet), set: o => setMtSettings(o, true), open: openMachineTableSettings, ok: machineTableSettingsOk,
-    state: () => ({ open: el('machineTablePanel').classList.contains('open'), work: Object.assign({}, mtWork), warn: el('mtSetWarn').hidden ? '' : el('mtSetWarn').textContent }) };
+    state: () => ({ open: el('machineTablePanel').classList.contains('open'), tab: mtTab, work: Object.assign({}, mtWork), sel: cupSel, dirty: cupDirty(), warn: el('mtSetWarn').hidden ? '' : el('mtSetWarn').textContent, msg: el('mtCupMsg').textContent }) };
+  window.__cupSets = { list: () => cupSets.map(c => Object.assign({}, c)), set: arr => { cupSets = normCupSets(arr); saveCupSets(); Array.from(cupAssign.keys()).forEach(k => { if (!cupSets.some(c => c.id === cupAssign.get(k))) cupAssign.delete(k); }); mtApplyChange(); },
+    assign: () => Object.fromEntries(cupAssign), setAssign: o => { cupAssign = new Map(Object.entries(o || {})); mtApplyChange(); }, openAssign: openCupAssign, assignOk: cupAssignOk };
   var machineTable = null, machineTableWarnedFor = null;
   function parseMachineTable(text) {
     if (typeof text !== 'string') return null;
@@ -20802,15 +21062,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function machineTableBoxes() {
     const zb = partBottomZ(); if (zb == null || !machineTable) return null;
     const S = mtSet, TX = mtTableX(), TY = mtTableY();
-    const cupBot = zb - S.cupZ, beamTop = cupBot - S.sockZ, beamBot = beamTop - S.beamZ, padH = Math.min(MT_PAD_H, S.cupZ), out = [];
+    const cups = machineTable.beams.map((b, bi) => b.y.map((y, i) => cupFor(bi, i)));
+    const maxZ = Math.max(0, ...cups.map(r => Math.max(0, ...r.map(c => c.z)))) || cupSetById('std').z;
+    const beamTop = zb - maxZ - S.sockZ, sockTop = beamTop + S.sockZ, beamBot = beamTop - S.beamZ, out = [];
     out.push({ kind: 'plate', x0: 0, x1: TX, y0: 0, y1: TY, z0: beamBot, z1: beamBot });
-    machineTable.beams.forEach(b => {
+    machineTable.beams.forEach((b, bi) => {
       out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: 0, y1: TY, z0: beamBot, z1: beamTop, color: '#464e5c' });
       b.y.forEach((y, i) => {
-        const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, cx0 = sx0 + S.offX, cy0 = sy0 + S.offY;
-        out.push({ kind: 'sock', beam: b.n, cup: i + 1, x0: sx0, x1: sx0 + S.sockX, y0: sy0, y1: sy0 + S.sockY, z0: beamTop, z1: cupBot, color: '#3a3d44' });
-        if (S.cupZ > padH) out.push({ kind: 'body', beam: b.n, cup: i + 1, x0: cx0, x1: cx0 + S.cupX, y0: cy0, y1: cy0 + S.cupY, z0: cupBot, z1: zb - padH, color: '#222224' });
-        out.push({ kind: 'pad', beam: b.n, cup: i + 1, x0: cx0, x1: cx0 + S.cupX, y0: cy0, y1: cy0 + S.cupY, z0: zb - padH, z1: zb, color: '#c8ccc8' });
+        const C = cups[bi][i], padH = Math.min(MT_PAD_H, C.z), top = sockTop + C.z;
+        const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, cx0 = sx0 + C.ox, cy0 = sy0 + C.oy;
+        out.push({ kind: 'sock', beam: b.n, cup: i + 1, set: C.id, x0: sx0, x1: sx0 + S.sockX, y0: sy0, y1: sy0 + S.sockY, z0: beamTop, z1: sockTop, color: '#3a3d44' });
+        if (C.z > padH) out.push({ kind: 'body', beam: b.n, cup: i + 1, set: C.id, x0: cx0, x1: cx0 + C.x, y0: cy0, y1: cy0 + C.y, z0: sockTop, z1: top - padH, color: '#222224' });
+        out.push({ kind: 'pad', beam: b.n, cup: i + 1, set: C.id, x0: cx0, x1: cx0 + C.x, y0: cy0, y1: cy0 + C.y, z0: top - padH, z1: top, color: '#c8ccc8' });
       });
     });
     return out;
@@ -20958,6 +21221,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     b.setAttribute('aria-pressed', avail && on ? 'true' : 'false');
     b.innerHTML = TABLE_ICON(!on);
     const c = el('tablePlaneOn'); if (c) c.checked = on;
+    const a = el('btnTableAssign'); if (a) a.disabled = !cupAssignAvailable();
   }
   function tableRebake() { bakeParams = null; requestRender(); }
   function tableChanged(recheck) {
@@ -22441,6 +22705,7 @@ Max Mustermann (Anschrift wie oben)`,
     LS_KEY_OP_COLORS, LS_KEY_OPNAMES, LS_KEY_KNOWLEDGE_BASE,
     LS_KEY_GRID_VISIBLE,
     'cncsim.machineTableSettings',
+    'cncsim.suctionSets',
     'cncsim.axesVisible',
     LS_KEY_GRID_COLOR,
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
@@ -22488,6 +22753,7 @@ Max Mustermann (Anschrift wie oben)`,
       gridVisible,
       axesVisible,
       machineTableSettings: (typeof mtSet !== 'undefined') ? Object.assign({}, mtSet) : undefined,
+      suctionSets: window.__cupSets ? window.__cupSets.list() : undefined,
       gridColor: gridColorOverride,
       axisColors: axisColorOverride,
       axisLabelFontSize,
@@ -22611,6 +22877,7 @@ Max Mustermann (Anschrift wie oben)`,
         setGridVisible(data.gridVisible === true || data.gridVisible === '1' || data.gridVisible === 1);
         syncGridSettingsPanelFromActive();
       }
+      if (Array.isArray(data.suctionSets) && window.__cupSets) window.__cupSets.set(data.suctionSets);
       if (data.machineTableSettings && typeof data.machineTableSettings === 'object' && window.__mtSettings) window.__mtSettings.set(data.machineTableSettings);
       if (data.axesVisible !== undefined) {
         setAxesVisible(data.axesVisible === true || data.axesVisible === '1' || data.axesVisible === 1);
