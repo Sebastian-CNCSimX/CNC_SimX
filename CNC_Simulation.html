@@ -8888,7 +8888,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 399;
+  const APP_RELEASE_NUMBER = 400;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8897,7 +8897,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '26.11.2026, 11:50 Uhr';
+  const APP_RELEASE_TIMESTAMP = '26.11.2026, 12:56 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -9240,6 +9240,34 @@ H*1
 IJMODE=absolute
 CORNERRADIUS=GFIL r=
 [/MACHINETYPE Name="SCM absolut"]
+
+[MACHINETYPE Name="SCM Movepart"]
+[SWITCHCASEMACHINE]
+CR=->R
+OPTI->BLA
+G13D->G1
+G03D->G0
+XT G->M6 T
+V->F
+N X->/
+O ->;O
+Q->C
+R->A
+C=2->G41
+C=1->G42
+C=0->G40
+PB->;PB
+XN X=->;X=
+X=-->;X=
+[/SWITCHCASEMACHINE]
+[CALCMACHINE]
+X*1
+Y*1
+Z*1
+[/CALCMACHINE]
+IJMODE=absolute
+CORNERRADIUS=GFIL r=
+[/MACHINETYPE Name="SCM Movepart"]
 `;
   // SIM_SAVE:MACHINETYPES_DEFAULT:END
 
@@ -9251,7 +9279,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))))))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateScmMovepart400(migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))))))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -9379,6 +9407,24 @@ CORNERRADIUS=GFIL r=
       try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) {  }
     }
     try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_H397, '1'); } catch (e) {  }
+    return out;
+  }
+  const LS_KEY_MIGRATION_SCM_MOVEPART400 = 'cncsim.migration.scmMovepart400';
+  function migrateScmMovepart400(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_MOVEPART400)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM"]', endTag = '[/MACHINETYPE Name="SCM"]';
+    const start = out.indexOf(openTag), end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1 && out.indexOf('[MACHINETYPE Name="SCM Movepart"]') === -1) {
+      const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+      const blk = out.slice(start, end + endTag.length);
+      const mp = blk.split(openTag).join('[MACHINETYPE Name="SCM Movepart"]').split(endTag).join('[/MACHINETYPE Name="SCM Movepart"]');
+      const absEnd = '[/MACHINETYPE Name="SCM absolut"]', ae = out.indexOf(absEnd);
+      const pos = ae !== -1 ? ae + absEnd.length : end + endTag.length;
+      out = out.slice(0, pos) + nl + nl + mp + out.slice(pos);
+      try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) {  }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_MOVEPART400, '1'); } catch (e) {  }
     return out;
   }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
@@ -13382,6 +13428,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 400, date: '26.11.2026', items: [
+      { de: 'Neuer Maschinentyp „SCM Movepart“: Saugerblöcke („Move Part“) werden nacheinander ausgewertet – die Sauger fahren beim Abspielen in den Tisch und zurück, Werkstück, Bahnen und Abtrag fahren mit. Die Nullpunktzeile „O“ verschiebt X/Y; nach einem Trennschnitt folgt jedes Teil seinen Saugern, beide Teile bleiben im Abtrag erhalten.',
+        en: 'New machine type "SCM Movepart": vacuum cup blocks ("Move Part") are evaluated one after another – during playback the cups move into the table and back, workpiece, paths and material removal move with them. The origin line "O" shifts X/Y; after a separating cut each part follows its own cups and both parts are kept in the material removal.' },
+    ] },
     { release: 399, date: '26.11.2026', items: [
       { de: 'Saugerzuordnung: Die Draufsicht zeigt jetzt auch die Bearbeitungen (rot = durchgefräst, grün = Tasche/Nut); Sauger unter einer Durchfräsung sind rot umrandet. Anzeige abschaltbar, Zoomen mit dem Mausrad, ⌂ zeigt wieder den ganzen Tisch.',
         en: 'Vacuum cup assignment: the top view now also shows the machining (red = milled through, green = pocket/groove); vacuum cups below a through cut are outlined in red. Display can be switched off, zoom with the mouse wheel, ⌂ shows the whole table again.' },
@@ -14509,6 +14559,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     name: p.uf.name, source: p.uf.source, missing: p.uf.missing, achsmass: p.uf.achsmass, dir: p.ufDir, hit: p.ufHit || null } : null);
   function isScmFamilyName(name) { return /^scm/i.test(String(name || '').trim()); }
   function isScmAbsolutName(name) { return /^scm\s+absolut$/i.test(String(name || '').trim()); }
+  function isScmMovepartName(name) { return /^scm\s+movepart$/i.test(String(name || '').trim()); }
   function machineCalcOpts(mt) { return { hAsZ: !!(mt && isScmFamilyName(mt.name)), ijAbsolute: !!(mt && mt.ijMode === 'absolute') }; }
   var calcMissingWarnedFor = null;
   function displayCurrentProgram() {
@@ -15178,6 +15229,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
 
+    if (typeof mpBuild === 'function') mpBuild(segments);
     points = [];
     segments.filter(seg => !seg.context).forEach(seg => {
       seg.rangeStart = points.length;
@@ -15386,11 +15438,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   function cameraPosition() {
     const eyeDist = Math.max(cam.dist, cam.minEyeDist);
+    const sh = (typeof mpCamShift !== 'undefined' && mpCamShift) || null;
     return {
-      x: cam.target.x - cam.orient.fwd.x * eyeDist,
-      y: cam.target.y - cam.orient.fwd.y * eyeDist,
-      z: cam.target.z - cam.orient.fwd.z * eyeDist
+      x: cam.target.x - cam.orient.fwd.x * eyeDist - (sh ? sh.x : 0),
+      y: cam.target.y - cam.orient.fwd.y * eyeDist - (sh ? sh.y : 0),
+      z: cam.target.z - cam.orient.fwd.z * eyeDist - (sh ? sh.z : 0)
     };
+  }
+  function cameraPositionRaw() {
+    const eyeDist = Math.max(cam.dist, cam.minEyeDist);
+    return { x: cam.target.x - cam.orient.fwd.x * eyeDist, y: cam.target.y - cam.orient.fwd.y * eyeDist, z: cam.target.z - cam.orient.fwd.z * eyeDist };
   }
 
   function rotateAroundAxis(v, axis, angle) {
@@ -15530,6 +15587,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxf3dFillKey: dxf3dFillVersion + '|' + dxfTexVersion + '|' + dxf3dFillLowQ(),
       objKey: objVersion + '|' + objLowQ() + '|' + dxfTexVersion,
       segments,
+      mpKey: (typeof mpDisplayKey === 'function') ? mpDisplayKey() : '',
       postQ: (postDisp = postDisplayState()) ? postDisp.q + ':' + postDisp.yM + ':' + postDisp.zM + ':' + postRotDir : '',
     };
   }
@@ -15557,6 +15615,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       a.dxf3dFillKey === b.dxf3dFillKey &&
       a.objKey === b.objKey &&
       a.postQ === b.postQ &&
+      a.mpKey === b.mpKey &&
       a.segments === b.segments;
   }
 
@@ -15564,12 +15623,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
     ensureBakeCanvas();
 
+    if (typeof mpUpdateDisplay === 'function') mpUpdateDisplay();
     const camPos = cameraPosition();
     const basis = buildBasis(camPos);
     const proj = p => project(p, camPos, basis, w, h);
+    const camPosRaw = cameraPositionRaw(), projRaw = p => project(p, camPosRaw, basis, w, h);
 
     const newParams = computeBakeParams(w, h);
-    let needFullBake = !bakeParamsEqual(newParams, bakeParams);
+    let needFullBake = !bakeParamsEqual(newParams, bakeParams) || !!(typeof mpPasses === 'function' && mpPasses());
     if (!needFullBake) {
       for (const seg of segments) {
         if (seg.context) continue;
@@ -15584,18 +15645,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.fillStyle = newParams.bg;
       ctx.fillRect(0, 0, w, h);
       const tableFromBelow = tablePlaneVisible() && tableViewFromBelow(basis);
-      if (tablePlaneVisible() && !tableFromBelow) drawTablePlane(camPos, basis, w, h, false);
-      if (gridVisible) drawGrid(proj);
-      if (axesVisible) drawAxisGizmo(proj);
-      dxf3dLastDepth = null;
-      drawDxf(proj);
-      drawObjModel(proj);
-      segments.forEach(seg => {
-        if (seg.opIndex != null && hiddenOpIndexes.has(seg.opIndex)) return;
-        if (!abtragPathHidden()) drawPolyline(seg, proj, 0);
-        seg._baked = segRevealCount(seg);
-      });
-      if (tableFromBelow) drawTablePlane(camPos, basis, w, h, true);
+      if (tablePlaneVisible() && !tableFromBelow) drawTablePlane(camPosRaw, basis, w, h, false);
+      if (gridVisible) drawGrid(projRaw);
+      if (axesVisible) drawAxisGizmo(projRaw);
+      const drawWork = pj => {
+        dxf3dLastDepth = null;
+        drawDxf(pj);
+        drawObjModel(pj);
+        segments.forEach(seg => {
+          if (seg.opIndex != null && hiddenOpIndexes.has(seg.opIndex)) return;
+          if (!abtragPathHidden()) drawPolyline(seg, pj, 0);
+          seg._baked = segRevealCount(seg);
+        });
+      };
+      const passes = (typeof mpPasses === 'function') ? mpPasses() : null;
+      if (passes) {
+        const keep = mpCamShift;
+        passes.forEach(ps => { mpCamShift = ps.shift; mpPassPiece = ps.j; const cp = cameraPosition(); drawWork(p => project(p, cp, basis, w, h)); });
+        mpCamShift = keep; mpPassPiece = -1;
+      } else drawWork(proj);
+      if (tableFromBelow) drawTablePlane(camPosRaw, basis, w, h, true);
       ctx = liveCtx;
       bakeParams = newParams;
     } else {
@@ -17501,6 +17570,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
       let keepC = c => c[1] >= big * 0.7;
       if (colKeep && comps.some(c => c[5] > 0.5 * c[4])) keepC = c => c[5] > 0.5 * c[4];
+      if (mpModel && mpModel.pieces && mpModel.pieces.length > 1) keepC = c => c[1] >= big * 0.3;
       const dropRoot = new Set();
       comps.forEach(c => { if (!keepC(c)) dropRoot.add(c[3]); });
       lastComps = comps.slice().sort((x, y) => y[1] - x[1]).slice(0, 8).map(c => c[2] ? -c[1] : c[1]);
@@ -18844,6 +18914,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const inner = big.filter(enclosed);
           if (inner.length && inner.length < big.length) { kept = inner; waste = big.filter(pc => !enclosed(pc)); info.keptByLoop = true; }
         }
+        if (mpModel && mpModel.pieces && mpModel.pieces.length > 1) { const mx = Math.max(0, ...big.map(pc => area(pc[0]))); const all = big.filter(pc => area(pc[0]) >= 0.3 * mx); if (all.length > kept.length) { kept = all; waste = big.filter(pc => !all.includes(pc)); info.mpKeptAll = true; } }
         Object.assign(info, { pieces: big.length, waste: waste.length, kept: kept.length });
         if (kept.length && (waste.length || info.keptSingle)) {
           kept.sort((p, q) => area(q[0]) - area(p[0]));
@@ -19067,6 +19138,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   const abdexScreenBuf = { sx: new Float64Array(0), sy: new Float64Array(0), sd: new Float64Array(0) };
   function drawMortiseBody(proj, mesh, baseZ) {
+    if (mpPassPiece >= 0 && typeof mpFilterMesh === 'function') mesh = mpFilterMesh(mesh, mpPassPiece);
     const m = ctx.getTransform();
     const sc = m.a || 1;
     const cv = ctx.canvas;
@@ -19884,6 +19956,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       ctx.beginPath();
       let started = false;
       for (let i = startAt; i < revealCount; i++) {
+        if (mpPassPiece >= 0 && seg.points[i].mpShowPiece !== mpPassPiece) { started = false; continue; }
         const p = proj(toRender(postViewPoint(seg.points[i])));
         if (!p) { started = false; continue; }
         if (!started) { ctx.moveTo(p.x, p.y); started = true; }
@@ -19902,6 +19975,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (let i = startAt; i < revealCount; i++) {
       const rapid = seg.points[i].rapid;
       if (rapid && !showRapid) { flush(); pathRapid = null; continue; }
+      if (mpPassPiece >= 0 && (seg.points[i].mpShowPiece !== mpPassPiece || seg.points[i - 1].mpShowPiece !== mpPassPiece)) { flush(); pathRapid = null; continue; }
       const a = proj(toRender(postViewPoint(seg.points[i - 1])));
       const b = proj(toRender(postViewPoint(seg.points[i])));
       if (!a || !b) { flush(); pathRapid = null; continue; }
@@ -21278,10 +21352,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var machineTable = null, machineTableWarnedFor = null;
   function parseMachineTable(text) {
     if (typeof text !== 'string') return null;
-    const table = {}, beams = [];
-    let area = null, dz = null;
+    const table = {}, beams = [], blocks = [];
+    let area = null, dz = null, curBlock = null;
     const lines = text.split(/\r?\n/);
-    for (const l of lines) {
+    for (let li = 0; li < lines.length; li++) {
+      const l = lines[li];
       let m;
       if ((m = l.match(/;\s*TABLE\s+SIZE\s+([XY])\s+(-?[\d.]+)/i))) table[m[1].toUpperCase()] = +m[2];
       else if (/^\s*H\s/.test(l) && area == null) {
@@ -21294,13 +21369,17 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         for (const mm of l.matchAll(/\bY(\d+)=(-?[\d.]+)/g)) ys[+mm[1] - 1] = +mm[2];
         if (!ys.some(v => isFinite(v))) continue;
         beams.push({ n: n ? +n[1] : beams.length + 1, x: +x[1], y: ys.filter(v => isFinite(v)) });
+        const bn = n ? +n[1] : null;
+        if (!curBlock || (bn != null && curBlock.beams.some(b => b.n === bn))) { curBlock = { line: li, beams: [] }; blocks.push(curBlock); }
+        curBlock.beams.push({ n: bn != null ? bn : curBlock.beams.length + 1, x: +x[1], y: ys.filter(v => isFinite(v)) });
       }
     }
     if (!(table.X > 0 || table.Y > 0) && !beams.length) return null;
-    return { x: table.X > 0 ? table.X : null, y: table.Y > 0 ? table.Y : null, beams, area: area || 'AD', dz };
+    return { x: table.X > 0 ? table.X : null, y: table.Y > 0 ? table.Y : null, beams, area: area || 'AD', dz, blocks };
   }
   function machineTableFromProgram(text) {
     machineTable = parseMachineTable(text);
+    if (machineTable && isScmMovepartName(activeMachineTypeName) && machineTable.blocks.length > 1) { machineTable.beamsAll = machineTable.beams; machineTable.beams = machineTable.blocks[0].beams; machineTable.movepart = true; }
     if (machineTable && machineTable.area !== 'AD' && !finishedView && machineTableWarnedFor !== text) {
       machineTableWarnedFor = text;
       setTimeout(() => alert(T('Die Darstellung könnte falsch sein -> unerwarteter Arbeitsbereich, noch nicht implementiert!',
@@ -21319,14 +21398,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function machineTableActive() { return !!(tablePlane && tablePlane.on && machineTableAvailable()); }
   function mtTableX() { return machineTable && machineTable.x > 0 ? machineTable.x : mtSet.tX; }
   function mtTableY() { return machineTable && machineTable.y > 0 ? machineTable.y : mtSet.tY; }
-  function machineTableBoxes() {
+  function machineTableBoxes(beamsOverride) {
     const zb = partBottomZ(); if (zb == null || !machineTable) return null;
+    const MB = beamsOverride || (mpModel ? mpDisplayBeams() : machineTable.beams);
     const S = mtSet, TX = mtTableX(), TY = mtTableY();
-    const cups = machineTable.beams.map((b, bi) => b.y.map((y, i) => cupFor(bi, i)));
+    const cups = MB.map((b, bi) => b.y.map((y, i) => cupFor(bi, i)));
     const maxZ = Math.max(0, ...cups.map(r => Math.max(0, ...r.map(c => c.z)))) || cupSetById('std').z;
     const beamTop = zb - maxZ - S.sockZ, sockTop = beamTop + S.sockZ, beamBot = beamTop - S.beamZ, out = [];
     out.push({ kind: 'plate', x0: 0, x1: TX, y0: 0, y1: TY, z0: beamBot, z1: beamBot });
-    machineTable.beams.forEach((b, bi) => {
+    MB.forEach((b, bi) => {
       out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: 0, y1: TY, z0: beamBot, z1: beamTop, color: '#464e5c' });
       b.y.forEach((y, i) => {
         const C = cups[bi][i], padH = Math.min(MT_PAD_H, C.z), top = sockTop + C.z;
@@ -21412,9 +21492,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return Math.hypot(dx, dy, dz);
   }
   function machineTableHit(i, boxes) {
-    const p = points[i];
+    let p = points[i];
     if (!p || p.toolRadius == null) return null;
-    const q = i > 0 ? points[i - 1] : p;
+    let q = i > 0 ? points[i - 1] : p;
+    if (mpModel && p.mpState != null) {
+      boxes = mpBoxesForState(p.mpState) || boxes;
+      p = Object.assign({}, p, { x: p.mx, y: p.my }); q = Object.assign({}, q, { x: q.mx != null ? q.mx : q.x, y: q.my != null ? q.my : q.y });
+    }
     const r = Math.max(0, p.toolRadius), L = p.toolLength > 0 ? p.toolLength : 50;
     const ax = p.uf ? { x: 0, y: 0, z: -1 } : toolAxisDirection(p);
     const segLen = Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
@@ -21433,6 +21517,183 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     return null;
   }
+  var mpModel = null, mpCamShift = null, mpShown = null, mpAnim = null, mpBoxCache = null;
+  const MP_ANIM_MS = 1000;
+  function mpBuild(segs) {
+    mpModel = null; mpCamShift = null; mpShown = null; mpAnim = null; mpBoxCache = null;
+    const mt = machineTable;
+    if (!mt || !mt.movepart || !current || !isScmMovepartName(activeMachineTypeName)) return;
+    const B = mt.blocks, nS = B.length;
+    const pos = B.map(b => { const m = new Map(); b.beams.forEach(be => be.y.forEach((y, r) => m.set(be.n + ':' + r, { x: be.x, y }))); return m; });
+    const cupKeys = Array.from(pos[0].keys());
+    const delta = (k, key) => { const a = pos[0].get(key), b = pos[k].get(key); return a && b ? { x: b.x - a.x, y: b.y - a.y } : null; };
+    const hl = (rawProgramText || '').split(/\r?\n/).find(l => /^\s*H\s/.test(l)) || '';
+    const DX = +((hl.match(/\bDX=(-?[\d.]+)/) || [])[1]), DY = +((hl.match(/\bDY=(-?[\d.]+)/) || [])[1]);
+    const stock = DX > 0 && DY > 0 ? [[0, 0], [DX, 0], [DX, DY], [0, DY], [0, 0]] : null;
+    const cupsOn = stock ? cupKeys.filter(k => { const c = pos[0].get(k); return c.x >= 0 && c.x <= DX && c.y >= 0 && c.y <= DY; }) : cupKeys;
+    const modeD = (k, keys) => {
+      const cnt = new Map(); let best = null, bn = 0;
+      keys.forEach(key => { const d = delta(k, key); if (!d) return; const id = d.x.toFixed(3) + '|' + d.y.toFixed(3); const n = (cnt.get(id) || 0) + 1; cnt.set(id, n); if (n > bn) { bn = n; best = d; } });
+      return { d: best || { x: 0, y: 0 }, kinds: cnt.size };
+    };
+    const uni = []; for (let k = 0; k < nS; k++) { const r = modeD(k, cupsOn.length ? cupsOn : cupKeys); uni.push(r); }
+    const stateAt = line => { let k = 0; for (let j = 0; j < nS; j++) if (B[j].line <= line) k = j; return k; };
+    const L = current.lines, oAt = new Array(L.length); let ox = 0, oy = 0;
+    for (let i = 0; i < L.length; i++) {
+      const m = /^\s*;?\s*O\s*X=(-?[\d.]+)\s*Y=(-?[\d.]+)/i.exec(L[i] || '');
+      if (m) { ox = +m[1]; oy = +m[2]; }
+      oAt[i] = { x: ox, y: oy };
+    }
+    const zb = partBottomZ();
+    const model = { states: B.map((b, k) => ({ line: b.line, beams: b.beams, d: uni[k].d, kinds: uni[k].kinds })), pieces: null, pieceSince: -1, stock, warn: [] };
+    const caps = [];
+    const lineChoice = new Map();
+    let pieces = null;
+    const pieceD = (pc, k) => { const r = modeD(k, pc.cups); return pc.cups.length ? r.d : uni[k].d; };
+    const makePieces = k => {
+      if (!stock || !caps.length) return null;
+      try {
+        const U = caps.length === 1 ? caps[0] : abtragOp('union', ...caps);
+        const parts = abtragOp('difference', [[stock]], U);
+        const area = ring => { let a = 0; for (let i = 0; i + 1 < ring.length; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; return Math.abs(a / 2); };
+        const A = DX * DY, list = parts.map(pc => ({ ring: pc[0], area: area(pc[0]) })).filter(pc => pc.area > 0.01 * A);
+        if (list.length < 2) return null;
+        list.forEach(pc => { pc.cups = cupsOn.filter(key => { const c = pos[0].get(key); return mpInRing(pc.ring, c.x, c.y); }); });
+        return list;
+      } catch (e) { return null; }
+    };
+    let lastState = 0, prev = null;
+    segs.forEach(seg => {
+      const blade = !!seg.toolIsBlade, rr = blade ? Math.max(0.5, (seg.toolLength > 0 && seg.toolLength < 20 ? seg.toolLength : 3.5) / 2) : Math.max(0, seg.toolRadius || 0);
+      prev = null;
+      seg.points.forEach(p => {
+        const li = p.lineIdx != null ? p.lineIdx : 0, k = stateAt(li), o = oAt[li] || { x: 0, y: 0 };
+        if (k !== lastState) {
+          if (uni[k].kinds > 1 && !pieces) { pieces = makePieces(k); if (pieces) { model.pieces = pieces; model.pieceSince = k; } else model.warn.push(k); }
+          lastState = k;
+        }
+        const mx = p.x + o.x, my = p.y + o.y;
+        let d = uni[k].d, pi = -1;
+        if (pieces) {
+          if (lineChoice.has(li)) pi = lineChoice.get(li);
+          else {
+            let best = Infinity;
+            pieces.forEach((pc, j) => { const dj = pieceD(pc, k), qx = mx - dj.x, qy = my - dj.y; const dist = mpInRing(pc.ring, qx, qy) ? 0 : mpRingDist(pc.ring, qx, qy); if (dist < best) { best = dist; pi = j; } });
+            lineChoice.set(li, pi);
+          }
+          if (pi >= 0) d = pieceD(pieces[pi], k);
+        }
+        p.mx = mx; p.my = my; p.x = mx - d.x; p.y = my - d.y; p.mpState = k; p.mpPiece = pi;
+        if (prev && !p.rapid && zb != null && Math.min(p.z, prev.z) <= zb + 0.01 && rr > 0) caps.push(mpCapsule(prev.x, prev.y, p.x, p.y, rr));
+        prev = p;
+      });
+    });
+    model.pieceD = pieces ? (k => pieces.map(pc => pieceD(pc, k))) : null;
+    if (pieces) segs.forEach(seg => seg.points.forEach(p => { p.mpShowPiece = mpPieceAt(pieces, p.x, p.y); }));
+    mpModel = model;
+  }
+  function mpPieceAt(pieces, x, y) {
+    let best = Infinity, bi = 0;
+    for (let j = 0; j < pieces.length; j++) { const d = mpInRing(pieces[j].ring, x, y) ? 0 : mpRingDist(pieces[j].ring, x, y); if (d < best) { best = d; bi = j; } if (!d) break; }
+    return bi;
+  }
+  function mpInRing(ring, x, y) {
+    let c = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; }
+    return c;
+  }
+  function mpRingDist(ring, x, y) {
+    let best = Infinity;
+    for (let i = 0; i + 1 < ring.length; i++) {
+      const a = ring[i], b = ring[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / l2)) : 0;
+      best = Math.min(best, Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t));
+    }
+    return best;
+  }
+  function mpCapsule(x0, y0, x1, y1, r) {
+    const ang = Math.atan2(y1 - y0, x1 - x0), N = 8, ring = [];
+    for (let i = 0; i <= N; i++) { const a = ang - Math.PI / 2 + Math.PI * i / N; ring.push([x1 + r * Math.cos(a), y1 + r * Math.sin(a)]); }
+    for (let i = 0; i <= N; i++) { const a = ang + Math.PI / 2 + Math.PI * i / N; ring.push([x0 + r * Math.cos(a), y0 + r * Math.sin(a)]); }
+    ring.push(ring[0].slice());
+    return [ring];
+  }
+  function mpStateDs(k) { const m = mpModel; return m.pieces && m.pieceD ? m.pieceD(k) : [m.states[k].d]; }
+  function mpStateNow() {
+    const m = mpModel; if (!m) return 0;
+    if (!hasStarted && scrubIdx === 0) return 0;
+    if (points.length && scrubIdx >= points.length - 1) return m.states.length - 1;
+    const p = points[scrubIdx]; return p && p.mpState != null ? p.mpState : 0;
+  }
+  var mpPieceShow = null, mpPlayedAt = 0, mpPassPiece = -1, mpMeshCache = null;
+  function mpUpdateDisplay() {
+    if (!mpModel) { mpCamShift = null; mpPieceShow = null; return; }
+    const k = mpStateNow(), now = performance.now();
+    if (playing) mpPlayedAt = now;
+    if (mpShown == null) mpShown = k;
+    if (k !== mpShown) {
+      if (playing || now - mpPlayedAt < 400) mpAnim = { from: mpShown, to: k, t0: now, fromDs: (mpPieceShow || mpStateDs(mpShown)).map(d => Object.assign({}, d)), fromBeams: mpDisplayBeams() };
+      else mpAnim = null;
+      mpShown = k;
+    }
+    let ds = mpStateDs(k);
+    if (mpAnim) {
+      const f = Math.min(1, (now - mpAnim.t0) / MP_ANIM_MS), e = f * f * (3 - 2 * f), F = mpAnim.fromDs;
+      ds = ds.map((d, j) => { const a = F[j] || F[0]; return { x: a.x + (d.x - a.x) * e, y: a.y + (d.y - a.y) * e }; });
+      mpAnim.e = e;
+      if (f >= 1) mpAnim = null; else requestAnimationFrame(() => { bakeParams = null; requestRender(); });
+    }
+    mpPieceShow = ds;
+    const cp = points[scrubIdx], j = cp && cp.mpShowPiece != null && ds[cp.mpShowPiece] ? cp.mpShowPiece : 0, d = ds[j] || ds[0];
+    mpCamShift = { x: d.x, y: 0, z: d.y };
+  }
+  function mpPasses() {
+    const ds = mpPieceShow; if (!mpModel || !mpModel.pieces || !ds || ds.length < 2) return null;
+    if (ds.every(d => Math.abs(d.x - ds[0].x) < 1e-6 && Math.abs(d.y - ds[0].y) < 1e-6)) return null;
+    return ds.map((d, j) => ({ j, shift: { x: d.x, y: 0, z: d.y } }));
+  }
+  function mpFilterMesh(mesh, j) {
+    if (!mesh || mesh.dexel || !mpModel || !mpModel.pieces) return mesh;
+    if (!mpMeshCache || mpMeshCache.mesh !== mesh) mpMeshCache = { mesh, byJ: new Map() };
+    if (mpMeshCache.byJ.has(j)) return mpMeshCache.byJ.get(j);
+    const P = mpModel.pieces, at = (x, y) => { const t = dxfTransformPoint({ x, y, z: 0 }); return mpPieceAt(P, t.x, t.y); };
+    const cen = V => { let x = 0, y = 0; V.forEach(v => { x += v[0]; y += v[1]; }); return [x / V.length, y / V.length]; };
+    const out = Object.assign({}, mesh, {
+      tris: (mesh.tris || []).filter(t => { const c = cen(t.v); return at(c[0], c[1]) === j; }),
+      walls: (mesh.walls || []).filter(w => at((w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2) === j),
+    });
+    if (mesh.faces3) out.faces3 = mesh.faces3.filter(f => { const c = cen(f.v); return at(c[0], c[1]) === j; });
+    if (mesh.bores) out.bores = mesh.bores.filter(b => at(b.entry[0], b.entry[1]) === j);
+    if (mesh.rings) {
+      out.rings = [];
+      mesh.rings.forEach(r => {
+        const n = r.pts.length, own = r.pts.map(p => at(p[0], p[1]) === j);
+        if (own.every(Boolean)) { out.rings.push(r); return; }
+        let run = [];
+        const flush = () => { if (run.length >= 2) out.rings.push(Object.assign({}, r, { pts: run, open: true })); run = []; };
+        for (let k = 0; k < (r.open ? n : n + 1); k++) { const i = k % n; if (own[i]) run.push(r.pts[i]); else flush(); }
+        flush();
+      });
+    }
+    mpMeshCache.byJ.set(j, out);
+    return out;
+  }
+  function mpDisplayBeams() {
+    const m = mpModel; if (!m) return machineTable ? machineTable.beams : [];
+    const k = mpShown != null ? mpShown : 0, to = m.states[k].beams;
+    if (!mpAnim || mpAnim.e == null) return to;
+    const from = mpAnim.fromBeams || m.states[mpAnim.from].beams, e = mpAnim.e;
+    return to.map(b => { const a = from.find(x => x.n === b.n); return a ? { n: b.n, x: a.x + (b.x - a.x) * e, y: b.y.map((y, r) => a.y[r] != null ? a.y[r] + (y - a.y[r]) * e : y) } : b; });
+  }
+  function mpDisplayKey() { return mpModel ? (mpShown + '|' + (mpCamShift ? mpCamShift.x.toFixed(2) + ',' + mpCamShift.z.toFixed(2) : '') + '|' + (mpPieceShow ? mpPieceShow.map(d => d.x.toFixed(2) + ',' + d.y.toFixed(2)).join(';') : '') + '|' + (mpAnim ? mpAnim.e : '')) : ''; }
+  function mpBoxesForState(k) {
+    if (!mpModel) return null;
+    if (!mpBoxCache) mpBoxCache = new Map();
+    if (!mpBoxCache.has(k)) mpBoxCache.set(k, machineTableBoxes(mpModel.states[k].beams));
+    return mpBoxCache.get(k);
+  }
+  window.__movepart = () => mpModel ? { states: mpModel.states.map(s => ({ line: s.line, d: s.d, kinds: s.kinds, beams: s.beams.map(b => ({ n: b.n, x: b.x, y: b.y.slice() })) })),
+    pieces: mpModel.pieces ? mpModel.pieces.map(pc => ({ area: Math.round(pc.area), cups: pc.cups.slice() })) : null, pieceSince: mpModel.pieceSince, warn: mpModel.warn.slice(),
+    shown: mpShown, anim: !!mpAnim, shift: mpCamShift ? { x: mpCamShift.x, y: mpCamShift.z } : null, pieceShow: mpPieceShow ? mpPieceShow.map(d => ({ x: d.x, y: d.y })) : null, passes: (mpPasses() || []).length, displayBeams: mpDisplayBeams().map(b => ({ n: b.n, y: b.y.slice() })) } : null;
   window.__machineTable = () => machineTable ? { x: mtTableX(), y: mtTableY(), area: machineTable.area, dz: machineTable.dz, beams: machineTable.beams.map(b => ({ n: b.n, x: b.x, y: b.y.slice() })) } : null;
   window.__machineTableParse = t => parseMachineTable(t);
   window.__machineTableBoxes = () => machineTableBoxes() || [];
