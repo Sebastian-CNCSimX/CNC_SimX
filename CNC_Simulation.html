@@ -1680,6 +1680,15 @@
   .cup-assign-scroll { overflow-x: auto; }
   #cupAssignTop { background: var(--muted-soft); border-radius: 8px; }
   .cup-assign-legends { margin: 8px 0 10px; }
+  
+  .cup-assign-ops { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px 2px; cursor: pointer; }
+  .cup-assign-ops .panel-hint { margin: 0 0 0 8px; }
+  .cup-assign-view { position: relative; display: inline-block; max-width: 100%; }
+  #cupAssignTop { cursor: grab; }
+  #cupAssignTop.panning { cursor: grabbing; }
+  .cup-assign-home { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 8px; background: var(--card, #fff); color: var(--ink); font-size: 16px; line-height: 1; cursor: pointer; }
+  .cup-assign-home:hover { color: var(--accent); }
+  .cup-assign-zoomhint { margin: 2px 0 0 2px; }
   .cup-assign-legend { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 12.5px; }
   .cup-assign-table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
   .cup-assign-table th { padding: 4px; font-weight: 600; }
@@ -2734,7 +2743,10 @@
   <div class="paste-card">
     <h3 id="cupAssignTitle">Saugerzuordnung</h3>
     <p class="panel-hint" id="cupAssignHint"></p>
-    <div class="cup-assign-scroll"><svg id="cupAssignTop" width="920" height="300"></svg></div>
+    
+    <label class="cup-assign-ops"><input type="checkbox" id="cupAssignShowOps"> <span data-i18n-en="Show machining">Bearbeitungen anzeigen</span><span class="panel-hint" data-i18n-en="(red = milled through below the part, green = pocket/groove)">(rot = durchgefräst bis unter das Bauteil, grün = Tasche/Nut)</span></label>
+    <div class="cup-assign-scroll"><div class="cup-assign-view"><svg id="cupAssignTop" width="920" height="300"></svg><button type="button" class="cup-assign-home" id="btnCupAssignHome" title="Ganzen Tisch zeigen" data-i18n-en-title="Show whole table" data-i18n-de-title="Ganzen Tisch zeigen">⌂</button></div></div>
+    <p class="panel-hint cup-assign-zoomhint" data-i18n-en="Mouse wheel = zoom, drag = pan, ⌂ = show whole table">Mausrad = zoomen, ziehen = verschieben, ⌂ = ganzen Tisch zeigen</p>
     <div class="cup-assign-legends" id="cupAssignLegend"></div>
     <div class="cup-assign-scroll" id="cupAssignTable"></div>
     <div class="paste-actions cup-assign-actions"><button class="btn ghost" id="btnCupAssignStd" type="button" data-i18n-en="All to default">Alle auf Standard</button><span><button class="btn ghost" id="btnCupAssignCancel" type="button" data-i18n-en="Cancel">Abbrechen</button> <button class="btn primary" id="btnCupAssignOk" type="button">Ok</button></span></div>
@@ -8876,7 +8888,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 398;
+  const APP_RELEASE_NUMBER = 399;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8885,7 +8897,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '26.11.2026, 07:01 Uhr';
+  const APP_RELEASE_TIMESTAMP = '26.11.2026, 11:50 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13370,6 +13382,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 399, date: '26.11.2026', items: [
+      { de: 'Saugerzuordnung: Die Draufsicht zeigt jetzt auch die Bearbeitungen (rot = durchgefräst, grün = Tasche/Nut); Sauger unter einer Durchfräsung sind rot umrandet. Anzeige abschaltbar, Zoomen mit dem Mausrad, ⌂ zeigt wieder den ganzen Tisch.',
+        en: 'Vacuum cup assignment: the top view now also shows the machining (red = milled through, green = pocket/groove); vacuum cups below a through cut are outlined in red. Display can be switched off, zoom with the mouse wheel, ⌂ shows the whole table again.' },
+    ] },
     { release: 398, date: '26.11.2026', items: [
       { de: '„Zielflagge CNC“ und „Zielflagge ☰+ Liste“ fragen jetzt immer nach dem Maschinentyp; ein erkannter Typ ist vorgewählt und muss nur bestätigt werden.',
         en: '"Finish flag CNC" and "finish flag ☰+ List" now always ask for the machine type; a detected type is preselected and only needs to be confirmed.' },
@@ -21087,21 +21103,91 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var cupAssignWork = null;
   function cupAssignAvailable() { return !!(machineTable && machineTable.beams.some(b => b.y.length)); }
   function cupAssignRows() { return machineTable ? Math.max(0, ...machineTable.beams.map(b => b.y.length)) : 0; }
+  var LS_KEY_CUP_ASSIGN_OPS = 'cncsim.cupAssignShowOps';
+  var cupAssignShowOps = (() => { try { return localStorage.getItem('cncsim.cupAssignShowOps') !== '0'; } catch (e) { return true; } })();
+  function setCupAssignShowOps(on) {
+    cupAssignShowOps = !!on;
+    try { localStorage.setItem(LS_KEY_CUP_ASSIGN_OPS, cupAssignShowOps ? '1' : '0'); } catch (e) {  }
+    renderCupAssignIfOpen();
+  }
+  function cupAssignOpsSvg(kx, ky, H) {
+    const zb = partBottomZ(), deep = [], groups = [];
+    let cur = null, n = 0;
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i], q = points[i - 1];
+      if (!p || !q || p.rapid || p.uf || hiddenOpIndexes.has(p.opIndex)) { cur = null; continue; }
+      const r = Math.max(0, p.toolRadius || 0), isDeep = zb != null && Math.min(p.z, q.z) <= zb + 0.01;
+      if (isDeep) deep.push({ x0: q.x, y0: q.y, x1: p.x, y1: p.y, r });
+      const key = (isDeep ? 'd' : 'f') + r;
+      const a = (q.x * kx).toFixed(1) + ' ' + (H - q.y * ky).toFixed(1), b = (p.x * kx).toFixed(1) + ' ' + (H - p.y * ky).toFixed(1);
+      if (!cur || cur.key !== key || cur.end !== a) { cur = { key, deep: isDeep, r, d: 'M' + a, end: a }; groups.push(cur); }
+      cur.d += 'L' + b; cur.end = b; n++;
+    }
+    let svg = '<g class="cup-assign-opslayer" pointer-events="none" stroke-linecap="round" stroke-linejoin="round" fill="none">';
+    groups.forEach(g => {
+      const col = g.deep ? '#d62828' : '#1f9d55';
+      svg += '<path d="' + g.d + '" stroke="' + col + '" stroke-opacity="0.35" stroke-width="' + Math.max(1.5, 2 * g.r * kx).toFixed(2) + '"/><path d="' + g.d + '" stroke="' + col + '" stroke-width="0.8"/>';
+    });
+    return { svg: svg + '</g>', deep, n };
+  }
+  function cupAssignSegRectDist(s, x0, y0, x1, y1) {
+    const inR = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    if (inR(s.x0, s.y0) || inR(s.x1, s.y1)) return 0;
+    const cross = (ax, ay, bx, by, cx, cy, dx, dy) => {
+      const d1 = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax), d2 = (bx - ax) * (dy - ay) - (by - ay) * (dx - ax);
+      const d3 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx), d4 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
+      return d1 * d2 < 0 && d3 * d4 < 0;
+    };
+    const E = [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]];
+    if (E.some(e => cross(s.x0, s.y0, s.x1, s.y1, e[0], e[1], e[2], e[3]))) return 0;
+    const ptSeg = (px, py) => { const dx = s.x1 - s.x0, dy = s.y1 - s.y0, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((px - s.x0) * dx + (py - s.y0) * dy) / l2)) : 0; return Math.hypot(px - s.x0 - dx * t, py - s.y0 - dy * t); };
+    const ptRect = (px, py) => Math.hypot(Math.max(x0 - px, 0, px - x1), Math.max(y0 - py, 0, py - y1));
+    return Math.min(ptSeg(x0, y0), ptSeg(x1, y0), ptSeg(x1, y1), ptSeg(x0, y1), ptRect(s.x0, s.y0), ptRect(s.x1, s.y1));
+  }
+  function cupAssignCupHit(deep, x0, y0, x1, y1) {
+    return deep.some(s => Math.max(s.x0, s.x1) + s.r >= x0 && Math.min(s.x0, s.x1) - s.r <= x1 && Math.max(s.y0, s.y1) + s.r >= y0 && Math.min(s.y0, s.y1) - s.r <= y1
+      && cupAssignSegRectDist(s, x0, y0, x1, y1) < s.r - 1e-6);
+  }
+  var cupAssignVB = null, cupAssignFull = [0, 0, 920, 300], cupAssignDrag = null, cupAssignDragged = false;
+  function cupAssignApplyView() {
+    const t = el('cupAssignTop'), v = cupAssignVB || cupAssignFull;
+    t.setAttribute('viewBox', v.map(x => +x.toFixed(2)).join(' '));
+  }
+  function cupAssignZoom(f, fx, fy) {
+    const F = cupAssignFull, v = (cupAssignVB || F).slice();
+    const w = Math.min(F[2], Math.max(F[2] / 20, v[2] / f)), h = w * F[3] / F[2];
+    const px = v[0] + fx * v[2], py = v[1] + fy * v[3];
+    cupAssignVB = cupAssignClamp([px - fx * w, py - fy * h, w, h]);
+    if (cupAssignVB[2] >= F[2] - 1e-6) cupAssignVB = null;
+    cupAssignApplyView();
+  }
+  function cupAssignClamp(v) {
+    const F = cupAssignFull;
+    v[0] = Math.min(F[0] + F[2] - v[2], Math.max(F[0], v[0])); v[1] = Math.min(F[1] + F[3] - v[3], Math.max(F[1], v[1]));
+    return v;
+  }
   function renderCupAssign() {
     const mt = machineTable; if (!mt) return;
     const rows = cupAssignRows(), W = 900, TX = mtTableX(), TY = mtTableY(), kx = W / TX, H = Math.max(120, Math.min(300, TY * kx)), ky = H / TY;
     const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std';
-    let svg = '<g transform="translate(10,10)"><rect width="' + W + '" height="' + H + '" fill="#7d8796" opacity="0.35"/>';
+    let svg = '<g transform="translate(10,10)"><rect width="' + W + '" height="' + H + '" fill="#7d8796" opacity="0.35"/>', cupSvg = '';
+    const ops = cupAssignShowOps ? cupAssignOpsSvg(kx, ky, H) : null, hits = [];
+    el('cupAssignShowOps').checked = cupAssignShowOps;
     mt.beams.forEach((b, bi) => {
       svg += '<rect x="' + ((b.x - mtSet.beamX / 2) * kx).toFixed(1) + '" y="0" width="' + Math.max(2, mtSet.beamX * kx).toFixed(1) + '" height="' + H + '" fill="#464e5c"/>'
         + '<text x="' + (b.x * kx).toFixed(1) + '" y="' + (H - 4) + '" font-size="10" fill="#fff" text-anchor="middle">PB' + (bi + 1) + '</text>';
       b.y.forEach((y, r) => {
         const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2;
-        svg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + mtSet.sockY) * ky).toFixed(1) + '" width="' + (mtSet.sockX * kx).toFixed(1) + '" height="' + (mtSet.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
-          + '<rect class="cup-assign-cup" data-b="' + bi + '" data-r="' + r + '" x="' + ((sx + c.ox) * kx).toFixed(1) + '" y="' + (H - (sy + c.oy + c.y) * ky).toFixed(1) + '" width="' + Math.max(2, c.x * kx).toFixed(1) + '" height="' + Math.max(2, c.y * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="#222" stroke-width="0.6" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></rect>';
+        const hit = ops && cupAssignCupHit(ops.deep, sx + c.ox, sy + c.oy, sx + c.ox + c.x, sy + c.oy + c.y);
+        if (hit) hits.push('PB' + (bi + 1) + ':Y' + (r + 1));
+        cupSvg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + mtSet.sockY) * ky).toFixed(1) + '" width="' + (mtSet.sockX * kx).toFixed(1) + '" height="' + (mtSet.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
+          + '<rect class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" x="' + ((sx + c.ox) * kx).toFixed(1) + '" y="' + (H - (sy + c.oy + c.y) * ky).toFixed(1) + '" width="' + Math.max(2, c.x * kx).toFixed(1) + '" height="' + Math.max(2, c.y * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></rect>';
       });
     });
-    const top = el('cupAssignTop'); top.setAttribute('width', W + 20); top.setAttribute('height', H + 20); top.innerHTML = svg + '</g>';
+    const top = el('cupAssignTop'); top.setAttribute('width', W + 20); top.setAttribute('height', H + 20);
+    top.innerHTML = svg + (ops ? ops.svg : '') + cupSvg + '</g>';
+    cupAssignFull = [0, 0, W + 20, H + 20]; cupAssignApplyView();
+    window.__lastCupAssignInfo = { ops: !!ops, segs: ops ? ops.n : 0, deep: ops ? ops.deep.length : 0, hits, view: cupAssignVB ? cupAssignVB.slice() : null };
     el('cupAssignLegend').innerHTML = cupSets.map(c => '<span class="cup-assign-legend"><span class="mt-cup-swatch" style="background:' + cupColor(c.id) + '"></span>' + escapeHtml(c.name) + '</span>').join('');
     const opts = sel => cupSets.map(c => '<option value="' + c.id + '"' + (c.id === sel ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('');
     let h = '<table class="cup-assign-table"><tr><th>' + T('Reihe', 'Row') + '</th><th>' + T('ganze Reihe', 'whole row') + '</th>'
@@ -21125,6 +21211,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!cupAssignAvailable()) return;
     closeAllMenus(); closeContextMenu();
     cupAssignWork = new Map(cupAssign);
+    cupAssignVB = null;
     el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Vacuum cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
     renderCupAssign();
     el('cupAssignPanel').classList.add('open');
@@ -21141,11 +21228,36 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     renderCupAssign();
   });
   el('cupAssignTop').addEventListener('click', e => {
+    if (cupAssignDragged) { cupAssignDragged = false; return; }
     const r = e.target.closest && e.target.closest('.cup-assign-cup'); if (!r) return;
     const s = el('cupAssignTable').querySelector('.cup-assign-sel[data-b="' + r.dataset.b + '"][data-r="' + r.dataset.r + '"]');
     if (s) { s.focus(); s.classList.add('flash'); setTimeout(() => s.classList.remove('flash'), 700); }
   });
   el('btnCupAssignStd').addEventListener('click', () => { cupAssignWork.clear(); renderCupAssign(); });
+  el('cupAssignShowOps').addEventListener('change', e => setCupAssignShowOps(e.target.checked));
+  el('btnCupAssignHome').addEventListener('click', () => { cupAssignVB = null; cupAssignApplyView(); });
+  el('cupAssignTop').addEventListener('wheel', e => {
+    e.preventDefault();
+    const rc = el('cupAssignTop').getBoundingClientRect();
+    cupAssignZoom(e.deltaY < 0 ? 1.25 : 0.8, rc.width ? (e.clientX - rc.left) / rc.width : 0.5, rc.height ? (e.clientY - rc.top) / rc.height : 0.5);
+  }, { passive: false });
+  el('cupAssignTop').addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    cupAssignDrag = { x: e.clientX, y: e.clientY, v: (cupAssignVB || cupAssignFull).slice() }; cupAssignDragged = false;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!cupAssignDrag) return;
+    const dx = e.clientX - cupAssignDrag.x, dy = e.clientY - cupAssignDrag.y;
+    if (!cupAssignDragged && Math.hypot(dx, dy) < 4) return;
+    cupAssignDragged = true; el('cupAssignTop').classList.add('panning');
+    if (!cupAssignVB) return;
+    const rc = el('cupAssignTop').getBoundingClientRect(), v = cupAssignDrag.v;
+    cupAssignVB = cupAssignClamp([v[0] - dx * v[2] / rc.width, v[1] - dy * v[3] / rc.height, v[2], v[3]]);
+    cupAssignApplyView();
+  });
+  window.addEventListener('mouseup', () => { if (!cupAssignDrag) return; cupAssignDrag = null; el('cupAssignTop').classList.remove('panning'); });
+  window.__cupAssignShowOps = { get: () => cupAssignShowOps, set: v => setCupAssignShowOps(v) };
+  window.__cupAssignView = { zoom: (f, fx, fy) => cupAssignZoom(f, fx == null ? 0.5 : fx, fy == null ? 0.5 : fy), home: () => { cupAssignVB = null; cupAssignApplyView(); }, get: () => (cupAssignVB || cupAssignFull).slice() };
   el('btnCupAssignOk').addEventListener('click', cupAssignOk);
   el('btnCupAssignCancel').addEventListener('click', () => el('cupAssignPanel').classList.remove('open'));
   el('cupAssignPanel').addEventListener('keydown', e => {
@@ -22862,6 +22974,7 @@ Max Mustermann (Anschrift wie oben)`,
     LS_KEY_GRID_VISIBLE,
     'cncsim.machineTableSettings',
     'cncsim.suctionSets',
+    'cncsim.cupAssignShowOps',
     'cncsim.axesVisible',
     LS_KEY_GRID_COLOR,
     LS_KEY_TOOL_APPEARANCE_SAW, LS_KEY_TOOL_APPEARANCE_COLLET, LS_KEY_TOOL_APPEARANCE_CUTTER,
@@ -22910,6 +23023,7 @@ Max Mustermann (Anschrift wie oben)`,
       axesVisible,
       machineTableSettings: (typeof mtSet !== 'undefined') ? Object.assign({}, mtSet) : undefined,
       suctionSets: window.__cupSets ? window.__cupSets.list() : undefined,
+      cupAssignShowOps: window.__cupAssignShowOps ? window.__cupAssignShowOps.get() : undefined,
       gridColor: gridColorOverride,
       axisColors: axisColorOverride,
       axisLabelFontSize,
@@ -23034,6 +23148,7 @@ Max Mustermann (Anschrift wie oben)`,
         syncGridSettingsPanelFromActive();
       }
       if (Array.isArray(data.suctionSets) && window.__cupSets) window.__cupSets.set(data.suctionSets);
+      if (typeof data.cupAssignShowOps === 'boolean' && window.__cupAssignShowOps) window.__cupAssignShowOps.set(data.cupAssignShowOps);
       if (data.machineTableSettings && typeof data.machineTableSettings === 'object' && window.__mtSettings) window.__mtSettings.set(data.machineTableSettings);
       if (data.axesVisible !== undefined) {
         setAxesVisible(data.axesVisible === true || data.axesVisible === '1' || data.axesVisible === 1);
