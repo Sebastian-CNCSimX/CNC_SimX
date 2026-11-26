@@ -8876,7 +8876,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 397;
+  const APP_RELEASE_NUMBER = 398;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8885,7 +8885,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '25.11.2026, 15:51 Uhr';
+  const APP_RELEASE_TIMESTAMP = '26.11.2026, 07:01 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11646,6 +11646,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     machineTypePromptSelect.innerHTML = machineTypeSelect.innerHTML;
     machineTypePromptSelect.value = machineTypeSelect.value;
     const detected = suggestion && suggestion.toLowerCase() !== 'iso';
+    if (detected && Array.from(machineTypePromptSelect.options).some(o => o.value === suggestion)) machineTypePromptSelect.value = suggestion;
     el('machineTypePromptFile').textContent = filename ? T('Programm: ', 'Program: ') + filename : '';
     el('machineTypePromptHint').textContent = detected
       ? T('Erkannter Maschinentyp: ' + suggestion + '. Mit Ok wird der CNC-Code an diesen Maschinentyp angepasst.', 'Detected machine type: ' + suggestion + '. Ok adapts the CNC code to this machine type.')
@@ -11655,8 +11656,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   el('btnMachineTypePromptConfirm').addEventListener('click', () => {
     machineTypePromptPanel.classList.remove('open');
-    if (finishedMtPending && finishedMtPending.listMode) { finishedMtPending = null; finishedList.mt = machineTypePromptSelect.value; finishedList.mtDetected = false; finishedListOpen(); return; }
-    if (finishedMtPending) { const sc = finishedMtPending; finishedMtPending = null; sc.machineType = machineTypePromptSelect.value; sc.mtDetected = false; finishedShow(sc, sc.programFilename); return; }
+    if (finishedMtPending && finishedMtPending.listMode) { const sug = finishedMtPending.mtSuggest; finishedMtPending = null; finishedList.mt = machineTypePromptSelect.value; finishedList.mtDetected = !!sug && sug === finishedList.mt; finishedListOpen(); return; }
+    if (finishedMtPending) { const sc = finishedMtPending; finishedMtPending = null; sc.machineType = machineTypePromptSelect.value; sc.mtDetected = !!sc.mtSuggest && sc.mtSuggest === sc.machineType; finishedShow(sc, sc.programFilename); return; }
     if (rawProgramText == null) return;
     machineTypeSelect.value = machineTypePromptSelect.value;
     applyActiveMachineType();
@@ -13369,6 +13370,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 398, date: '26.11.2026', items: [
+      { de: '„Zielflagge CNC“ und „Zielflagge ☰+ Liste“ fragen jetzt immer nach dem Maschinentyp; ein erkannter Typ ist vorgewählt und muss nur bestätigt werden.',
+        en: '"Finish flag CNC" and "finish flag ☰+ List" now always ask for the machine type; a detected type is preselected and only needs to be confirmed.' },
+    ] },
     { release: 397, date: '25.11.2026', items: [
       { de: 'CALCMACHINE rechnet jetzt mit Formeln und Werten aus dem Programmkopf, z. B. „Z*1+DZ“ (DX, DY, DZ, BX … aus der H-Zeile; fehlt ein Wert, gilt 0 mit Hinweis).',
         en: 'CALCMACHINE now calculates with formulas and values from the program header, e.g. "Z*1+DZ" (DX, DY, DZ, BX … from the H line; a missing value counts as 0 with a notice).' },
@@ -26162,8 +26167,8 @@ Max Mustermann (Anschrift wie oben)`,
     if (finishedView || rawProgramText != null) return;
     const sc = { programText: text, programFilename: name, programSize: size, autoPart: true };
     const sug = suggestMachineType(text, machineTypes.map(mt => mt.name));
-    if (sug && sug.toLowerCase() !== 'iso') { sc.machineType = sug; sc.mtDetected = true; finishedShow(sc, name); return; }
     openMachineTypePrompt(sug, name);
+    sc.mtSuggest = sug && sug.toLowerCase() !== 'iso' ? sug : null;
     finishedMtPending = sc;
   }
   const finishedList = { items: [], mt: null, mtDetected: false };
@@ -26190,9 +26195,8 @@ Max Mustermann (Anschrift wie oben)`,
     if (wasEmpty && !finishedList.mt) {
       const first = finishedList.items[0];
       const sug = suggestMachineType(first.text, machineTypes.map(mt => mt.name));
-      if (sug && sug.toLowerCase() !== 'iso') { finishedList.mt = sug; finishedList.mtDetected = true; finishedListOpen(); return; }
       openMachineTypePrompt(sug, first.name);
-      finishedMtPending = { listMode: true };
+      finishedMtPending = { listMode: true, mtSuggest: sug && sug.toLowerCase() !== 'iso' ? sug : null };
       return;
     }
     finishedListRender();
