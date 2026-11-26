@@ -8888,7 +8888,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 400;
+  const APP_RELEASE_NUMBER = 401;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8897,7 +8897,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '26.11.2026, 12:56 Uhr';
+  const APP_RELEASE_TIMESTAMP = '26.11.2026, 14:32 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -9279,7 +9279,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateScmMovepart400(migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))))))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateScmMovepartO401(migrateScmMovepart400(migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))))))))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -9410,6 +9410,24 @@ CORNERRADIUS=GFIL r=
     return out;
   }
   const LS_KEY_MIGRATION_SCM_MOVEPART400 = 'cncsim.migration.scmMovepart400';
+  function mpForceOComment(blk) {
+    const nl = blk.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+    if (/^[ \t]*O[ \t]*->.*$/m.test(blk)) return blk.replace(/^[ \t]*O[ \t]*->.*$/mg, 'O ->;O');
+    return blk.replace(/\[SWITCHCASEMACHINE\][ \t]*\r?\n/, m => m + 'O ->;O' + nl);
+  }
+  const LS_KEY_MIGRATION_SCM_MOVEPART_O401 = 'cncsim.migration.scmMovepartO401';
+  function migrateScmMovepartO401(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_MOVEPART_O401)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="SCM Movepart"]', endTag = '[/MACHINETYPE Name="SCM Movepart"]';
+    const start = out.indexOf(openTag), end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1) {
+      const blk = out.slice(start, end + endTag.length), fixed = mpForceOComment(blk);
+      if (fixed !== blk) { out = out.slice(0, start) + fixed + out.slice(end + endTag.length); try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) {  } }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_SCM_MOVEPART_O401, '1'); } catch (e) {  }
+    return out;
+  }
   function migrateScmMovepart400(text) {
     try { if (window.localStorage.getItem(LS_KEY_MIGRATION_SCM_MOVEPART400)) return text; } catch (e) { return text; }
     let out = text;
@@ -9418,7 +9436,7 @@ CORNERRADIUS=GFIL r=
     if (start !== -1 && end !== -1 && out.indexOf('[MACHINETYPE Name="SCM Movepart"]') === -1) {
       const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
       const blk = out.slice(start, end + endTag.length);
-      const mp = blk.split(openTag).join('[MACHINETYPE Name="SCM Movepart"]').split(endTag).join('[/MACHINETYPE Name="SCM Movepart"]');
+      const mp = mpForceOComment(blk.split(openTag).join('[MACHINETYPE Name="SCM Movepart"]').split(endTag).join('[/MACHINETYPE Name="SCM Movepart"]'));
       const absEnd = '[/MACHINETYPE Name="SCM absolut"]', ae = out.indexOf(absEnd);
       const pos = ae !== -1 ? ae + absEnd.length : end + endTag.length;
       out = out.slice(0, pos) + nl + nl + mp + out.slice(pos);
@@ -13428,6 +13446,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 401, date: '26.11.2026', items: [
+      { de: '„SCM Movepart“: Bögen (z. B. Anfahrbögen der Stufenkontur) liegen wieder richtig, und das Rohteil wird nach dem Trennschnitt mit beiden Teilen verschoben angezeigt.',
+        en: '"SCM Movepart": arcs (e.g. lead-in arcs of the step contour) are correct again, and after the separating cut the raw part is shown moved with both parts.' },
+      { de: 'Saugerfahrt beim Abspielen in 10 sichtbaren Zwischenschritten (2 s); das Programm wartet, bis die Sauger stehen.',
+        en: 'Vacuum cup moves during playback in 10 visible intermediate steps (2 s); the program waits until the cups are in position.' },
+      { de: 'Tischkollision mit der Säge: geprüft wird das senkrechte Sägeblatt in Fahrtrichtung (nur der Teil unter dem Bauteil) statt einer liegenden Scheibe – keine falschen Meldungen mehr beim Trennschnitt.',
+        en: 'Table collision with the saw: the vertical blade in the feed direction is checked (only the part below the workpiece) instead of a horizontal disc – no more false reports for the separating cut.' },
+    ] },
     { release: 400, date: '26.11.2026', items: [
       { de: 'Neuer Maschinentyp „SCM Movepart“: Saugerblöcke („Move Part“) werden nacheinander ausgewertet – die Sauger fahren beim Abspielen in den Tisch und zurück, Werkstück, Bahnen und Abtrag fahren mit. Die Nullpunktzeile „O“ verschiebt X/Y; nach einem Trennschnitt folgt jedes Teil seinen Saugern, beide Teile bleiben im Abtrag erhalten.',
         en: 'New machine type "SCM Movepart": vacuum cup blocks ("Move Part") are evaluated one after another – during playback the cups move into the table and back, workpiece, paths and material removal move with them. The origin line "O" shifts X/Y; after a separating cut each part follows its own cups and both parts are kept in the material removal.' },
@@ -21495,11 +21521,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let p = points[i];
     if (!p || p.toolRadius == null) return null;
     let q = i > 0 ? points[i - 1] : p;
+    if (q !== p && q.opIndex !== p.opIndex) q = p;
     if (mpModel && p.mpState != null) {
       boxes = mpBoxesForState(p.mpState) || boxes;
       p = Object.assign({}, p, { x: p.mx, y: p.my }); q = Object.assign({}, q, { x: q.mx != null ? q.mx : q.x, y: q.my != null ? q.my : q.y });
     }
     const r = Math.max(0, p.toolRadius), L = p.toolLength > 0 ? p.toolLength : 50;
+    if (p.toolIsBlade && !p.uf) {
+      const zb = partBottomZ(); if (zb == null) return null;
+      const t = Math.max(0.25, (p.toolLength > 0 && p.toolLength < 20 ? p.toolLength : 3.5) / 2);
+      let dx = p.x - q.x, dy = p.y - q.y, l = Math.hypot(dx, dy);
+      if (l < 1e-9) { const c = (p.c || 0) * Math.PI / 180; dx = Math.cos(c); dy = Math.sin(c); l = 1; }
+      const ux = dx / l, uy = dy / l;
+      const segL = Math.hypot(p.x - q.x, p.y - q.y), nP = Math.min(400, Math.max(1, Math.ceil(segL / 4)));
+      const near = boxes.filter(b => b.kind !== 'plate' && b.x1 >= Math.min(p.x, q.x) - r && b.x0 <= Math.max(p.x, q.x) + r && b.y1 >= Math.min(p.y, q.y) - r && b.y0 <= Math.max(p.y, q.y) + r && b.z1 >= Math.min(p.z, q.z));
+      if (!near.length) return null;
+      for (let s = 0; s <= nP; s++) {
+        const f = s / nP, x = q.x + (p.x - q.x) * f, y = q.y + (p.y - q.y) * f, z = q.z + (p.z - q.z) * f, h = zb - z;
+        if (h <= 0) continue;
+        for (let w = 0; w <= Math.min(h, 2 * r); w += Math.max(0.5, Math.min(2, h / 4))) {
+          const half = Math.sqrt(Math.max(0, r * r - (r - w) * (r - w)));
+          for (let u = -half; u <= half + 1e-9; u += Math.max(1, half / 20)) {
+            const px = x + ux * u, py = y + uy * u, pz = z + w;
+            for (const b of near) if (mtPointBoxDist(px, py, pz, b) < t) return b;
+          }
+        }
+      }
+      return null;
+    }
     const ax = p.uf ? { x: 0, y: 0, z: -1 } : toolAxisDirection(p);
     const segLen = Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
     const nPath = Math.min(400, Math.max(1, Math.ceil(segLen / Math.max(2, r / 2)))), nTool = Math.min(40, Math.max(2, Math.ceil(L / Math.max(2, r))));
@@ -21518,10 +21567,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return null;
   }
   var mpModel = null, mpCamShift = null, mpShown = null, mpAnim = null, mpBoxCache = null;
-  const MP_ANIM_MS = 1000;
+  const MP_ANIM_MS = 2000, MP_ANIM_STEPS = 10;
   function mpBuild(segs) {
     mpModel = null; mpCamShift = null; mpShown = null; mpAnim = null; mpBoxCache = null;
     const mt = machineTable;
+    if (mt && mt.blocks && mt.blocks.length > 1) {
+      const on = isScmMovepartName(activeMachineTypeName);
+      if (on && !mt.movepart) { mt.beamsAll = mt.beams; mt.beams = mt.blocks[0].beams; mt.movepart = true; }
+      else if (!on && mt.movepart) { mt.beams = mt.beamsAll || mt.beams; mt.movepart = false; }
+    }
     if (!mt || !mt.movepart || !current || !isScmMovepartName(activeMachineTypeName)) return;
     const B = mt.blocks, nS = B.length;
     const pos = B.map(b => { const m = new Map(); b.beams.forEach(be => be.y.forEach((y, r) => m.set(be.n + ':' + r, { x: be.x, y }))); return m; });
@@ -21637,7 +21691,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     let ds = mpStateDs(k);
     if (mpAnim) {
-      const f = Math.min(1, (now - mpAnim.t0) / MP_ANIM_MS), e = f * f * (3 - 2 * f), F = mpAnim.fromDs;
+      const f = Math.min(1, (now - mpAnim.t0) / MP_ANIM_MS), e = f >= 1 ? 1 : Math.floor(f * MP_ANIM_STEPS + 1e-9) / MP_ANIM_STEPS, F = mpAnim.fromDs;
       ds = ds.map((d, j) => { const a = F[j] || F[0]; return { x: a.x + (d.x - a.x) * e, y: a.y + (d.y - a.y) * e }; });
       mpAnim.e = e;
       if (f >= 1) mpAnim = null; else requestAnimationFrame(() => { bakeParams = null; requestRender(); });
@@ -21655,12 +21709,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!mesh || mesh.dexel || !mpModel || !mpModel.pieces) return mesh;
     if (!mpMeshCache || mpMeshCache.mesh !== mesh) mpMeshCache = { mesh, byJ: new Map() };
     if (mpMeshCache.byJ.has(j)) return mpMeshCache.byJ.get(j);
-    const P = mpModel.pieces, at = (x, y) => { const t = dxfTransformPoint({ x, y, z: 0 }); return mpPieceAt(P, t.x, t.y); };
+    const P = mpModel.pieces, o = dxfTransformPoint({ x: 0, y: 0, z: 0 }), at = (x, y) => mpPieceAt(P, x + o.x, y + o.y);
+    const ringL = P[j].ring.map(q => [q[0] - o.x, q[1] - o.y]);
     const cen = V => { let x = 0, y = 0; V.forEach(v => { x += v[0]; y += v[1]; }); return [x / V.length, y / V.length]; };
-    const out = Object.assign({}, mesh, {
-      tris: (mesh.tris || []).filter(t => { const c = cen(t.v); return at(c[0], c[1]) === j; }),
-      walls: (mesh.walls || []).filter(w => at((w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2) === j),
+    const lerp = (a, b, t) => a.map((v, i) => v + ((b[i] != null ? b[i] : v) - v) * t);
+    const tSplit = (a, b) => { const ja = at(a[0], a[1]); let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2, q = lerp(a, b, m); if (at(q[0], q[1]) === ja) lo = m; else hi = m; } return (lo + hi) / 2; };
+    const tris = [];
+    (mesh.tris || []).forEach(t => {
+      const own = t.v.map(v => at(v[0], v[1]) === j);
+      if (own.every(Boolean)) { tris.push(t); return; }
+      if (!own.some(Boolean)) { const c = cen(t.v); if (at(c[0], c[1]) !== j) return; }
+      try {
+        const ring = t.v.map(v => [v[0], v[1]]); ring.push(ring[0].slice());
+        abtragOp('intersection', [ring], [ringL]).forEach(pc => { const r = pc[0]; for (let k = 1; k + 2 < r.length; k++) tris.push(Object.assign({}, t, { v: [r[0], r[k], r[k + 1]] })); });
+      } catch (e) { const c = cen(t.v); if (at(c[0], c[1]) === j) tris.push(t); }
     });
+    const walls = [];
+    (mesh.walls || []).forEach(w => {
+      const ia = at(w.a[0], w.a[1]) === j, ib = at(w.b[0], w.b[1]) === j;
+      if (ia && ib) { walls.push(w); return; }
+      if (!ia && !ib) return;
+      const t = tSplit(w.a, w.b), aT = w.at || w.a, bT = w.bt || w.b;
+      const m = lerp(w.a, w.b, t), mT = lerp(aT, bT, t);
+      walls.push(ia ? Object.assign({}, w, { b: m, bt: w.bt ? mT : undefined }) : Object.assign({}, w, { a: m, at: w.at ? mT : undefined }));
+    });
+    const out = Object.assign({}, mesh, { tris, walls });
     if (mesh.faces3) out.faces3 = mesh.faces3.filter(f => { const c = cen(f.v); return at(c[0], c[1]) === j; });
     if (mesh.bores) out.bores = mesh.bores.filter(b => at(b.entry[0], b.entry[1]) === j);
     if (mesh.rings) {
@@ -21670,11 +21743,16 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (own.every(Boolean)) { out.rings.push(r); return; }
         let run = [];
         const flush = () => { if (run.length >= 2) out.rings.push(Object.assign({}, r, { pts: run, open: true })); run = []; };
-        for (let k = 0; k < (r.open ? n : n + 1); k++) { const i = k % n; if (own[i]) run.push(r.pts[i]); else flush(); }
+        for (let k = 0; k < (r.open ? n : n + 1); k++) {
+          const i = k % n, prev = k > 0 ? (k - 1) % n : -1;
+          if (prev >= 0 && own[i] !== own[prev]) { const q = lerp(r.pts[prev], r.pts[i], tSplit(r.pts[prev], r.pts[i])); if (own[i]) { flush(); run.push(q); } else { run.push(q); flush(); } }
+          if (own[i]) run.push(r.pts[i]);
+        }
         flush();
       });
     }
     mpMeshCache.byJ.set(j, out);
+    (window.__lastMpFilter = window.__lastMpFilter || {})[j] = { tris: tris.length, walls: walls.length, area: Math.round(tris.reduce((s0, t) => { const v = t.v; return s0 + Math.abs((v[1][0] - v[0][0]) * (v[2][1] - v[0][1]) - (v[2][0] - v[0][0]) * (v[1][1] - v[0][1])) / 2; }, 0)) };
     return out;
   }
   function mpDisplayBeams() {
@@ -21799,6 +21877,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   function stepPlayback(ts) {
     if (!playing) return;
+    if (typeof mpAnim !== 'undefined' && (mpAnim || (mpModel && mpShown != null && mpStateNow() !== mpShown))) { stepPlayback._last = ts; requestRender(); requestAnimationFrame(stepPlayback); return; }
     if (!stepPlayback._last) stepPlayback._last = ts;
     if (ts - stepPlayback._last > 130 / Math.min(1, playSpeed)) {
       stepPlayback._last = ts;
@@ -21806,7 +21885,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
         let stepN = 1;
         if (playSpeed > 1) { stepPlayback._acc = (stepPlayback._acc || 0) + playSpeed; stepN = Math.floor(stepPlayback._acc + 1e-9); stepPlayback._acc -= stepN; }
-        scrubIdx = Math.min(scrubIdx + Math.max(1, stepN), points.length - 1);
+        let nextIdx = Math.min(scrubIdx + Math.max(1, stepN), points.length - 1);
+        if (typeof mpModel !== 'undefined' && mpModel && points[scrubIdx]) { const k0 = points[scrubIdx].mpState; for (let i = scrubIdx + 1; i <= nextIdx; i++) if (points[i].mpState !== k0) { nextIdx = i; break; } }
+        scrubIdx = nextIdx;
         scrubEl.value = String(scrubIdx);
         updateReadoutAndHighlight();
         requestRender();
