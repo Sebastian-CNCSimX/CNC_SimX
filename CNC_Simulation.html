@@ -1711,6 +1711,8 @@
   .cup-assign-ctx .ci:hover { background: var(--muted-soft); }
   .cup-assign-ctx .ck { width: 14px; text-align: center; }
   
+  .gut-msg-body { font-size: 14px; line-height: 1.5; }
+  .gut-msg-body .gut-item { margin: 10px 0; padding: 8px 12px; background: var(--muted-soft); border-radius: 8px; line-height: 1.6; }
   .cup-assign-ctx .csep { height: 1px; background: var(--border); margin: 4px 6px; }
   .cup-assign-ctx .cv { margin-left: auto; color: var(--ink-faint); }
   .cup-assign-ctx .crot-edit { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; background: var(--muted-soft); }
@@ -2746,6 +2748,13 @@
   </div>
 </div>
 
+<div class="paste-panel" id="gutMsgPanel">
+  <div class="paste-card" style="max-width:540px">
+    <h3 id="gutMsgTitle">⚠ Gutteil fällt ab</h3>
+    <div id="gutMsgBody" class="gut-msg-body"></div>
+    <div class="paste-actions"><button class="btn primary" id="btnGutMsgOk" type="button">Ok</button></div>
+  </div>
+</div>
 <div class="paste-panel" id="machineTablePanel">
   <div class="paste-card">
     <h3 data-i18n-en="Machine table &amp; vacuum cups">Maschinentisch &amp; Sauger</h3>
@@ -8942,7 +8951,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 407;
+  const APP_RELEASE_NUMBER = 408;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8951,7 +8960,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '27.11.2026, 13:01 Uhr';
+  const APP_RELEASE_TIMESTAMP = '27.11.2026, 16:01 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11838,6 +11847,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     rawProgramText = text;
     postRotDir = 'up';
     rawProgramFilename = filename;
+    if (typeof gutMsgDone !== 'undefined' && gutMsgDone) gutMsgDone.clear();
     rawProgramFileSize = fileMeta && typeof fileMeta.size === 'number' ? fileMeta.size : null;
     rawProgramFileDate = fileMeta && typeof fileMeta.lastModified === 'number' ? new Date(fileMeta.lastModified) : null;
     sidebarView = 'code';
@@ -13500,6 +13510,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 408, date: '27.11.2026', items: [
+      { de: 'Abtragssimulation (Volumenkörper): Ein abgetrenntes Teil mit eigener Bearbeitung (z. B. Handlauf mit Omegaprofil nach dem Trennschnitt) verschwindet nicht mehr als Abfall – Meldung „Gutteil fällt ab“, danach liegt es in der Ablage vor dem Tisch (rot gestrichelt umrahmt).',
+        en: 'Material removal simulation (solid): a separated part with its own machining (e.g. handrail with omega profile after the separating cut) no longer disappears as waste – message "Good part falls off", then it lies in the storage area in front of the table (red dashed frame).' },
+    ] },
     { release: 407, date: '27.11.2026', items: [
       { de: 'Reiter „Sauger“: Messen in der Draufsicht (Abstände zwischen Sockel und Sauger, Ergebnis unten links), Saugerliste in voller Höhe mit kleinerer Schrift, Eingabefelder im Stil des Unterfluraggregats.',
         en: '"Vacuum cups" tab: measuring in the top view (distances between base and cup, result bottom left), cup list at full height with a smaller font, input fields in the style of the underfloor unit.' },
@@ -15780,6 +15794,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         passes.forEach(ps => { mpCamShift = ps.shift; mpPassPiece = ps.j; const cp = cameraPosition(); drawWork(p => project(p, cp, basis, w, h)); });
         mpCamShift = keep; mpPassPiece = -1;
       } else drawWork(proj);
+      gutAblagePasses(basis, w, h, projRaw);
       if (tableFromBelow) drawTablePlane(camPosRaw, basis, w, h, true);
       ctx = liveCtx;
       bakeParams = newParams;
@@ -16161,6 +16176,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         [[(b.x0 + b.x1) / 2, b.y0], [b.x1, (b.y0 + b.y1) / 2], [(b.x0 + b.x1) / 2, b.y1], [b.x0, (b.y0 + b.y1) / 2]].forEach(q => T3(q[0], q[1], z, 'mid'));
         if (b.kind === 'pad' || b.kind === 'sock') T3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, z, 'mid');
       });
+    }
+    if (typeof gutRects !== 'undefined' && gutRects && gutRects.length) {
+      const sh = (typeof mpCamShift !== 'undefined' && mpCamShift) || { x: 0, z: 0 };
+      gutRects.forEach(r => [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]].forEach(q => trySnap({ x: q[0] - sh.x, y: q[1] - sh.z, z: r.z }, 'end')));
     }
 
     const nearLines = [];
@@ -17620,6 +17639,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     let dropList = null, lastComps = null;
     function clearDrop() {
+      gutCol = null; gutList = null;
       if (!dropList) return;
       const cols = new Set();
       for (let m = 0; m < dropList.length; m++) { const c = dropList[m], i = c % NX, j = ((c - i) / NX) % NY; cols.add(i + NX * j); }
@@ -17630,6 +17650,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let dropMark = null, lastChanged = false;
     let keepFn = null, colKeep = null;
     function setKeep(fn) { keepFn = fn; colKeep = null; }
+    let gutFn = null, gutCol = null, gutList = null;
+    function setGut(fn) { gutFn = fn; }
     function applyDrop(out) {
       const old = dropList || [];
       if (!dropMark || dropMark.length < st.length) dropMark = new Uint8Array(st.length);
@@ -17696,6 +17718,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         c[4]++; if (colKeep && colKeep[runCol[m]]) c[5]++;
         if (!c[2]) { const col = runCol[m], i = col % NX, j = (col - i) / NX; if (i <= 1 || i >= NX - 2 || j <= 1 || j >= NY - 2) c[2] = true; }
       }
+      gutCol = null; gutList = null;
       if (comps.length <= 1) { lastComps = comps.map(c => c[2] ? -c[1] : c[1]); applyDrop([]); return 0; }
       let big = 0; comps.forEach(c => { if (c[1] > big) big = c[1]; });
       let keepC = c => c[1] >= big * 0.7;
@@ -17703,6 +17726,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (mpModel && mpModel.pieces && mpModel.pieces.length > 1) keepC = c => c[1] >= big * 0.3;
       const dropRoot = new Set();
       comps.forEach(c => { if (!keepC(c)) dropRoot.add(c[3]); });
+      if (gutFn && dropRoot.size) {
+        const colsOf = new Map();
+        for (let m = 0; m < nR; m++) { const r = find(m); if (!dropRoot.has(r)) continue; let a = colsOf.get(r); if (!a) colsOf.set(r, a = []); a.push(runCol[m]); }
+        const found = new Map();
+        const sizeOf = new Map(); comps.forEach(c => sizeOf.set(c[3], c[1]));
+        colsOf.forEach((cols, r) => { const id = gutFn(cols, NX, NY, gx0, gy0, h, (sizeOf.get(r) || 0) / (big || 1)); if (id >= 0) { dropRoot.delete(r); found.set(r, id); } });
+        if (found.size) {
+          gutCol = new Int16Array(NX * NY);
+          for (let m = 0; m < nR; m++) { const id = found.get(find(m)); if (id != null) gutCol[runCol[m]] = id + 1; }
+          gutList = Array.from(new Set(found.values())).sort((a, b) => a - b);
+        }
+      }
       lastComps = comps.slice().sort((x, y) => y[1] - x[1]).slice(0, 8).map(c => c[2] ? -c[1] : c[1]);
       const out = [];
       if (dropRoot.size) for (let m = 0; m < nR; m++) {
@@ -17726,7 +17761,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       return n;
     }
     return {
-      setRay, clearDrop, settleDrop, reDrop, setKeep, comps: () => lastComps, changed: () => lastChanged, keeps: () => !!colKeep,
+      setRay, clearDrop, settleDrop, reDrop, setKeep, comps: () => lastComps,
+      setGut, gut: () => gutCol ? { col: gutCol, ids: gutList, NX, NY, gx0, gy0, h } : null,  changed: () => lastChanged, keeps: () => !!colKeep,
       update(budget) {
         const t0 = Date.now();
         let left = 0;
@@ -17956,6 +17992,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const dex = { CORE, D, box, h, mesher: abdexMesher(D), nSteps: S.tool.length, idx: S.idx, want: 0, shown: 0, req: 0, inflight: null, meshing: false,
       mesh: null, workers: [], W: 1, roundK: 40, disposed: false, err: null, t0: 0, lastRoundMs: 0, ccN: -1, ccTimer: 0, dropped: 0,
       snapKey: st.snapKey || null, snapUsed: !!st.startRays };
+    dex.gutFn = abdexGutFn(st, dex); dex.mesher.setGut(dex.gutFn);
     const cfgFor = (part, W) => ({ box, h, poly, z0: zS0, z1: zS1, steps: S.steps, tool: S.tool, tools: S.tools, part, W, startRays: st.startRays || null });
     let workersOk = false;
     if (nW > 0) {
@@ -17999,9 +18036,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const t0 = performance.now();
     const ms = abdexMesher({ box: D.box, nx, ny, nz, h: D.h * S, g: D.g, rays: [R0, R1, R2] });
     if (keepFn) ms.setKeep(keepFn);
+    if (dex.gutFn) ms.setGut(dex.gutFn);
     ms.settleDrop(); ms.update();
     const chunks = ms.chunks(); let nT = 0; chunks.forEach(c => { nT += c.nT; });
-    const lm = Object.assign({}, mesh, { dexel: { chunks, box: mesh.dexel.box, nT } });
+    const lm = Object.assign({}, mesh, { dexel: { chunks, box: mesh.dexel.box, nT, mesher: ms } });
     dex.lod = { src: mesh, mesh: lm, ms: Math.round(performance.now() - t0), nT, want: dex.want, builds: (dex.lod ? dex.lod.builds : 0) + 1 };
     return lm;
   }
@@ -18010,7 +18048,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     let nT = 0; chunks.forEach(c => { nT += c.nT; });
     let len = 0; const R2 = dex.D.rays[2]; for (let m = 0; m < R2.length; m++) { const r = R2[m]; for (let q = 0; q < r.length; q += 2) len += r[q + 1] - r[q]; }
     dex.vol = Math.round(len * dex.h * dex.h / 100) / 10;
-    return { tris: [], walls: [], faces3: null, rings: [], levels: [], bores: null, abtrag: true, dexel: { chunks, box: dex.box, nT } };
+    return { tris: [], walls: [], faces3: null, rings: [], levels: [], bores: null, abtrag: true, dexel: { chunks, box: dex.box, nT, mesher: dex.mesher } };
   }
   function abdexSend(dex, n) {
     if (dex.ccTimer) { clearTimeout(dex.ccTimer); dex.ccTimer = 0; }
@@ -18081,6 +18119,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (dex.disposed || dex.inflight || dex.meshing || dex.shown !== dex.want || dex.ccN === dex.shown) return;
         dex.ccN = dex.shown;
         dex.dropped = window.__abdexNoCC ? 0 : dex.mesher.settleDrop();
+        gutAfterSettle(dex);
         if (dex.mesher.changed()) { dex.meshN = dex.shown; abdexMeshStep(dex); } else { abtragMeshTarget = -1; requestRender(); }
       }, 200);
     }
@@ -19558,8 +19597,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           }
         }
         if (pieceOf) { const st = (window.__mpDexPass = window.__mpDexPass || {})[mpPassPiece] || (window.__mpDexPass[mpPassPiece] = { kept: 0, total: 0 }); st.total += ch.nT; for (let t = 0; t < ch.nT; t++) if (pieceOf.arr[t] === mpPassPiece) st.kept++; }
+        const gutG = mesh.dexel.mesher ? mesh.dexel.mesher.gut() : null, gutOf = gutG ? gutTriArr(ch, gutG) : null;
+        if (gutPassId >= 0 && !gutOf) continue;
         for (let t = 0; t < ch.nT; t++) {
           if (pieceOf && pieceOf.arr[t] !== mpPassPiece) continue;
+          if (gutOf && (gutPassId >= 0 ? gutOf[t] !== gutPassId + 1 : gutOf[t] > 0)) continue;
           const fc = N[3 * t] * fx + N[3 * t + 1] * fy + N[3 * t + 2] * fz;
           if (fc > -EPSF) { triCulled++; continue; }
           const a = I[3 * t], b = I[3 * t + 1], c = I[3 * t + 2];
@@ -20023,6 +20065,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       if (meshActive) {
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
+        gutLastBody = bodyMesh && bodyMesh.dexel ? { mesh: bodyMesh, baseZ: dxfKonturLoop[0].z || 0 } : null;
         const rinfo = drawMortiseBody(proj, bodyMesh, dxfKonturLoop[0].z || 0);
         window.__lastMortiseRenderInfo = Object.assign({ thickness: dxfThickness, levels: bodyMesh.levels.length, tris: bodyMesh.tris.length, walls: bodyMesh.walls.length, abtrag: !!abMesh }, rinfo || {});
       } else if (fillActive) {
@@ -22006,6 +22049,150 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     return null;
   }
+  const GUT_Y = -500, GUT_MARGIN = 10, GUT_GAP = 50;
+  var gutPassId = -1, gutLastBody = null, gutRects = null, gutMsgDone = new Set(), gutResume = false, gutTriCache = new WeakMap();
+  function abdexGutFn(st, dex) {
+    dex.gutReg = [];
+    const list = st.list || [], zBot = st.zTop - st.T, info = new Map(), masks = new Map();
+    const axisOf = q => { try { return toolAxisDirection(q); } catch (e) { return { x: 0, y: 0, z: 1 }; } };
+    for (let i = 1; i < list.length; i++) {
+      const q = list[i]; if (!q || q.rapid || !(q.toolRadius > 0) || q.opIndex == null) continue;
+      let o = info.get(q.opIndex); if (!o) info.set(q.opIndex, o = { vert: true, blade: false, minZ: Infinity, title: q.opTitle || '', line: q.lineIdx });
+      if (q.toolIsBlade) o.blade = true;
+      if (q.uf || Math.abs(axisOf(q).z) < 0.999) o.vert = false;
+      if (q.z < o.minZ) o.minZ = q.z;
+    }
+    info.forEach(o => { o.cut = o.blade || (o.vert && o.minZ <= zBot + 0.5); });
+    const build = (NX, NY, gx0, gy0, h) => {
+      const byOp = new Map();
+      let M = null;
+      const disc = (x, y, R) => {
+        const i0 = Math.max(0, Math.floor((x - R - gx0) / h)), i1 = Math.min(NX - 1, Math.ceil((x + R - gx0) / h));
+        const j0 = Math.max(0, Math.floor((y - R - gy0) / h)), j1 = Math.min(NY - 1, Math.ceil((y + R - gy0) / h));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+          const dx = gx0 + i * h - x, dy = gy0 + j * h - y; if (dx * dx + dy * dy > R * R) continue;
+          M[i + NX * j] = 1;
+        }
+      };
+      for (let i = 1; i < list.length; i++) {
+        const q = list[i], p = list[i - 1]; if (!q || q.rapid || !(q.toolRadius > 0) || q.opIndex == null || hiddenOpIndexes.has(q.opIndex)) continue;
+        const o = info.get(q.opIndex); if (!o || o.cut) continue;
+        M = byOp.get(q.opIndex); if (!M) byOp.set(q.opIndex, M = new Uint8Array(NX * NY));
+        const R = q.toolRadius + h, ax = axisOf(q), back = Math.abs(ax.z) < 0.999 ? Math.min(q.toolLength > 0 ? q.toolLength : 50, 2 * q.toolRadius) : 0;
+        const from = p && !p.rapid && p.opIndex === q.opIndex ? p : q, d = Math.hypot(q.x - from.x, q.y - from.y), n = Math.max(1, Math.ceil(d / Math.max(h, R / 2)));
+        for (let k = 0; k <= n; k++) {
+          const x = from.x + (q.x - from.x) * k / n, y = from.y + (q.y - from.y) * k / n;
+          disc(x, y, R);
+          for (let u = R / 2; u <= back; u += R / 2) disc(x + ax.x * u, y + ax.y * u, R);
+        }
+      }
+      return byOp;
+    };
+    return (cols, NX, NY, gx0, gy0, h, rel) => {
+      if (!(rel >= 0.4)) return -1;
+      const key = NX + ':' + NY + ':' + gx0 + ':' + gy0 + ':' + h;
+      let byOp = masks.get(key); if (!byOp) masks.set(key, byOp = build(NX, NY, gx0, gy0, h));
+      const seen = new Uint8Array(NX * NY), cnt = new Map();
+      let hit = 0, nC = 0, i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
+      for (let m = 0; m < cols.length; m++) {
+        const c = cols[m]; if (seen[c]) continue; seen[c] = 1; nC++;
+        const i = c % NX, j = (c - i) / NX;
+        if (i < i0) i0 = i; if (i > i1) i1 = i; if (j < j0) j0 = j; if (j > j1) j1 = j;
+        let any = false; byOp.forEach((M, op) => { if (M[c]) { any = true; cnt.set(op, (cnt.get(op) || 0) + 1); } });
+        if (any) hit++;
+      }
+      if (hit < Math.max(8, nC * 0.1)) return -1;
+      let first = -1, best = 0; cnt.forEach((v, op) => { if (v > best) { best = v; first = op; } });
+      const x0 = gx0 + i0 * h, x1 = gx0 + i1 * h, y0 = gy0 + j0 * h, y1 = gy0 + j1 * h;
+      const near = (a0, a1, b0, b1) => Math.abs((a0 + a1) - (b0 + b1)) < 0.2 * ((a1 - a0) + (b1 - b0)) + 4 * h && Math.abs((a1 - a0) - (b1 - b0)) < 0.2 * Math.max(a1 - a0, b1 - b0) + 4 * h;
+      let g = dex.gutReg.find(r => near(r.x0, r.x1, x0, x1) && near(r.y0, r.y1, y0, y1));
+      if (!g) {
+        const op = info.get(first) || {}, cp = points[scrubIdx] || {}, so = info.get(cp.opIndex) || {};
+        g = { id: dex.gutReg.length, x0, y0, x1, y1, h, z0: zBot, T: st.T, op: op.title || T('Arbeitsgang ', 'Machining step ') + (first + 1),
+          sep: cp.opTitle || so.title || '', sepLine: so.line != null ? so.line + 1 : null,
+          key: (rawProgramFilename || '') + '|' + Math.round(x0 / 10) + '|' + Math.round(y0 / 10) + '|' + Math.round(x1 / 10) + '|' + Math.round(y1 / 10) };
+        dex.gutReg.push(g);
+      } else if (h < g.h) Object.assign(g, { x0, y0, x1, y1, h });
+      return g.id;
+    };
+  }
+  function gutTriArr(ch, G) {
+    const c = gutTriCache.get(ch); if (c && c.col === G.col) return c.arr;
+    const P = ch.pos, I = ch.idx, arr = new Int16Array(ch.nT), ih = 1 / G.h;
+    for (let t = 0; t < ch.nT; t++) {
+      const a = I[3 * t], b = I[3 * t + 1], d = I[3 * t + 2];
+      const i = Math.round(((P[3 * a] + P[3 * b] + P[3 * d]) / 3 - G.gx0) * ih), j = Math.round(((P[3 * a + 1] + P[3 * b + 1] + P[3 * d + 1]) / 3 - G.gy0) * ih);
+      let id = 0;
+      for (let dj = -1; dj <= 1 && !id; dj++) for (let di = -1; di <= 1 && !id; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < G.NX && jj < G.NY) id = G.col[ii + G.NX * jj]; }
+      arr[t] = id;
+    }
+    gutTriCache.set(ch, { col: G.col, arr });
+    return arr;
+  }
+  function gutLayout(ids, reg) {
+    let cx = 0;
+    return ids.map(id => reg[id]).filter(Boolean).sort((a, b) => a.id - b.id).map(g => {
+      const w = g.x1 - g.x0 + 2 * GUT_MARGIN, d = g.y1 - g.y0 + 2 * GUT_MARGIN;
+      const r = { id: g.id, x0: cx, x1: cx + w, y1: GUT_Y, y0: GUT_Y - d, z: g.z0, sx: cx + GUT_MARGIN - g.x0, sy: GUT_Y - GUT_MARGIN - g.y1 };
+      cx += w + GUT_GAP;
+      return r;
+    });
+  }
+  function gutCurrent() {
+    const dex = abtragOn && abtragState && abtragState.dex && !abtragState.dex.disposed ? abtragState.dex : null;
+    const G = dex ? dex.mesher.gut() : null;
+    return G ? { dex, G, L: gutLayout(G.ids, dex.gutReg) } : null;
+  }
+  function gutAblagePasses(basis, w, h, projRaw) {
+    const cur = gutCurrent();
+    gutRects = cur ? cur.L : null;
+    if (!cur || !gutLastBody) return;
+    const keepS = mpCamShift, keepP = mpPassPiece, keepO = bodyOccluder;
+    cur.L.forEach(r => {
+      mpCamShift = { x: r.sx, y: 0, z: r.sy }; mpPassPiece = -1; gutPassId = r.id;
+      const cp = cameraPosition();
+      try { drawMortiseBody(p => project(p, cp, basis, w, h), gutLastBody.mesh, gutLastBody.baseZ); } catch (e) {  }
+    });
+    gutPassId = -1; mpCamShift = keepS; mpPassPiece = keepP; bodyOccluder = keepO;
+    ctx.save(); ctx.setLineDash([8, 5]); ctx.strokeStyle = '#d62828'; ctx.lineWidth = 2; ctx.globalAlpha = 1;
+    cur.L.forEach(r => {
+      const Q = [[r.x0, r.y1], [r.x1, r.y1], [r.x1, r.y0], [r.x0, r.y0]].map(q => projRaw(toRender({ x: q[0], y: q[1], z: r.z })));
+      if (Q.some(q => !q || !isFinite(q.x) || !isFinite(q.y))) return;
+      ctx.beginPath(); Q.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); ctx.closePath(); ctx.stroke();
+    });
+    ctx.restore();
+    window.__lastGutDraw = { passes: cur.L.length, at: performance.now() };
+  }
+  function gutAfterSettle(dex) {
+    const G = dex.mesher.gut(), sig = G ? G.ids.join(',') : '';
+    if (sig === (dex.gutSig || '')) return;
+    dex.gutSig = sig; bakeParams = null; requestRender();
+    if (!G) return;
+    const fresh = G.ids.map(id => dex.gutReg[id]).filter(g => g && !gutMsgDone.has(g.key));
+    if (!fresh.length) return;
+    fresh.forEach(g => gutMsgDone.add(g.key));
+    gutShowMsg(fresh);
+  }
+  function gutShowMsg(list) {
+    const f = v => String(Math.round(v)), sep = list[0].sep;
+    el('gutMsgTitle').textContent = list.length > 1 ? T('⚠ Gutteile fallen ab', '⚠ Good parts fall off') : T('⚠ Gutteil fällt ab', '⚠ Good part falls off');
+    el('gutMsgBody').innerHTML = '<div>' + (sep ? T('Nach „', 'After "') + '<b>' + escapeHtml(sep) + '</b>' + T('“', '"') + (list[0].sepLine ? T(' (Zeile ', ' (line ') + list[0].sepLine + ')' : '') + ' ' : '')
+      + (list.length > 1 ? T('sind bearbeitete Teile abgetrennt, die in echt abfallen:', 'machined parts have been separated that fall off in reality:') : T('ist ein bearbeitetes Teil abgetrennt, das in echt abfällt:', 'a machined part has been separated that falls off in reality:')) + '</div>'
+      + list.map(g => '<div class="gut-item"><b>' + T('Gutteil ', 'Good part ') + (g.id + 1) + ' – ' + escapeHtml(g.op) + '</b><br>' + T('Umriss ca. ', 'Outline approx. ') + f(g.x1 - g.x0) + ' × ' + f(g.y1 - g.y0) + ' mm, ' + T('Stärke ', 'thickness ') + f(g.T) + ' mm</div>').join('')
+      + '<div>' + T('Zur Ansicht liegt es in der Ablage vor dem Tisch (rot gestrichelt). Die Simulation läuft nach „Ok“ weiter.', 'For viewing it lies in the storage area in front of the table (red dashed). The simulation continues after "Ok".') + '</div>';
+    gutResume = gutResume || playing;
+    if (playing) { playing = false; updatePlayIcon(); stepPlayback._last = null; }
+    el('gutMsgPanel').classList.add('open');
+    setTimeout(() => { try { el('btnGutMsgOk').focus(); } catch (e) {  } }, 0);
+  }
+  function gutMsgOk() {
+    el('gutMsgPanel').classList.remove('open');
+    if (gutResume && points.length) { playing = true; hasStarted = true; updatePlayIcon(); stepPlayback._last = null; requestAnimationFrame(stepPlayback); }
+    gutResume = false;
+  }
+  el('btnGutMsgOk').addEventListener('click', gutMsgOk);
+  el('gutMsgPanel').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); gutMsgOk(); } });
+  window.__gutInfo = () => { const cur = gutCurrent(); return { msg: el('gutMsgPanel').classList.contains('open'), ids: cur ? cur.G.ids.slice() : [], reg: cur ? cur.dex.gutReg.map(g => ({ id: g.id, op: g.op, sep: g.sep, sepLine: g.sepLine, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 })) : [], rects: cur ? cur.L.map(r => Object.assign({}, r)) : [] }; };
   var mpModel = null, mpCamShift = null, mpShown = null, mpAnim = null, mpBoxCache = null;
   const MP_ANIM_MS = 2000, MP_ANIM_STEPS = 10;
   function mpBuild(segs) {
