@@ -1689,6 +1689,22 @@
   .cup-assign-home { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 8px; background: var(--card, #fff); color: var(--ink); font-size: 16px; line-height: 1; cursor: pointer; }
   .cup-assign-home:hover { color: var(--accent); }
   .cup-assign-zoomhint { margin: 2px 0 0 2px; }
+  
+  .cup-assign-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+  .cup-assign-tools { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted-soft); }
+  .cup-assign-tool { width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel, #fff); color: var(--ink); font-size: 16px; line-height: 1; cursor: pointer; padding: 0; }
+  .cup-assign-tool:hover { color: var(--accent); }
+  .cup-assign-tool.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cup-assign-measure { min-width: 230px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel, #fff); font-size: 13px; }
+  .cup-assign-measure .mh { font-weight: 600; margin-bottom: 6px; }
+  .cup-assign-measure .ms { color: var(--ink-faint); margin-bottom: 6px; }
+  .cup-assign-measure .mr { display: flex; justify-content: space-between; gap: 20px; padding: 3px 0; border-top: 1px solid var(--border); }
+  .cup-assign-ctx { position: fixed; z-index: 100000; background: var(--panel, #fff); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.18); padding: 4px; font-size: 13px; min-width: 210px; }
+  .cup-assign-ctx .ch { padding: 4px 10px; color: var(--ink-faint); font-size: 12px; }
+  .cup-assign-ctx .ci { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  .cup-assign-ctx .ci:hover { background: var(--muted-soft); }
+  .cup-assign-ctx .ck { width: 14px; text-align: center; }
+  .cup-assign-ctx .cs { margin-left: auto; width: 14px; height: 14px; border-radius: 3px; border: 1px solid #888; }
   .cup-assign-legend { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 12.5px; }
   .cup-assign-table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
   .cup-assign-table th { padding: 4px; font-weight: 600; }
@@ -2745,8 +2761,17 @@
     <p class="panel-hint" id="cupAssignHint"></p>
     
     <label class="cup-assign-ops"><input type="checkbox" id="cupAssignShowOps"> <span data-i18n-en="Show machining">Bearbeitungen anzeigen</span><span class="panel-hint" data-i18n-en="(red = milled through below the part, green = pocket/groove)">(rot = durchgefräst bis unter das Bauteil, grün = Tasche/Nut)</span></label>
-    <div class="cup-assign-scroll"><div class="cup-assign-view"><svg id="cupAssignTop" width="920" height="300"></svg><button type="button" class="cup-assign-home" id="btnCupAssignHome" title="Ganzen Tisch zeigen" data-i18n-en-title="Show whole table" data-i18n-de-title="Ganzen Tisch zeigen">⌂</button></div></div>
-    <p class="panel-hint cup-assign-zoomhint" data-i18n-en="Mouse wheel = zoom, drag = pan, ⌂ = show whole table">Mausrad = zoomen, ziehen = verschieben, ⌂ = ganzen Tisch zeigen</p>
+    
+    <div class="cup-assign-row">
+      <div class="cup-assign-scroll"><div class="cup-assign-view"><svg id="cupAssignTop" width="920" height="300"></svg></div></div>
+      <div class="cup-assign-tools" id="cupAssignTools">
+        <button type="button" class="cup-assign-tool" id="btnCupAssignHome" title="Ganzen Tisch zeigen" data-i18n-en-title="Show whole table" data-i18n-de-title="Ganzen Tisch zeigen">⌂</button>
+        <button type="button" class="cup-assign-tool" id="btnCupAssignMeasure" aria-pressed="false" title="Messen (Direkt, Abstand X, Abstand Y)" data-i18n-en-title="Measure (direct, distance X, distance Y)" data-i18n-de-title="Messen (Direkt, Abstand X, Abstand Y)">📏</button>
+      </div>
+      <div class="cup-assign-measure" id="cupAssignMeasureOut" hidden></div>
+    </div>
+    <p class="panel-hint cup-assign-zoomhint" data-i18n-en="Mouse wheel = zoom, drag = pan, ⌂ = show whole table, 📏 = measure, right-click on a cup = swap cup">Mausrad = zoomen, ziehen = verschieben, ⌂ = ganzen Tisch zeigen, 📏 = messen, Rechtsklick auf einen Sauger = Sauger tauschen</p>
+    <div class="cup-assign-ctx" id="cupAssignCtx" hidden></div>
     <div class="cup-assign-legends" id="cupAssignLegend"></div>
     <div class="cup-assign-scroll" id="cupAssignTable"></div>
     <div class="paste-actions cup-assign-actions"><button class="btn ghost" id="btnCupAssignStd" type="button" data-i18n-en="All to default">Alle auf Standard</button><span><button class="btn ghost" id="btnCupAssignCancel" type="button" data-i18n-en="Cancel">Abbrechen</button> <button class="btn primary" id="btnCupAssignOk" type="button">Ok</button></span></div>
@@ -8888,7 +8913,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 403;
+  const APP_RELEASE_NUMBER = 404;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8897,7 +8922,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '27.11.2026, 07:52 Uhr';
+  const APP_RELEASE_TIMESTAMP = '27.11.2026, 08:44 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13446,6 +13471,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 404, date: '27.11.2026', items: [
+      { de: 'Saugerzuordnung: Rechtsklick auf einen Sauger öffnet die Liste der Sauger zum Tauschen; Leiste rechts neben der Draufsicht mit ⌂ und Messen (Direkt, Abstand X, Abstand Y; Fangpunkte an Saugern, Sockeln, Balken und Bahnen).',
+        en: 'Vacuum cup assignment: right-click on a cup opens the list of cups to swap it; toolbar right of the top view with ⌂ and measuring (direct, distance X, distance Y; snap points on cups, sockets, consoles and paths).' },
+      { de: 'Messen in der 3D-Simulation fängt jetzt auch am Maschinentisch: Ecken, Kantenmitten und Mitte von Saugern, Sockeln und Balken sowie die Ecken der Tischplatte.',
+        en: 'Measuring in the 3D simulation now also snaps to the machine table: corners, edge midpoints and centres of cups, sockets and consoles and the corners of the table plate.' },
+    ] },
     { release: 403, date: '27.11.2026', items: [
       { de: '„SCM Movepart“: erst verfahren, dann fräsen – auch beim Weiterschalten mit den Pfeiltasten. Der Pfeil an einer Saugerfahrt startet nur die Fahrt; weitergeht es, wenn die Sauger stehen.',
         en: '"SCM Movepart": move first, then mill – also when stepping with the arrow keys. The arrow key at a vacuum cup move only starts the move; stepping continues once the cups are in position.' },
@@ -16072,6 +16103,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     toolSnapPoints.forEach(p => trySnap(p, 'end'));
     cncGeo.mids.forEach(p => trySnap(p, 'mid'));
     dxfGeo.mids.forEach(p => tryDxf(p, 'mid'));
+    if (typeof machineTableActive === 'function' && machineTableActive()) {
+      const sh = (typeof mpCamShift !== 'undefined' && mpCamShift) || { x: 0, z: 0 };
+      const T3 = (x, y, z, kind) => trySnap({ x: x - sh.x, y: y - sh.z, z }, kind);
+      (machineTableBoxes() || []).forEach(b => {
+        if (b.kind === 'body') return;
+        const z = b.kind === 'plate' ? b.z0 : b.z1;
+        [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].forEach(q => T3(q[0], q[1], z, 'end'));
+        if (b.kind === 'plate') return;
+        [[(b.x0 + b.x1) / 2, b.y0], [b.x1, (b.y0 + b.y1) / 2], [(b.x0 + b.x1) / 2, b.y1], [b.x0, (b.y0 + b.y1) / 2]].forEach(q => T3(q[0], q[1], z, 'mid'));
+        if (b.kind === 'pad' || b.kind === 'sock') T3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, z, 'mid');
+      });
+    }
 
     const nearLines = [];
     function collectNearLine(p0, p1) {
@@ -21278,6 +21321,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupAssignApplyView() {
     const t = el('cupAssignTop'), v = cupAssignVB || cupAssignFull;
     t.setAttribute('viewBox', v.map(x => +x.toFixed(2)).join(' '));
+    if (typeof cupMeasureDraw === 'function' && cupMeasure && cupMeasure.on) cupMeasureDraw();
   }
   function cupAssignZoom(f, fx, fy) {
     const F = cupAssignFull, v = (cupAssignVB || F).slice();
@@ -21291,6 +21335,84 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const F = cupAssignFull;
     v[0] = Math.min(F[0] + F[2] - v[2], Math.max(F[0], v[0])); v[1] = Math.min(F[1] + F[3] - v[3], Math.max(F[1], v[1]));
     return v;
+  }
+  var cupGeo = null, cupMeasure = { on: false, a: null, b: null, hover: null }, cupMeasureLast = null;
+  function cupAssignSnapPoints() {
+    const mt = machineTable, out = []; if (!mt || !cupGeo) return out;
+    const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std';
+    const rectPts = (x0, y0, x1, y1, what, center, pri) => {
+      [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].forEach(q => out.push({ x: q[0], y: q[1], kind: 'end', what, pri }));
+      [[(x0 + x1) / 2, y0], [x1, (y0 + y1) / 2], [(x0 + x1) / 2, y1], [x0, (y0 + y1) / 2]].forEach(q => out.push({ x: q[0], y: q[1], kind: 'mid', what, pri }));
+      if (center) out.push({ x: (x0 + x1) / 2, y: (y0 + y1) / 2, kind: 'mid', what: what + T(' (Mitte)', ' (centre)'), pri });
+    };
+    mt.beams.forEach((b, bi) => {
+      rectPts(b.x - mtSet.beamX / 2, 0, b.x + mtSet.beamX / 2, cupGeo.TY, T('Balken', 'Console') + ' PB' + (bi + 1), false, 1);
+      b.y.forEach((y, r) => {
+        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2, nm = 'PB' + (bi + 1) + '/Y' + (r + 1);
+        rectPts(sx, sy, sx + mtSet.sockX, sy + mtSet.sockY, T('Sockel', 'Socket') + ' ' + nm, true, 2);
+        rectPts(sx + c.ox, sy + c.oy, sx + c.ox + c.x, sy + c.oy + c.y, T('Sauger', 'Cup') + ' ' + nm, true, 3);
+      });
+    });
+    if (cupGeo.ops) points.forEach((p, i) => { if (i && !p.rapid && !p.uf && !hiddenOpIndexes.has(p.opIndex)) out.push({ x: p.x, y: p.y, kind: 'end', what: T('Bahnpunkt', 'Path point'), pri: 0 }); });
+    return out;
+  }
+  function cupClientToTable(cx, cy) {
+    const svg = el('cupAssignTop'), g = svg.querySelector('g'); if (!g || !cupGeo) return null;
+    const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+    const m = g.getScreenCTM(); if (!m) return null;
+    const q = pt.matrixTransform(m.inverse());
+    return { x: q.x / cupGeo.kx, y: (cupGeo.H - q.y) / cupGeo.ky };
+  }
+  function cupTableToClient(x, y) {
+    const svg = el('cupAssignTop'), g = svg.querySelector('g'); if (!g || !cupGeo) return null;
+    const pt = svg.createSVGPoint(); pt.x = x * cupGeo.kx; pt.y = cupGeo.H - y * cupGeo.ky;
+    const m = g.getScreenCTM(); if (!m) return null;
+    const q = pt.matrixTransform(m); return { x: q.x, y: q.y };
+  }
+  function cupMeasureSnap(cx, cy) {
+    let best = null, bd = 12;
+    cupAssignSnapPoints().forEach(p => { const s = cupTableToClient(p.x, p.y); if (!s) return; const d = Math.hypot(s.x - cx, s.y - cy); if (d < bd - 0.5 || (best ? Math.abs(d - bd) <= 0.5 && p.pri > best.pri : d < bd)) { bd = Math.min(bd, d); best = p; } });
+    return best;
+  }
+  function cupMeasureDraw() {
+    const layer = el('cupAssignTop').querySelector('#cupAssignMeasureLayer'); if (!layer || !cupGeo) return;
+    const svg = el('cupAssignTop'), vb = (svg.getAttribute('viewBox') || '0 0 1 1').split(' ').map(Number), w = svg.getBoundingClientRect().width || 1, k = vb[2] / w;
+    const X = x => (x * cupGeo.kx).toFixed(2), Y = y => (cupGeo.H - y * cupGeo.ky).toFixed(2), M = cupMeasure;
+    const col = p => p.kind === 'mid' ? '#e6b800' : '#2db84d';
+    let h = '';
+    if (M.on && M.a && M.b) {
+      h += '<line x1="' + X(M.a.x) + '" y1="' + Y(M.a.y) + '" x2="' + X(M.b.x) + '" y2="' + Y(M.a.y) + '" stroke="#d62828" stroke-width="' + (1.3 * k) + '"/>'
+        + '<line x1="' + X(M.b.x) + '" y1="' + Y(M.a.y) + '" x2="' + X(M.b.x) + '" y2="' + Y(M.b.y) + '" stroke="#1f63c6" stroke-width="' + (1.3 * k) + '"/>'
+        + '<line x1="' + X(M.a.x) + '" y1="' + Y(M.a.y) + '" x2="' + X(M.b.x) + '" y2="' + Y(M.b.y) + '" stroke="#222" stroke-width="' + (1.3 * k) + '" stroke-dasharray="' + 4 * k + ' ' + 3 * k + '"/>';
+    }
+    if (M.on) [M.a, M.b].forEach(p => { if (p) h += '<circle cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="' + 4 * k + '" fill="' + col(p) + '" stroke="#fff" stroke-width="' + k + '"/>'; });
+    if (M.on && M.hover) h += '<circle class="cup-measure-hover" cx="' + X(M.hover.x) + '" cy="' + Y(M.hover.y) + '" r="' + 7 * k + '" fill="none" stroke="' + col(M.hover) + '" stroke-width="' + 2.5 * k + '"/><circle cx="' + X(M.hover.x) + '" cy="' + Y(M.hover.y) + '" r="' + 1.6 * k + '" fill="' + col(M.hover) + '"/>';
+    layer.innerHTML = h;
+    const out = el('cupAssignMeasureOut');
+    if (M.on && M.a && M.b) { const dx = Math.abs(M.b.x - M.a.x), dy = Math.abs(M.b.y - M.a.y); cupMeasureLast = { a: M.a, b: M.b, direct: Math.hypot(dx, dy), dx, dy }; }
+    window.__lastCupMeasure = cupMeasureLast;
+    out.hidden = !M.on && !cupMeasureLast;
+    if (!out.hidden) {
+      const f = v => (Math.round(v * 10) / 10).toFixed(1).replace('.', currentLang === 'en' ? '.' : ',') + ' mm', L = cupMeasureLast;
+      let body = '<div class="mh">' + T('Messung', 'Measurement') + '</div>';
+      if (L) body += '<div class="ms">' + escapeHtml(L.a.what) + ' → ' + escapeHtml(L.b.what) + '</div>'
+        + [[T('Direkt', 'Direct'), L.direct], [T('Abstand X', 'Distance X'), L.dx], [T('Abstand Y', 'Distance Y'), L.dy]].map(r => '<div class="mr"><span>' + r[0] + '</span><b>' + f(r[1]) + '</b></div>').join('');
+      if (M.on && !(M.a && M.b)) body += '<div class="ms" style="margin-top:6px">' + (M.a ? T('Startpunkt gesetzt – zweiten Punkt anklicken.', 'Start point set – click the second point.') : T('Ersten Punkt anklicken.', 'Click the first point.')) + '</div>';
+      out.innerHTML = body;
+    }
+  }
+  function cupMeasureToggle(on) {
+    cupMeasure = { on: on == null ? !cupMeasure.on : !!on, a: null, b: null, hover: null };
+    const b = el('btnCupAssignMeasure'); b.classList.toggle('active', cupMeasure.on); b.setAttribute('aria-pressed', cupMeasure.on ? 'true' : 'false');
+    cupMeasureDraw();
+  }
+  function cupCtxClose() { const c = el('cupAssignCtx'); c.hidden = true; c.innerHTML = ''; }
+  function cupCtxOpen(bi, r, cx, cy) {
+    const c = el('cupAssignCtx'), cur = cupAssignWork.get(bi + ':' + r) || 'std';
+    c.innerHTML = '<div class="ch">PB' + (+bi + 1) + ' / Y' + (+r + 1) + '</div>' + cupSets.map(s0 => '<div class="ci" data-id="' + escapeHtml(s0.id) + '"><span class="ck">' + (s0.id === cur ? '✓' : '') + '</span><span>' + escapeHtml(s0.name) + '</span><span class="cs" style="background:' + cupColor(s0.id) + '"></span></div>').join('');
+    c.dataset.b = bi; c.dataset.r = r; c.hidden = false;
+    const w = c.offsetWidth || 220, h = c.offsetHeight || 200;
+    c.style.left = Math.max(4, Math.min(cx + 4, window.innerWidth - w - 4)) + 'px'; c.style.top = Math.max(4, Math.min(cy + 4, window.innerHeight - h - 4)) + 'px';
   }
   function renderCupAssign() {
     const mt = machineTable; if (!mt) return;
@@ -21311,7 +21433,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       });
     });
     const top = el('cupAssignTop'); top.setAttribute('width', W + 20); top.setAttribute('height', H + 20);
-    top.innerHTML = svg + (ops ? ops.svg : '') + cupSvg + '</g>';
+    top.innerHTML = svg + (ops ? ops.svg : '') + cupSvg + '<g id="cupAssignMeasureLayer" pointer-events="none"></g></g>';
+    cupGeo = { kx, ky, H, TX, TY, ops };
+    cupMeasureDraw();
     cupAssignFull = [0, 0, W + 20, H + 20]; cupAssignApplyView();
     window.__lastCupAssignInfo = { ops: !!ops, segs: ops ? ops.n : 0, deep: ops ? ops.deep.length : 0, hits, view: cupAssignVB ? cupAssignVB.slice() : null };
     el('cupAssignLegend').innerHTML = cupSets.map(c => '<span class="cup-assign-legend"><span class="mt-cup-swatch" style="background:' + cupColor(c.id) + '"></span>' + escapeHtml(c.name) + '</span>').join('');
@@ -21338,6 +21462,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     closeAllMenus(); closeContextMenu();
     cupAssignWork = new Map(cupAssign);
     cupAssignVB = null;
+    cupCtxClose(); cupMeasure = { on: false, a: null, b: null, hover: null }; el('btnCupAssignMeasure').classList.remove('active'); el('btnCupAssignMeasure').setAttribute('aria-pressed', 'false');
     el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Vacuum cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
     renderCupAssign();
     el('cupAssignPanel').classList.add('open');
@@ -21355,13 +21480,38 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   });
   el('cupAssignTop').addEventListener('click', e => {
     if (cupAssignDragged) { cupAssignDragged = false; return; }
+    if (cupMeasure.on) {
+      const p = cupMeasureSnap(e.clientX, e.clientY); if (!p) return;
+      if (!cupMeasure.a || cupMeasure.b) { cupMeasure.a = p; cupMeasure.b = null; } else cupMeasure.b = p;
+      cupMeasureDraw(); return;
+    }
     const r = e.target.closest && e.target.closest('.cup-assign-cup'); if (!r) return;
     const s = el('cupAssignTable').querySelector('.cup-assign-sel[data-b="' + r.dataset.b + '"][data-r="' + r.dataset.r + '"]');
     if (s) { s.focus(); s.classList.add('flash'); setTimeout(() => s.classList.remove('flash'), 700); }
   });
   el('btnCupAssignStd').addEventListener('click', () => { cupAssignWork.clear(); renderCupAssign(); });
   el('cupAssignShowOps').addEventListener('change', e => setCupAssignShowOps(e.target.checked));
-  el('btnCupAssignHome').addEventListener('click', () => { cupAssignVB = null; cupAssignApplyView(); });
+  el('btnCupAssignHome').addEventListener('click', () => { cupAssignVB = null; cupAssignApplyView(); cupMeasureDraw(); });
+  el('btnCupAssignMeasure').addEventListener('click', () => cupMeasureToggle());
+  el('cupAssignTop').addEventListener('mousemove', e => {
+    if (!cupMeasure.on || cupAssignDrag) return;
+    const p = cupMeasureSnap(e.clientX, e.clientY);
+    if ((p && p.x) !== (cupMeasure.hover && cupMeasure.hover.x) || (p && p.y) !== (cupMeasure.hover && cupMeasure.hover.y)) { cupMeasure.hover = p; cupMeasureDraw(); }
+  });
+  el('cupAssignTop').addEventListener('mouseleave', () => { if (cupMeasure.hover) { cupMeasure.hover = null; cupMeasureDraw(); } });
+  el('cupAssignPanel').addEventListener('contextmenu', e => {
+    e.preventDefault(); e.stopPropagation();
+    const r = e.target.closest && e.target.closest('.cup-assign-cup');
+    if (r) cupCtxOpen(r.dataset.b, r.dataset.r, e.clientX, e.clientY); else cupCtxClose();
+  });
+  el('cupAssignCtx').addEventListener('click', e => {
+    const it = e.target.closest('.ci'); if (!it) return;
+    const c = el('cupAssignCtx');
+    cupAssignWork.set(c.dataset.b + ':' + c.dataset.r, it.dataset.id);
+    cupCtxClose(); renderCupAssign();
+  });
+  document.addEventListener('mousedown', e => { const c = el('cupAssignCtx'); if (!c.hidden && !c.contains(e.target)) cupCtxClose(); }, true);
+  window.__cupAssignMeasure = { toggle: on => cupMeasureToggle(on), state: () => ({ on: cupMeasure.on, a: cupMeasure.a, b: cupMeasure.b, hover: cupMeasure.hover }), toClient: (x, y) => cupTableToClient(x, y), snapCount: () => cupAssignSnapPoints().length };
   el('cupAssignTop').addEventListener('wheel', e => {
     e.preventDefault();
     const rc = el('cupAssignTop').getBoundingClientRect();
@@ -21388,7 +21538,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnCupAssignCancel').addEventListener('click', () => el('cupAssignPanel').classList.remove('open'));
   el('cupAssignPanel').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); e.stopPropagation(); cupAssignOk(); }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); el('cupAssignPanel').classList.remove('open'); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!el('cupAssignCtx').hidden) { cupCtxClose(); return; } el('cupAssignPanel').classList.remove('open'); }
   });
   el('btnTableAssign').addEventListener('click', openCupAssign);
   document.addEventListener('cncsim:lang-changed', () => {
