@@ -8951,7 +8951,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 408;
+  const APP_RELEASE_NUMBER = 409;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8960,7 +8960,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '27.11.2026, 16:01 Uhr';
+  const APP_RELEASE_TIMESTAMP = '27.11.2026, 18:26 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11745,11 +11745,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
 
   const MACHINE_DETECT_TO_NAME_KEY = { CIX: 'biesse', SCM: 'scm', HOMAG: 'homag', FORMAT4: 'format4', KRC: 'krc', MOROFF: 'moroff' };
+  function hasMovepartSuctionBlock(lines) {
+    for (let i = 0; i < lines.length; i++) {
+      if (!/^\s*;.*move\s*part/i.test(lines[i])) continue;
+      for (let k = i + 1; k < Math.min(lines.length, i + 4); k++) {
+        const t = lines[k].trim();
+        if (/^PB\b/i.test(t)) return true;
+        if (t !== '' && !/^N$/i.test(t)) break;
+      }
+    }
+    return false;
+  }
   function suggestMachineType(rawText, configuredNames) {
     const lines = rawText.replace(/\r\n/g, '\n').split('\n');
     const detected = CNCParser.detectMachine(lines);
     const key = MACHINE_DETECT_TO_NAME_KEY[detected];
     if (detected === 'CIX' && configuredNames.indexOf('Biesse CIX') !== -1) return 'Biesse CIX';
+    if (detected === 'SCM' && hasMovepartSuctionBlock(lines)) {
+      const mp = configuredNames.find(n => /^scm\s+movepart$/i.test(String(n || '').trim()));
+      if (mp) return mp;
+    }
     if (key) {
       const match = configuredNames.find(n => n.toLowerCase() === key || n.toLowerCase().startsWith(key));
       if (match) return match;
@@ -13510,6 +13525,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 409, date: '27.11.2026', items: [
+      { de: 'Maschinentyp-Vorschlag: SCM-Programme mit Saugerfahrt („Move Part“ vor einem Saugerblock) schlagen beim Laden „SCM Movepart“ vor.',
+        en: 'Machine type suggestion: SCM programs with a vacuum cup move ("Move Part" before a vacuum cup block) suggest "SCM Movepart" when loading.' },
+      { de: '„SCM Movepart“: Die Kollisionsprüfung berücksichtigt geänderte Saugerzuordnung und Drehwinkel sofort (bisher wurde gegen die vorherigen Sauger geprüft).',
+        en: '"SCM Movepart": the collision check takes changed vacuum cup assignments and rotation angles into account immediately (previously it checked against the previous cups).' },
+    ] },
     { release: 408, date: '27.11.2026', items: [
       { de: 'Abtragssimulation (Volumenkörper): Ein abgetrenntes Teil mit eigener Bearbeitung (z. B. Handlauf mit Omegaprofil nach dem Trennschnitt) verschwindet nicht mehr als Abfall – Meldung „Gutteil fällt ab“, danach liegt es in der Ablage vor dem Tisch (rot gestrichelt umrahmt).',
         en: 'Material removal simulation (solid): a separated part with its own machining (e.g. handrail with omega profile after the separating cut) no longer disappears as waste – message "Good part falls off", then it lies in the storage area in front of the table (red dashed frame).' },
@@ -21211,6 +21232,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function mtApplyChange() {
     bakeParams = null; requestRender();
+    mpBoxCache = null;
     if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
   }
   function mtWarnings(t, c) {
