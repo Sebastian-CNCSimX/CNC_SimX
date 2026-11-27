@@ -1690,6 +1690,11 @@
   .cup-assign-home:hover { color: var(--accent); }
   .cup-assign-zoomhint { margin: 2px 0 0 2px; }
   
+  #mtPaneCups.cup-round .cup-shp-rect, #mtPaneCups.cup-round .cup-shp-rect-lbl { display: none; }
+  #mtPaneCups:not(.cup-round) .cup-shp-round { display: none; }
+  .cup-assign-ctx .ci.dis { color: var(--ink-faint); cursor: default; }
+  .cup-assign-ctx .ci.dis:hover { background: none; }
+  
   .cup-assign-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
   .cup-assign-tools { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted-soft); }
   .cup-assign-tool { width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel, #fff); color: var(--ink); font-size: 16px; line-height: 1; cursor: pointer; padding: 0; }
@@ -2742,9 +2747,11 @@
         <div><div class="mt-cup-list" id="mtCupList"></div>
           <div class="mt-cup-btns"><button class="btn ghost small" id="btnMtCupNew" type="button" data-i18n-en="New">Neu</button><button class="btn ghost small" id="btnMtCupCopy" type="button" data-i18n-en="Copy">Kopieren</button><button class="btn ghost small" id="btnMtCupDelete" type="button" data-i18n-en="Delete">Löschen</button></div></div>
         <div>
+          
+          <div class="mt-set-row" id="mtCupShapeRow"><b data-i18n-en="Shape">Form</b><div><div class="mt-set-fields"><label><span></span><select id="mtCupShape" class="filename-input" style="width:170px"><option value="rect" data-i18n-en="Rectangular">Rechteckig</option><option value="round" data-i18n-en="Round">Rund</option></select></label></div></div></div>
           <div class="mt-set-row"><b data-i18n-en="Name">Name</b><div><div class="mt-set-fields"><label><span></span><input type="text" id="mtCupName" class="filename-input" spellcheck="false" style="width:240px"></label></div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Vacuum cup">Sauger</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Vacuum base 15mm (display only)">Saugplatte 15mm (nur Darstellung)</div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Offset">Verschiebung</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Vacuum cup">Sauger</b><div><div class="mt-set-fields"><label><span><span class="cup-shp-rect" data-i18n-en="X">X</span><span class="cup-shp-round" title="Durchmesser" data-i18n-en-title="Diameter" data-i18n-de-title="Durchmesser">Ø</span></span><input type="text" id="mtCupX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label class="cup-shp-rect-lbl"><span data-i18n-en="Y">Y</span><input type="text" id="mtCupY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Vacuum base 15mm (display only)">Saugplatte 15mm (nur Darstellung)</div></div></div>
+          <div class="mt-set-row"><b data-i18n-en="Offset">Verschiebung</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtCupOffX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtCupOffY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note cup-shp-rect" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</div><div class="mt-set-note cup-shp-round" data-i18n-en="0 / 0 = circle centre above the centre of the base">0 / 0 = Kreismitte über Sockelmitte</div></div></div>
           <div class="mt-set-warn" id="mtSetWarn" hidden></div>
           <div class="mt-cup-save"><button class="btn ghost" id="btnMtCupSave" type="button" data-i18n-en="Save vacuum cup">Sauger speichern</button><span class="mt-cup-msg" id="mtCupMsg"></span></div>
         </div>
@@ -3528,6 +3535,7 @@
           <select id="dxfTextureListSelect" size="6" class="tool-dxf-profile-select"></select>
           <div class="tool-dxf-profile-list-actions">
             <button class="btn ghost small" id="btnDxfTextureNew" type="button" data-i18n-en="New">Neu</button>
+            <button class="btn ghost small" id="btnDxfTextureCopy" type="button" data-i18n-en="Copy">Kopieren</button>
             <button class="btn ghost small" id="btnDxfTextureDelete" type="button" data-i18n-en="Delete">Löschen</button>
           </div>
         </div>
@@ -8913,7 +8921,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 404;
+  const APP_RELEASE_NUMBER = 405;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8922,7 +8930,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '27.11.2026, 08:44 Uhr';
+  const APP_RELEASE_TIMESTAMP = '27.11.2026, 10:57 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13471,6 +13479,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 405, date: '27.11.2026', items: [
+      { de: 'Runde Sauger: Im Reiter „Sauger“ gibt es die Form „Rechteckig“ oder „Rund“ (Durchmesser, Z, Verschiebung ab Sockelmitte). Runde Sauger erscheinen überall rund – 3D, Saugerzuordnung, Kollision und Messen.',
+        en: 'Round vacuum cups: the "Vacuum cups" tab offers the shape "Rectangular" or "Round" (diameter, Z, offset from the centre of the base). Round cups appear round everywhere – 3D, cup assignment, collision and measuring.' },
+      { de: 'Rechtsklick-Menü „Neu / Kopieren / Löschen“ in Bauteilprofil, Texturen, Werkzeugprofil, Spannfutter, Unterfluraggregat und Sauger; Texturen lassen sich jetzt auch kopieren.',
+        en: 'Right-click menu "New / Copy / Delete" in part profile, textures, tool profile, chuck, underfloor unit and vacuum cups; textures can now be copied too.' },
+    ] },
     { release: 404, date: '27.11.2026', items: [
       { de: 'Saugerzuordnung: Rechtsklick auf einen Sauger öffnet die Liste der Sauger zum Tauschen; Leiste rechts neben der Draufsicht mit ⌂ und Messen (Direkt, Abstand X, Abstand Y; Fangpunkte an Saugern, Sockeln, Balken und Bahnen).',
         en: 'Vacuum cup assignment: right-click on a cup opens the list of cups to swap it; toolbar right of the top view with ⌂ and measuring (direct, distance X, distance Y; snap points on cups, sockets, consoles and paths).' },
@@ -16109,6 +16123,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       (machineTableBoxes() || []).forEach(b => {
         if (b.kind === 'body') return;
         const z = b.kind === 'plate' ? b.z0 : b.z1;
+        if (b.round) { const R = b.round; [[R.cx, R.cy], [R.cx + R.r, R.cy], [R.cx - R.r, R.cy], [R.cx, R.cy + R.r], [R.cx, R.cy - R.r]].forEach(q => T3(q[0], q[1], z, 'mid')); return; }
         [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].forEach(q => T3(q[0], q[1], z, 'end'));
         if (b.kind === 'plate') return;
         [[(b.x0 + b.x1) / 2, b.y0], [b.x1, (b.y0 + b.y1) / 2], [(b.x0 + b.x1) / 2, b.y1], [b.x0, (b.y0 + b.y1) / 2]].forEach(q => T3(q[0], q[1], z, 'mid'));
@@ -21062,7 +21077,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!c || typeof c !== 'object' || typeof c.name !== 'string' || !c.name.trim()) return null;
     const n = v => (typeof v === 'number' && isFinite(v)) ? v : NaN;
     const o = { id: typeof c.id === 'string' && c.id ? c.id : 'c' + Math.random().toString(36).slice(2, 9), name: c.name.trim().slice(0, 60),
-      x: n(c.x), y: n(c.y), z: n(c.z), ox: n(c.ox), oy: n(c.oy) };
+      x: n(c.x), y: n(c.y), z: n(c.z), ox: n(c.ox), oy: n(c.oy), shape: c.shape === 'round' ? 'round' : 'rect' };
+    if (o.shape === 'round') o.y = o.x;
     if (!(o.x > 0 && o.y > 0 && o.z > 0) || !isFinite(o.ox) || !isFinite(o.oy)) return null;
     return o;
   }
@@ -21079,11 +21095,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function cupLocalize() { cupSets.forEach(c => { if (c.fixed) c.name = T(c.de, c.en); }); }
   var cupSets = normCupSets((() => { try { return JSON.parse(window.localStorage.getItem(CUP_LS_KEY) || 'null'); } catch (e) { return null; } })());
-  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets.filter(c => !c.fixed).map(c => ({ id: c.id, name: c.name, x: c.x, y: c.y, z: c.z, ox: c.ox, oy: c.oy })))); } catch (e) {  } }
+  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets.filter(c => !c.fixed).map(c => ({ id: c.id, name: c.name, x: c.x, y: c.y, z: c.z, ox: c.ox, oy: c.oy, shape: c.shape === 'round' ? 'round' : 'rect' })))); } catch (e) {  } }
   function cupSetById(id) { return cupSets.find(c => c.id === id) || cupSets[0]; }
   function cupColor(id) { const i = cupSets.findIndex(c => c.id === id); return CUP_COLORS[(i < 0 ? 0 : i) % CUP_COLORS.length]; }
   var cupAssign = new Map();
   function cupFor(bIdx, row) { return cupSetById(cupAssign.get(bIdx + ':' + row) || 'std'); }
+  function cupFoot(C, sx0, sy0, sw, sh) {
+    if (C && C.shape === 'round') { const r = C.x / 2, cx = sx0 + sw / 2 + C.ox, cy = sy0 + sh / 2 + C.oy; return { round: true, cx, cy, r, x0: cx - r, y0: cy - r, x1: cx + r, y1: cy + r }; }
+    return { round: false, x0: sx0 + C.ox, y0: sy0 + C.oy, x1: sx0 + C.ox + C.x, y1: sy0 + C.oy + C.y };
+  }
   function mtApplyChange() {
     bakeParams = null; requestRender();
     if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
@@ -21091,11 +21111,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function mtWarnings(t, c) {
     const w = [], f = v => String(Math.round(v * 100) / 100).replace('.', currentLang === 'en' ? '.' : ',');
     if (c.x > t.beamX) w.push(T('Der Sauger ist breiter als der Balken (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).', 'The vacuum cup is wider than the console (' + f(c.x) + ' > ' + f(t.beamX) + ' mm).'));
-    const over = [];
-    if (c.oy < 0) over.push([T('vorn', 'front'), -c.oy]);
-    if (c.oy + c.y > t.sockY) over.push([T('hinten', 'back'), c.oy + c.y - t.sockY]);
-    if (c.ox < 0) over.push([T('links', 'left'), -c.ox]);
-    if (c.ox + c.x > t.sockX) over.push([T('rechts', 'right'), c.ox + c.x - t.sockX]);
+    const over = [], ft = cupFoot(c, 0, 0, t.sockX, t.sockY);
+    if (ft.y0 < -1e-9) over.push([T('vorn', 'front'), -ft.y0]);
+    if (ft.y1 > t.sockY + 1e-9) over.push([T('hinten', 'back'), ft.y1 - t.sockY]);
+    if (ft.x0 < -1e-9) over.push([T('links', 'left'), -ft.x0]);
+    if (ft.x1 > t.sockX + 1e-9) over.push([T('rechts', 'right'), ft.x1 - t.sockX]);
     if (over.length) w.push(T('Der Sauger steht über den Sockel hinaus (', 'The vacuum cup overhangs the base (') + over.map(o => o[0] + ' ' + f(o[1]) + ' mm').join(', ') + T('). Zulässig – bitte prüfen.', '). Allowed – please check.'));
     return { list: w, overhang: over.length > 0, wide: c.x > t.beamX };
   }
@@ -21111,13 +21131,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function mtSketch(t, c, topEl, sideEl) {
     if (topEl) {
-      const minX = Math.min(0, c.ox), maxX = Math.max(t.sockX, c.ox + c.x), minY = Math.min(0, c.oy), maxY = Math.max(t.sockY, c.oy + c.y);
+      const ft = cupFoot(c, 0, 0, t.sockX, t.sockY);
+      const minX = Math.min(0, ft.x0), maxX = Math.max(t.sockX, ft.x1), minY = Math.min(0, ft.y0), maxY = Math.max(t.sockY, ft.y1);
       const k = Math.min(200 / (maxX - minX || 1), 170 / (maxY - minY || 1)), ox = 130 - ((minX + maxX) / 2) * k, oy = 118 + ((minY + maxY) / 2) * k;
       const R = (x, y, w, h) => 'x="' + (ox + x * k).toFixed(1) + '" y="' + (oy - (y + h) * k).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"';
       const cx = ox + (t.sockX / 2) * k, cy = oy - (t.sockY / 2) * k;
       topEl.innerHTML = '<text x="10" y="16" font-size="12" fill="currentColor" opacity="0.7">' + T('Draufsicht (Sockel gestrichelt, Sauger rot)', 'Top view (base dashed, vacuum cup red)') + '</text>'
         + '<rect ' + R(0, 0, t.sockX, t.sockY) + ' fill="#3a3d44" fill-opacity="0.15" stroke="#1d4e6b" stroke-width="3" stroke-dasharray="7 5"/>'
-        + '<rect ' + R(c.ox, c.oy, c.x, c.y) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
+        + (ft.round ? '<circle cx="' + (ox + ft.cx * k).toFixed(1) + '" cy="' + (oy - ft.cy * k).toFixed(1) + '" r="' + (ft.r * k).toFixed(1) + '" fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>'
+          : '<rect ' + R(c.ox, c.oy, c.x, c.y) + ' fill="#c8ccc8" fill-opacity="0.9" stroke="#c62828" stroke-width="3"/>')
         + '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')" stroke="#555"><circle r="9" fill="none" stroke-width="1.5"/><line x1="-14" x2="14"/><line y1="-14" y2="14"/></g>'
         + '<text x="10" y="236" font-size="11" fill="currentColor" opacity="0.7">' + T('+ = Sockelmitte (Position aus dem Programm)', '+ = centre of base (position from the program)') + '</text>'
         + '<text x="10" y="249" font-size="11" fill="currentColor" opacity="0.7">' + T('unten = vorn (kleines Y)', 'bottom = front (small Y)') + '</text>';
@@ -21147,7 +21169,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function cupReadForm() {
     const base = cupSetById(cupSel), c = Object.assign({}, base); let ok = true;
-    Object.keys(CUP_FIELDS).forEach(k => { const v = numIn(el(CUP_FIELDS[k]), k === 'x' || k === 'y' || k === 'z'); if (v == null) ok = false; else c[k] = v; });
+    c.shape = el('mtCupShape').value === 'round' ? 'round' : 'rect';
+    Object.keys(CUP_FIELDS).forEach(k => { if (k === 'y' && c.shape === 'round') return; const v = numIn(el(CUP_FIELDS[k]), k === 'x' || k === 'y' || k === 'z'); if (v == null) ok = false; else c[k] = v; });
+    if (c.shape === 'round') { c.y = c.x; el('mtCupY').classList.remove('invalid'); }
     const nm = el('mtCupName'); c.name = nm.value.trim(); const nameOk = !!c.name; nm.classList.toggle('invalid', !nameOk); if (!nameOk) ok = false;
     return { c, ok };
   }
@@ -21155,6 +21179,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (!el('machineTablePanel').classList.contains('open')) return false;
     if (cupSetById(cupSel).fixed) return false;
     const base = cupSetById(cupSel), f = cupReadForm().c;
+    if ((f.shape || 'rect') !== (base.shape || 'rect')) return true;
     return ['name', 'x', 'y', 'z', 'ox', 'oy'].some(k => f[k] !== base[k] && !(typeof base[k] === 'number' && String(el(CUP_FIELDS[k] || 'mtCupName').value).trim() === ''));
   }
   function showMtTab(t) {
@@ -21174,10 +21199,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     const fx = !!cupSetById(cupSel).fixed;
     el('btnMtCupDelete').disabled = fx; el('btnMtCupSave').disabled = fx;
-    ['mtCupName'].concat(Object.keys(CUP_FIELDS).map(k => CUP_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
+    ['mtCupName', 'mtCupShape'].concat(Object.keys(CUP_FIELDS).map(k => CUP_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
   }
   function fillCupForm() {
     const c = cupSetById(cupSel);
+    el('mtCupShape').value = c.shape === 'round' ? 'round' : 'rect'; el('mtPaneCups').classList.toggle('cup-round', c.shape === 'round');
     el('mtCupName').value = c.name; el('mtCupName').classList.remove('invalid', 'warn');
     Object.keys(CUP_FIELDS).forEach(k => { el(CUP_FIELDS[k]).value = String(c[k]); el(CUP_FIELDS[k]).classList.remove('invalid', 'warn'); });
     el('mtCupMsg').textContent = c.fixed ? T('Standardsauger – nicht änderbar. Zum Anpassen „Kopieren“.', 'Standard vacuum cup – cannot be changed. Use "Copy" to adapt it.') : '';
@@ -21223,7 +21249,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupAdd(copy) {
     if (!cupConfirmLeave()) return;
     const src = copy ? cupSetById(cupSel) : cupSetById('std');
-    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New vacuum cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy };
+    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New vacuum cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy, shape: copy && src.shape === 'round' ? 'round' : 'rect' };
     cupSets.push(c); saveCupSets(); cupSel = c.id; renderCupList(); fillCupForm(); el('mtCupName').focus(); el('mtCupName').select();
   }
   function cupDelete() {
@@ -21256,6 +21282,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('mtTabCups').addEventListener('click', () => showMtTab('cups'));
   Object.keys(MT_FIELDS).forEach(k => el(MT_FIELDS[k]).addEventListener('input', mtRefresh));
   Object.keys(CUP_FIELDS).forEach(k => el(CUP_FIELDS[k]).addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); }));
+  el('mtCupShape').addEventListener('change', () => {
+    const round = el('mtCupShape').value === 'round';
+    el('mtPaneCups').classList.toggle('cup-round', round);
+    if (!round) el('mtCupY').value = '145';
+    el('mtCupMsg').textContent = ''; mtRefresh();
+  });
   el('mtCupName').addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); });
   el('mtCupList').addEventListener('click', e => { const it = e.target.closest('.mt-cup-item'); if (it) cupSelect(it.dataset.id); });
   el('btnMtCupSave').addEventListener('click', cupSave);
@@ -21313,6 +21345,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const ptRect = (px, py) => Math.hypot(Math.max(x0 - px, 0, px - x1), Math.max(y0 - py, 0, py - y1));
     return Math.min(ptSeg(x0, y0), ptSeg(x1, y0), ptSeg(x1, y1), ptSeg(x0, y1), ptRect(s.x0, s.y0), ptRect(s.x1, s.y1));
   }
+  function cupAssignSegPointDist(sg, px, py) {
+    const dx = sg.x1 - sg.x0, dy = sg.y1 - sg.y0, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((px - sg.x0) * dx + (py - sg.y0) * dy) / l2)) : 0;
+    return Math.hypot(px - sg.x0 - dx * t, py - sg.y0 - dy * t);
+  }
   function cupAssignCupHit(deep, x0, y0, x1, y1) {
     return deep.some(s => Math.max(s.x0, s.x1) + s.r >= x0 && Math.min(s.x0, s.x1) - s.r <= x1 && Math.max(s.y0, s.y1) + s.r >= y0 && Math.min(s.y0, s.y1) - s.r <= y1
       && cupAssignSegRectDist(s, x0, y0, x1, y1) < s.r - 1e-6);
@@ -21350,7 +21386,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       b.y.forEach((y, r) => {
         const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2, nm = 'PB' + (bi + 1) + '/Y' + (r + 1);
         rectPts(sx, sy, sx + mtSet.sockX, sy + mtSet.sockY, T('Sockel', 'Socket') + ' ' + nm, true, 2);
-        rectPts(sx + c.ox, sy + c.oy, sx + c.ox + c.x, sy + c.oy + c.y, T('Sauger', 'Cup') + ' ' + nm, true, 3);
+        const ft = cupFoot(c, sx, sy, mtSet.sockX, mtSet.sockY);
+        if (ft.round) [[ft.cx, ft.cy, T(' (Mitte)', ' (centre)')], [ft.cx + ft.r, ft.cy, ''], [ft.cx - ft.r, ft.cy, ''], [ft.cx, ft.cy + ft.r, ''], [ft.cx, ft.cy - ft.r, '']].forEach(q => out.push({ x: q[0], y: q[1], kind: 'mid', what: T('Sauger', 'Cup') + ' ' + nm + q[2], pri: 3 }));
+        else rectPts(ft.x0, ft.y0, ft.x1, ft.y1, T('Sauger', 'Cup') + ' ' + nm, true, 3);
       });
     });
     if (cupGeo.ops) points.forEach((p, i) => { if (i && !p.rapid && !p.uf && !hiddenOpIndexes.has(p.opIndex)) out.push({ x: p.x, y: p.y, kind: 'end', what: T('Bahnpunkt', 'Path point'), pri: 0 }); });
@@ -21425,11 +21463,13 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       svg += '<rect x="' + ((b.x - mtSet.beamX / 2) * kx).toFixed(1) + '" y="0" width="' + Math.max(2, mtSet.beamX * kx).toFixed(1) + '" height="' + H + '" fill="#464e5c"/>'
         + '<text x="' + (b.x * kx).toFixed(1) + '" y="' + (H - 4) + '" font-size="10" fill="#fff" text-anchor="middle">PB' + (bi + 1) + '</text>';
       b.y.forEach((y, r) => {
-        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2;
-        const hit = ops && cupAssignCupHit(ops.deep, sx + c.ox, sy + c.oy, sx + c.ox + c.x, sy + c.oy + c.y);
+        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2, ft = cupFoot(c, sx, sy, mtSet.sockX, mtSet.sockY);
+        const hit = ops && (ft.round ? ops.deep.some(sg => cupAssignSegPointDist(sg, ft.cx, ft.cy) < ft.r + sg.r - 1e-6) : cupAssignCupHit(ops.deep, ft.x0, ft.y0, ft.x1, ft.y1));
         if (hit) hits.push('PB' + (bi + 1) + ':Y' + (r + 1));
         cupSvg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + mtSet.sockY) * ky).toFixed(1) + '" width="' + (mtSet.sockX * kx).toFixed(1) + '" height="' + (mtSet.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
-          + '<rect class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" x="' + ((sx + c.ox) * kx).toFixed(1) + '" y="' + (H - (sy + c.oy + c.y) * ky).toFixed(1) + '" width="' + Math.max(2, c.x * kx).toFixed(1) + '" height="' + Math.max(2, c.y * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></rect>';
+          + (ft.round
+            ? '<ellipse class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" cx="' + (ft.cx * kx).toFixed(1) + '" cy="' + (H - ft.cy * ky).toFixed(1) + '" rx="' + Math.max(1, ft.r * kx).toFixed(1) + '" ry="' + Math.max(1, ft.r * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></ellipse>'
+            : '<rect class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" x="' + (ft.x0 * kx).toFixed(1) + '" y="' + (H - ft.y1 * ky).toFixed(1) + '" width="' + Math.max(2, c.x * kx).toFixed(1) + '" height="' + Math.max(2, c.y * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></rect>');
       });
     });
     const top = el('cupAssignTop'); top.setAttribute('width', W + 20); top.setAttribute('height', H + 20);
@@ -21612,10 +21652,11 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: 0, y1: TY, z0: beamBot, z1: beamTop, color: '#464e5c' });
       b.y.forEach((y, i) => {
         const C = cups[bi][i], padH = Math.min(MT_PAD_H, C.z), top = sockTop + C.z;
-        const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, cx0 = sx0 + C.ox, cy0 = sy0 + C.oy;
+        const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, ft = cupFoot(C, sx0, sy0, S.sockX, S.sockY);
+        const rd = ft.round ? { cx: ft.cx, cy: ft.cy, r: ft.r } : undefined;
         out.push({ kind: 'sock', beam: b.n, cup: i + 1, set: C.id, x0: sx0, x1: sx0 + S.sockX, y0: sy0, y1: sy0 + S.sockY, z0: beamTop, z1: sockTop, color: '#3a3d44' });
-        if (C.z > padH) out.push({ kind: 'body', beam: b.n, cup: i + 1, set: C.id, x0: cx0, x1: cx0 + C.x, y0: cy0, y1: cy0 + C.y, z0: sockTop, z1: top - padH, color: '#222224' });
-        out.push({ kind: 'pad', beam: b.n, cup: i + 1, set: C.id, x0: cx0, x1: cx0 + C.x, y0: cy0, y1: cy0 + C.y, z0: top - padH, z1: top, color: '#c8ccc8' });
+        if (C.z > padH) out.push({ kind: 'body', beam: b.n, cup: i + 1, set: C.id, x0: ft.x0, x1: ft.x1, y0: ft.y0, y1: ft.y1, z0: sockTop, z1: top - padH, color: '#222224', round: rd });
+        out.push({ kind: 'pad', beam: b.n, cup: i + 1, set: C.id, x0: ft.x0, x1: ft.x1, y0: ft.y0, y1: ft.y1, z0: top - padH, z1: top, color: '#c8ccc8', round: rd });
       });
     });
     return out;
@@ -21650,7 +21691,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         return;
       }
       const X0 = b.x0, X1 = b.x1, Y0 = b.y0, Y1 = b.y1, Z0 = b.z0, Z1 = b.z1;
-      const F = [
+      const F = b.round ? mtRoundFaces(b) : [
         [[0, 0, 1], [[X0, Y0, Z1], [X1, Y0, Z1], [X1, Y1, Z1], [X0, Y1, Z1]], 1.0],
         [[0, 0, -1], [[X0, Y0, Z0], [X0, Y1, Z0], [X1, Y1, Z0], [X1, Y0, Z0]], 0.5],
         [[0, -1, 0], [[X0, Y0, Z0], [X1, Y0, Z0], [X1, Y0, Z1], [X0, Y0, Z1]], 0.8],
@@ -21664,12 +21705,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       else gd = cs((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2)[2];
       const grp = { g: isCup ? 1 : 0, gd, sub: b.kind === 'pad' ? 2 : b.kind === 'body' ? 1 : 0 };
       F.forEach(([n, V, f]) => {
-        const c = V.reduce((a, v) => [a[0] + v[0] / 4, a[1] + v[1] / 4, a[2] + v[2] / 4], [0, 0, 0]);
+        const c = V.reduce((a, v) => [a[0] + v[0] / V.length, a[1] + v[1] / V.length, a[2] + v[2] / V.length], [0, 0, 0]);
         const nr = sub(toRender({ x: n[0], y: n[1], z: n[2] }), rc), toCam = sub(camW, toRender({ x: c[0], y: c[1], z: c[2] }));
         if (dot(nr, toCam) <= 0) return;
         const C = V.map(v => cs(v[0], v[1], v[2]));
         const P = clip(C); if (!P) return;
-        faces.push({ P, g: grp.g, gd: grp.gd, sub: grp.sub, key: isCup ? key : null, fill: mtShade(b.color, f), alpha: 1, depth: (C[0][2] + C[1][2] + C[2][2] + C[3][2]) / 4 });
+        faces.push({ P, g: grp.g, gd: grp.gd, sub: grp.sub, key: isCup ? key : null, fill: mtShade(b.color, f), alpha: 1, depth: C.reduce((a, q) => a + q[2], 0) / C.length });
         quads++;
       });
     });
@@ -21690,9 +21731,59 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       boxes: boxes.length, quads, cupRuns: { cups: cupKeys.size, runs: cupRuns }, fromBelow: !!fromBelow, zTop: partBottomZ(), ms: +(performance.now() - t0).toFixed(3) };
   }
   function mtPointBoxDist(x, y, z, b) {
-    const dx = Math.max(b.x0 - x, 0, x - b.x1), dy = Math.max(b.y0 - y, 0, y - b.y1), dz = Math.max(b.z0 - z, 0, z - b.z1);
+    const dz = Math.max(b.z0 - z, 0, z - b.z1);
+    if (b.round) return Math.hypot(Math.max(0, Math.hypot(x - b.round.cx, y - b.round.cy) - b.round.r), dz);
+    const dx = Math.max(b.x0 - x, 0, x - b.x1), dy = Math.max(b.y0 - y, 0, y - b.y1);
     return Math.hypot(dx, dy, dz);
   }
+  function mtRoundFaces(b) {
+    const N = 32, R = b.round, top = [], bot = [], F = [];
+    for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2; top.push([R.cx + R.r * Math.cos(a), R.cy + R.r * Math.sin(a), b.z1]); bot.push([R.cx + R.r * Math.cos(a), R.cy + R.r * Math.sin(a), b.z0]); }
+    F.push([[0, 0, 1], top, 1.0]); F.push([[0, 0, -1], bot.slice().reverse(), 0.5]);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N, am = (i + 0.5) / N * Math.PI * 2;
+      F.push([[Math.cos(am), Math.sin(am), 0], [bot[i], bot[j], top[j], top[i]], 0.62 + 0.18 * (1 + Math.cos(am + 2.3)) / 2]);
+    }
+    return F;
+  }
+  window.__mtPointBoxDist = (x, y, z, b) => mtPointBoxDist(x, y, z, b);
+  const LIST_CTX = [
+    { area: 'settingsPanePartProfile', list: 'partProfileSelect', btns: ['btnPartProfileNew', 'btnPartProfileCopy', 'btnPartProfileDelete'] },
+    { area: 'settingsPaneTextures', list: 'dxfTextureListSelect', btns: ['btnDxfTextureNew', 'btnDxfTextureCopy', 'btnDxfTextureDelete'] },
+    { area: 'toolsPaneProfile', list: 'toolDxfProfileSelect', btns: ['btnToolDxfProfileNew', 'btnToolDxfProfileCopy', 'btnToolDxfProfileDelete'] },
+    { area: 'toolsPaneChuck', list: 'chuckDxfProfileSelect', btns: ['btnChuckDxfProfileNew', 'btnChuckDxfProfileCopy', 'btnChuckDxfProfileDelete'] },
+    { area: 'ufBody', list: 'ufSelect', btns: ['btnUfNew', 'btnUfCopy', 'btnUfDelete'] },
+    { area: 'mtPaneCups', list: 'mtCupList', item: '.mt-cup-item', btns: ['btnMtCupNew', 'btnMtCupCopy', 'btnMtCupDelete'] },
+  ];
+  var listCtx = null;
+  function listCtxClose() { if (listCtx && !listCtx.hidden) { listCtx.hidden = true; listCtx.innerHTML = ''; } }
+  function listCtxOpen(cfg, onItem, x, y) {
+    if (!listCtx) {
+      listCtx = document.createElement('div'); listCtx.className = 'cup-assign-ctx'; listCtx.id = 'listCtxMenu'; listCtx.hidden = true; document.body.appendChild(listCtx);
+      listCtx.addEventListener('click', e => { const it = e.target.closest('.ci'); if (!it || it.classList.contains('dis')) return; const b = el(it.dataset.btn); listCtxClose(); if (b && !b.disabled) b.click(); });
+    }
+    const labels = [T('Neu', 'New'), T('Kopieren', 'Copy'), T('Löschen', 'Delete')];
+    listCtx.innerHTML = (onItem ? [0, 1, 2] : [0]).map(i => { const b = el(cfg.btns[i]); return '<div class="ci' + (!b || b.disabled ? ' dis' : '') + '" data-btn="' + cfg.btns[i] + '">' + labels[i] + '</div>'; }).join('');
+    listCtx.dataset.area = cfg.area; listCtx.hidden = false;
+    const w = listCtx.offsetWidth || 160, h = listCtx.offsetHeight || 100;
+    listCtx.style.left = Math.max(4, Math.min(x + 4, window.innerWidth - w - 4)) + 'px'; listCtx.style.top = Math.max(4, Math.min(y + 4, window.innerHeight - h - 4)) + 'px';
+  }
+  document.addEventListener('contextmenu', e => {
+    const t = e.target; if (!t || !t.closest || !t.closest('#settingsPanel, #toolsPanel, #ufPanel, #machineTablePanel')) return;
+    e.stopPropagation();
+    const cfg = LIST_CTX.find(c => { const a = el(c.area); return a && a.contains(t) && a.offsetParent !== null; });
+    const tag = t.tagName, isText = (tag === 'INPUT' && !/^(checkbox|radio|button|submit|color|range|file)$/i.test(t.type || '')) || tag === 'TEXTAREA';
+    if (isText) { listCtxClose(); return; }
+    e.preventDefault();
+    if (!cfg) { listCtxClose(); return; }
+    const L = el(cfg.list); let onItem = false;
+    if (cfg.item) { const it = t.closest(cfg.item); if (it && L.contains(it)) { const id = it.dataset.id; if (!it.classList.contains('active')) it.click(); const act = L.querySelector(cfg.item + '.active'); onItem = !!act && act.dataset.id === id; } }
+    else if (tag === 'OPTION' && L.contains(t)) { if (L.value !== t.value) { L.value = t.value; L.dispatchEvent(new Event('change', { bubbles: true })); } onItem = L.value === t.value; }
+    listCtxOpen(cfg, onItem, e.clientX, e.clientY);
+  }, true);
+  document.addEventListener('mousedown', e => { if (listCtx && !listCtx.hidden && !listCtx.contains(e.target)) listCtxClose(); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && listCtx && !listCtx.hidden) { e.preventDefault(); e.stopPropagation(); listCtxClose(); } }, true);
+  window.__listCtx = () => listCtx && !listCtx.hidden ? { area: listCtx.dataset.area, items: [...listCtx.querySelectorAll('.ci')].map(i => ({ t: i.textContent, dis: i.classList.contains('dis'), btn: i.dataset.btn })) } : null;
   function machineTableHit(i, boxes) {
     let p = points[i];
     if (!p || p.toolRadius == null) return null;
@@ -28788,6 +28879,7 @@ Max Mustermann (Anschrift wie oben)`,
     }
     const ro = !!texEdit.std;
     el('btnDxfTextureDelete').disabled = !texEdit.id || ro;
+    el('btnDxfTextureCopy').disabled = !texEdit.id;
     el('btnDxfTextureSave').disabled = ro;
     el('btnDxfTextureChooseFile').disabled = ro;
     el('dxfTextureNameInput').readOnly = ro;
@@ -28827,6 +28919,17 @@ Max Mustermann (Anschrift wie oben)`,
   el('btnDxfTextures').addEventListener('click', openDxfTexturePanel);
   dxfTextureListSelect.addEventListener('change', () => loadDxfTextureIntoForm(dxfTextureListSelect.value));
   el('btnDxfTextureNew').addEventListener('click', () => loadDxfTextureIntoForm(null));
+  el('btnDxfTextureCopy').addEventListener('click', () => {
+    const t = getDxfTextureById(texEdit && texEdit.id); if (!t) return;
+    if (dxfTexturePanel.__unsaved && dxfTexturePanel.__unsaved() && !confirm(T('Die Textur ist noch nicht gespeichert. Trotzdem kopieren? Die Änderungen gehen verloren.', 'The texture is not saved yet. Copy anyway? The changes will be lost.'))) return;
+    const taken = n => dxfTextures.some(x => x.name.toLowerCase() === n.toLowerCase()) || DXF_STD_TEXTURES.some(x => x.de.toLowerCase() === n.toLowerCase() || x.en.toLowerCase() === n.toLowerCase());
+    const base = (t.name + T(' (Kopie)', ' (copy)')).slice(0, 60); let name = base; for (let i = 2; taken(name); i++) name = (base + ' ' + i).slice(0, 60);
+    const now = Date.now(), rec = normalizeDxfTexture({ id: 'tex_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 8), name, dataUrl: t.dataUrl || texEdit.dataUrl, w: t.w || texEdit.w, h: t.h || texEdit.h, tileWidthMm: t.tileWidthMm, fileName: t.fileName || '' });
+    if (!rec) return;
+    const next = dxfTextures.concat([rec]);
+    if (!persistDxfTextures(next)) { el('dxfTextureError').textContent = T('Kopieren nicht möglich - der Speicher des Browsers ist voll.', 'Cannot copy - the browser storage is full.'); el('dxfTextureError').hidden = false; return; }
+    dxfTextures = next; onDxfTexturesChanged(); refreshDxfTextureList(); loadDxfTextureIntoForm(rec.id);
+  });
   el('btnDxfTextureChooseFile').addEventListener('click', () => el('dxfTextureFileInput').click());
   el('dxfTextureTileInput').addEventListener('input', updateDxfTextureInfo);
   const dxfTextureError = msg => { el('dxfTextureError').textContent = msg; el('dxfTextureError').hidden = false; };
