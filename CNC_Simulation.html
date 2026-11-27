@@ -8888,7 +8888,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 401;
+  const APP_RELEASE_NUMBER = 402;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8897,7 +8897,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '26.11.2026, 14:32 Uhr';
+  const APP_RELEASE_TIMESTAMP = '26.11.2026, 16:43 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13446,6 +13446,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 402, date: '26.11.2026', items: [
+      { de: '„SCM Movepart“: beim Wechsel in den nächsten Arbeitsgang springen die Stufen nicht mehr kurz nach vorn bzw. zusammen.',
+        en: '"SCM Movepart": when moving on to the next operation the steps no longer jump to the front or together for a moment.' },
+      { de: 'Saugerfahrt auch beim zeilenweisen Durchgehen mit den Pfeiltasten als Bewegung sichtbar.',
+        en: 'Vacuum cup moves are also shown as a movement when stepping line by line with the arrow keys.' },
+      { de: 'Abtrag als Volumenkörper: nach dem Trennschnitt werden die auseinandergefahrenen Teile ohne Reststück dazwischen gezeigt.',
+        en: 'Material removal as solid: after the separating cut the parts that moved apart are shown without a leftover piece in between.' },
+    ] },
     { release: 401, date: '26.11.2026', items: [
       { de: '„SCM Movepart“: Bögen (z. B. Anfahrbögen der Stufenkontur) liegen wieder richtig, und das Rohteil wird nach dem Trennschnitt mit beiden Teilen verschoben angezeigt.',
         en: '"SCM Movepart": arcs (e.g. lead-in arcs of the step contour) are correct again, and after the separating cut the raw part is shown moved with both parts.' },
@@ -19165,6 +19173,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   const abdexScreenBuf = { sx: new Float64Array(0), sy: new Float64Array(0), sd: new Float64Array(0) };
   function drawMortiseBody(proj, mesh, baseZ) {
     if (mpPassPiece >= 0 && typeof mpFilterMesh === 'function') mesh = mpFilterMesh(mesh, mpPassPiece);
+    if (mpPassPiece >= 0 && mesh && mesh.dexel) (window.__mpDexPass = window.__mpDexPass || {})[mpPassPiece] = { kept: 0, total: 0 };
     const m = ctx.getTransform();
     const sc = m.a || 1;
     const cv = ctx.canvas;
@@ -19443,7 +19452,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (!sl || sl.length < nV) sl = abdexScreenBuf.sl = new Float64Array(nV * 2);
         for (let v = 0; v < nV; v++) { const f = VN[3 * v] * fx + VN[3 * v + 1] * fy + VN[3 * v + 2] * fz; sl[v] = 0.55 + 0.45 * (f < 0 ? -f : 0); }
         const I = ch.idx, N = ch.nrm;
+        let pieceOf = null;
+        if (mpPassPiece >= 0 && typeof mpModel !== 'undefined' && mpModel && mpModel.pieces) {
+          pieceOf = mpDexPiece.get(ch);
+          if (!pieceOf || pieceOf.pieces !== mpModel.pieces) {
+            const arr = new Uint8Array(ch.nT);
+            for (let t = 0; t < ch.nT; t++) { const a = I[3 * t], b = I[3 * t + 1], c = I[3 * t + 2]; arr[t] = mpPieceAt(mpModel.pieces, (P[3 * a] + P[3 * b] + P[3 * c]) / 3, (P[3 * a + 1] + P[3 * b + 1] + P[3 * c + 1]) / 3); }
+            pieceOf = { arr, pieces: mpModel.pieces }; mpDexPiece.set(ch, pieceOf);
+          }
+        }
+        if (pieceOf) { const st = (window.__mpDexPass = window.__mpDexPass || {})[mpPassPiece] || (window.__mpDexPass[mpPassPiece] = { kept: 0, total: 0 }); st.total += ch.nT; for (let t = 0; t < ch.nT; t++) if (pieceOf.arr[t] === mpPassPiece) st.kept++; }
         for (let t = 0; t < ch.nT; t++) {
+          if (pieceOf && pieceOf.arr[t] !== mpPassPiece) continue;
           const fc = N[3 * t] * fx + N[3 * t + 1] * fy + N[3 * t + 2] * fz;
           if (fc > -EPSF) { triCulled++; continue; }
           const a = I[3 * t], b = I[3 * t + 1], c = I[3 * t + 2];
@@ -21569,6 +21589,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var mpModel = null, mpCamShift = null, mpShown = null, mpAnim = null, mpBoxCache = null;
   const MP_ANIM_MS = 2000, MP_ANIM_STEPS = 10;
   function mpBuild(segs) {
+    const mpKeyNow = (rawProgramText || '').length + '|' + activeMachineTypeName + '|' + (rawProgramText || '').slice(0, 200), keepShown = mpBuildKey === mpKeyNow ? mpShown : null, keepShow = mpBuildKey === mpKeyNow ? mpPieceShow : null;
+    mpBuildKey = mpKeyNow; mpAnimChain = false;
     mpModel = null; mpCamShift = null; mpShown = null; mpAnim = null; mpBoxCache = null;
     const mt = machineTable;
     if (mt && mt.blocks && mt.blocks.length > 1) {
@@ -21645,6 +21667,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     model.pieceD = pieces ? (k => pieces.map(pc => pieceD(pc, k))) : null;
     if (pieces) segs.forEach(seg => seg.points.forEach(p => { p.mpShowPiece = mpPieceAt(pieces, p.x, p.y); }));
     mpModel = model;
+    if (keepShown != null && keepShown < model.states.length) { mpShown = keepShown; if (keepShow && keepShow.length === mpStateDs(keepShown).length) mpPieceShow = keepShow; }
   }
   function mpPieceAt(pieces, x, y) {
     let best = Infinity, bi = 0;
@@ -21674,27 +21697,34 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function mpStateDs(k) { const m = mpModel; return m.pieces && m.pieceD ? m.pieceD(k) : [m.states[k].d]; }
   function mpStateNow() {
     const m = mpModel; if (!m) return 0;
-    if (!hasStarted && scrubIdx === 0) return 0;
-    if (points.length && scrubIdx >= points.length - 1) return m.states.length - 1;
+    const isOp = scopeMode && scopeMode.type === 'op';
+    const atStart = !isOp || !findAdjacentPlayableOp(scopeMode.index, -1), atEnd = !isOp || !findAdjacentPlayableOp(scopeMode.index, 1);
+    if (atStart && !hasStarted && scrubIdx === 0) return 0;
+    if (atEnd && points.length && scrubIdx >= points.length - 1) return m.states.length - 1;
     const p = points[scrubIdx]; return p && p.mpState != null ? p.mpState : 0;
   }
-  var mpPieceShow = null, mpPlayedAt = 0, mpPassPiece = -1, mpMeshCache = null;
+  var mpPieceShow = null, mpPlayedAt = 0, mpPassPiece = -1, mpMeshCache = null, mpAnimNext = false, mpDexPiece = new WeakMap(), mpBuildKey = null, mpAnimChain = false;
   function mpUpdateDisplay() {
     if (!mpModel) { mpCamShift = null; mpPieceShow = null; return; }
-    const k = mpStateNow(), now = performance.now();
+    const kWant = mpStateNow(), now = performance.now();
     if (playing) mpPlayedAt = now;
-    if (mpShown == null) mpShown = k;
-    if (k !== mpShown) {
-      if (playing || now - mpPlayedAt < 400) mpAnim = { from: mpShown, to: k, t0: now, fromDs: (mpPieceShow || mpStateDs(mpShown)).map(d => Object.assign({}, d)), fromBeams: mpDisplayBeams() };
-      else mpAnim = null;
+    if (mpShown == null) mpShown = kWant;
+    const animOk = playing || mpAnimNext || mpAnimChain;
+    let k = mpShown;
+    if (!(mpAnim && animOk) && kWant !== mpShown) {
+      k = animOk && Math.abs(kWant - mpShown) > 1 ? mpShown + Math.sign(kWant - mpShown) : kWant;
+      if (animOk) { mpAnimChain = true; mpAnim = { from: mpShown, to: k, t0: now, fromDs: (mpPieceShow || mpStateDs(mpShown)).map(d => Object.assign({}, d)), fromBeams: mpDisplayBeams() }; }
+      else { mpAnim = null; mpAnimChain = false; }
       mpShown = k;
-    }
+    } else if (!mpAnim && kWant === mpShown) mpAnimChain = false;
+    mpAnimNext = false;
     let ds = mpStateDs(k);
     if (mpAnim) {
       const f = Math.min(1, (now - mpAnim.t0) / MP_ANIM_MS), e = f >= 1 ? 1 : Math.floor(f * MP_ANIM_STEPS + 1e-9) / MP_ANIM_STEPS, F = mpAnim.fromDs;
       ds = ds.map((d, j) => { const a = F[j] || F[0]; return { x: a.x + (d.x - a.x) * e, y: a.y + (d.y - a.y) * e }; });
       mpAnim.e = e;
-      if (f >= 1) mpAnim = null; else requestAnimationFrame(() => { bakeParams = null; requestRender(); });
+      if (f >= 1) { mpAnim = null; if (kWant !== mpShown) requestAnimationFrame(() => { bakeParams = null; requestRender(); }); else mpAnimChain = false; }
+      else requestAnimationFrame(() => { bakeParams = null; requestRender(); });
     }
     mpPieceShow = ds;
     const cp = points[scrubIdx], j = cp && cp.mpShowPiece != null && ds[cp.mpShowPiece] ? cp.mpShowPiece : 0, d = ds[j] || ds[0];
@@ -26923,6 +26953,7 @@ Max Mustermann (Anschrift wie oben)`,
 
   function stepCodeLine(dir) {
     if (playing || !points.length) return false;
+    if (typeof mpModel !== 'undefined' && mpModel) mpAnimNext = true;
     if (scopeMode.type === 'op') {
       if (dir < 0 && scrubIdx === 0) {
         const prevOp = findAdjacentVisibleOp(scopeMode.index, -1);
