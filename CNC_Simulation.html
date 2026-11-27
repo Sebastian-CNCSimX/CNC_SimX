@@ -8888,7 +8888,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 402;
+  const APP_RELEASE_NUMBER = 403;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8897,7 +8897,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '26.11.2026, 16:43 Uhr';
+  const APP_RELEASE_TIMESTAMP = '27.11.2026, 07:52 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -13446,6 +13446,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 403, date: '27.11.2026', items: [
+      { de: '„SCM Movepart“: erst verfahren, dann fräsen – auch beim Weiterschalten mit den Pfeiltasten. Der Pfeil an einer Saugerfahrt startet nur die Fahrt; weitergeht es, wenn die Sauger stehen.',
+        en: '"SCM Movepart": move first, then mill – also when stepping with the arrow keys. The arrow key at a vacuum cup move only starts the move; stepping continues once the cups are in position.' },
+      { de: 'Am Programmende verschwindet zuerst das Restholz, danach fährt das Teil nach vorn. Alle 10 Zwischenschritte der Fahrt werden auch bei rechenintensivem Abtrag gezeigt.',
+        en: 'At the end of the program the offcut disappears first, then the part moves to the front. All 10 intermediate steps of the move are shown even with computation-heavy material removal.' },
+    ] },
     { release: 402, date: '26.11.2026', items: [
       { de: '„SCM Movepart“: beim Wechsel in den nächsten Arbeitsgang springen die Stufen nicht mehr kurz nach vorn bzw. zusammen.',
         en: '"SCM Movepart": when moving on to the next operation the steps no longer jump to the front or together for a moment.' },
@@ -21694,13 +21700,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     ring.push(ring[0].slice());
     return [ring];
   }
+  function mpAbtragReady(i) {
+    if (!abtragOn) return true;
+    const a = window.__lastAbtragInfo;
+    return !!a && !a.error && a.target != null && a.target >= i && !a.pending;
+  }
+  var mpHold = null;
+  function mpEndPending() {
+    const m = mpModel; if (!m || !points.length) return false;
+    const isOp = scopeMode && scopeMode.type === 'op';
+    if (isOp && findAdjacentPlayableOp(scopeMode.index, 1)) return false;
+    return mpShown !== m.states.length - 1;
+  }
   function mpStateDs(k) { const m = mpModel; return m.pieces && m.pieceD ? m.pieceD(k) : [m.states[k].d]; }
   function mpStateNow() {
     const m = mpModel; if (!m) return 0;
+    if (mpHold) { if (mpHold.idx === scrubIdx) return mpHold.state; mpHold = null; }
     const isOp = scopeMode && scopeMode.type === 'op';
     const atStart = !isOp || !findAdjacentPlayableOp(scopeMode.index, -1), atEnd = !isOp || !findAdjacentPlayableOp(scopeMode.index, 1);
     if (atStart && !hasStarted && scrubIdx === 0) return 0;
-    if (atEnd && points.length && scrubIdx >= points.length - 1) return m.states.length - 1;
+    if (atEnd && points.length && scrubIdx >= points.length - 1 && (!hasStarted || mpAbtragReady(points.length - 1))) return m.states.length - 1;
     const p = points[scrubIdx]; return p && p.mpState != null ? p.mpState : 0;
   }
   var mpPieceShow = null, mpPlayedAt = 0, mpPassPiece = -1, mpMeshCache = null, mpAnimNext = false, mpDexPiece = new WeakMap(), mpBuildKey = null, mpAnimChain = false;
@@ -21711,19 +21730,21 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (mpShown == null) mpShown = kWant;
     const animOk = playing || mpAnimNext || mpAnimChain;
     let k = mpShown;
-    if (!(mpAnim && animOk) && kWant !== mpShown) {
+    if (animOk && !mpAnim && kWant !== mpShown && !mpAbtragReady(mpHold ? scrubIdx : Math.max(0, scrubIdx - 1))) { requestAnimationFrame(() => requestRender()); }
+    else if (!(mpAnim && animOk) && kWant !== mpShown) {
       k = animOk && Math.abs(kWant - mpShown) > 1 ? mpShown + Math.sign(kWant - mpShown) : kWant;
-      if (animOk) { mpAnimChain = true; mpAnim = { from: mpShown, to: k, t0: now, fromDs: (mpPieceShow || mpStateDs(mpShown)).map(d => Object.assign({}, d)), fromBeams: mpDisplayBeams() }; }
+      if (animOk) { mpAnimChain = true; mpAnim = { from: mpShown, to: k, t0: now, step: 0, tStep: now, fromDs: (mpPieceShow || mpStateDs(mpShown)).map(d => Object.assign({}, d)), fromBeams: mpDisplayBeams() }; }
       else { mpAnim = null; mpAnimChain = false; }
       mpShown = k;
     } else if (!mpAnim && kWant === mpShown) mpAnimChain = false;
     mpAnimNext = false;
     let ds = mpStateDs(k);
     if (mpAnim) {
-      const f = Math.min(1, (now - mpAnim.t0) / MP_ANIM_MS), e = f >= 1 ? 1 : Math.floor(f * MP_ANIM_STEPS + 1e-9) / MP_ANIM_STEPS, F = mpAnim.fromDs;
+      if (mpAnim.step < MP_ANIM_STEPS && now - mpAnim.tStep >= MP_ANIM_MS / MP_ANIM_STEPS) { mpAnim.step++; mpAnim.tStep = now; }
+      const f = mpAnim.step / MP_ANIM_STEPS, e = f, F = mpAnim.fromDs;
       ds = ds.map((d, j) => { const a = F[j] || F[0]; return { x: a.x + (d.x - a.x) * e, y: a.y + (d.y - a.y) * e }; });
       mpAnim.e = e;
-      if (f >= 1) { mpAnim = null; if (kWant !== mpShown) requestAnimationFrame(() => { bakeParams = null; requestRender(); }); else mpAnimChain = false; }
+      if (f >= 1 && now - mpAnim.tStep >= MP_ANIM_MS / MP_ANIM_STEPS) { mpAnim = null; if (kWant !== mpShown) requestAnimationFrame(() => { bakeParams = null; requestRender(); }); else mpAnimChain = false; }
       else requestAnimationFrame(() => { bakeParams = null; requestRender(); });
     }
     mpPieceShow = ds;
@@ -21907,7 +21928,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
 
   function stepPlayback(ts) {
     if (!playing) return;
-    if (typeof mpAnim !== 'undefined' && (mpAnim || (mpModel && mpShown != null && mpStateNow() !== mpShown))) { stepPlayback._last = ts; requestRender(); requestAnimationFrame(stepPlayback); return; }
+    if (typeof mpAnim !== 'undefined' && (mpAnim || (mpModel && mpShown != null && (mpStateNow() !== mpShown || (scrubIdx >= points.length - 1 && mpEndPending()))))) { stepPlayback._last = ts; requestRender(); requestAnimationFrame(stepPlayback); return; }
     if (!stepPlayback._last) stepPlayback._last = ts;
     if (ts - stepPlayback._last > 130 / Math.min(1, playSpeed)) {
       stepPlayback._last = ts;
@@ -26953,7 +26974,19 @@ Max Mustermann (Anschrift wie oben)`,
 
   function stepCodeLine(dir) {
     if (playing || !points.length) return false;
-    if (typeof mpModel !== 'undefined' && mpModel) mpAnimNext = true;
+    if (typeof mpModel !== 'undefined' && mpModel) {
+      mpAnimNext = true;
+      if (mpAnim) return false;
+      const last = points.length - 1, ni = dir > 0 ? Math.min(scrubIdx + 1, last) : Math.max(scrubIdx - 1, 0);
+      let kNew;
+      if (ni !== scrubIdx) kNew = points[ni] && points[ni].mpState != null ? points[ni].mpState : mpShown;
+      else { const hs = hasStarted; hasStarted = true; mpHold = null; kNew = mpStateNow(); hasStarted = hs; }
+      if (mpShown != null && kNew !== mpShown && !(mpHold && mpHold.idx === scrubIdx)) {
+        if (dir > 0 && !mpAbtragReady(scrubIdx)) { requestRender(); return false; }
+        hasStarted = true; mpHold = { idx: scrubIdx, state: kNew }; requestRender(); return false;
+      }
+      mpHold = null;
+    }
     if (scopeMode.type === 'op') {
       if (dir < 0 && scrubIdx === 0) {
         const prevOp = findAdjacentVisibleOp(scopeMode.index, -1);
