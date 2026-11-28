@@ -8691,7 +8691,8 @@
         swivelADir: parseSwivelParam(blockLines, 'SWIVELADIR'),
         swivelCDir: parseSwivelParam(blockLines, 'SWIVELCDIR'),
         ijMode: parseIJMode(blockLines),
-        cornerRadiusMarker: parseCornerRadiusMarker(blockLines)
+        cornerRadiusMarker: parseCornerRadiusMarker(blockLines),
+        zSafetySaw4: parseSwivelParam(blockLines, 'Z_SAFETYSAW4AXIS')
       });
     }
     return result;
@@ -8975,7 +8976,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 410;
+  const APP_RELEASE_NUMBER = 411;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8984,7 +8985,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '28.11.2026, 11:27 Uhr';
+  const APP_RELEASE_TIMESTAMP = '28.11.2026, 12:33 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -9201,6 +9202,7 @@ Y*1
 Z*1
 [/CALCMACHINE]
 CORNERRADIUS=G302 I
+Z_SAFETYSAW4AXIS=500
 [/MACHINETYPE Name="HOMAG"]
 
 [MACHINETYPE Name="Houfek"]
@@ -9366,7 +9368,7 @@ CORNERRADIUS=GFIL r=
   function loadPersistedMachineTypesConfig() {
     try {
       const saved = window.localStorage.getItem(LS_KEY_MACHINETYPES_CONFIG);
-      return saved != null ? migrateScmMovepartO401(migrateScmMovepart400(migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved))))))))) : DEFAULT_MACHINETYPES_TEXT;
+      return saved != null ? migrateHomagSaw411(migrateScmMovepartO401(migrateScmMovepart400(migrateScmH397(migrateScmC0Rule(migrateScmC1Rule(migrateScmORule(migrateFormat4WRules(migrateFormat4SwivelBlock(migrateBiesseCixBlock(saved)))))))))) : DEFAULT_MACHINETYPES_TEXT;
     } catch (e) {
       return DEFAULT_MACHINETYPES_TEXT;
     }
@@ -9533,6 +9535,21 @@ CORNERRADIUS=GFIL r=
     return out;
   }
   const LS_KEY_MIGRATION_BIESSE_CIX = 'cncsim.migration.biesseCix275';
+  var LS_KEY_MIGRATION_HOMAG_SAW411 = 'cncsim.migration.homagSaw411';
+  function migrateHomagSaw411(text) {
+    try { if (window.localStorage.getItem(LS_KEY_MIGRATION_HOMAG_SAW411)) return text; } catch (e) { return text; }
+    let out = text;
+    const openTag = '[MACHINETYPE Name="HOMAG"]', endTag = '[/MACHINETYPE Name="HOMAG"]';
+    const start = out.indexOf(openTag), end = start === -1 ? -1 : out.indexOf(endTag, start);
+    if (start !== -1 && end !== -1 && !/^\s*Z_SAFETYSAW4AXIS\s*=/im.test(out.slice(start, end))) {
+      const nl = out.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+      const before = out.slice(0, end), sep = /\r?\n$/.test(before) ? '' : nl;
+      out = before + sep + 'Z_SAFETYSAW4AXIS=500' + nl + out.slice(end);
+      try { window.localStorage.setItem(LS_KEY_MACHINETYPES_CONFIG, out); } catch (e) {  }
+    }
+    try { window.localStorage.setItem(LS_KEY_MIGRATION_HOMAG_SAW411, '1'); } catch (e) {  }
+    return out;
+  }
   function migrateBiesseCixBlock(text) {
     try { if (window.localStorage.getItem(LS_KEY_MIGRATION_BIESSE_CIX)) return text; } catch (e) { return text; }
     let out = text;
@@ -13550,6 +13567,10 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 411, date: '28.11.2026', items: [
+      { de: 'HOMAG, 4-Achs-Sägen: Nach dem Werkzeugwechsel steht die Säge auf der Sicherheitshöhe (500 mm über dem Material, im Maschinentyp „Z_SAFETYSAW4AXIS=500“) und fährt senkrecht auf den ersten Punkt – die Kontur wird beim Schwenken nicht mehr verletzt. Am Ende fährt sie wieder hoch.',
+        en: 'HOMAG, 4-axis sawing: after the tool change the saw is at the safety height (500 mm above the material, machine type "Z_SAFETYSAW4AXIS=500") and moves vertically to the first point – the contour is no longer damaged when swivelling. At the end it moves up again.' },
+    ] },
     { release: 410, date: '28.11.2026', items: [
       { de: 'HOMAG: Saugerblöcke („SaugerK“) werden im Maschinentisch angezeigt – Balken (XA), Sauger (YA1 … YAn), Tischgröße aus KM="TABLE SIZE X/Y". Sauger mit „Mit Kennung“ (z. B. 66) werden beim Laden automatisch zugeordnet.',
         en: 'HOMAG: vacuum cup blocks ("SaugerK") are shown on the machine table – consoles (XA), vacuum cups (YA1 … YAn), table size from KM="TABLE SIZE X/Y". Vacuum cups with "With ID" (e.g. 66) are assigned automatically when loading.' },
@@ -14663,6 +14684,33 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     }
     return { bottom: 0, rect: null };
   }
+  function materialTopZ() {
+    if (typeof tablePartAvailable === 'function' && tablePartAvailable()) {
+      let zb = Infinity;
+      dxfKonturLoop.forEach(q => { const r = dxfTransformPoint({ x: q.x, y: q.y, z: q.z || 0 }); if (r.z < zb) zb = r.z; });
+      if (isFinite(zb)) return Math.max(zb, zb + (dxfThickness || 0));
+    }
+    const m = rawProgramText && rawProgramText.match(/^\s*DI\s*=\s*"?(-?[\d.]+)/m);
+    return m ? +m[1] : 0;
+  }
+  function saw4SafetyHeight(sec) {
+    if (!sec || !sec.toolIsBlade || sec.uf) return null;
+    const { activeMt } = resolveActiveMtGeometryParams();
+    const zs = activeMt && activeMt.zSafetySaw4;
+    if (!(typeof zs === 'number' && isFinite(zs))) return null;
+    if (!sec.lines.some(l => /4\s*-?\s*achs/i.test(l))) return null;
+    return zs;
+  }
+  function applySaw4Safety(sec, pts) {
+    const zs = saw4SafetyHeight(sec); if (zs == null || !pts.length) return pts;
+    const hasZ = p => { const l = sec.lines[p.lineIdx - sec.startIdx]; return typeof l === 'string' && !/\bG92(?!\d)/i.test(l) && /(?:^|[\s\d.])Z\s*-?\d/i.test(l.replace(/\(.*?\)|;.*$/g, '')); };
+    const f = pts.findIndex(hasZ); if (f < 0) return pts;
+    const zSafe = materialTopZ() + zs, first = pts[f];
+    for (let i = 0; i < f; i++) pts[i] = Object.assign({}, pts[i], { x: first.x, y: first.y, z: zSafe, saw4Safety: true });
+    const last = pts[pts.length - 1];
+    pts.push(Object.assign({}, last, { z: zSafe, a: 0, b: 0, saw4Safety: true }));
+    return pts;
+  }
   function applyUfToPoints(sec, pts) {
     if (!sec || !sec.uf || !pts.length) return pts;
     const uf = sec.uf, info = ufPartInfo(), bottom = info.bottom;
@@ -15362,7 +15410,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const activeIJMode = (activeMtForIJ && activeMtForIJ.ijMode) || 'incremental';
     const activeChiralityFlip = CNCSwap.computeArcChiralityFlip(activeMtForIJ && activeMtForIJ.calcRules);
     const activeCornerRadiusMarkerRegex = buildCornerRadiusMarkerRegex(activeMtForIJ && activeMtForIJ.cornerRadiusMarker);
-    return { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex };
+    return { activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex, activeMt: activeMtForIJ };
   }
 
   function setScope(mode) {
@@ -15381,7 +15429,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
         if (opSections.length) {
           opSections.forEach((sec, colorCursor) => {
             const state = newModalState();
-            const pts = applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
+            const pts = applySaw4Safety(sec, applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, usedAxes, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex)));
             segments.push({ color: pathColor(colorCursor), colorCursor, title: sec.title, opIndex: sec.index, points: pts, context: false, toolRadius: sec.toolRadius, toolLength: sec.toolLength, toolIsBlade: sec.toolIsBlade, toolMode: sec.toolMode, toolProfileId: sec.toolProfileId, chuckProfileId: sec.chuckProfileId });
           });
         } else if (current.sections.length) {
@@ -15400,7 +15448,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
           const isActive = sec.index === mode.index;
           const state = newModalState();
           const axesSink = isActive ? usedAxes : new Set();
-          const pts = applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex));
+          const pts = applySaw4Safety(sec, applyUfToPoints(sec, extractMotion(sec.lines, sec.startIdx, state, axesSink, activeIJMode, activeChiralityFlip, activeCornerRadiusMarkerRegex)));
           segments.push({
             color: isActive ? pathColor(colorCursor) : cssVar('--ink-faint'),
             colorCursor: isActive ? colorCursor : null,
@@ -20194,6 +20242,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       let started = false;
       for (let i = startAt; i < revealCount; i++) {
         if (mpPassPiece >= 0 && seg.points[i].mpShowPiece !== mpPassPiece) { started = false; continue; }
+        if (seg.points[i].saw4Safety) { started = false; continue; }
         const p = proj(toRender(postViewPoint(seg.points[i])));
         if (!p) { started = false; continue; }
         if (!started) { ctx.moveTo(p.x, p.y); started = true; }
@@ -20212,6 +20261,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     for (let i = startAt; i < revealCount; i++) {
       const rapid = seg.points[i].rapid;
       if (rapid && !showRapid) { flush(); pathRapid = null; continue; }
+      if (seg.points[i].saw4Safety || seg.points[i - 1].saw4Safety) { flush(); pathRapid = null; continue; }
       if (mpPassPiece >= 0 && (seg.points[i].mpShowPiece !== mpPassPiece || seg.points[i - 1].mpShowPiece !== mpPassPiece)) { flush(); pathRapid = null; continue; }
       const a = proj(toRender(postViewPoint(seg.points[i - 1])));
       const b = proj(toRender(postViewPoint(seg.points[i])));
