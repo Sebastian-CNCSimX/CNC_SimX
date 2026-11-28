@@ -1735,6 +1735,12 @@
   #mtPaneCups .mt-set-fields input { width: 78px; }
   @media (max-width: 1000px) { .mt-cup-grid { grid-template-columns: minmax(0, 1fr); } }
   .mt-set-grid { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; align-items: start; }
+  
+  #mtPaneTable .mt-set-grid { grid-template-columns: minmax(0, 1fr); }
+  #mtBeamGrid { margin-top: 12px; }
+  .cup-assign-beam { flex: 0 0 220px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+  .cup-assign-beam .panel-hint { margin: 0; line-height: 1.5; }
+  .mt-cup-ty { display: inline-flex; gap: 6px; align-items: center; }
   .mt-set-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .mt-set-row > b { padding-bottom: 6px; }
   .mt-set-fields { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
@@ -2760,12 +2766,26 @@
     <h3 data-i18n-en="Machine table &amp; vacuum cups">Maschinentisch &amp; Sauger</h3>
     <div class="settings-tabs" role="tablist"><button class="settings-tab active" type="button" role="tab" id="mtTabTable" data-i18n-en="Machine table">Maschinentisch</button><button class="settings-tab" type="button" role="tab" id="mtTabCups" data-i18n-en="Vacuum cups">Sauger</button></div>
     <div id="mtPaneTable">
-      <div class="mt-set-head"><p class="panel-hint" data-i18n-en="Dimensions in mm. Applies to SCM for now. If the program contains &quot;; TABLE SIZE&quot;, the table size from the program is used. The part lies on the vacuum cups, below them base, console and table top.">Maße in mm. Gilt vorerst für SCM. Steht „; TABLE SIZE“ im Programm, gilt die Tischgröße aus dem Programm. Das Bauteil liegt auf den Saugern, darunter Sockel, Balken und Tischplatte.</p><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
+      
+      <div class="mt-set-head"><p class="panel-hint" data-i18n-en="Dimensions in mm. If the program contains &quot;TABLE SIZE&quot; (SCM &quot;; TABLE SIZE&quot;, HOMAG KM=&quot;TABLE SIZE&quot;), the table size from the program is used. Create, copy and delete consoles (with base) like the vacuum cups; which console applies is chosen in the vacuum cup assignment (preselected by machine type).">Maße in mm. Steht „TABLE SIZE“ im Programm (SCM „; TABLE SIZE“, HOMAG KM="TABLE SIZE"), gilt die Tischgröße aus dem Programm. Balken (mit Sockel) wie die Sauger anlegen, kopieren, löschen; welcher Balken gilt, wählt man in der Saugerzuordnung (Vorauswahl nach Maschinentyp).</p><button class="btn ghost small" id="btnMtSetDefaults" type="button" data-i18n-en="Defaults">Standardwerte</button></div>
       <div class="mt-set-grid"><div>
           <div class="mt-set-row"><b data-i18n-en="Machine table">Maschinentisch</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetTX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetTY" class="filename-input" inputmode="decimal" spellcheck="false"></label></div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Console">Balken</b><div><div class="mt-set-fields"><label><span data-i18n-en="X (width)">X (Breite)</span><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z (height)">Z (Höhe)</span><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Y = table depth">Y = Tischtiefe</div></div></div>
-          <div class="mt-set-row"><b data-i18n-en="Base">Sockel</b><div><div class="mt-set-fields"><label><span data-i18n-en="X">X</span><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Y">Y</span><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"></label><label><span data-i18n-en="Z">Z</span><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"></label></div><div class="mt-set-note" data-i18n-en="Centre = program position, the same for all vacuum cups">Mitte = Programmposition, für alle Sauger gleich</div></div></div>
-      </div><div class="mt-set-sketch"><svg id="mtSetSideTable" width="260" height="250" viewBox="0 0 260 250"></svg></div></div>
+      </div></div>
+      <div class="mt-cup-grid" id="mtBeamGrid">
+        <div><div class="mt-cup-list" id="mtBeamList"></div>
+          <div class="mt-cup-btns"><button class="btn ghost small" id="btnMtBeamNew" type="button" data-i18n-en="New">Neu</button><button class="btn ghost small" id="btnMtBeamCopy" type="button" data-i18n-en="Copy">Kopieren</button><button class="btn ghost small" id="btnMtBeamDelete" type="button" data-i18n-en="Delete">Löschen</button></div></div>
+        <div class="mt-cup-form">
+          <div class="color-field-row"><span data-i18n-en="Name">Name</span><input type="text" id="mtBeamName" class="filename-input" spellcheck="false"></div>
+          <div class="color-field-row"><span><span data-i18n-en="Console X (width)">Balken X (Breite)</span><span class="uf-tag" data-i18n-en="Y = table depth">Y = Tischtiefe</span></span><span class="color-field-inputs"><input type="text" id="mtSetBeamX" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          <div class="color-field-row"><span data-i18n-en="Console Z (height)">Balken Z (Höhe)</span><span class="color-field-inputs"><input type="text" id="mtSetBeamZ" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          <div class="color-field-row"><span><span data-i18n-en="Base X">Sockel X</span><span class="uf-tag" data-i18n-en="Centre = program position">Mitte = Programmposition</span></span><span class="color-field-inputs"><input type="text" id="mtSetSockX" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          <div class="color-field-row"><span data-i18n-en="Base Y">Sockel Y</span><span class="color-field-inputs"><input type="text" id="mtSetSockY" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          <div class="color-field-row"><span data-i18n-en="Base Z">Sockel Z</span><span class="color-field-inputs"><input type="text" id="mtSetSockZ" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          <div class="mt-set-warn" id="mtBeamWarn" hidden></div>
+          <div class="mt-cup-save"><button class="btn ghost" id="btnMtBeamSave" type="button" data-i18n-en="Save console">Balken speichern</button><span class="mt-cup-msg" id="mtBeamMsg"></span></div>
+        </div>
+        <div class="mt-set-sketch"><svg id="mtSetSideTable" width="260" height="250" viewBox="0 0 260 250"></svg></div>
+      </div>
     </div>
     <div id="mtPaneCups" hidden>
       <p class="panel-hint" data-i18n-en="Vacuum cup sets like the tool profiles: create, copy, delete. &quot;Sauger 145x145&quot; is the default and cannot be deleted. Which cup sits where: table symbol with gear next to the table symbol.">Saugersets wie bei den Werkzeugprofilen: anlegen, kopieren, löschen. „Sauger 145x145“ ist der Standard und kann nicht gelöscht werden. Welcher Sauger wo sitzt: Symbol Tisch mit Zahnrad neben dem Tisch-Symbol.</p>
@@ -2782,6 +2802,8 @@
           <div class="color-field-row"><span><span data-i18n-en="Height Z">Höhe Z</span><span class="uf-tag" data-i18n-en="Vacuum base 15mm (display only)">Saugplatte 15mm (nur Darstellung)</span></span><span class="color-field-inputs"><input type="text" id="mtCupZ" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
           <div class="color-field-row"><span><span data-i18n-en="Offset X">Verschiebung X</span><span class="uf-tag cup-shp-rect" data-i18n-en="0 / 0 = flush with the base at front left">0 / 0 = links vorn bündig mit dem Sockel</span><span class="uf-tag cup-shp-round" data-i18n-en="0 / 0 = circle centre above the centre of the base">0 / 0 = Kreismitte über Sockelmitte</span></span><span class="color-field-inputs"><input type="text" id="mtCupOffX" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
           <div class="color-field-row"><span data-i18n-en="Offset Y">Verschiebung Y</span><span class="color-field-inputs"><input type="text" id="mtCupOffY" class="filename-input" inputmode="decimal" spellcheck="false"><span class="uf-unit">mm</span></span></div>
+          
+          <div class="color-field-row" id="mtCupTyRow"><span><label class="mt-cup-ty"><input type="checkbox" id="mtCupTyOn"><span data-i18n-en="With ID">Mit Kennung</span></label><span class="uf-tag" data-i18n-en="HOMAG only: TY in the vacuum cup block">nur HOMAG: TY im Saugerblock</span></span><span class="color-field-inputs"><input type="text" id="mtCupTy" class="filename-input" spellcheck="false"><span class="uf-unit" style="visibility:hidden">mm</span></span></div>
           <div class="mt-set-warn" id="mtSetWarn" hidden></div>
           <div class="mt-cup-save"><button class="btn ghost" id="btnMtCupSave" type="button" data-i18n-en="Save vacuum cup">Sauger speichern</button><span class="mt-cup-msg" id="mtCupMsg"></span></div>
         </div>
@@ -2800,6 +2822,8 @@
     <label class="cup-assign-ops"><input type="checkbox" id="cupAssignShowOps"> <span data-i18n-en="Show machining">Bearbeitungen anzeigen</span><span class="panel-hint" data-i18n-en="(red = milled through below the part, green = pocket/groove)">(rot = durchgefräst bis unter das Bauteil, grün = Tasche/Nut)</span></label>
     
     <div class="cup-assign-row">
+      
+      <div class="cup-assign-beam" id="cupAssignBeamBox"><b data-i18n-en="Console">Balken</b><select id="cupAssignBeam" class="filename-input"></select><div class="panel-hint" id="cupAssignBeamInfo"></div></div>
       <div class="cup-assign-scroll"><div class="cup-assign-view"><svg id="cupAssignTop" width="920" height="300"></svg></div></div>
       <div class="cup-assign-tools" id="cupAssignTools">
         <button type="button" class="cup-assign-tool" id="btnCupAssignHome" title="Ganzen Tisch zeigen" data-i18n-en-title="Show whole table" data-i18n-de-title="Ganzen Tisch zeigen">⌂</button>
@@ -8951,7 +8975,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
 
   const root = document.documentElement;
 
-  const APP_RELEASE_NUMBER = 409;
+  const APP_RELEASE_NUMBER = 410;
   const UPDATE_INFO_LS_KEY = 'cncsim.lastSeenRelease';
   const updateInfoStart = (() => {
     try {
@@ -8960,7 +8984,7 @@ function buildMortiseMesh(contour, pockets, thickness, topContour, opts) {
         used: keys.some(k => /^cncsim/.test(k) && !['cncsimx_lang', 'cncsim.partProfiles', UPDATE_INFO_LS_KEY].includes(k)) };
     } catch (e) { return { last: 0, used: false }; }
   })();
-  const APP_RELEASE_TIMESTAMP = '27.11.2026, 18:26 Uhr';
+  const APP_RELEASE_TIMESTAMP = '28.11.2026, 11:27 Uhr';
 
   const UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/Sebastian-CNCSimX/CNC_SimX/main/latest.json';
   const UPDATE_HTML_ORIGIN = 'https://raw.githubusercontent.com';
@@ -11863,6 +11887,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     postRotDir = 'up';
     rawProgramFilename = filename;
     if (typeof gutMsgDone !== 'undefined' && gutMsgDone) gutMsgDone.clear();
+    if (typeof beamSelProg !== 'undefined') { beamSelProg = null; homagKennungFor = null; }
     rawProgramFileSize = fileMeta && typeof fileMeta.size === 'number' ? fileMeta.size : null;
     rawProgramFileDate = fileMeta && typeof fileMeta.lastModified === 'number' ? new Date(fileMeta.lastModified) : null;
     sidebarView = 'code';
@@ -13525,6 +13550,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnObjDeleteIcon').addEventListener('click', clearObj);
 
   const CHANGELOG_ENTRIES = [
+    { release: 410, date: '28.11.2026', items: [
+      { de: 'HOMAG: Saugerblöcke („SaugerK“) werden im Maschinentisch angezeigt – Balken (XA), Sauger (YA1 … YAn), Tischgröße aus KM="TABLE SIZE X/Y". Sauger mit „Mit Kennung“ (z. B. 66) werden beim Laden automatisch zugeordnet.',
+        en: 'HOMAG: vacuum cup blocks ("SaugerK") are shown on the machine table – consoles (XA), vacuum cups (YA1 … YAn), table size from KM="TABLE SIZE X/Y". Vacuum cups with "With ID" (e.g. 66) are assigned automatically when loading.' },
+      { de: 'Maschinentisch & Sauger: Balken (mit Sockel) wie die Sauger anlegen, kopieren, löschen – fest: „SCM Balken 150mm“, „HOMAG Balken 150mm“, „HOMAG Balken 120mm“. In der Saugerzuordnung links den Balken wählen; Vorauswahl nach Maschinentyp.',
+        en: 'Machine table & vacuum cups: create, copy and delete consoles (with base) like the vacuum cups – fixed: "SCM console 150mm", "HOMAG console 150mm", "HOMAG console 120mm". Choose the console on the left in the vacuum cup assignment; preselected by machine type.' },
+    ] },
     { release: 409, date: '27.11.2026', items: [
       { de: 'Maschinentyp-Vorschlag: SCM-Programme mit Saugerfahrt („Move Part“ vor einem Saugerblock) schlagen beim Laden „SCM Movepart“ vor.',
         en: 'Machine type suggestion: SCM programs with a vacuum cup move ("Move Part" before a vacuum cup block) suggest "SCM Movepart" when loading.' },
@@ -21158,6 +21189,49 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   var mtSetRaw = (() => { try { return JSON.parse(window.localStorage.getItem(MT_LS_KEY) || 'null'); } catch (e) { return null; } })();
   var mtSet = normMtSettings(mtSetRaw);
+  var BEAM_LS_KEY = 'cncsim.beamSets';
+  var BEAM_KEYS = ['beamX', 'beamZ', 'sockX', 'sockY', 'sockZ'];
+  var BEAM_FIXED = [
+    { id: 'scm150', de: 'SCM Balken 150mm', en: 'SCM console 150mm', beamX: 150, beamZ: 100, sockX: 145, sockY: 145, sockZ: 20 },
+    { id: 'homag150', de: 'HOMAG Balken 150mm', en: 'HOMAG console 150mm', beamX: 150, beamZ: 100, sockX: 130, sockY: 170, sockZ: 20 },
+    { id: 'homag120', de: 'HOMAG Balken 120mm', en: 'HOMAG console 120mm', beamX: 120, beamZ: 100, sockX: 130, sockY: 170, sockZ: 20 },
+  ];
+  function beamFixedNames() { const n = new Set(); BEAM_FIXED.forEach(b => { n.add(b.de.toLowerCase()); n.add(b.en.toLowerCase()); }); return n; }
+  function normBeamSets(arr) {
+    const fixedIds = new Set(BEAM_FIXED.map(b => b.id)), names = beamFixedNames(), ids = new Set(fixedIds);
+    const out = BEAM_FIXED.map(b => Object.assign({ fixed: true, name: b.de }, b));
+    (Array.isArray(arr) ? arr : []).forEach(b => {
+      if (!b || typeof b !== 'object' || b.fixed || typeof b.name !== 'string' || !b.name.trim()) return;
+      const o = { id: typeof b.id === 'string' && b.id ? b.id : 'b' + Math.random().toString(36).slice(2, 9), name: b.name.trim().slice(0, 60) };
+      if (ids.has(o.id) || !BEAM_KEYS.every(k => typeof b[k] === 'number' && isFinite(b[k]) && b[k] > 0)) return;
+      BEAM_KEYS.forEach(k => { o[k] = b[k]; });
+      while (names.has(o.name.toLowerCase())) o.name = o.name + ' (eigen)';
+      ids.add(o.id); names.add(o.name.toLowerCase()); out.push(o);
+    });
+    return out;
+  }
+  function saveBeamSets() { try { window.localStorage.setItem(BEAM_LS_KEY, JSON.stringify(beamSets.filter(b => !b.fixed).map(b => Object.assign({ id: b.id, name: b.name }, ...BEAM_KEYS.map(k => ({ [k]: b[k] })))))); } catch (e) {  } }
+  var beamSets = (() => {
+    let raw = null, had = false;
+    try { const t = window.localStorage.getItem(BEAM_LS_KEY); had = t != null; raw = JSON.parse(t || 'null'); } catch (e) { raw = null; }
+    if (!had && mtSetRaw && typeof mtSetRaw === 'object' && BEAM_KEYS.some(k => typeof mtSetRaw[k] === 'number' && mtSetRaw[k] > 0 && mtSetRaw[k] !== MT_DEFAULTS[k])) {
+      const own = normMtSettings(mtSetRaw); raw = [Object.assign({ id: 'own', name: 'Eigener Balken' }, ...BEAM_KEYS.map(k => ({ [k]: own[k] })))];
+    }
+    const out = normBeamSets(raw);
+    if (!had) { try { window.localStorage.setItem(BEAM_LS_KEY, JSON.stringify(out.filter(b => !b.fixed).map(b => Object.assign({ id: b.id, name: b.name }, ...BEAM_KEYS.map(k => ({ [k]: b[k] })))))); } catch (e) {  } }
+    return out;
+  })();
+  function beamLocalize() { beamSets.forEach(b => { if (b.fixed) b.name = T(b.de, b.en); }); }
+  function beamSetById(id) { return beamSets.find(b => b.id === id) || beamSets[0]; }
+  var beamSelProg = null;
+  function isHomagName(name) { return /homag/i.test(String(name || '')); }
+  function beamDefaultFor(typeName) {
+    const n = String(typeName || ''), key = isHomagName(n) ? 'homag' : /scm/i.test(n) ? 'scm' : null;
+    const m = key && beamSets.find(b => b.name.toLowerCase().indexOf(key) !== -1);
+    return (m || beamSets[0]).id;
+  }
+  function beamEffectiveId() { return beamSelProg && beamSets.some(b => b.id === beamSelProg) ? beamSelProg : beamDefaultFor(typeof activeMachineTypeName !== 'undefined' ? activeMachineTypeName : ''); }
+  function mtSyncBeam() { const b = beamSetById(beamEffectiveId()); BEAM_KEYS.forEach(k => { mtSet[k] = b[k]; }); return b; }
   var CUP_LS_KEY = 'cncsim.suctionSets';
   var CUP_FIXED = [
     { id: 'std', de: 'Sauger 145x145', en: 'Vacuum cup 145x145', x: 145, y: 145, z: 90, ox: 0, oy: 0 },
@@ -21175,6 +21249,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     const o = { id: typeof c.id === 'string' && c.id ? c.id : 'c' + Math.random().toString(36).slice(2, 9), name: c.name.trim().slice(0, 60),
       x: n(c.x), y: n(c.y), z: n(c.z), ox: n(c.ox), oy: n(c.oy), shape: c.shape === 'round' ? 'round' : 'rect' };
     if (o.shape === 'round') o.y = o.x;
+    o.tyOn = !!c.tyOn; o.ty = (typeof c.ty === 'string' || typeof c.ty === 'number') ? String(c.ty).trim().slice(0, 20) : '';
     if (!(o.x > 0 && o.y > 0 && o.z > 0) || !isFinite(o.ox) || !isFinite(o.oy)) return null;
     return o;
   }
@@ -21191,7 +21266,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function cupLocalize() { cupSets.forEach(c => { if (c.fixed) c.name = T(c.de, c.en); }); }
   var cupSets = normCupSets((() => { try { return JSON.parse(window.localStorage.getItem(CUP_LS_KEY) || 'null'); } catch (e) { return null; } })());
-  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets.filter(c => !c.fixed).map(c => ({ id: c.id, name: c.name, x: c.x, y: c.y, z: c.z, ox: c.ox, oy: c.oy, shape: c.shape === 'round' ? 'round' : 'rect' })))); } catch (e) {  } }
+  function saveCupSets() { try { window.localStorage.setItem(CUP_LS_KEY, JSON.stringify(cupSets.filter(c => !c.fixed).map(c => ({ id: c.id, name: c.name, x: c.x, y: c.y, z: c.z, ox: c.ox, oy: c.oy, shape: c.shape === 'round' ? 'round' : 'rect', tyOn: !!c.tyOn, ty: c.ty || '' })))); } catch (e) {  } }
   function cupSetById(id) { return cupSets.find(c => c.id === id) || cupSets[0]; }
   function cupColor(id) { const i = cupSets.findIndex(c => c.id === id); return CUP_COLORS[(i < 0 ? 0 : i) % CUP_COLORS.length]; }
   var cupAssign = new Map();
@@ -21231,6 +21306,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     return f;
   }
   function mtApplyChange() {
+    mtSyncBeam();
     bakeParams = null; requestRender();
     mpBoxCache = null;
     if (typeof tableCollisionReset === 'function' && el('tableCollisionPanel')) { tableCollisionReset(); if (points.length) { tableCollisionCheck(); updateReadout(); } }
@@ -21340,7 +21416,9 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     el('mtSetTop').style.cursor = mtMeasure.on ? 'crosshair' : '';
     mtMeasureDraw();
   }
-  var MT_FIELDS = { tX: 'mtSetTX', tY: 'mtSetTY', beamX: 'mtSetBeamX', beamZ: 'mtSetBeamZ', sockX: 'mtSetSockX', sockY: 'mtSetSockY', sockZ: 'mtSetSockZ' };
+  var MT_FIELDS = { tX: 'mtSetTX', tY: 'mtSetTY' };
+  var BEAM_FIELDS = { beamX: 'mtSetBeamX', beamZ: 'mtSetBeamZ', sockX: 'mtSetSockX', sockY: 'mtSetSockY', sockZ: 'mtSetSockZ' };
+  var beamSel = 'scm150';
   var CUP_FIELDS = { x: 'mtCupX', y: 'mtCupY', z: 'mtCupZ', ox: 'mtCupOffX', oy: 'mtCupOffY' };
   var mtWork = null, cupSel = 'std', mtTab = 'table';
   const numIn = (i, positive) => { const v = parseFloat(String(i.value).replace(',', '.').trim()); const good = String(i.value).trim() !== '' && isFinite(v) && (!positive || v > 0); i.classList.toggle('invalid', !good); return good ? v : null; };
@@ -21355,6 +21433,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     Object.keys(CUP_FIELDS).forEach(k => { if (k === 'y' && c.shape === 'round') return; const v = numIn(el(CUP_FIELDS[k]), k === 'x' || k === 'y' || k === 'z'); if (v == null) ok = false; else c[k] = v; });
     if (c.shape === 'round') { c.y = c.x; el('mtCupY').classList.remove('invalid'); }
     const nm = el('mtCupName'); c.name = nm.value.trim(); const nameOk = !!c.name; nm.classList.toggle('invalid', !nameOk); if (!nameOk) ok = false;
+    c.tyOn = el('mtCupTyOn').checked; c.ty = el('mtCupTy').value.trim();
+    const tyOk = !c.tyOn || !!c.ty; el('mtCupTy').classList.toggle('invalid', !tyOk); if (!tyOk) ok = false;
     return { c, ok };
   }
   function cupDirty() {
@@ -21362,6 +21442,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (cupSetById(cupSel).fixed) return false;
     const base = cupSetById(cupSel), f = cupReadForm().c;
     if ((f.shape || 'rect') !== (base.shape || 'rect')) return true;
+    if (!!f.tyOn !== !!base.tyOn || (f.ty || '') !== (base.ty || '')) return true;
     return ['name', 'x', 'y', 'z', 'ox', 'oy'].some(k => f[k] !== base[k] && !(typeof base[k] === 'number' && String(el(CUP_FIELDS[k] || 'mtCupName').value).trim() === ''));
   }
   function showMtTab(t) {
@@ -21381,19 +21462,91 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     });
     const fx = !!cupSetById(cupSel).fixed;
     el('btnMtCupDelete').disabled = fx; el('btnMtCupSave').disabled = fx;
-    ['mtCupName', 'mtCupShape'].concat(Object.keys(CUP_FIELDS).map(k => CUP_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
+    ['mtCupName', 'mtCupShape', 'mtCupTyOn', 'mtCupTy'].concat(Object.keys(CUP_FIELDS).map(k => CUP_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
   }
   function fillCupForm() {
     const c = cupSetById(cupSel);
     el('mtCupShape').value = c.shape === 'round' ? 'round' : 'rect'; el('mtPaneCups').classList.toggle('cup-round', c.shape === 'round');
     el('mtCupName').value = c.name; el('mtCupName').classList.remove('invalid', 'warn');
     Object.keys(CUP_FIELDS).forEach(k => { el(CUP_FIELDS[k]).value = String(c[k]); el(CUP_FIELDS[k]).classList.remove('invalid', 'warn'); });
+    el('mtCupTyOn').checked = !!c.tyOn; el('mtCupTy').value = c.ty || ''; el('mtCupTy').classList.remove('invalid'); el('mtCupTy').disabled = !!c.fixed || !c.tyOn;
     el('mtCupMsg').textContent = c.fixed ? T('Standardsauger – nicht änderbar. Zum Anpassen „Kopieren“.', 'Standard vacuum cup – cannot be changed. Use "Copy" to adapt it.') : '';
     mtRefresh();
   }
+  function beamReadForm() {
+    const b = Object.assign({}, beamSetById(beamSel)); let ok = true;
+    Object.keys(BEAM_FIELDS).forEach(k => { const v = numIn(el(BEAM_FIELDS[k]), true); if (v == null) ok = false; else b[k] = v; });
+    const nm = el('mtBeamName'); b.name = nm.value.trim(); const nameOk = !!b.name; nm.classList.toggle('invalid', !nameOk); if (!nameOk) ok = false;
+    return { b, ok };
+  }
+  function beamDirty() {
+    if (!el('machineTablePanel').classList.contains('open')) return false;
+    const base = beamSetById(beamSel); if (base.fixed) return false;
+    const f = beamReadForm().b;
+    return ['name'].concat(BEAM_KEYS).some(k => f[k] !== base[k] && !(typeof base[k] === 'number' && String(el(BEAM_FIELDS[k]).value).trim() === ''));
+  }
+  function renderBeamList() {
+    const L = el('mtBeamList'); L.textContent = '';
+    beamSets.forEach(b => {
+      const d = document.createElement('div'); d.className = 'mt-cup-item' + (b.id === beamSel ? ' active' : ''); d.dataset.id = b.id;
+      const nm = document.createElement('span'); nm.className = 'mt-cup-name'; nm.textContent = b.name; d.appendChild(nm);
+      if (b.fixed) { const lk = document.createElement('span'); lk.textContent = '🔒'; lk.title = T('Fester Balken – nicht löschbar und nicht änderbar', 'Fixed console – cannot be deleted or changed'); d.appendChild(lk); }
+      L.appendChild(d);
+    });
+    const fx = !!beamSetById(beamSel).fixed;
+    el('btnMtBeamDelete').disabled = fx; el('btnMtBeamSave').disabled = fx;
+    ['mtBeamName'].concat(Object.keys(BEAM_FIELDS).map(k => BEAM_FIELDS[k])).forEach(id => { el(id).disabled = fx; });
+  }
+  function fillBeamForm() {
+    const b = beamSetById(beamSel);
+    el('mtBeamName').value = b.name; el('mtBeamName').classList.remove('invalid', 'warn');
+    Object.keys(BEAM_FIELDS).forEach(k => { el(BEAM_FIELDS[k]).value = String(b[k]); el(BEAM_FIELDS[k]).classList.remove('invalid'); });
+    el('mtBeamMsg').textContent = b.fixed ? T('Fester Balken – nicht änderbar. Zum Anpassen „Kopieren“.', 'Fixed console – cannot be changed. Use "Copy" to adapt it.') : '';
+    mtRefresh();
+  }
+  function beamConfirmLeave() {
+    if (!beamDirty()) return true;
+    if (confirm(T('Noch nicht gespeichert: Balken „' + beamSetById(beamSel).name + '“.\n\nTrotzdem fortfahren? Die Änderungen gehen verloren.',
+      'Not saved yet: console "' + beamSetById(beamSel).name + '".\n\nContinue anyway? The changes will be lost.'))) return true;
+    showMtTab('table');
+    return false;
+  }
+  function beamUniqueName(base, exceptId) {
+    const fixedNames = beamFixedNames(), taken = n => fixedNames.has(n.toLowerCase()) || beamSets.some(b => b.id !== exceptId && b.name.toLowerCase() === n.toLowerCase());
+    if (!taken(base)) return base;
+    for (let i = 2; ; i++) if (!taken(base + ' ' + i)) return base + ' ' + i;
+  }
+  function beamSave() {
+    const r = beamReadForm();
+    if (!r.ok) { el('mtBeamMsg').textContent = T('Bitte gültige Werte eingeben (Maße größer als 0).', 'Please enter valid values (dimensions greater than 0).'); return false; }
+    if (beamSetById(beamSel).fixed) return false;
+    if (beamFixedNames().has(r.b.name.toLowerCase()) || beamSets.some(b => b.id !== beamSel && b.name.toLowerCase() === r.b.name.toLowerCase())) { el('mtBeamMsg').textContent = T('Der Name „' + r.b.name + '“ ist schon vergeben.', 'The name "' + r.b.name + '" is already used.'); el('mtBeamName').classList.add('invalid'); return false; }
+    const i = beamSets.findIndex(b => b.id === beamSel); beamSets[i] = Object.assign({}, beamSets[i], r.b);
+    saveBeamSets(); renderBeamList(); el('mtBeamMsg').textContent = T('Gespeichert.', 'Saved.'); mtRefresh(); mtApplyChange(); renderCupAssignIfOpen();
+    return true;
+  }
+  function beamSelect(id) { if (id === beamSel || !beamConfirmLeave()) return; beamSel = id; renderBeamList(); fillBeamForm(); }
+  function beamAdd(copy) {
+    if (!beamConfirmLeave()) return;
+    const src = copy ? beamSetById(beamSel) : beamSets[0];
+    const b = Object.assign({ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: beamUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Balken', 'New console')) }, ...BEAM_KEYS.map(k => ({ [k]: src[k] })));
+    beamSets.push(b); saveBeamSets(); beamSel = b.id; renderBeamList(); fillBeamForm(); el('mtBeamName').focus(); el('mtBeamName').select();
+  }
+  function beamDelete() {
+    const b = beamSetById(beamSel); if (b.fixed) return;
+    if (!confirm(T('Balken „' + b.name + '“ löschen?', 'Delete console "' + b.name + '"?'))) return;
+    beamSets = beamSets.filter(x => x.id !== b.id);
+    if (beamSelProg === b.id) beamSelProg = null;
+    saveBeamSets(); beamSel = beamSets[0].id; renderBeamList(); fillBeamForm(); mtApplyChange(); renderCupAssignIfOpen();
+  }
   function mtRefresh() {
     const rt = mtReadTable(); mtWork = rt.s;
-    const rc = cupReadForm(), c = rc.c, w = mtWarnings(mtWork, c);
+    const rb = beamReadForm(), bw = el('mtBeamWarn'); bw.textContent = '';
+    if (beamDirty()) { const p = document.createElement('div'); p.textContent = '⚠ ' + T('Noch nicht gespeichert: „' + (rb.b.name || beamSetById(beamSel).name) + '“.', 'Not saved yet: "' + (rb.b.name || beamSetById(beamSel).name) + '".'); bw.appendChild(p); }
+    bw.hidden = !bw.childNodes.length;
+    el('mtBeamName').classList.toggle('warn', !bw.hidden && !el('mtBeamName').classList.contains('invalid'));
+    const tb = Object.assign({}, mtWork, ...BEAM_KEYS.map(k => ({ [k]: beamSetById(beamEffectiveId())[k] })));
+    const rc = cupReadForm(), c = rc.c, w = mtWarnings(tb, c);
     ['mtCupOffX', 'mtCupOffY'].forEach(id => el(id).classList.toggle('warn', w.overhang && !el(id).classList.contains('invalid')));
     el('mtCupX').classList.toggle('warn', w.wide && !el('mtCupX').classList.contains('invalid'));
     const box = el('mtSetWarn'); box.textContent = '';
@@ -21402,8 +21555,8 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (dirty) { const p = document.createElement('div'); p.textContent = '⚠ ' + T('Noch nicht gespeichert: „' + (c.name || cupSetById(cupSel).name) + '“.', 'Not saved yet: "' + (c.name || cupSetById(cupSel).name) + '".'); box.appendChild(p); }
     box.hidden = !box.childNodes.length;
     el('mtCupName').classList.toggle('warn', dirty && !el('mtCupName').classList.contains('invalid'));
-    mtSketch(mtWork, c, el('mtSetTop'), el('mtSetSide'));
-    mtSketch(mtWork, cupSetById('std'), null, el('mtSetSideTable'));
+    mtSketch(tb, c, el('mtSetTop'), el('mtSetSide'));
+    mtSketch(Object.assign({}, mtWork, ...BEAM_KEYS.map(k => ({ [k]: isFinite(rb.b[k]) ? rb.b[k] : beamSetById(beamSel)[k] }))), cupSetById('std'), null, el('mtSetSideTable'));
     return rt.ok;
   }
   function cupConfirmLeave() {
@@ -21431,7 +21584,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupAdd(copy) {
     if (!cupConfirmLeave()) return;
     const src = copy ? cupSetById(cupSel) : cupSetById('std');
-    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New vacuum cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy, shape: copy && src.shape === 'round' ? 'round' : 'rect' };
+    const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: cupUniqueName(copy ? src.name + T(' (Kopie)', ' (copy)') : T('Neuer Sauger', 'New vacuum cup')), x: src.x, y: src.y, z: src.z, ox: src.ox, oy: src.oy, shape: copy && src.shape === 'round' ? 'round' : 'rect', tyOn: !!(copy && src.tyOn), ty: copy ? (src.ty || '') : '' };
     cupSets.push(c); saveCupSets(); cupSel = c.id; renderCupList(); fillCupForm(); el('mtCupName').focus(); el('mtCupName').select();
   }
   function cupDelete() {
@@ -21447,18 +21600,20 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     mtWork = Object.assign({}, mtSet);
     Object.keys(MT_FIELDS).forEach(k => { const i = el(MT_FIELDS[k]); i.value = String(mtSet[k]); i.classList.remove('invalid'); });
     if (!cupSets.some(c => c.id === cupSel)) cupSel = 'std';
+    beamSel = beamEffectiveId();
     el('machineTablePanel').classList.add('open');
+    renderBeamList(); fillBeamForm();
     renderCupList(); fillCupForm(); showMtTab(tab === 'cups' ? 'cups' : 'table');
     setTimeout(() => { try { el(mtTab === 'cups' ? 'mtCupName' : 'mtSetTX').focus(); } catch (e) {  } }, 0);
   }
   function machineTableSettingsOk() {
     if (!mtRefresh()) { showMtTab('table'); const bad = el('mtPaneTable').querySelector('input.invalid'); if (bad) bad.focus(); return false; }
-    if (!cupConfirmLeave()) return false;
+    if (!cupConfirmLeave() || !beamConfirmLeave()) return false;
     setMtSettings(mtWork, true);
     el('machineTablePanel').classList.remove('open');
     return true;
   }
-  function machineTableSettingsCancel() { if (!cupConfirmLeave()) return; el('machineTablePanel').classList.remove('open'); }
+  function machineTableSettingsCancel() { if (!cupConfirmLeave() || !beamConfirmLeave()) return; el('machineTablePanel').classList.remove('open'); }
   el('btnOpenMachineTable').addEventListener('click', () => openMachineTableSettings('table'));
   el('mtTabTable').addEventListener('click', () => showMtTab('table'));
   el('mtTabCups').addEventListener('click', () => showMtTab('cups'));
@@ -21471,6 +21626,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     el('mtCupMsg').textContent = ''; mtRefresh();
   });
   el('mtCupName').addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); });
+  el('mtCupTyOn').addEventListener('change', () => { el('mtCupTy').disabled = !el('mtCupTyOn').checked; if (el('mtCupTyOn').checked && !el('mtCupTy').value.trim()) el('mtCupTy').focus(); el('mtCupMsg').textContent = ''; mtRefresh(); });
+  el('mtCupTy').addEventListener('input', () => { el('mtCupMsg').textContent = ''; mtRefresh(); });
+  Object.keys(BEAM_FIELDS).forEach(k => el(BEAM_FIELDS[k]).addEventListener('input', () => { el('mtBeamMsg').textContent = ''; mtRefresh(); }));
+  el('mtBeamName').addEventListener('input', () => { el('mtBeamMsg').textContent = ''; mtRefresh(); });
+  el('mtBeamList').addEventListener('click', e => { const it = e.target.closest('.mt-cup-item'); if (it) beamSelect(it.dataset.id); });
+  el('btnMtBeamSave').addEventListener('click', beamSave);
+  el('btnMtBeamNew').addEventListener('click', () => beamAdd(false));
+  el('btnMtBeamCopy').addEventListener('click', () => beamAdd(true));
+  el('btnMtBeamDelete').addEventListener('click', beamDelete);
   el('mtCupList').addEventListener('click', e => { const it = e.target.closest('.mt-cup-item'); if (it) cupSelect(it.dataset.id); });
   el('btnMtMeasure').addEventListener('click', () => mtMeasureToggle());
   el('mtSetTop').addEventListener('mousemove', e => { if (!mtMeasure.on) return; const p = mtMeasureSnap(e.clientX, e.clientY); if ((p && p.what + p.x + p.y) !== (mtMeasure.hover && mtMeasure.hover.what + mtMeasure.hover.x + mtMeasure.hover.y)) { mtMeasure.hover = p; mtMeasureDraw(); } });
@@ -21490,10 +21654,12 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnMtSetCancel').addEventListener('click', machineTableSettingsCancel);
   el('btnMtSetDefaults').addEventListener('click', () => { Object.keys(MT_FIELDS).forEach(k => { el(MT_FIELDS[k]).value = String(MT_DEFAULTS[k]); }); mtRefresh(); });
   el('machineTablePanel').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (mtTab === 'cups' && cupDirty()) cupSave(); else machineTableSettingsOk(); }
+    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (mtTab === 'cups' && cupDirty()) cupSave(); else if (mtTab === 'table' && beamDirty()) beamSave(); else machineTableSettingsOk(); }
     else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); machineTableSettingsCancel(); }
   });
   var cupAssignWork = null;
+  var cupBeamWork = null;
+  function cupAssignBeam() { return beamSetById(cupBeamWork || beamEffectiveId()); }
   function cupAssignAvailable() { return !!(machineTable && machineTable.beams.some(b => b.y.length)); }
   function cupAssignRows() { return machineTable ? Math.max(0, ...machineTable.beams.map(b => b.y.length)) : 0; }
   var LS_KEY_CUP_ASSIGN_OPS = 'cncsim.cupAssignShowOps';
@@ -21567,18 +21733,18 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   var cupGeo = null, cupMeasure = { on: false, a: null, b: null, hover: null }, cupMeasureLast = null;
   function cupAssignSnapPoints() {
     const mt = machineTable, out = []; if (!mt || !cupGeo) return out;
-    const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std';
+    const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std', S = cupAssignBeam();
     const rectPts = (x0, y0, x1, y1, what, center, pri) => {
       [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].forEach(q => out.push({ x: q[0], y: q[1], kind: 'end', what, pri }));
       [[(x0 + x1) / 2, y0], [x1, (y0 + y1) / 2], [(x0 + x1) / 2, y1], [x0, (y0 + y1) / 2]].forEach(q => out.push({ x: q[0], y: q[1], kind: 'mid', what, pri }));
       if (center) out.push({ x: (x0 + x1) / 2, y: (y0 + y1) / 2, kind: 'mid', what: what + T(' (Mitte)', ' (centre)'), pri });
     };
     mt.beams.forEach((b, bi) => {
-      rectPts(b.x - mtSet.beamX / 2, 0, b.x + mtSet.beamX / 2, cupGeo.TY, T('Balken', 'Console') + ' PB' + (bi + 1), false, 1);
+      rectPts(b.x - S.beamX / 2, 0, b.x + S.beamX / 2, cupGeo.TY, T('Balken', 'Console') + ' PB' + (bi + 1), false, 1);
       b.y.forEach((y, r) => {
-        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2, nm = 'PB' + (bi + 1) + '/Y' + (r + 1);
-        rectPts(sx, sy, sx + mtSet.sockX, sy + mtSet.sockY, T('Sockel', 'Socket') + ' ' + nm, true, 2);
-        const ft = cupFoot(c, sx, sy, mtSet.sockX, mtSet.sockY, cupRotWork.get(bi + ':' + r) || 0);
+        const c = cupSetById(get(bi, r)), sx = b.x - S.sockX / 2, sy = y - S.sockY / 2, nm = 'PB' + (bi + 1) + '/Y' + (r + 1);
+        rectPts(sx, sy, sx + S.sockX, sy + S.sockY, T('Sockel', 'Socket') + ' ' + nm, true, 2);
+        const ft = cupFoot(c, sx, sy, S.sockX, S.sockY, cupRotWork.get(bi + ':' + r) || 0);
         if (ft.poly) {
           const P = ft.poly, nmC = T('Sauger', 'Cup') + ' ' + nm;
           P.forEach(q => out.push({ x: q[0], y: q[1], kind: 'end', what: nmC, pri: 3 }));
@@ -21652,21 +21818,26 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   }
   function renderCupAssign() {
     const mt = machineTable; if (!mt) return;
-    const rows = cupAssignRows(), W = 900, TX = mtTableX(), TY = mtTableY(), kx = W / TX, H = Math.max(120, Math.min(300, TY * kx)), ky = H / TY;
+    const S = cupAssignBeam();
+    const TYv = Math.max(mtTableY(), ...mt.beams.map(b => Math.max(0, ...b.y.map(y => y + S.sockY / 2))));
+    const rows = cupAssignRows(), W = 900, TX = mtTableX(), TY = TYv, kx = W / TX, H = Math.max(120, Math.min(300, TY * kx)), ky = H / TY;
     const get = (b, r) => cupAssignWork.get(b + ':' + r) || 'std';
-    let svg = '<g transform="translate(10,10)"><rect width="' + W + '" height="' + H + '" fill="#7d8796" opacity="0.35"/>', cupSvg = '', rotSvg = '';
+    const bsel = el('cupAssignBeam'); bsel.innerHTML = beamSets.map(b => '<option value="' + escapeHtml(b.id) + '"' + (b.id === S.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
+    const fm = v => String(v).replace('.', currentLang === 'en' ? '.' : ',');
+    el('cupAssignBeamInfo').innerHTML = escapeHtml(T('Balken ' + fm(S.beamX) + ' breit, ' + fm(S.beamZ) + ' hoch', 'Console ' + fm(S.beamX) + ' wide, ' + fm(S.beamZ) + ' high')) + '<br>' + escapeHtml(T('Sockel ', 'Base ') + fm(S.sockX) + ' × ' + fm(S.sockY) + ' × ' + fm(S.sockZ)) + '<br><br>' + escapeHtml(T('Gilt für alle Balken dieses Programms.', 'Applies to all consoles of this program.'));
+    let svg = '<g transform="translate(10,10)"><rect y="' + (H - mtTableY() * ky).toFixed(1) + '" width="' + W + '" height="' + (mtTableY() * ky).toFixed(1) + '" fill="#7d8796" opacity="0.35"/>', cupSvg = '', rotSvg = '';
     const ops = cupAssignShowOps ? cupAssignOpsSvg(kx, ky, H) : null, hits = [];
     el('cupAssignShowOps').checked = cupAssignShowOps;
     mt.beams.forEach((b, bi) => {
-      svg += '<rect x="' + ((b.x - mtSet.beamX / 2) * kx).toFixed(1) + '" y="0" width="' + Math.max(2, mtSet.beamX * kx).toFixed(1) + '" height="' + H + '" fill="#464e5c"/>'
+      svg += '<rect x="' + ((b.x - S.beamX / 2) * kx).toFixed(1) + '" y="0" width="' + Math.max(2, S.beamX * kx).toFixed(1) + '" height="' + H + '" fill="#464e5c"/>'
         + '<text x="' + (b.x * kx).toFixed(1) + '" y="' + (H - 4) + '" font-size="10" fill="#fff" text-anchor="middle">PB' + (bi + 1) + '</text>';
       b.y.forEach((y, r) => {
         const rot = cupRotWork.get(bi + ':' + r) || 0;
-        const c = cupSetById(get(bi, r)), sx = b.x - mtSet.sockX / 2, sy = y - mtSet.sockY / 2, ft = cupFoot(c, sx, sy, mtSet.sockX, mtSet.sockY, rot);
+        const c = cupSetById(get(bi, r)), sx = b.x - S.sockX / 2, sy = y - S.sockY / 2, ft = cupFoot(c, sx, sy, S.sockX, S.sockY, rot);
         const hit = ops && (ft.round ? ops.deep.some(sg => cupAssignSegPointDist(sg, ft.cx, ft.cy) < ft.r + sg.r - 1e-6) : ft.poly ? ops.deep.some(sg => cupSegPolyDist(sg, ft.poly) < sg.r - 1e-6) : cupAssignCupHit(ops.deep, ft.x0, ft.y0, ft.x1, ft.y1));
         if (ft.poly) rotSvg += '<text class="cup-assign-rot" x="' + (((ft.x0 + ft.x1) / 2) * kx).toFixed(1) + '" y="' + (H - ft.y1 * ky - 3).toFixed(1) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#fff" stroke="#1b1f26" stroke-width="3" paint-order="stroke" pointer-events="none">' + (rot > 0 ? '+' : '') + rot + '°</text>';
         if (hit) hits.push('PB' + (bi + 1) + ':Y' + (r + 1));
-        cupSvg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + mtSet.sockY) * ky).toFixed(1) + '" width="' + (mtSet.sockX * kx).toFixed(1) + '" height="' + (mtSet.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
+        cupSvg += '<rect x="' + (sx * kx).toFixed(1) + '" y="' + (H - (sy + S.sockY) * ky).toFixed(1) + '" width="' + (S.sockX * kx).toFixed(1) + '" height="' + (S.sockY * ky).toFixed(1) + '" fill="none" stroke="#1d4e6b" stroke-dasharray="3 2"/>'
           + (ft.round
             ? '<ellipse class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" cx="' + (ft.cx * kx).toFixed(1) + '" cy="' + (H - ft.cy * ky).toFixed(1) + '" rx="' + Math.max(1, ft.r * kx).toFixed(1) + '" ry="' + Math.max(1, ft.r * ky).toFixed(1) + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + '</title></ellipse>'
             : ft.poly ? '<polygon class="cup-assign-cup' + (hit ? ' cup-hit' : '') + '" data-b="' + bi + '" data-r="' + r + '" points="' + ft.poly.map(q => (q[0] * kx).toFixed(1) + ',' + (H - q[1] * ky).toFixed(1)).join(' ') + '" fill="' + cupColor(c.id) + '" stroke="' + (hit ? '#d62828' : '#222') + '" stroke-width="' + (hit ? 3 : 0.6) + '" style="cursor:pointer"><title>PB' + (bi + 1) + ' / Y' + (r + 1) + ': ' + escapeHtml(c.name) + ' ' + (rot > 0 ? '+' : '') + rot + '°</title></polygon>'
@@ -21703,6 +21874,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     closeAllMenus(); closeContextMenu();
     cupAssignWork = new Map(cupAssign);
     cupRotWork = new Map(cupRot);
+    cupBeamWork = beamEffectiveId();
     cupAssignVB = null;
     cupCtxClose(); cupMeasure = { on: false, a: null, b: null, hover: null }; el('btnCupAssignMeasure').classList.remove('active'); el('btnCupAssignMeasure').setAttribute('aria-pressed', 'false');
     el('cupAssignTitle').textContent = T('Saugerzuordnung', 'Vacuum cup assignment') + (rawProgramFilename ? ' – ' + rawProgramFilename : '');
@@ -21712,6 +21884,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function cupAssignOk() {
     cupAssign = new Map(Array.from(cupAssignWork).filter(e => e[1] && e[1] !== 'std'));
     cupRot = new Map(Array.from(cupRotWork).filter(e => e[1]));
+    if (cupBeamWork && cupBeamWork !== beamEffectiveId()) beamSelProg = cupBeamWork;
     el('cupAssignPanel').classList.remove('open');
     mtApplyChange();
   }
@@ -21733,6 +21906,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     if (s) { s.focus(); s.classList.add('flash'); setTimeout(() => s.classList.remove('flash'), 700); }
   });
   el('btnCupAssignStd').addEventListener('click', () => { cupAssignWork.clear(); renderCupAssign(); });
+  el('cupAssignBeam').addEventListener('change', e => { cupBeamWork = e.target.value; renderCupAssign(); });
   el('btnCupAssignRotStd').addEventListener('click', () => { cupRotWork.clear(); cupCtxClose(); renderCupAssign(); });
   el('cupAssignShowOps').addEventListener('change', e => setCupAssignShowOps(e.target.checked));
   el('btnCupAssignHome').addEventListener('click', () => { cupAssignVB = null; cupAssignApplyView(); cupMeasureDraw(); });
@@ -21811,12 +21985,15 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   el('btnTableAssign').addEventListener('click', openCupAssign);
   document.addEventListener('cncsim:lang-changed', () => {
     cupLocalize();
+    beamLocalize(); if (el('machineTablePanel').classList.contains('open')) { renderBeamList(); if (beamSetById(beamSel).fixed) el('mtBeamName').value = beamSetById(beamSel).name; }
     updateTablePlaneSizeHint();
     if (el('machineTablePanel').classList.contains('open')) { renderCupList(); mtRefresh(); }
     renderCupAssignIfOpen();
   });
   window.__mtSettings = { get: () => Object.assign({}, mtSet), set: o => setMtSettings(o, true), open: openMachineTableSettings, ok: machineTableSettingsOk,
-    state: () => ({ open: el('machineTablePanel').classList.contains('open'), tab: mtTab, work: Object.assign({}, mtWork), sel: cupSel, dirty: cupDirty(), warn: el('mtSetWarn').hidden ? '' : el('mtSetWarn').textContent, msg: el('mtCupMsg').textContent }) };
+    state: () => ({ open: el('machineTablePanel').classList.contains('open'), tab: mtTab, work: Object.assign({}, mtWork), sel: cupSel, dirty: cupDirty(), beamSel, beamDirty: beamDirty(), beamMsg: el('mtBeamMsg').textContent, warn: el('mtSetWarn').hidden ? '' : el('mtSetWarn').textContent, msg: el('mtCupMsg').textContent }) };
+  window.__beams = { list: () => beamSets.map(b => Object.assign({}, b)), effective: () => beamEffectiveId(), prog: () => beamSelProg, setProg: id => { beamSelProg = id || null; mtApplyChange(); },
+    defaultFor: n => beamDefaultFor(n) };
   window.__cupSets = { list: () => cupSets.map(c => Object.assign({}, c)), set: arr => { cupSets = normCupSets(arr); saveCupSets(); Array.from(cupAssign.keys()).forEach(k => { if (!cupSets.some(c => c.id === cupAssign.get(k))) cupAssign.delete(k); }); mtApplyChange(); },
     assign: () => Object.fromEntries(cupAssign), setAssign: o => { cupAssign = new Map(Object.entries(o || {})); mtApplyChange(); }, openAssign: openCupAssign, assignOk: cupAssignOk,
     rot: () => Object.fromEntries(cupRot), setRot: o => { cupRot = new Map(Object.entries(o || {}).map(e => [e[0], +e[1]]).filter(e => e[1])); mtApplyChange(); } };
@@ -21824,12 +22001,28 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function parseMachineTable(text) {
     if (typeof text !== 'string') return null;
     const table = {}, beams = [], blocks = [];
-    let area = null, dz = null, curBlock = null;
+    let area = null, dz = null, curBlock = null, homag = false;
     const lines = text.split(/\r?\n/);
     for (let li = 0; li < lines.length; li++) {
       const l = lines[li];
       let m;
-      if ((m = l.match(/;\s*TABLE\s+SIZE\s+([XY])\s+(-?[\d.]+)/i))) table[m[1].toUpperCase()] = +m[2];
+      if (/^\s*<115\s+\\SaugerK\\/.test(l)) {
+        const kv = {}; let k = li + 1;
+        for (; k < lines.length && !/^\s*[<\[]/.test(lines[k]); k++) { const mm = lines[k].match(/^\s*(\w+)\s*=\s*"?(-?[\d.]+)"?/); if (mm) kv[mm[1].toUpperCase()] = mm[2]; }
+        li = k - 1;
+        const an = +kv.AN > 0 ? +kv.AN : Object.keys(kv).filter(q => /^YA\d+$/.test(q)).length, ys = [], ty = [];
+        for (let j = 1; j <= an; j++) { const v = parseFloat(kv['YA' + j]); if (isFinite(v)) { ys.push(v); ty.push(kv['TY' + j] != null ? String(kv['TY' + j]) : null); } }
+        const xa = parseFloat(kv.XA);
+        if (!isFinite(xa) || !ys.length) continue;
+        homag = true;
+        const hb = { n: beams.length + 1, x: xa, y: ys, ty };
+        beams.push(hb);
+        if (!curBlock) { curBlock = { line: li, beams: [] }; blocks.push(curBlock); }
+        curBlock.beams.push(Object.assign({}, hb));
+        continue;
+      }
+      if ((m = l.match(/^\s*DI\s*=\s*"?(-?[\d.]+)/)) && dz == null) { dz = +m[1]; continue; }
+      if ((m = l.match(/(?:;|KM\s*=\s*")\s*TABLE\s+SIZE\s+([XY])\s+(-?[\d.]+)/i))) table[m[1].toUpperCase()] = +m[2];
       else if (/^\s*H\s/.test(l) && area == null) {
         const a = l.match(/\s-(A[BD]|DC)\b/); if (a) area = a[1];
         const d = l.match(/\bDZ=(-?[\d.]+)/); if (d) dz = +d[1];
@@ -21846,10 +22039,31 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       }
     }
     if (!(table.X > 0 || table.Y > 0) && !beams.length) return null;
-    return { x: table.X > 0 ? table.X : null, y: table.Y > 0 ? table.Y : null, beams, area: area || 'AD', dz, blocks };
+    return { x: table.X > 0 ? table.X : null, y: table.Y > 0 ? table.Y : null, beams, area: area || 'AD', dz, blocks, homag };
+  }
+  var homagKennungFor = null;
+  function homagApplyKennung(text) {
+    if (homagKennungFor === text) return;
+    homagKennungFor = text;
+    const unknown = new Set();
+    cupAssign.clear();
+    machineTable.beams.forEach((b, bi) => b.y.forEach((y, r) => {
+      const t = b.ty && b.ty[r]; if (t == null || t === '') return;
+      const c = cupSets.find(s0 => s0.tyOn && s0.ty === String(t));
+      if (c) { if (c.id !== 'std') cupAssign.set(bi + ':' + r, c.id); } else unknown.add(String(t));
+    }));
+    mpBoxCache = null;
+    if (unknown.size && !finishedView) {
+      const list = Array.from(unknown).join(', ');
+      setTimeout(() => alert(T('Kennung ' + list + ' im Programm, aber kein Sauger mit dieser Kennung angelegt – dort wird der Standardsauger gezeigt.\n\nKennung eintragen: Einstellungen → Maschinentisch & Sauger → Sauger → „Mit Kennung“.',
+        'ID ' + list + ' in the program, but no vacuum cup with this ID has been created – the standard vacuum cup is shown there.\n\nEnter the ID: Settings → Machine table & vacuum cups → Vacuum cups → "With ID".')), 0);
+    }
   }
   function machineTableFromProgram(text) {
     machineTable = parseMachineTable(text);
+    if (machineTable && machineTable.homag && !isHomagName(activeMachineTypeName)) machineTable = null;
+    if (machineTable && machineTable.homag) homagApplyKennung(text);
+    mtSyncBeam();
     if (machineTable && isScmMovepartName(activeMachineTypeName) && machineTable.blocks.length > 1) { machineTable.beamsAll = machineTable.beams; machineTable.beams = machineTable.blocks[0].beams; machineTable.movepart = true; }
     if (machineTable && machineTable.area !== 'AD' && !finishedView && machineTableWarnedFor !== text) {
       machineTableWarnedFor = text;
@@ -21863,7 +22077,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
       dxfKonturLoop.forEach(q => { const r = dxfTransformPoint({ x: q.x, y: q.y, z: q.z || 0 }); if (r.z < zb) zb = r.z; });
       if (isFinite(zb)) return Math.min(zb, zb + Math.min(0, dxfThickness || 0));
     }
-    return machineTable && machineTable.dz > 0 ? (isScmAbsolutName(activeMachineTypeName) ? 0 : -machineTable.dz) : null;
+    return machineTable && machineTable.dz > 0 ? (isScmAbsolutName(activeMachineTypeName) || machineTable.homag ? 0 : -machineTable.dz) : null;
   }
   function machineTableAvailable() { return !!(machineTable && partBottomZ() != null); }
   function machineTableActive() { return !!(tablePlane && tablePlane.on && machineTableAvailable()); }
@@ -21872,13 +22086,14 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
   function machineTableBoxes(beamsOverride) {
     const zb = partBottomZ(); if (zb == null || !machineTable) return null;
     const MB = beamsOverride || (mpModel ? mpDisplayBeams() : machineTable.beams);
+    mtSyncBeam();
     const S = mtSet, TX = mtTableX(), TY = mtTableY();
     const cups = MB.map((b, bi) => b.y.map((y, i) => cupFor(bi, i)));
     const maxZ = Math.max(0, ...cups.map(r => Math.max(0, ...r.map(c => c.z)))) || cupSetById('std').z;
     const beamTop = zb - maxZ - S.sockZ, sockTop = beamTop + S.sockZ, beamBot = beamTop - S.beamZ, out = [];
     out.push({ kind: 'plate', x0: 0, x1: TX, y0: 0, y1: TY, z0: beamBot, z1: beamBot });
     MB.forEach((b, bi) => {
-      out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: 0, y1: TY, z0: beamBot, z1: beamTop, color: '#464e5c' });
+      out.push({ kind: 'beam', beam: b.n, x0: b.x - S.beamX / 2, x1: b.x + S.beamX / 2, y0: Math.min(0, ...b.y.map(v => v - S.sockY / 2)), y1: Math.max(TY, ...b.y.map(v => v + S.sockY / 2)), z0: beamBot, z1: beamTop, color: '#464e5c' });
       b.y.forEach((y, i) => {
         const C = cups[bi][i], padH = Math.min(MT_PAD_H, C.z), top = sockTop + C.z;
         const sx0 = b.x - S.sockX / 2, sy0 = y - S.sockY / 2, ft = cupFoot(C, sx0, sy0, S.sockX, S.sockY, cupRotFor(bi, i));
@@ -21992,6 +22207,7 @@ Tools can be displayed as “semi”-transparent (a fill color must be selected 
     { area: 'toolsPaneChuck', list: 'chuckDxfProfileSelect', btns: ['btnChuckDxfProfileNew', 'btnChuckDxfProfileCopy', 'btnChuckDxfProfileDelete'] },
     { area: 'ufBody', list: 'ufSelect', btns: ['btnUfNew', 'btnUfCopy', 'btnUfDelete'] },
     { area: 'mtPaneCups', list: 'mtCupList', item: '.mt-cup-item', btns: ['btnMtCupNew', 'btnMtCupCopy', 'btnMtCupDelete'] },
+    { area: 'mtBeamGrid', list: 'mtBeamList', item: '.mt-cup-item', btns: ['btnMtBeamNew', 'btnMtBeamCopy', 'btnMtBeamDelete'] },
   ];
   var listCtx = null;
   function listCtxClose() { if (listCtx && !listCtx.hidden) { listCtx.hidden = true; listCtx.innerHTML = ''; } }
